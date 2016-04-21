@@ -77,9 +77,9 @@ C.........    SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT(IN   ) :: JDATE                ! date YYYYDDD
         INTEGER     , INTENT(IN   ) :: JTIME                ! time 10000
         INTEGER     , INTENT(IN   ) :: TZONE                ! time zone (5 for Eastern)
-        INTEGER     , INTENT(IN   ) :: MONTH( 24, 0:23 )    ! source time zone's month-of-year 1...12
-        INTEGER     , INTENT(IN   ) :: DAYOW( 24, 0:23 )    ! source time zone's day-of-week   1...7
-        INTEGER     , INTENT(IN   ) :: DAYOM( 24, 0:23 )    ! source time zone's day-of-month  1...31
+        INTEGER     , INTENT(IN   ) :: MONTH( 24, -23:23 )    ! source time zone's month-of-year 1...12
+        INTEGER     , INTENT(IN   ) :: DAYOW( 24, -23:23 )    ! source time zone's day-of-week   1...7
+        INTEGER     , INTENT(IN   ) :: DAYOM( 24, -23:23 )    ! source time zone's day-of-month  1...31
         CHARACTER(*), INTENT(IN   ) :: PNAME                ! met-based temp profile file name
 
 C.........  EXTERNAL FUNCTIONS:

@@ -72,9 +72,9 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER, INTENT(IN ) :: TZONE                   ! time zone (5 for Eastern)
         INTEGER, INTENT(IN ) :: VIDX                    ! pol/act index
         INTEGER, INTENT(IN ) :: HIDX                    ! hour index
-        INTEGER, INTENT(IN ) :: MONTH( 24, 0:23 )       ! source time zone's month-of-year 1...12
-        INTEGER, INTENT(IN ) :: DAYOW( 24, 0:23 )       ! source time zone's day-of-week   1...7
-        INTEGER, INTENT(IN ) :: DAYOM( 24, 0:23 )       ! source time zone's day-of-month  1...31
+        INTEGER, INTENT(IN ) :: MONTH( 24, -23:23 )       ! source time zone's month-of-year 1...12
+        INTEGER, INTENT(IN ) :: DAYOW( 24, -23:23 )       ! source time zone's day-of-week   1...7
+        INTEGER, INTENT(IN ) :: DAYOM( 24, -23:23 )       ! source time zone's day-of-month  1...31
 
 C...........   EXTERNAL FUNCTIONS:
 

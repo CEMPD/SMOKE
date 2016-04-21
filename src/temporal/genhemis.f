@@ -101,9 +101,9 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   TMAT update variables
 
-        INTEGER, SAVE :: MONTH ( 24, 0:23 )  ! time zone's month 1 ... 12
-        INTEGER, SAVE :: DAYOW ( 24, 0:23 )  ! time zone's day-of-week    1 ... 7
-        INTEGER, SAVE :: DAYOM ( 24, 0:23 )  ! time zone's day-of-month   1 ... 31
+        INTEGER, SAVE :: MONTH ( 24, -23:23 )  ! time zone's month 1 ... 12
+        INTEGER, SAVE :: DAYOW ( 24, -23:23 )  ! time zone's day-of-week    1 ... 7
+        INTEGER, SAVE :: DAYOM ( 24, -23:23 )  ! time zone's day-of-month   1 ... 31
 
         REAL, ALLOCATABLE, SAVE :: STHOUR( : )         ! episode start hour
         REAL, ALLOCATABLE, SAVE :: EDHOUR( : )         ! episode end hour
