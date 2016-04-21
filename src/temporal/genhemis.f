@@ -101,8 +101,6 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   TMAT update variables
 
-        INTEGER, SAVE :: NHRCALC             ! No. of entries in HRCALC
-        INTEGER, SAVE :: HRCALC( 24 )        ! List of GMT hrs for calc'g TMAT
         INTEGER, SAVE :: MONTH ( 24, 0:23 )  ! time zone's month 1 ... 12
         INTEGER, SAVE :: DAYOW ( 24, 0:23 )  ! time zone's day-of-week    1 ... 7
         INTEGER, SAVE :: DAYOM ( 24, 0:23 )  ! time zone's day-of-month   1 ... 31
@@ -196,15 +194,6 @@ C.............  Define the minimum and maximum time zones in the inventory
 C.............  Adjust TZMIN and TZMAX for possibility of daylight savings
             TZMIN = TZMIN - 1
             TZMAX = TZMAX + 1
-
-C.............  Determine hours of output day in GMT for updating TMAT
-            NHRCALC = TZMAX - TZMIN + 1
-
-            K = 0
-            DO I = TZMIN, TZMAX
-                K = K + 1
-                HRCALC( K ) = MOD( I - TZONE + 25, 24 )
-            END DO
 
 C.............  Set flags for daily and hourly data
             DFLAG = ( DNAME .NE. 'NONE' )
