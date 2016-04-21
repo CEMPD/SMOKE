@@ -1213,7 +1213,7 @@ C.............  Local variables:
                 CALL M3EXIT( PNAME, 0,0, MESG, 2 )
             END IF
 
-            TFAC( NFIELDS,0 ) = 1.0
+            TFAC( 1:NFIELDS,0 ) = 1.0
             IDSTR( 0 )        =  '0'
             NULLPROF          =   0
 
@@ -1305,7 +1305,7 @@ C.............  Open and count FNAME
             END IF
 
             IDSTR( 0 )        =  '0'
-            TFAC( NFIELDS,0 ) = 1.0
+            TFAC( 1:NFIELDS,0 ) = 1.0
 
 C.............  Read file:  CKEY and FACS
 
