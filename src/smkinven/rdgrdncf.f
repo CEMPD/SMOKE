@@ -87,7 +87,6 @@ C...........   Other local variables
         INTEGER      :: INY = 0     !  tmp inventory year
         INTEGER         IOS         !  i/o status
         INTEGER         INVFMT      !  inventory format code
-        INTEGER      :: MONTH = 0   !  tmp month (0=annual)
         INTEGER      :: NDAYS = 0   !  days of year
         INTEGER         NSCC        !  number of SCCs
         INTEGER         NLINE       !  number of lines in list format file
@@ -98,12 +97,13 @@ C...........   Other local variables
 
         REAL         :: CNVFAC = 0.0  !  conversion factor
 
-        LOGICAL      :: MONFLAG  = .FALSE. ! true: monthly inventory
+        LOGICAL      :: ANNFLAG= .FALSE. ! true: annual inventory
         LOGICAL      :: EFLAG  = .FALSE. ! true: error occurred
         LOGICAL      :: DFLAG  = .FALSE. ! true: weekday (not full week) nrmlizr
 
         CHARACTER(300)  MESG, LINE  !  message buffer
 
+        CHARACTER( 2 )     CMON     ! monthly inv flag
         CHARACTER(CELLEN3) CCELL    ! tmp cell ID
         CHARACTER(POLLEN3) CCOD     ! character pollutant index
         CHARACTER(SCCLEN3) PSCC, SCC      ! source category code
@@ -181,7 +181,7 @@ C.............  Store sorted input list
             
                 IF( BLKORCMT ( SORTLST( I ) ) ) CYCLE
             
-                READ( SORTLST( I ), * ) SCC, CBUF, CVAR, MONTH, LINE
+                READ( SORTLST( I ), * ) SCC, CBUF, CVAR, CMON, LINE
                 CALL PADZERO( SCC )
 
                 NF = NF + 1
@@ -200,7 +200,7 @@ C.............  count no of SCCs and Pollutants
 
                 J = INXLST( I )
 
-                READ( EDGARLST( J ), * ) SCC, CBUF, CVAR, MONTH, LINE
+                READ( EDGARLST( J ), * ) SCC, CBUF, CVAR, CMON, LINE
 
                 IF( INDEX1( CBUF, NF, CPOL ) < 1 ) THEN
                     NIPOL = NIPOL + 1
@@ -214,8 +214,10 @@ C.............  count no of SCCs and Pollutants
 
             END DO
 
-            IF( MONTH > 0 ) MONFLAG = .TRUE.   ! Determine inv temp resolution (annual or monthly)
-            
+            IF( CMON == '0' .OR. CMON == 'N' .OR. CMON == ' ' ) THEN
+                ANNFLAG = .TRUE.   ! Determine inv temp resolution (annual or monthly)
+            END IF
+
             NIPPA = NIPOL
 
             CLOSE( FDEV )
@@ -239,12 +241,12 @@ C.........  NOTE - Both EINAM and EANAM are created to support WRINVEMIS
             EIIDX ( V ) = V
             EINAM ( V ) = CPOL( V )
             EANAM ( V ) = CPOL( V )
-            IF( MONFLAG ) THEN
-                EAUNIT( V ) = 'tons/day'
-                EADESC( V ) = 'Average-day Emissions for ' // TRIM( CPOL(V) )
-            ELSE
+            IF( ANNFLAG ) THEN
                 EAUNIT( V ) = 'tons/yr'
                 EADESC( V ) = 'Annual Emissions for ' // TRIM( CPOL(V) )
+            ELSE
+                EAUNIT( V ) = 'tons/day'
+                EADESC( V ) = 'Average-day Emissions for ' // TRIM( CPOL(V) )
             END IF
         END DO
 
@@ -366,14 +368,14 @@ C.........  Loop over pollutant-specific raw NetCDF gridded inventory file
             SCC  = TRIM( SEGMENT( 1 ) )
             CBUF = TRIM( SEGMENT( 2 ) )
             CVAR = TRIM( SEGMENT( 3 ) )
-            MONTH = STR2INT( SEGMENT( 4 ) )
+            CMON = TRIM( SEGMENT( 4 ) )
 
             CALL PADZERO( SCC )
 
             V = INDEX1( CBUF, NIPOL, EANAM ) 
 
 C.................  Define inventory temporal resoltion (annual or avg-day)
-            IF( MONTH == 0 ) THEN   ! Annual inventory
+            IF( CMON == '0' .OR. CMON == 'N' .OR. CMON == ' ' ) THEN   ! Annual inventory
                 TPF = MTPRFAC * WKSET
                 IDX = NEM
                 CNVFAC = 1000. * GM2TON * NDAYS * DAY2SEC  ! kg/m2/s -> kg/m2/year
