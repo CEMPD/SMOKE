@@ -136,8 +136,9 @@ C.........  Separate line into segments
 
 C.........  Use the file format definition to parse the line into
 C           the various data fields
-        CALL PADZERO( SEGMENT( 1 )( 1:5 ) )
-        WRITE( CFIP, '(I1.7,A)' ) ICC, SEGMENT( 1 )( 1:5 )  ! country code of FIPS     
+        CFIP = REPEAT( '0', FIPLEN3 )
+        WRITE( CFIP( FIPEXPLEN3+1:FIPEXPLEN3+1 ), '(I1)' ) ICC  ! country code of FIPS
+        CFIP( FIPEXPLEN3+2:FIPEXPLEN3+6 ) = ADJUSTR( SEGMENT( 1 )( 1:5 ) )  ! state/county code
 
         FIREID = SEGMENT( 2 )   ! fire ID
         LOCID  = SEGMENT( 3 )   ! location ID
