@@ -414,8 +414,9 @@ C.............  Get lines
 
 C.............  Use the file format definition to parse the line into
 C               the various data fields
-            CALL PADZERO( SEGMENT( 1 )( 1:5 ) )
-            WRITE( CFIP, '(I1,A)' ) ICC, SEGMENT( 1 )( 1:5 )  ! country code of FIPS     
+            CFIP = REPEAT( '0', FIPLEN3 )
+            WRITE( CFIP( FIPEXPLEN3+1:FIPEXPLEN3+1 ), '(I1)' ) ICC  ! country code of FIPS
+            CFIP( FIPEXPLEN3+2:FIPEXPLEN3+6 ) = ADJUSTR( SEGMENT( 1 )( 1:5 ) )  ! state/county code
             FIP    = STR2INT( CFIP )          ! FIP codes
             FCID   = SEGMENT( 2 )   ! fire ID
             SKID   = SEGMENT( 3 )   ! location ID
@@ -725,8 +726,8 @@ C               look it up and get indidies
             IF( FIP .NE. LFIP ) THEN
                 J = FINDC( CFIP, NINVIFIP, INVCFIP )
                 IF( J .LE. 0 ) THEN
-                    WRITE( MESG,93000 ) 'INTERNAL ERROR: Could not ',
-     &                     'find FIPS code' // CFIP // 'in internal list.'
+                    WRITE( MESG,93000 ) 'INTERNAL ERROR: Could not '//
+     &                     'find FIPS code ' // CFIP // 'in internal list.'
                     CALL M3MSG2( MESG )
                     CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
                 END IF
