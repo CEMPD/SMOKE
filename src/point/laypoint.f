@@ -299,7 +299,7 @@ C...........   Other local variables
         CHARACTER(80) :: GDESC     !  grid description
         CHARACTER(256)   OUTFMT    !  output format for RDEV report
         CHARACTER(256)   BUFFER    !  source characteristics buffer
-        CHARACTER(256)   MESG      !  buffer for M3EXIT() messages
+        CHARACTER(512)   MESG      !  buffer for M3EXIT() messages
 
         CHARACTER(IOVLEN3) VNAME      ! variable name buffer 
         CHARACTER(IOVLEN3) COORD3D    ! coordinate system name
@@ -466,8 +466,8 @@ C.............  Check for layer-1 fraction
             I = INDEX1( SPDATNAM( 1 ), NVARS3D, VNAME3D )
             IF ( I .GT. 0 ) THEN
                 LFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'NOTE: Layer-1 fraction ' //
-     &                 'hourly input will be used '//CRLF()// BLANK10//
+                MESG = 'NOTE: Layer-1 fraction hourly input ' //
+     &                 'will be used '//CRLF()// BLANK10//
      &                 'to allocate plumes for some sources.'
                 CALL M3MSG2( MESG )
 
@@ -493,8 +493,8 @@ C.............  Check for plume top and plume bottom
 
             ELSE IF ( J .GT. 0 .AND. K .GT. 0 ) THEN
                 BFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'NOTE: Plume top and bottom in ' //
-     &                 'hourly input will be used '//CRLF()// BLANK10//
+                MESG = 'NOTE: Plume top and bottom in hourly ' //
+     &                 'input will be used '//CRLF()// BLANK10//
      &                 'to allocate plumes for some sources.'
                 CALL M3MSG2( MESG )
 
@@ -509,8 +509,8 @@ C.............  Check for temperatures
             I = INDEX1( SPDATNAM( 4 ), NVARS3D, VNAME3D )
             IF ( I .GT. 0 ) THEN
                 TFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'NOTE: Temperatures ' //
-     &                 'hourly input will be used '//CRLF()// BLANK10//
+                MESG = 'NOTE: Temperatures hourly input ' //
+     &                 'will be used '//CRLF()// BLANK10//
      &                 'to allocate plumes for some sources.'
                 CALL M3MSG2( MESG )
 
@@ -523,8 +523,8 @@ C.............  Check for velocity
             I = INDEX1( SPDATNAM( 5 ), NVARS3D, VNAME3D )
             IF ( I .GT. 0 ) THEN
                 YFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'NOTE: Velocities ' //
-     &                 'hourly input will be used '//CRLF()// BLANK10//
+                MESG = 'NOTE: Velocities hourly input ' //
+     &                 'will be used '//CRLF()// BLANK10//
      &                 'to allocate plumes for some sources.'
                 CALL M3MSG2( MESG )
 
@@ -537,8 +537,8 @@ C.............  Check for flow rate
             I = INDEX1( SPDATNAM( 6 ), NVARS3D, VNAME3D )
             IF ( I .GT. 0 ) THEN
                 FFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'NOTE: Flow rate ' //
-     &                 'hourly input will be used '//CRLF()// BLANK10//
+                MESG = 'NOTE: Flow rate hourly input ' //
+     &                 'will be used '//CRLF()// BLANK10//
      &                 'to allocate plumes for some sources.'
                 CALL M3MSG2( MESG )
 
@@ -1514,8 +1514,7 @@ C                       hydrostatic assumption) from bottom to top.
 C.................  Check plume rise for nonsense values
                 CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
                 IF( ZTOP .LT. STKHT( S ) .AND. K .LE. 0 ) THEN
-                    WRITE( MESG,94010 ) 
-     &                     'WARNING: Top of plume found to be ' //
+                    MESG = 'WARNING: Top of plume found to be ' //
      &                     'less than top of stack for:'//
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 )
                     CALL M3MESG( MESG )
@@ -1549,8 +1548,7 @@ C.................  Allocate plume to layers
                          ENDIF
 
                       ELSE
-                         WRITE( MESG,94010 )
-     &                       'ERROR: Fire Source not found '//
+                         MESG = 'ERROR: Fire Source not found '//
      &                       CRLF() // BLANK10 // BUFFER( 1:L2 )
                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
@@ -1571,8 +1569,7 @@ C                       Second, the rest of (1-LAY1F) gets distributed to above 
                         PBL = HMIX( S )
                         IF( PBL  .LE. 100.0 ) PBL = 100.0    ! reset PBL if < 100.
                         IF( ZTOP .LE. ZBOT ) THEN           ! Error: ZTOP < ZBOT 
-                            WRITE( MESG,94010 ) 
-     &                         'ERROR: PTOP can not be lower than PBOT'//
+                            MESG = 'ERROR: PTOP can not be lower than PBOT'//
      &                          CRLF() // BLANK10 // BUFFER( 1:L2 )
                             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                         END IF
@@ -1646,8 +1643,7 @@ C                   to output in the first layer if they are.
                 IF( X .LT. 0.0 ) THEN
 
                     CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-                    WRITE( MESG,94010 ) 
-     &                     'WARNING: One or more negative plume ' //
+                    MESG = 'WARNING: One or more negative plume ' //
      &                     'fractions found for:'//
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 )//'.'//
      &                     CRLF() // BLANK10 // 'Plume reset to '//
