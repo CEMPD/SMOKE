@@ -152,7 +152,6 @@ C...........   Other local variables
         LOGICAL, SAVE :: ONETIME  = .TRUE.! true: one time routine called
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
-        LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
 
         CHARACTER( 3 ) :: STA = '006'     ! state code for CA (=006)
         CHARACTER(100) :: BUFFER = ' '    ! src description buffer 
@@ -182,9 +181,6 @@ C***********************************************************************
 C   begin body of program RDMEDSPD
 C.........  First time routine called
         IF( FIRSTIME ) THEN
-
-C.............  Get value of these controls from the environment
-            IFLAG = ENVYN ( 'IMPORT_AVEINV_YN', ' ', .TRUE., IOS )
 
 C.............  Get maximum number of warnings
             MXWARN = ENVINT( WARNSET , ' ', 100, I )

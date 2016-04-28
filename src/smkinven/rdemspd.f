@@ -160,7 +160,6 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
         LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
-        LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
         LOGICAL, SAVE :: NFLAG  = .FALSE. ! true: Special pollutant name field used on that line
         LOGICAL, SAVE :: WIDE_FORMAT = .FALSE. ! true: hourly data values given with 12 columns instead of 7
 
@@ -187,9 +186,6 @@ C   begin body of program RDEMSPD
 
 C.........  First time routine called
         IF( FIRSTIME ) THEN
-
-C.............  Get value of these controls from the environment
-            IFLAG = ENVYN ( 'IMPORT_AVEINV_YN', ' ', .TRUE., IOS )
 
 C.............  Get environment variable using an hourly file as a daily file
 C.............  NOTE - the hourly file will have been assigned as a daily
@@ -707,13 +703,8 @@ C.............  If SCCs are needed for matching...
                 CHAR4 = TSCC
 
 C.................  Build source characteristics field for searching inventory
-                IF( .NOT. IFLAG ) THEN
-                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                       '     '//TSCC, CHRBLNK3, POLBLNK3, CSRC )
-                ELSE
-                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
-                END IF
+                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
 
 C.................  Search for this record in sources
                 J = FINDC( CSRC, NS, CSOURC( SS ) )
@@ -722,13 +713,8 @@ C.............  If SCCs are not being used for matching (at least not yet)...
             ELSE
 
 C.................  Build source characteristics field for searching inventory
-                IF( .NOT. IFLAG ) THEN
-                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                       '     '//TSCC, CHRBLNK3, POLBLNK3, CSRC )
-                ELSE
-                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
-                END IF
+                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
 
 C.................  Search for this record in sources
                 J = FINDC( CSRC, NS, CSOURC( SS ) )
@@ -748,13 +734,8 @@ C                   if reading the SCC in helps (needed for IDA format)
                     CHAR4 = TSCC
 
 C.....................  Build source characteristics field for searching inventory
-                    IF( .NOT. IFLAG ) THEN
-                        CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                         '     '//TSCC, CHRBLNK3, POLBLNK3, CSRC )
-                    ELSE
-                        CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
      &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
-                    END IF
 
 C.....................  Search for this record in sources
                     J = FINDC( CSRC, NS, CSOURC( SS ) )
