@@ -156,6 +156,8 @@ C...........   Other local variables
         INTEGER       :: RTIME = 0        ! reference time
         INTEGER, SAVE :: S1 = 0           ! saved 1st position of extra field
         INTEGER, SAVE :: S2 = 0           ! saved 2nd position of extra field
+        INTEGER, SAVE :: NDAYS    = 0     ! saved processing days
+        INTEGER, SAVE :: B_YEAR   = 0     ! saved processing base year
         INTEGER, SAVE :: SDATESAV = 0     ! saved start date
         INTEGER, SAVE :: STIMESAV = 0     ! saved start time
         INTEGER, SAVE :: TDIVIDE  = 1     ! time step divisor
@@ -202,6 +204,18 @@ C.............  NOTE - the hourly file will have been assigned as a daily
 C               file when it was opened.
             MESG = 'Use daily totals only from hourly data file'
             SFLAG = ENVYN( 'HOURLY_TO_DAILY', MESG, .FALSE., IOS )
+
+C.............  Get processing base year info
+            MESG = 'Define Processing Base Year for daily/hourly-specific inventory'
+            B_YEAR = ENVINT( 'BASE_YEAR', MESG, 0, IOS )
+            IF( B_YEAR == 0 ) THEN
+                MESG = 'ERROR: MUST define the processing base year for '//
+     &                 'daily/hourly-specific inventory'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+            NDAYS  = MON_DAYS( INV_MON )
+            LYEAR =  INT( 1 / YR2DAY( B_YEAR ) )   ! convert year to days
+            IF( LYEAR > 365 .AND. MONTH == 2 ) NDAYS = 29
 
 C.............  Get maximum number of warnings
             MXWARN = ENVINT( WARNSET , ' ', 100, I )
@@ -372,9 +386,9 @@ C.............  Set the number of fields, depending on day- or hour-specific
 
 C.............  Skip non-processing month/day 
             IF( INV_MON > 0 ) THEN
-                N = MON_DAYS( INV_MON )
-                FSTDATE = 1000 * YEAR + JULIAN( YEAR, INV_MON, 1 )
-                LSTDATE = 1000 * YEAR + JULIAN( YEAR, INV_MON, N )
+
+                FSTDATE = 1000 * B_YEAR + JULIAN( B_YEAR, INV_MON, 1 )
+                LSTDATE = 1000 * B_YEAR + JULIAN( B_YEAR, INV_MON, NDAYS )
                 CALL NEXTIME( FSTDATE, JTIME, -240000 )     ! include the last day of previous month
                 CALL NEXTIME( LSTDATE, JTIME,  240000 )     ! include the first day of next month 
 
