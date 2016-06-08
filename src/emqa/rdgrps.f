@@ -813,6 +813,7 @@ C----------------------------------------------------------------------
 C.............  Initialize output variables
             STATUS = 1
             LEVEL  = 0
+            CALL PADZERO( REGN )
 
 C.............  Find in country list                      
             IF( REGN( FIPEXPLEN3+2:FIPLEN3 ) == '00000' ) THEN
@@ -821,7 +822,7 @@ C.............  Find in country list
                 LEVEL = 1
 
 C.............  Find in state list
-            ELSE IF( REGN( STALEN3:FIPLEN3 ) == '000' ) THEN
+            ELSE IF( REGN( STALEN3+1:FIPLEN3 ) == '000' ) THEN
                 K = FINDC( REGN, NSTATE, STATCOD )
                 STATUS = 0
                 LEVEL = 2
