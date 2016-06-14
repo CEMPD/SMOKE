@@ -86,7 +86,6 @@ C...........   Other local variables
         INTEGER         SCCIDX      ! current SCC index
         INTEGER         NLINES      ! number of lines
         INTEGER         MDEV        ! open SCCXREF input file
-        INTEGER         CNTY        ! current FIPS code
         
         REAL            SPDVAL      ! hourly speed value
 
@@ -94,6 +93,7 @@ C...........   Other local variables
 
         CHARACTER(1060)    LINE     ! line buffer
         CHARACTER(300)     MESG     ! message buffer
+        CHARACTER(FIPLEN3) CFIP     ! current FIPS
         CHARACTER(SCCLEN3) SCC      ! current SCC
         CHARACTER(10)      KEYWORD  ! temperature keyword
 
@@ -176,23 +176,15 @@ C.............  Find SCC in inventory list
                 CYCLE
             END IF
 
-C.............  Convert FIP to integer
-            IF( .NOT. CHKINT( SEGMENT( 1 ) ) ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94010 ) 'ERROR: Bad FIPS code ' //
-     &            'at line', IREC, 'of hourly speed file.'
-                CALL M3MESG( MESG )
-                CYCLE
-            END IF
-
 C.............  Find county in inventory list
-            CNTY = STR2INT( SEGMENT( 1 ) )
-            FIPIDX = FINDC( CNTY, NINVIFIP, INVCFIP )
+            CFIP = ADJUSTR( SEGMENT( 1 ) )
+            CALL PADZERO( CFIP )
+            FIPIDX = FINDC( CFIP, NINVIFIP, INVCFIP )
             
             IF( FIPIDX .LE. 0 ) THEN
                 WRITE( MESG, 94010 ) 'NOTE: Skipping line',
-     &            IREC, 'of hourly speed file because FIPS code',
-     &            CNTY, 'is not in the inventory.'
+     &            IREC, 'of hourly speed file because FIPS code '//
+     &            CFIP //' is not in the inventory.'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
