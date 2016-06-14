@@ -148,6 +148,7 @@ C...........  Parse line into fields
 
 C...........  SCC mapping loop based on SCCXREF reference input file
           SCC = ADJUSTL( SEGMENT( 2 ) )
+          CALL PADZERO( SCC )
 
           KK = 0
           NSCC = 0
