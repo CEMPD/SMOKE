@@ -177,10 +177,10 @@ C.............  Find SCC in inventory list
             END IF
 
 C.............  Find county in inventory list
-            CFIP = ADJUSTR( SEGMENT( 1 ) )
+            CFIP = ADJUSTL( SEGMENT( 1 ) )
             CALL PADZERO( CFIP )
             FIPIDX = FINDC( CFIP, NINVIFIP, INVCFIP )
-            
+
             IF( FIPIDX .LE. 0 ) THEN
                 WRITE( MESG, 94010 ) 'NOTE: Skipping line',
      &            IREC, 'of hourly speed file because FIPS code '//
