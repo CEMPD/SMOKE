@@ -38,6 +38,7 @@ C***************************************************************************
 C...........   MODULES for public variables
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
+        USE MODELEV, ONLY: FFLAG
 
         IMPLICIT NONE
 
@@ -223,6 +224,7 @@ C              name and store it's file.
                 NPOLCNT = NPOLCNT + 1
                 MAPNAM( NPOLCNT ) = LINE( 1:IOVLEN3 )
                 MAPFIL( NPOLCNT ) = TRIM( PATH ) // LINE( IOVLEN3+2:L1 )
+                IF( MAPNAM( NPOLCNT ) == 'ACRESBURNED' ) FFLAG = .FALSE.   ! elevpoint fire flag setting
 
             END IF
 
