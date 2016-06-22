@@ -100,7 +100,7 @@ C   begin body of subroutine  UPDTMAT
 C.........  Compute correct year-to-day conversion factor:
 
         YRFAC = YR2DAY( JDATE / 1000 )            
-        V     = IPOL2D( IGRP,VIDX )
+        V     = IPOL2D( VIDX,IGRP )
 
 C.........  Compute TMAT for current group of pollutants
 

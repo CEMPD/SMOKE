@@ -57,7 +57,7 @@ C.........  MODINFO contains the information about the source category
         USE MODXREF,  ONLY: MDEX, WDEX, DDEX
 
         USE MODTMPRL, ONLY: NHOLIDAY, HOLJDATE, HOLALTDY, HRLFAC, HRLPROF,
-     &                      METPROFLAG, METPROTYPE, METPROF, METFACS
+     &                      NMETPROF, METPROF, IPOL2D
 
         USE MODDAYHR, ONLY: INDXD, INDXH, EMACD, EMACH, NDYSRC, NHRSRC,
      &                      LDSPOA, LHSPOA, LHPROF,
@@ -107,13 +107,13 @@ C...........   TMAT update variables
 
         REAL, ALLOCATABLE, SAVE :: STHOUR( : )         ! episode start hour
         REAL, ALLOCATABLE, SAVE :: EDHOUR( : )         ! episode end hour
+        REAL, ALLOCATABLE       :: METVAL( : )         ! tmp met-based temporal factors
         REAL                    :: TMPHRLFAC( 24 )     ! tmp hourly factors
 
 C...........   Other local variables
 
         INTEGER          C, H, I, II, J, K, K1, K2, KK, L, M, S, V !  indices and counters
         INTEGER          IHR
-       integer  t0,t1,t2,t3,t4,t5,t6,t7
         INTEGER, SAVE :: TZMIN   ! minimum time zone in inventory
         INTEGER, SAVE :: TZMAX   ! maximum time zone in inventory
 
@@ -126,6 +126,8 @@ C...........   Other local variables
         INTEGER          IOS        ! i/o status
         INTEGER, SAVE :: LTIME = -1 ! time used in previous subroutine call
         INTEGER          MON        ! tmp month number (1=Jan)
+        INTEGER          IMET       ! met-based profile ID by source
+        INTEGER          VIDX       ! tmp pollutant index for profile
         INTEGER          PIDX       ! tmp pollutant/activity index
         INTEGER          TDATE      ! date for computing time zones update arr
         INTEGER          TTIME      ! time for computing time zones update arr
@@ -133,6 +135,7 @@ C...........   Other local variables
         INTEGER          EPSEND     ! tmp episode end hour
 
         REAL             UFAC            ! tmp units conversion factor
+        REAL             TOT             ! tmp total value (denominator)
         REAL          :: NORMFAC   = 0.  ! normalizing factors for hourly factors
         REAL          :: SUMHRLFAC = 0.  ! tmp partial sum of hourly factors
         REAL          :: TOTHRLFAC = 0.  ! tmp sum of hourly factors
@@ -336,7 +339,7 @@ C.........  Determine if this TMAT needs to be updated
 C.........  Construct TMAT -- array of effective composite profile coefficients
         IF( TMATCALC ) THEN
 
-            CALL MKTMAT( NSRC, IGRP, NGRP,  NGSZ, JDATE, JTIME, TZONE,
+            CALL MKTMAT( NSRC, IGRP, NGRP, NGSZ, JDATE, JTIME, TZONE,
      &                   MONTH, DAYOW, DAYOM, PNAME )
 
         END IF         ! if TMAT is to be calculated
@@ -498,11 +501,38 @@ C.........................  Re-normalizing hourly temporal factors
 
                         EMIST( S,V ) = UFAC * EMACD( I ) * TMPHRLFAC( K )
 
-                   ELSE       ! end of computing wildfires hourly emission factors
+                    ELSE       ! end of computing wildfires hourly emission factors
 
                         EMIST( S,V ) = UFAC * EMACD( I ) * HRLFAC( K,IHR )
 
-                   END IF
+                    END IF
+
+C....................  Apply hour-of-day Gentpro temporal profiles to daily inventory
+                    VIDX = IPOL2D( V,IGRP )
+                    IF( VIDX < 1 ) CYCLE
+                    IMET = METPROF( S,VIDX )
+
+                    IF( IMET > 0 ) THEN
+
+                        IF( ALLOCATED( METVAL ) ) DEALLOCATE( METVAL )
+                        ALLOCATE( METVAL( NMETPROF ), STAT = IOS )
+                        CALL CHECKMEM( IOS, 'METVAL', PROGNAME )
+                        METVAL = 0.0
+
+                        IF( .NOT. READ3( PNAME, 'DAYTOT', 1, JDATE, JTIME, METVAL ) ) THEN
+                            MESG = 'Could not read DAYTOT variable from ' // TRIM( PNAME )
+                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                        END IF
+                        TOT = METVAL( IMET )
+
+                        IF( .NOT. READ3( PNAME, 'HRLSRC', 1, JDATE, JTIME, METVAL ) ) THEN
+                             MESG = 'Could not read HRLSRC variable from ' // TRIM( PNAME )
+                             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                        END IF
+
+                        EMIST( S,V ) = UFAC * EMACD( I ) * METVAL( IMET ) / TOT
+
+                    END IF
 
                 END DO
 

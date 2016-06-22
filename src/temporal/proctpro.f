@@ -908,15 +908,16 @@ C.........  hour-of-day:  all these use TPROF_HOURLY:
         IF ( METCOUNT .GT. 0 ) THEN       !  met based
 
 C.............  Determine which hourly profiles to apply
-           MESG = 'Specifies the basis of hourly profiles: [YEAR|MONTH]'
-           CALL ENVSTR( 'HOURLY_TPROF_BASE', MESG, ' ',HOUR_TPROF, IOS )
-           CALL UPCASE( HOUR_TPROF )
+            MESG = 'Specifies the basis of hourly profiles: [YEAR|MONTH]'
+            CALL ENVSTR( 'HOURLY_TPROF_BASE', MESG, ' ',HOUR_TPROF, IOS )
+            CALL UPCASE( HOUR_TPROF )
 
-            IF( .NOT. ( HOUR_TPROF=='MONTH' .OR. HOUR_TPROF=='YEAR' ) ) THEN
+            IF( .NOT. ( HOUR_TPROF=='MONTH' .OR. HOUR_TPROF=='YEAR' .OR.
+     &                  HOUR_TPROF=='DAY' ) ) THEN
                 MESG = 'ERROR: MUST define the basis of hourly profiles '//
      &                 'for a correct hourly conversion.'
      &                 //CRLF()//BLANK10//':: Define HOURLY_TPROF_BASE to '//
-     &                 '[YEAR or MONTH]'
+     &                 '[YEAR, MONTH, or DAY]'
                 CALL M3EXIT( PNAME, 0, 0, MESG, 2 )
             END IF
 
