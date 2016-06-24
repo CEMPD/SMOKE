@@ -123,10 +123,11 @@ C.............  Skip record in case of NGRP > 1 and all fields not used
 
             DO S = 1, NSRC
 
-                IMET = METPROF( S,V )
                 IMTH = MTHPROF( S,V )
                 IWEK = WEKPROF( S,V )
                 IDOM = DOMPROF( S,V )
+                IMET = METPROF( S,V )
+                IF( HOUR_TPROF == 'DAY' ) IMET = 0
 
 C.................  Adjust for annual data, which should always use an
 C                   average-day factor (if the emissions are an annual total,
@@ -343,6 +344,8 @@ C                   APPLY hour-of-month profiles to monthly inventory
             END DO
 
             DEALLOCATE( METDAT )
+
+            RETURN
 
             END SUBROUTINE UPDATE_TMAT_METFACS
 

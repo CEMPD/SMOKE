@@ -512,7 +512,7 @@ C....................  Apply hour-of-day Gentpro temporal profiles to daily inve
                     IF( VIDX < 1 ) CYCLE
                     IMET = METPROF( S,VIDX )
 
-                    IF( IMET > 0 ) THEN
+                    IF( IMET > 0 .AND. HOUR_TPROF == 'DAY' ) THEN
 
                         IF( ALLOCATED( METVAL ) ) DEALLOCATE( METVAL )
                         ALLOCATE( METVAL( NMETPROF ), STAT = IOS )
