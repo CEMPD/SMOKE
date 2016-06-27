@@ -57,7 +57,7 @@ C.........  MODINFO contains the information about the source category
         USE MODXREF,  ONLY: MDEX, WDEX, DDEX
 
         USE MODTMPRL, ONLY: NHOLIDAY, HOLJDATE, HOLALTDY, HRLFAC, HRLPROF,
-     &                      NMETPROF, METPROF, IPOL2D
+     &                      NMETPROF, METPROF, IPOL2D, HOUR_TPROF
 
         USE MODDAYHR, ONLY: INDXD, INDXH, EMACD, EMACH, NDYSRC, NHRSRC,
      &                      LDSPOA, LHSPOA, LHPROF,
