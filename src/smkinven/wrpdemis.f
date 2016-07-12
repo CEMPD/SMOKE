@@ -640,6 +640,7 @@ C                   are combined into the same SMOKE name.
      &                         'inventory. Will store only one value '//
      &                         'for '// CRLF()// BLANK10//SPDATDSC(V2)//
      &                         ':' // CRLF() // BLANK10 // BUFFER(1:L2)
+                        CALL M3MESG( MESG )
                     ELSE
                         MESG = 'WARNING: Duplicate source in ' //
      &                         'inventory will have summed emissions:' 
