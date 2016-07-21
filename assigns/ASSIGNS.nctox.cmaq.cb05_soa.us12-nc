@@ -18,6 +18,12 @@
 #
 ## END HEADER ##############################################################
 
+## Determine operating system for compiling SMOKE
+#  Set executable format, makeing allownces for 64-bit archtecnture
+#  example: Linux2_x86_64ifort (Intel), Linux2_x86_64pg (Portland group), Linux2_x86_64gfort (gfortran)...
+#
+   setenv BIN    Linux2_x86_64ifort    # Intel Fortran 64-bit compiler
+
 ## I/O Naming roots
 #
    setenv INVID     nei2005      # Inventory input identifier
@@ -412,18 +418,13 @@ endif
       source $ASSIGNS/setmerge_files.scr    #  Define merging output file names 
 
     endif
-#  Determine operating system for compiling SMOKE
-   source $SMK_HOME/scripts/platform
-   if ( $status != 0 ) then
-      exit( $status )
-   endif
 
 #  Make directory for executables
    setenv SMK_BIN "$SMKROOT/$BIN"
    if( ! -e $SMK_BIN ) mkdir -p $SMK_BIN
 
 #  Create and change permissions for output directories
-   source $ASSIGNS/smk_mkdir
+   $ASSIGNS/smk_mkdir
    if ( $status > 0 ) then
       set outstat = 1   
    endif
