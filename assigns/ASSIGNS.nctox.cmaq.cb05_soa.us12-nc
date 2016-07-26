@@ -18,6 +18,12 @@
 #
 ## END HEADER ##############################################################
 
+## Determine operating system for compiling SMOKE
+#  Set executable format, makeing allownces for 64-bit archtecnture
+#  example: Linux2_x86_64ifort (Intel), Linux2_x86_64pg (Portland group), Linux2_x86_64gfort (gfortran)...
+#
+   setenv BIN    Linux2_x86_64ifort    # Intel Fortran 64-bit compiler
+
 ## I/O Naming roots
 #
    setenv INVID     nei2005      # Inventory input identifier
@@ -153,6 +159,7 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv SMK_MVSPATH $GE_DAT/MOVES_lookuptables/                # Dir for MOVES lookup tab
    setenv MRCLIST     $SMK_MVSPATH/mrclist.${SRCABBR}.lst # List of MOVES lookup table list file
    setenv METMOVES    $SMKDAT/met/run_$METSCEN/SMOKE_DAILY_${IOAPI_GRIDNAME_1}.ncf  # Met4moves output
+   setenv CFPRO       $GE_DAT/cfpro_moves_test.txt
 endif
 #
 ## Point source input files
@@ -192,6 +199,8 @@ endif
    setenv GSCNV       $GE_DAT/gscnv.$SPC.txt                     # ROG to TOG conversion facs
 #   setenv PROCDATES   $GE_DAT/procdates.txt                      # time periods that Temporal should process
    setenv SOURCE_GROUPS $INVDIR/other/source_groups.nc.txt       # Source apportionment groups
+   setenv GRIDMASK   /nas01/depts/ie/cempd/EMAQ/Platform/GriddedEI/GEOCODE_EDGAR0.1.ncf
+
 
 #
 ## Override shared inputs
@@ -412,18 +421,13 @@ endif
       source $ASSIGNS/setmerge_files.scr    #  Define merging output file names 
 
     endif
-#  Determine operating system for compiling SMOKE
-   source $SMK_HOME/scripts/platform
-   if ( $status != 0 ) then
-      exit( $status )
-   endif
 
 #  Make directory for executables
    setenv SMK_BIN "$SMKROOT/$BIN"
    if( ! -e $SMK_BIN ) mkdir -p $SMK_BIN
 
 #  Create and change permissions for output directories
-   source $ASSIGNS/smk_mkdir
+   $ASSIGNS/smk_mkdir
    if ( $status > 0 ) then
       set outstat = 1   
    endif
