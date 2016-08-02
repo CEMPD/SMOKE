@@ -864,7 +864,7 @@ C.............  BY options affecting inputs needed
                     HHFLAG      = .TRUE.          ! indicator flag for BY LAYER instruction only
 
                 CASE( 'LAYER' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                       IF( CATEGORY .EQ. 'POINT' ) THEN
                         LFLAG        = .TRUE.     ! Implies layer fractions file
                         TFLAG        = .TRUE.     ! Implies temporal allocation
@@ -884,28 +884,15 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
 
                       END IF
 
-                    ELSE
-                      WRITE( MESG, 94010 )
-     &                   'WARNING: BY LAYER instruction at ' //
-     &                   'line', IREC, 'is not allowed with ' //
-     &                   'the ASCIIELEV instruction.'
-                      CALL M3MSG2( MESG )
-
                     END IF
 
                 CASE( 'ORIS' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         RPT_%BYORIS = .TRUE.
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                             NOFLAG = .TRUE.
                             RPT_%ORISNAM = .TRUE.
                         END IF
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY ORIS instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'PLANT' )
@@ -915,7 +902,7 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                     END IF
 
                 CASE( 'ROADCLASS' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         IF( CATEGORY .EQ. 'MOBILE' ) THEN
                             RPT_%BYRCL = .TRUE.
 
@@ -924,35 +911,20 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                             CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
 
                         END IF
-
-                    ELSE
-
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: ROADCLASS instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
-
                     END IF
 
                 CASE( 'SIC' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         RPT_%BYSIC  = .TRUE.
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                             NIFLAG = .TRUE.
                             RPT_%SICNAM = .TRUE.
                             IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
                         END IF
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY SIC instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'MATBURNED' )    ! using SIC as an alias for MATBURNED in wildfire
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         RPT_%BYSIC  = .TRUE.
                         MATFLAG     = .TRUE.
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
@@ -960,43 +932,25 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                             RPT_%SICNAM = .TRUE.
                             IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
                         END IF
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY MATBURNED instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'INTEGRATE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         RPT_%BYINTGR  = .TRUE.
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY INTEGRATE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'MACT' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         RPT_%BYMACT  = .TRUE.
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                             NMFLAG = .TRUE.
                             RPT_%MACTNAM = .TRUE.
                             IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
                         END IF
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY MACT instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'NFDRSCODE' )    ! using MACT as an alias for NFDRSCODE in wildfire
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         RPT_%BYMACT  = .TRUE.
                         NFDFLAG      = .TRUE.
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
@@ -1004,32 +958,20 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                             RPT_%MACTNAM = .TRUE.
                             IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
                         END IF
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY NFDRSCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'NAICS' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         RPT_%BYNAICS  = .TRUE.
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                             NNFLAG = .TRUE.
                             RPT_%NAICSNAM = .TRUE.
                             IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
                         END IF
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY NAICS instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'SCC10' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         RPT_%BYSCC  = .TRUE.
                         RPT_%SCCRES = 4
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
@@ -1037,27 +979,15 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                             RPT_%SCCNAM = .TRUE.
                             IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
                         END IF
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY SCC10 instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'SRCTYPE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         RPT_%BYSRCTYP  = .TRUE.
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY SRCTYP instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'SCC' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         RPT_%BYSCC = .TRUE.
                         K = INDEX1( SEGMENT(3)(1:1), NSCCLV3, SCCLEV )
 
@@ -1080,13 +1010,6 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                             RPT_%SCCNAM = .TRUE.
                             IF( .NOT. LDELIM ) RPT_%DELIM = '|'
                         END IF
-
-                    ELSE
-                        WRITE( MESG,94010 )
-     &                     'WARNING: BY SCC instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
                         
                 CASE( 'SOURCE' )
@@ -1122,20 +1045,14 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
      &                  RPT_%LATLON = .TRUE.
 
                 CASE( 'SPCCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         PSFLAG = .TRUE.
                         RPT_%BYSPC = .TRUE.
                         RPT_%SPCPOL = SEGMENT( 3 )
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY SPCCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'SRGCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         IF( CATEGORY .NE. 'POINT' ) THEN
                             GSFLAG = .TRUE.
                             RPT_%BYSRG = .TRUE.
@@ -1148,12 +1065,6 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                             CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
 
                         END IF
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY SRGCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'then ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'STACK' )
@@ -1168,135 +1079,69 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
      &                  RPT_%LATLON = .TRUE.
 
                 CASE( 'MONCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                        TSFLAG = .TRUE.
                        RPT_%BYMON = .TRUE.   ! monthly profile
-                    ELSE
-                       WRITE( MESG, 94010 )
-     &                     'WARNING: BY MONCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                       CALL M3MSG2( MESG )
                    END IF
 
                 CASE( 'WEKCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                        TSFLAG = .TRUE.
                        RPT_%BYWEK = .TRUE.   ! weekly profile
-                    ELSE
-                       WRITE( MESG, 94010 )
-     &                     'WARNING: BY WEKCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                       CALL M3MSG2( MESG )
                    END IF
 
                 CASE( 'DOMCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                        TSFLAG = .TRUE.
                        RPT_%BYDOM = .TRUE.   ! day of month profile
-                    ELSE
-                       WRITE( MESG, 94010 )
-     &                     'WARNING: BY DOMCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                       CALL M3MSG2( MESG )
                    END IF
 
                 CASE( 'MNDCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                        TSFLAG = .TRUE.
                        RPT_%BYMND = .TRUE.   ! monday hourly profile
-                    ELSE
-                       WRITE( MESG, 94010 )
-     &                     'WARNING: BY MNDCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                       CALL M3MSG2( MESG )
                    END IF
 
                 CASE( 'TUECODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                        TSFLAG = .TRUE.
                        RPT_%BYTUE = .TRUE.   ! tuesday hourly profile
-                    ELSE
-                       WRITE( MESG, 94010 )
-     &                     'WARNING: BY TUECODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                       CALL M3MSG2( MESG )
                    END IF
 
                 CASE( 'WEDCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                        TSFLAG = .TRUE.
                        RPT_%BYWED = .TRUE.   ! Wednesday hourly profile
-                    ELSE
-                       WRITE( MESG, 94010 )
-     &                     'WARNING: BY WEDCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                       CALL M3MSG2( MESG )
                    END IF
 
                 CASE( 'THUCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                        TSFLAG = .TRUE.
                        RPT_%BYTHU = .TRUE.   ! thursday hourly profile
-                    ELSE
-                       WRITE( MESG, 94010 )
-     &                     'WARNING: BY THUCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                       CALL M3MSG2( MESG )
                    END IF
 
                 CASE( 'FRICODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                        TSFLAG = .TRUE.
                        RPT_%BYFRI = .TRUE.   ! Friday hourly profile
-                    ELSE
-                       WRITE( MESG, 94010 )
-     &                     'WARNING: BY FRICODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                       CALL M3MSG2( MESG )
                    END IF
 
                 CASE( 'SATCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                        TSFLAG = .TRUE.
                        RPT_%BYSAT = .TRUE.   ! Saturday hourly profile
-                    ELSE
-                       WRITE( MESG, 94010 )
-     &                     'WARNING: BY SATCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                       CALL M3MSG2( MESG )
                    END IF
 
                 CASE( 'SUNCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                        TSFLAG = .TRUE.
                        RPT_%BYSUN = .TRUE.   ! Sunday hourly profile
-                    ELSE
-                       WRITE( MESG, 94010 )
-     &                     'WARNING: BY SUNCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                       CALL M3MSG2( MESG )
                    END IF
 
                 CASE( 'METCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                        TSFLAG = .TRUE.
                        RPT_%BYMET = .TRUE.   ! Met-based hourly profile
-                    ELSE
-                       WRITE( MESG, 94010 )
-     &                     'WARNING: BY METCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                       CALL M3MSG2( MESG )
                    END IF
 
                 CASE DEFAULT
@@ -1337,7 +1182,7 @@ C
 C.............  Setting for the use of layer fractions
             CASE( 'LAYFRAC' )
 
-                IF( .NOT. RPT_%USEASCELEV ) THEN
+                IF( NOT_ASCIIELEV( SEGMENT( 1 ) ) ) THEN
 
                     IF( CATEGORY .EQ. 'POINT' ) THEN
                         LFLAG = .TRUE.
@@ -1348,14 +1193,6 @@ C.............  Setting for the use of layer fractions
                         CALL WRONG_SOURCE_CATEGORY( SEGMENT( 1 ) )
 
                     END IF
-
-                ELSE
-
-                    WRITE( MESG, 94010 )
-     &                 'WARNING: LAYFRAC instruction at ' //
-     &                 'line', IREC, 'is not allowed with ' //
-     &                 'the ASCIIELEV instruction.'
-                    CALL M3MSG2( MESG )
 
                 END IF
 
@@ -1660,6 +1497,46 @@ C...........   Internal buffering formats............ 94xxx
 94010       FORMAT( 10( A, :, I8, :, 1X ) )
 
             END SUBROUTINE EXTRACT_LABEL
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+C.............  This internal function returns true if the ASCIIELEV instruction
+C               is not in use; otherwise it prints a warning and returns false
+            LOGICAL FUNCTION NOT_ASCIIELEV( COMMAND )
+
+C.............  Subroutine arguments
+            CHARACTER(*), INTENT (IN) :: COMMAND
+
+C.............  Local variables
+            INTEGER        L
+
+            CHARACTER(300) MESG
+
+C----------------------------------------------------------------------
+
+            NOT_ASCIIELEV = .TRUE.
+
+            IF( RPT_%USEASCELEV ) THEN
+                NOT_ASCIIELEV = .FALSE.
+
+                L = LEN_TRIM( COMMAND )
+                WRITE( MESG, 94010 )
+     &             'WARNING: ' // COMMAND( 1:L ) // ' instruction at ' //
+     &             'line', IREC, 'is not allowed with ' //
+     &             'the ASCIIELEV instruction.'
+                CALL M3MSG2( MESG )
+            END IF
+
+            RETURN
+
+C------------------- SUBPROGRAM FORMAT STATEMENTS ----------------------
+
+C...........   Internal buffering formats............ 94xxx
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END FUNCTION NOT_ASCIIELEV
 
         END SUBROUTINE PRCLINRC
 
