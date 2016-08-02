@@ -1,8 +1,10 @@
 
         SUBROUTINE RDDATAFF10PT( LINE, READDATA, READPOL, IYEAR, DESC,
-     &                          ERPTYP, SRCTYP, HT, DM, TK, FL, VL, SIC, 
+     &                          ERPTYP, SRCTYP, HT, DM, TK, FL, VL, SIC,
      &                          MACT, NAICS, CTYPE, LAT, LON, UTMZ, 
-     &                          NEID, CORS, BLID, EXTORL, HDRFLAG,
+     &                          NEID, CORS, BLID,  
+     &                          FUGHT, FUGWD, FUGLN, FUGAN,
+     &                          EXTORL, HDRFLAG,
      &                          AVEFLAG, EFLAG )
 
 C***********************************************************************
@@ -17,8 +19,8 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C      Created by Dongmei Yang (Oct, 2011) based on rddatantipt.f
-C
+C       Created by Dongmei Yang (Oct, 2011) based on rddatantipt.f
+C       Version June 2016 by Carlie Coats:  add fugitive-emissions p
 C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -55,8 +57,8 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         FINDC, STR2INT
-	REAL            YR2DAY, STR2REAL
-	LOGICAL         CHKINT
+        REAL            YR2DAY, STR2REAL
+        LOGICAL         CHKINT
         
         
         EXTERNAL   CRLF, FINDC, STR2INT, STR2REAL, YR2DAY, CHKINT
@@ -84,6 +86,10 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(NEILEN3), INTENT (OUT) :: NEID                  ! NEI unique ID
         CHARACTER(ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID
         CHARACTER(BLRLEN3), INTENT (OUT) :: BLID                  ! boiler ID
+        CHARACTER(16),      INTENT (OUT) :: FUGHT                 ! FUG_HEIGHT
+        CHARACTER(16),      INTENT (OUT) :: FUGWD                 ! FUG_WIDTHT
+        CHARACTER(16),      INTENT (OUT) :: FUGLN                 ! FUG_LENGTH
+        CHARACTER(16),      INTENT (OUT) :: FUGAN                 ! FUG_ANGLE
         CHARACTER(EXTLEN3), INTENT (OUT) :: EXTORL                ! additional ext vars
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: AVEFLAG               ! true: Aveday inv is processed
@@ -171,6 +177,11 @@ C           the various data fields
         LON    = SEGMENT( 24 )             ! stack longitude
         LAT    = SEGMENT( 25 )             ! stack latitude
         UTMZ   = ""                        ! UTM zone (n/a:Lat/Lon only in FF10)
+        
+        FUGHT = SEGMENT( 47 )
+        FUGWD = SEGMENT( 48 )
+        FUGLN = SEGMENT( 49 )
+        FUGAN = SEGMENT( 50 )
 
         READPOL ( 1     ) = SEGMENT( 13 )
         READDATA( 1,NEM ) = SEGMENT( 14 )  ! annual emissions

@@ -210,7 +210,7 @@ C.........  Variable dimensioning components, independent
      &              , NMBVAR3  = 9
      &              , NMBPPOL3 = 2   
      &              , NPTPPOL3 = 7
-     &              , NPTVAR3  = 9
+     &              , NPTVAR3  =13
      &              )
 
 C.........  Maximum settings...
