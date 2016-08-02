@@ -67,7 +67,7 @@ C.........  This module contains the lists of unique inventory information
      &                      NUNIQCAS, UNIQCAS, UCASNKEP, ITNAMA,
      &                      SCASIDX, UCASIDX, UCASNPOL, ITKEEPA, ITFACA,
      &                      EMISBYCAS, RECSBYCAS, EMISBYPOL, INVSTAT,
-     &                      NINVTBL, ITCASA, FIREFLAG
+     &                      NINVTBL, ITCASA, FIREFLAG, FIREFF10
 
 C.........  This module is for mobile-specific data
         USE MODMOBIL, ONLY: SCCMAPFLAG, SCCMAPLIST,
@@ -622,7 +622,7 @@ C...........  Process line depending on file format and source category
      &                                EXTORL, HDRFLAG,
      &                                AVEFLAG, EFLAG )
                     NPOLPERLN = 1
-
+                    IF( READPOL( 1 ) == 'ACRESBURNED' ) FIREFF10 = .TRUE.  ! fire in FF10 format
                 END SELECT
 
             CASE( MEDSFMT )
@@ -1433,6 +1433,12 @@ C.................  Correct hemisphere for stack longitude
 
             END IF
 
+            IF( FIREFF10 ) THEN     ! reset stack parameters when processing fire in FF10 format
+                STKHT  ( CURSRC ) = BADVAL3
+                STKDM  ( CURSRC ) = BADVAL3
+                STKTK  ( CURSRC ) = BADVAL3
+                STKVE  ( CURSRC ) = BADVAL3
+            END IF
 
             IF( CURFMT == ORLFIREFMT )THEN
                 CALL PADZERO( SRCTYP )

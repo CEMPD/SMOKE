@@ -64,6 +64,7 @@
         CHARACTER(300), ALLOCATABLE :: LSTSTR( : )  ! contents of list-fmt inventory file
 
 !.........  Inventory format flags
+        LOGICAL, PUBLIC :: FIREFF10  ! true: FF10 FIRE format inventory
         LOGICAL, PUBLIC :: FIREFLAG  ! true: ORL FIRE format inventory
         LOGICAL, PUBLIC :: FF10FLAG  ! true: FF10 format inventories
         LOGICAL, PUBLIC :: MEDSFLAG  ! true: Pregridded FF10 format inventories

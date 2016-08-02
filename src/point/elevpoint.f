@@ -391,6 +391,11 @@ C           results are stored in module MODINFO.
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
+C.........  If at least one stack parameters is missing, then we have a fire inventory
+        DO J = 1, NSRC
+            IF (STKHT(J) .NE. BADVAL3) FFLAG = .FALSE.
+        END DO
+
 C.........  Allocate memory for source status arrays and group numbers
         ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LMAJOR', PROGNAME )
@@ -412,8 +417,6 @@ C.........  Allocate memory for source status arrays and group numbers
         SMOLDER(1:NSRC) = .FALSE.        ! array
 
 C.........  Initialize source status and group number arrays
-
-
         LMAJOR  = .FALSE.   ! array
         LPING   = .FALSE.   ! array
         GROUPID = 0         ! array

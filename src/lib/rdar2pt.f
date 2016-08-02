@@ -101,11 +101,11 @@ C...........   Local arrays
 C...........   Other local variables
         INTEGER         I, J, K, L, N     ! counters and indices
 
-        INTEGER      :: CNT            ! tmp record counter 
-        INTEGER      :: FIPCNT         ! counter for no. entries per SCC/FIPs
+        INTEGER      :: CNT = 0        ! tmp record counter 
+        INTEGER      :: FIPCNT = 0     ! counter for no. entries per SCC/FIPs
         INTEGER         IOS            ! i/o status
-        INTEGER      :: MXSCC          ! max no. of SCCs per table 
-        INTEGER      :: NXREF          ! number of cross-ref entries 
+        INTEGER      :: MXSCC = 0      ! max no. of SCCs per table 
+        INTEGER      :: NXREF = 0      ! number of cross-ref entries 
 
         REAL         :: SUMTEST = 0.   ! value to check that factors sum to 1.
 

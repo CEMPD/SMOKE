@@ -159,6 +159,7 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv SMK_MVSPATH $GE_DAT/MOVES_lookuptables/                # Dir for MOVES lookup tab
    setenv MRCLIST     $SMK_MVSPATH/mrclist.${SRCABBR}.lst # List of MOVES lookup table list file
    setenv METMOVES    $SMKDAT/met/run_$METSCEN/SMOKE_DAILY_${IOAPI_GRIDNAME_1}.ncf  # Met4moves output
+   setenv CFPRO       $GE_DAT/cfpro_moves_test.txt
 endif
 #
 ## Point source input files
@@ -198,6 +199,8 @@ endif
    setenv GSCNV       $GE_DAT/gscnv.$SPC.txt                     # ROG to TOG conversion facs
 #   setenv PROCDATES   $GE_DAT/procdates.txt                      # time periods that Temporal should process
    setenv SOURCE_GROUPS $INVDIR/other/source_groups.nc.txt       # Source apportionment groups
+   setenv GRIDMASK   /nas01/depts/ie/cempd/EMAQ/Platform/GriddedEI/GEOCODE_EDGAR0.1.ncf
+
 
 #
 ## Override shared inputs

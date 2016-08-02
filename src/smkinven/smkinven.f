@@ -61,7 +61,7 @@ C...........   This module is the inventory arrays
      &                      CINTGR, CEXTORL
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG, INVDCOD, 
-     &                      FF10FLAG, MEDSFLAG, NCDFLAG, APIFLAG
+     &                      FF10FLAG, MEDSFLAG, NCDFLAG, APIFLAG, FIREFF10
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPOL, NIACT, NIPPA, EIIDX, INV_MON,
      &                     EINAM, AVIDX, ACTVTY, EANAM, NSRC
@@ -330,7 +330,7 @@ C                module MODSOURC
             IF( CATEGORY .EQ. 'POINT' ) THEN
                 MESG = 'Check stack parameter values'
                 STKFLG = ENVYN( 'CHECK_STACKS_YN', MESG, .TRUE., IOS )
-                IF( FIREFLAG ) STKFLG = .FALSE.    ! skip check stack para when wildfire
+                IF( FIREFLAG .OR. FIREFF10 ) STKFLG = .FALSE.    ! skip check stack para when wildfire
                 IF( STKFLG ) CALL FIXSTK( RDEV, NSRC )
             END IF
 
