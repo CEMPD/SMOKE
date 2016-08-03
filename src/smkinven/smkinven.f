@@ -99,10 +99,10 @@ C...........  LOCAL PARAMETERS and their descriptions:
 C.........  LOCAL VARIABLES and their descriptions:
 
 C.........  Day-specific and hour-specific variable indices
-        INTEGER         DEAIDX( MXVARS3 )
-        INTEGER         DSPIDX( MXSPDAT )
-        INTEGER         HEAIDX( MXVARS3 )
-        INTEGER         HSPIDX( MXSPDAT )
+        INTEGER     ::  DEAIDX( MXVARS3 ) = 0
+        INTEGER     ::  DSPIDX( MXSPDAT ) = 0
+        INTEGER     ::  HEAIDX( MXVARS3 ) = 0
+        INTEGER     ::  HSPIDX( MXSPDAT ) = 0
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
