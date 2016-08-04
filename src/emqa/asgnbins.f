@@ -584,7 +584,7 @@ C.................  code, so for now save space for the SRCID.
             IF ( RPT_%BYERPTYP ) THEN
                 IJ = II + ERPLEN3 - 1
                 SORTBUF( I )( II:IJ ) =  CERPTYP( OUTSRC( I ) )
-                II = IJ + ERPLEN3
+                II = IJ + 1
             END IF          !!  if report-by-emissions-release-point-type
 
             SORTBUF( I )( II: ) = ' '
