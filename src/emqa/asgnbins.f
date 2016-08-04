@@ -495,7 +495,7 @@ C.................  code, so for now save space for the SRCID.
                 END IF
                 SORTBUF( I )( II:IJ ) = PLANT
             END DO
-            II = IJ + PLTLEN3
+            II = IJ + 1
 
         END IF          !!  if report-by-plant
 
@@ -553,7 +553,7 @@ C.................  code, so for now save space for the SRCID.
             IF ( RPT_%BYSRCTYP ) THEN
                 IJ = II + STPLEN3 - 1
                 SORTBUF( I )( II:IJ ) =  CSRCTYP( OUTSRC( I ) )
-                II = IJ + STPLEN3
+                II = IJ + 1
             END IF          !!  if report-by-sourcetype
 
 
@@ -567,7 +567,7 @@ C.................  code, so for now save space for the SRCID.
             IF ( RPT_%BYINTGR ) THEN
                 IJ = II + INTLEN3 - 1
                 SORTBUF( I )( II:IJ ) = CINTGR( OUTSRC( I ) )
-                II = IJ + INTLEN3
+                II = IJ + 1
             END IF          !!  if report-by-integrate
 
             SORTBUF( I )( II: ) = ' '
