@@ -68,7 +68,8 @@ C.........  This module contains Smkreport-specific settings
      &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH, UNITWIDTH,
      &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
      &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
-     &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH
+     &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
+     &                      ERTYPWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -80,7 +81,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX
+     &                      BINGEO1IDX, BINERPTYP
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
@@ -175,7 +176,8 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRGEO4 = 55
         INTEGER, PARAMETER :: IHDRCARB = 56
         INTEGER, PARAMETER :: IHDRCADT = 57
-        INTEGER, PARAMETER :: NHEADER  = 57
+        INTEGER, PARAMETER :: IHDRERTYP= 58
+        INTEGER, PARAMETER :: NHEADER  = 58
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -236,7 +238,8 @@ C...........   Local parameters
      &                              'Geo Regn Level 3 ',
      &                              'Geo Regn Level 4 ',
      &                              'T,Yr,Mon,Jday,Dow',
-     &                              'Basin,Dist,Cnty  ' / )
+     &                              'Basin,Dist,Cnty  ',
+     &                              'Emis Release Type' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LGEO1USE ( NGEOLEV1 )
@@ -1260,6 +1263,17 @@ C.........  Stack group IDs when BY ELEVSTAT (RPT_%BYELEV)
 
             WRITE( STKGFMT, 94625 ) W1, RPT_%DELIM
             STKGWIDTH = W1 + LV
+        END IF
+
+C.........  Emissions release point type column
+        IF( RPT_%BYERPTYP ) THEN
+            J = LEN_TRIM( HEADERS( IHDRERTYP ) )
+            J = MAX( ERPLEN3, J )
+    
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRERTYP), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            ERTYPWIDTH = J + LV
         END IF
 
 C.........  Plant descriptions

@@ -133,6 +133,7 @@
         CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINSATID ( : ) ! Saturday hourly prof
         CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINSUNID ( : ) ! Sunday hourly prof
         CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINMETID ( : ) ! met-based hourly prof
+        CHARACTER(ERPLEN3), ALLOCATABLE, PUBLIC :: BINERPTYP( : ) ! emissions release point type
 
 !.........  Arrays for determining output from emission types to report columns
 !.........  Dimensioned ( NIPPA, NREPORT )

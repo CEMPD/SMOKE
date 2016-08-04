@@ -112,6 +112,7 @@ C.........  Allocate and initialize report arrays
         ALLRPT%BYCYNAM    = .FALSE.
         ALLRPT%BYDATE     = .FALSE.
         ALLRPT%BYELEV     = .FALSE.
+        ALLRPT%BYERPTYP   = .FALSE.
         ALLRPT%ELVSTKGRP  = .FALSE.
         ALLRPT%BYGEO1     = .FALSE.
         ALLRPT%BYGEO1NAM  = .FALSE.

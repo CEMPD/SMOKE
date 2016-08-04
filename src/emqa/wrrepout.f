@@ -72,7 +72,8 @@ C.........  This module contains Smkreport-specific settings
      &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
-     &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH
+     &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
+     &                      ERTYPWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -86,7 +87,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX
+     &                      BINGEO1IDX, BINERPTYP
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC,
@@ -743,6 +744,17 @@ C.............  Include stack group IDs when elevated sources flag = Y
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
 
+                END IF
+
+C.............  Include emissions release point type
+                IF( RPT_%BYERPTYP ) THEN
+                    L = ERTYPWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE+15 ) //
+     &                       BINERPTYP( I )( 1:L1-15 ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
                 END IF
 
 C.............  Include plant description (for point sources)

@@ -299,6 +299,12 @@ C.........  Plant name
                 IVARNAMS( NINVARR ) = 'CPDESC'
             END IF
 
+C.........  Emissions release point type
+            IF( ANY_TRUE( NREPORT, ALLRPT%BYERPTYP ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'CERPTYP'
+            END IF
+
 C.........  Allocate memory for and read in required inventory characteristics
             CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, 
      &                     IVARNAMS )
