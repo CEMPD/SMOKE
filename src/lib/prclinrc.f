@@ -461,6 +461,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYGEO1NAM = .FALSE.
                         RPT_%BYHOUR    = .FALSE.
                         RPT_%BYLAYER   = .FALSE.
+                        RPT_%BYLATLON  = .FALSE.
                         RPT_%BYMON     = .FALSE.
                         RPT_%BYDOM     = .FALSE.
                         RPT_%BYWEK     = .FALSE.
@@ -894,6 +895,16 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
 
                       END IF
 
+                    END IF
+
+                CASE( 'LATLON' )
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
+                        IF( CATEGORY .EQ. 'POINT' ) THEN
+                            RPT_%BYLATLON = .TRUE.
+                            RPT_%LATLON = .TRUE.
+                        ELSE IF( FIRSTLOOP ) THEN
+                            CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
+                        END IF
                     END IF
 
                 CASE( 'ORIS' )

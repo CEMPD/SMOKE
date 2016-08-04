@@ -123,6 +123,7 @@
             LOGICAL       :: BYGEO1NAM     ! true: by geocode 1 name
             LOGICAL       :: BYHOUR        ! true: by hour
             LOGICAL       :: BYLAYER       ! true: by layer
+            LOGICAL       :: BYLATLON      ! true: by lat-lon coordinates
             LOGICAL       :: BYMON         ! true: by monthly temporal code
             LOGICAL       :: BYWEK         ! true: by weekly temporal code
             LOGICAL       :: BYDOM         ! true: by day of month temporal code

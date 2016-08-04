@@ -55,7 +55,8 @@ C............  MODINFO contains the information about the source category
         USE MODSOURC, ONLY: CSOURC, CIFIP, CSCC, IRCLAS, SRGID, CMON,
      &                      CWEK, CDOM, CMND, CTUE, CWED, CTHU, CFRI,
      &                      CSAT, CSUN, CMET, SPPROF, CISIC, CMACT,
-     &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP
+     &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP,
+     &                      XLOCA, YLOCA
 
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
@@ -112,7 +113,7 @@ C...........   Local parameters:
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
-     &                                     + ERPLEN3
+     &                                     + ERPLEN3 + 26
         INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) = (/ 1, 3, 6,  8, 9 /)
         INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) = (/ 2, 4, 7, 10, 9 /)
 
@@ -586,6 +587,13 @@ C.................  code, so for now save space for the SRCID.
                 SORTBUF( I )( II:IJ ) =  CERPTYP( OUTSRC( I ) )
                 II = IJ + 1
             END IF          !!  if report-by-emissions-release-point-type
+
+
+            IF ( RPT_%BYLATLON ) THEN
+                IJ = II + 26 - 1
+                WRITE( SORTBUF( I )( II:IJ ), '( F13.8, F13.8 )' ) XLOCA( OUTSRC( I ) ), YLOCA( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !!  if report-by-latlon
 
             SORTBUF( I )( II: ) = ' '
 
