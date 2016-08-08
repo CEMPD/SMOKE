@@ -1039,7 +1039,6 @@ C.................  For ORL fires, #DATA line will have used CAS numbers, so
 C                   need to translate these into pollutant names.
                 ELSE IF ( CURFMT == ORLFIREFMT ) THEN
                     POLCOD = INDEX1( POLNAM, NINVTBL, ITCASA )
-               print*,POLCOD,POLNAM,ITNAMA(POLCOD)
                     POLCOD = INDEX1( ITNAMA(POLCOD), MXIDAT, INVDNAM )
                     IF( POLCOD == 0 ) THEN
                         WRITE( MESG,94010 ) 'ERROR: Unknown  ' //

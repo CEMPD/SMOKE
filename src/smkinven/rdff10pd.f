@@ -501,10 +501,10 @@ C                   exempt from daylight time or not.
                
                 DZONE = ZONE - TZONE
 
+C.............  Reset time shift to 0 to correctly compute local time zone
             ELSE
 
-C.................  Reset time shift to 0 to correctly compute local time zone
-                DZONE = 1
+                DZONE = 0
                 
             END IF
 

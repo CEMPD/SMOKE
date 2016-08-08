@@ -180,6 +180,7 @@ C...........   Other local variables
         INTEGER          WD               ! tmp field width
         INTEGER          YEAR             ! 4-digit year
         INTEGER       :: YR4 = 0          ! unused header year
+        INTEGER          DZONE            ! time shift (ZONE-TZONE)
         INTEGER          ZONE             ! source time zones
 
         REAL             TDAT             ! temporary data values
@@ -188,6 +189,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: DFLAG  = .FALSE. ! true: dates set by data
         LOGICAL       :: EFLAG  = .FALSE. ! TRUE iff ERROR
         LOGICAL       :: WARNOUT= .FALSE. ! true: then output warnings
+        LOGICAL, SAVE :: LFLAG = .FALSE.  ! true: output daily/hourly inv in local time
         LOGICAL, SAVE :: PRCHFX = .FALSE. ! true: skip adding HFLUX due to precomputed heat flux
         LOGICAL       :: HFXFLAG= .FALSE. ! true: adding HFLUX into a list
         LOGICAL       :: BNHRFLAG=.FALSE. ! true: adding BEGHOUR into a list
@@ -222,6 +224,10 @@ C   begin body of program RDORLFR
 
 C.........  First time routine called
         IF( FIRSTIME ) THEN
+
+C.............  No time zone shift for AERMOD support
+            MESG = 'Outputs local time daily and/or hourly inventories (No time shift)'
+            LFLAG = ENVYN( 'OUTPUT_LOCAL_TIME', MESG, .FALSE., IOS )
 
 C.............  Allocate memory for storing counting number of sources per day/pollutant
             ALLOCATE( NSRCPDDAT( 366,NIPPA ), STAT=IOS )
@@ -525,26 +531,39 @@ C.............  Set Julian day from MMDDYY8 SAS format
             JD = JULIAN( YEAR, MONTH, DAY )
             JDATE = 1000 * YEAR + JD
             JTIME = 0
+
+
+C.............  Local time shift flag (county-specific)
+            IF( .NOT. LFLAG ) THEN
             
-C.............  Set time zone number
-            ZONE = GETTZONE( CFIP )
+C.................  Set time zone number
+                ZONE = GETTZONE( CFIP )
             
-C.............  If daily emissions are not in the output time zone, print 
-C               warning
-            IF( GETCOUNT ) THEN
-               IF( WARNOUT .AND. ( ZONE .NE. TZONE ) .AND. 
-     &            ( NWARN( 1 ) .LE. MXWARN )               ) THEN
-                   WRITE( MESG,94010 ) 'WARNING: Time zone ', ZONE, 
-     &                 'in day-specific file at line of pollutant ' //
-     &                 TRIM( CDAT ) // ' on ' // TRIM( DATE ) // 
-     &                 ' does not match output time zone', TZONE
-                   CALL M3MESG( MESG )
-                   NWARN( 1 ) = NWARN( 1 ) + 1
+C.................  If daily emissions are not in the output time zone, print 
+C                   warning
+                IF( GETCOUNT ) THEN
+                   IF( WARNOUT .AND. ( ZONE .NE. TZONE ) .AND. 
+     &                ( NWARN( 1 ) .LE. MXWARN )               ) THEN
+                       WRITE( MESG,94010 ) 'WARNING: Time zone ', ZONE, 
+     &                   'in day-specific file at line of pollutant ' //
+     &                   TRIM( CDAT ) // ' on ' // TRIM( DATE ) // 
+     &                   ' does not match output time zone', TZONE
+                       CALL M3MESG( MESG )
+                       NWARN( 1 ) = NWARN( 1 ) + 1
+                   END IF
                 END IF
+
+                DZONE = ZONE - TZONE
+
+C.............  Reset time shift to 0 to correctly compute local time zone
+            ELSE
+
+                DZONE = 0
+
             END IF
 
 C.............  Convert date and time to output time zone.
-            CALL NEXTIME( JDATE, JTIME, ( ZONE - TZONE ) * 10000 )
+            CALL NEXTIME( JDATE, JTIME, DZONE * 10000 )
 
 C.............  Determine time step pointer based on reference time
             PTR = SECSDIFF( RDATE, RTIME, JDATE, JTIME ) / TDIVIDE + 1

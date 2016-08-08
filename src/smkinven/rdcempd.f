@@ -156,6 +156,7 @@ C...........   Other local variables
         INTEGER          YEAR             ! 4-digit year
         INTEGER          YY               ! 2-digit year
         INTEGER          YYMMDD           ! year, month, and day
+        INTEGER          DZONE            ! time shift (ZONE-TZONE)
         INTEGER          ZONE             ! source time zones
 
         REAL             DENOM            ! denominator for assignment weighting
@@ -177,6 +178,7 @@ C...........   Other local variables
         LOGICAL       :: MATCHFLG = .FALSE. ! true: a CEM/inventory match found
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
         LOGICAL       :: FIRSTLINE          ! true: just read first line of data
+        LOGICAL, SAVE :: LFLAG    = .FALSE. ! true: output daily/hourly inv in local time
         LOGICAL, SAVE :: SFLAG              ! true: use daily total from hourly
         LOGICAL       :: WARNOUT  = .FALSE. ! true: output warnings
         LOGICAL, SAVE :: YFLAG    = .FALSE. ! true: year mismatch found
@@ -208,6 +210,10 @@ C.............  NOTE - the hourly file will have been assigned as a daily
 C               file when it was opened.
             MESG = 'Use daily totals only from hourly data file'
             SFLAG = ENVYN( 'HOURLY_TO_DAILY', MESG, .FALSE., IOS )
+
+C.............  No time zone shift for AERMOD support
+            MESG = 'Outputs local time daily and/or hourly inventories (No time shift)'
+            LFLAG = ENVYN( 'OUTPUT_LOCAL_TIME', MESG, .FALSE., IOS )
 
 C.............  Give note if file is being read as a daily file
             IF( SFLAG ) THEN
@@ -461,8 +467,21 @@ C.............  Convert from times 0 through 23 to HHMMSS
 
 C.............  Convert date and time to output time zone
             CFIP = INVORFP ( INVORPOS )
-            ZONE = GETTZONE( CFIP )
-            CALL NEXTIME( JDATE, JTIME, ( ZONE - TZONE ) * 10000 )
+
+C.............  Local time shift flag (county-specific)
+            IF( .NOT. LFLAG ) THEN
+
+                ZONE = GETTZONE( CFIP )
+                DZONE = ZONE - TZONE
+
+C.............  Reset time shift to 0 to correctly compute local time zone
+            ELSE
+                DZONE  = 0
+
+            END IF
+
+C.............  Convert date and time to output time zone.
+            CALL NEXTIME( JDATE, JTIME, DZONE * 10000 )
 
 C.............  Determine time step pointer based on reference time
             PTR = SECSDIFF( RDATE, RTIME, JDATE, JTIME ) / TDIVIDE + 1

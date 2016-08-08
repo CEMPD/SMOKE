@@ -57,7 +57,7 @@ C.........  MODINFO contains the information about the source category
         USE MODXREF,  ONLY: MDEX, WDEX, DDEX
 
         USE MODTMPRL, ONLY: NHOLIDAY, HOLJDATE, HOLALTDY, HRLFAC, HRLPROF,
-     &                      NMETPROF, METPROF, IPOL2D, HOUR_TPROF
+     &                      NMETPROF, METPROF, IPOL2D, HOUR_TPROF, LTFLAG
 
         USE MODDAYHR, ONLY: INDXD, INDXH, EMACD, EMACH, NDYSRC, NHRSRC,
      &                      LDSPOA, LHSPOA, LHPROF,
@@ -197,6 +197,12 @@ C.............  Define the minimum and maximum time zones in the inventory
 C.............  Adjust TZMIN and TZMAX for possibility of daylight savings
             TZMIN = TZMIN - 1
             TZMAX = TZMAX + 1
+
+C.............  Ouput hourly emissions in local time
+            IF( LTFLAG ) THEN
+                TZMIN = 0
+                TZMAX = 0
+            END IF
 
 C.............  Set flags for daily and hourly data
             DFLAG = ( DNAME .NE. 'NONE' )
