@@ -43,7 +43,7 @@ C...........   This module is the source inventory arrays
      &                      STKDM, STKTK, STKVE, CSCC, CORIS, CBLRID,
      &                      CLINK, CPDESC, CSOURC, CVTYPE, CMACT,
      &                      CNAICS, CSRCTYP, CERPTYP, CNEIUID, CEXTORL,
-     &                      CINTGR, CISIC
+     &                      CINTGR, CISIC, FUGHGT, FUGWID, FUGLEN, FUGANG
 
         IMPLICIT NONE
 
@@ -331,6 +331,38 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
 
               IF( .NOT. READSET(INFILE,'STKVE',ALLAYS3,1,0,0,STKVE)) 
      &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
+
+            CASE( 'FUGHGT' )
+              ALLOCATE( FUGHGT( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'FUGHGT', PROGNAME )
+
+              IF( .NOT. READSET(INFILE,'FUG_HEIGHT',ALLAYS3,1,0,0,FUGHGT)) THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
+
+            CASE( 'FUGWID' )
+              ALLOCATE( FUGWID( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'FUGWID', PROGNAME )
+
+              IF( .NOT. READSET(INFILE,'FUG_WIDTH',ALLAYS3,1,0,0,FUGWID)) THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
+
+            CASE( 'FUGLEN' )
+              ALLOCATE( FUGLEN( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'FUGLEN', PROGNAME )
+
+              IF( .NOT. READSET(INFILE,'FUG_LENGTH',ALLAYS3,1,0,0,FUGLEN)) THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
+
+            CASE( 'FUGANG' )
+              ALLOCATE( FUGANG( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'FUGANG', PROGNAME )
+
+              IF( .NOT. READSET(INFILE,'FUG_ANGLE',ALLAYS3,1,0,0,FUGANG)) THEN
                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
               ENDIF
 

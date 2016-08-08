@@ -489,6 +489,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYSRC     = .FALSE.
                         RPT_%BYSRG     = .FALSE.
                         RPT_%BYSTACK   = .FALSE.
+                        RPT_%BYSTKPARM = .FALSE.
                         RPT_%BYSTAT    = .FALSE.
                         RPT_%BYSTNAM   = .FALSE.
                         RPT_%CARB      = .FALSE.
@@ -503,6 +504,7 @@ C.........................  Reset report settings to defaults
                         RPT_%SCCNAM    = .FALSE.
                         RPT_%SRCNAM    = .FALSE.
                         RPT_%STKPARM   = .FALSE.
+                        RPT_%FUGPARM   = .FALSE.
                         RPT_%USEASCELEV= .FALSE.
                         RPT_%USECRMAT  = .FALSE.
                         RPT_%USECUMAT  = .FALSE.
@@ -1044,7 +1046,8 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                     END IF
                     IF( SEGMENT( 3 ) .EQ. 'NAME' .OR.
      &                  SEGMENT( 4 ) .EQ. 'NAME' .OR.
-     &                  SEGMENT( 5 ) .EQ. 'NAME'      ) THEN
+     &                  SEGMENT( 5 ) .EQ. 'NAME' .OR.
+     &                  SEGMENT( 6 ) .EQ. 'NAME'      ) THEN
                         IF( CATEGORY .EQ. 'POINT' ) THEN
                             RPT_%SRCNAM = .TRUE.
                         ELSE
@@ -1057,12 +1060,21 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                     IF( CATEGORY     .EQ. 'POINT'    .AND.
      &                ( SEGMENT( 3 ) .EQ. 'STACKPARM' .OR.
      &                  SEGMENT( 4 ) .EQ. 'STACKPARM' .OR.
-     &                  SEGMENT( 5 ) .EQ. 'STACKPARM'      ) )
+     &                  SEGMENT( 5 ) .EQ. 'STACKPARM' .OR.
+     &                  SEGMENT( 6 ) .EQ. 'STACKPARM'      ) )
      &                  RPT_%STKPARM = .TRUE.
+
+                    IF( CATEGORY     .EQ. 'POINT'    .AND.
+     &                ( SEGMENT( 3 ) .EQ. 'FUGPARM' .OR.
+     &                  SEGMENT( 4 ) .EQ. 'FUGPARM' .OR.
+     &                  SEGMENT( 5 ) .EQ. 'FUGPARM' .OR.
+     &                  SEGMENT( 6 ) .EQ. 'FUGPARM'      ) )
+     &                  RPT_%FUGPARM = .TRUE.
 
                     IF( SEGMENT( 3 ) .EQ. 'LATLON' .OR.
      &                  SEGMENT( 4 ) .EQ. 'LATLON' .OR.
-     &                  SEGMENT( 5 ) .EQ. 'LATLON'      )
+     &                  SEGMENT( 5 ) .EQ. 'LATLON' .OR.
+     &                  SEGMENT( 6 ) .EQ. 'LATLON'      )
      &                  RPT_%LATLON = .TRUE.
 
                 CASE( 'SPCCODE' )
@@ -1098,6 +1110,17 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                     IF( SEGMENT( 3 ) .EQ. 'LATLON' .OR.
      &                  SEGMENT( 4 ) .EQ. 'LATLON'      )
      &                  RPT_%LATLON = .TRUE.
+
+                CASE( 'STACKPARM' )
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
+                        IF( CATEGORY .EQ. 'POINT' ) THEN
+                            RPT_%BYSTKPARM = .TRUE.
+                            RPT_%STKPARM = .TRUE.
+                            RPT_%FUGPARM = .TRUE.
+                        ELSE IF( FIRSTLOOP ) THEN
+                            CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
+                        END IF
+                    END IF
 
                 CASE( 'MONCODE' )
                     IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
