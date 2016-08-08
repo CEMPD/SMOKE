@@ -48,7 +48,7 @@ C***********************************************************************
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CPDESC, CSOURC, STKHT, STKDM, STKTK, STKVE,
-     &                      XLOCA, YLOCA
+     &                      XLOCA, YLOCA, FUGHGT, FUGWID, FUGLEN, FUGANG
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: SCCDESC, SCCDLEV, SICDESC, MACTDESC, 
@@ -73,7 +73,7 @@ C.........  This module contains Smkreport-specific settings
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
-     &                      ERTYPWIDTH
+     &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -711,6 +711,17 @@ C.............  Include stack parameters
      &                                       STKTK( S ), STKVE( S )
                     STRING = STRING( 1:LE ) // BUFFER
                     MXLE = MXLE + STKPWIDTH
+                    LE = MIN( MXLE, STRLEN )
+                END IF
+
+C.............  Include fugitive parameters
+                IF( RPT_%FUGPARM ) THEN
+                    S = BINSMKID( I )
+                    BUFFER = ' '
+                    WRITE( BUFFER, FUGPFMT ) FUGHGT( S ), FUGWID( S ),
+     &                                       FUGLEN( S ), FUGANG( S )
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + FUGPWIDTH
                     LE = MIN( MXLE, STRLEN )
                 END IF
 

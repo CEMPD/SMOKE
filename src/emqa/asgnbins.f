@@ -56,7 +56,8 @@ C............  MODINFO contains the information about the source category
      &                      CWEK, CDOM, CMND, CTUE, CWED, CTHU, CFRI,
      &                      CSAT, CSUN, CMET, SPPROF, CISIC, CMACT,
      &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP,
-     &                      XLOCA, YLOCA
+     &                      XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE,
+     &                      FUGHGT, FUGWID, FUGLEN, FUGANG
 
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
@@ -113,7 +114,7 @@ C...........   Local parameters:
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
-     &                                     + ERPLEN3 + 26
+     &                                     + ERPLEN3 + 26 + 64
         INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) = (/ 1, 3, 6,  8, 9 /)
         INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) = (/ 2, 4, 7, 10, 9 /)
 
@@ -594,6 +595,16 @@ C.................  code, so for now save space for the SRCID.
                 WRITE( SORTBUF( I )( II:IJ ), '( F13.8, F13.8 )' ) XLOCA( OUTSRC( I ) ), YLOCA( OUTSRC( I ) )
                 II = IJ + 1
             END IF          !!  if report-by-latlon
+
+
+            IF ( RPT_%BYSTKPARM ) THEN
+                IJ = II + 64 - 1
+                WRITE( SORTBUF( I )( II:IJ ), '( F8.2, F8.2, F8.2, F8.2, F8.2, F8.2, F8.2, F8.2 )' )
+     &              STKHT( OUTSRC( I ) ), STKDM( OUTSRC( I ) ), STKTK( OUTSRC( I ) ),
+     &              STKVE( OUTSRC( I ) ), FUGHGT( OUTSRC( I ) ), FUGWID( OUTSRC( I ) ),
+     &              FUGLEN( OUTSRC( I ) ), FUGANG( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !!  if report-by-stack-params
 
             SORTBUF( I )( II: ) = ' '
 

@@ -42,7 +42,8 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: STKHT, STKDM, STKTK, STKVE, CPDESC
+        USE MODSOURC, ONLY: STKHT, STKDM, STKTK, STKVE, CPDESC, FUGHGT,
+     &                      FUGWID, FUGLEN, FUGANG
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, SCCDESC, SCCDLEV, NINVSIC, SICDESC,
@@ -69,7 +70,7 @@ C.........  This module contains Smkreport-specific settings
      &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
      &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
-     &                      ERTYPWIDTH
+     &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -177,7 +178,11 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRCARB = 56
         INTEGER, PARAMETER :: IHDRCADT = 57
         INTEGER, PARAMETER :: IHDRERTYP= 58
-        INTEGER, PARAMETER :: NHEADER  = 58
+        INTEGER, PARAMETER :: IHDRFUGHT= 59
+        INTEGER, PARAMETER :: IHDRFUGWD= 60
+        INTEGER, PARAMETER :: IHDRFUGLN= 61
+        INTEGER, PARAMETER :: IHDRFUGAN= 62
+        INTEGER, PARAMETER :: NHEADER  = 62
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -239,7 +244,11 @@ C...........   Local parameters
      &                              'Geo Regn Level 4 ',
      &                              'T,Yr,Mon,Jday,Dow',
      &                              'Basin,Dist,Cnty  ',
-     &                              'Emis Release Type' / )
+     &                              'Emis Release Type',
+     &                              'Fug Ht           ',
+     &                              'Fug Wdt          ',
+     &                              'Fug Len          ',
+     &                              'Fug Ang          ' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LGEO1USE ( NGEOLEV1 )
@@ -255,7 +264,7 @@ C...........   Local variables that depend on module variables
         CHARACTER(10) CHRHDRS( NCHARS )  ! Source characteristics headers
 
 C...........   Other local arrays
-        INTEGER       PWIDTH( 4 )
+        INTEGER       PWIDTH( 8 )
 
 C...........   Other local variables
         INTEGER     I, J, K, K1, K2, L, L1, L2, S, V, IOS
@@ -437,6 +446,32 @@ C.............  Include stack parameters
                 WRITE( BUFFER, '(F30.0)' ) STKVE( S )
                 BUFFER = ADJUSTL( BUFFER )
                 PWIDTH( 4 ) = MAX( PWIDTH( 4 ), LEN_TRIM( BUFFER ) )
+
+            END IF
+
+C.............  Include fugitive parameters
+            IF( RPT_%FUGPARM ) THEN
+                S = BINSMKID( I )
+
+                BUFFER = ' '
+                WRITE( BUFFER, '(F30.0)' ) FUGHGT( S )
+                BUFFER = ADJUSTL( BUFFER )
+                PWIDTH( 5 ) = MAX( PWIDTH( 5 ), LEN_TRIM( BUFFER ) )
+
+                BUFFER = ' '
+                WRITE( BUFFER, '(F30.0)' ) FUGWID( S )
+                BUFFER = ADJUSTL( BUFFER )
+                PWIDTH( 6 ) = MAX( PWIDTH( 6 ), LEN_TRIM( BUFFER ) )
+
+                BUFFER = ' '
+                WRITE( BUFFER, '(F30.0)' ) FUGLEN( S )
+                BUFFER = ADJUSTL( BUFFER )
+                PWIDTH( 7 ) = MAX( PWIDTH( 7 ), LEN_TRIM( BUFFER ) )
+
+                BUFFER = ' '
+                WRITE( BUFFER, '(F30.0)' ) FUGANG( S )
+                BUFFER = ADJUSTL( BUFFER )
+                PWIDTH( 8 ) = MAX( PWIDTH( 8 ), LEN_TRIM( BUFFER ) )
 
             END IF
 
@@ -1215,7 +1250,43 @@ C.........  Stack parameters.  +3 for decimal and 2 significant figures
      &                              PWIDTH( 3 ), RPT_%DELIM,
      &                              PWIDTH( 4 ), RPT_%DELIM
 
-            STKPWIDTH = SUM( PWIDTH ) + 4*LV
+            STKPWIDTH = SUM( PWIDTH( 1:4 ) ) + 4*LV
+
+        END IF
+
+C.........  Fugitive parameters.  +3 for decimal and 2 significant figures
+        IF( RPT_%FUGPARM ) THEN
+
+            J = LEN_TRIM( HEADERS( IHDRFUGHT ) )
+            PWIDTH( 5 ) = MAX( PWIDTH( 5 ) + 3, J )
+            CALL ADD_TO_HEADER( PWIDTH( 5 ), HEADERS( IHDRFUGHT ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 5 ), ATTRUNIT( 6 ), LU, UNTBUF )
+
+            J = LEN_TRIM( HEADERS( IHDRFUGWD ) )
+            PWIDTH( 6 ) = MAX( PWIDTH( 6 ) + 3, J )
+            CALL ADD_TO_HEADER( PWIDTH( 6 ), HEADERS( IHDRFUGWD ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 6 ), ATTRUNIT( 7 ), LU, UNTBUF )
+
+            J = LEN_TRIM( HEADERS( IHDRFUGLN ) )
+            PWIDTH( 7 ) = MAX( PWIDTH( 7 ) + 3, J )
+            CALL ADD_TO_HEADER( PWIDTH( 7 ), HEADERS( IHDRFUGLN ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 7 ), ATTRUNIT( 8 ), LU, UNTBUF )
+
+            J = LEN_TRIM( HEADERS( IHDRFUGAN ) )
+            PWIDTH( 8 ) = MAX( PWIDTH( 8 ) + 3, J )
+            CALL ADD_TO_HEADER( PWIDTH( 8 ), HEADERS( IHDRFUGAN ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 8 ), ATTRUNIT( 9 ), LU, UNTBUF )
+
+            WRITE( FUGPFMT, 94640 ) PWIDTH( 5 ), RPT_%DELIM,
+     &                              PWIDTH( 6 ), RPT_%DELIM,
+     &                              PWIDTH( 7 ), RPT_%DELIM,
+     &                              PWIDTH( 8 ), RPT_%DELIM
+
+            FUGPWIDTH = SUM( PWIDTH( 5:8 ) ) + 4*LV
 
         END IF
 
