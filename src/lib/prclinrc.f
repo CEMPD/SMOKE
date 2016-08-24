@@ -808,6 +808,63 @@ C.............  Temporal allocated emission used for report
                 RPT_%USEHOUR = .TRUE.
                 RPT_%BYDATE = .TRUE.
 
+C.............  AERMOD support report
+            CASE( 'AERMOD' )
+
+                GFLAG           = .TRUE.
+                RPT_%USEGMAT    = .TRUE.
+                RPT_%BYCELL     = .TRUE.    ! reporty by cell
+                RPT_%GRDCOR     = .TRUE.    ! calculate grid lambert_x-y and utm x_y with zone
+                YFLAG           = .TRUE.    ! read costcy input file
+                RPT_%BYSTAT     = .TRUE.    ! report by state
+                RPT_%USEASCELEV = .FALSE.
+
+                IF( SEGMENT( 2 ) .EQ. 'POINT' ) THEN
+
+                    RPT_%BYPLANT   = .TRUE.      ! By Plant ID
+                    RPT_%SRCNAM    = .TRUE.      ! By Plant Name
+
+                    TSFLAG         = .TRUE.      ! By TSUP file
+                    RPT_%BYMON     = .TRUE.      ! By monthly profile ID
+                    RPT_%BYWEK     = .TRUE.      ! By weekly profile ID
+                    RPT_%BYMND     = .TRUE.
+                    RPT_%BYTUE     = .TRUE.
+                    RPT_%BYWED     = .TRUE.
+                    RPT_%BYTHU     = .TRUE.
+                    RPT_%BYFRI     = .TRUE.
+                    RPT_%BYSAT     = .TRUE.
+                    RPT_%BYSUN     = .TRUE.
+
+                    IF( SEGMENT( 3 ) .EQ. 'PTNONIPM' .OR.
+     &                  SEGMENT( 3 ) .EQ. 'PTEGU'         ) THEN
+
+                        RPT_%BYERPTYP  = .TRUE.   ! By release point type
+                        RPT_%BYSTKPARM = .TRUE.   ! By stack parameters
+                        RPT_%STKPARM   = .TRUE.   ! By fugitive parameters
+                        RPT_%FUGPARM   = .TRUE.
+                        RPT_%BYLATLON  = .TRUE.   ! By lat and long coordinates
+                        RPT_%LATLON    = .TRUE.
+
+                        IF( SEGMENT( 4 ) .EQ. 'EMIS' ) THEN
+                            TFLAG          = .TRUE.    ! read PTMP file
+                            RPT_%USEHOUR   = .TRUE.    ! By hourly emissions
+                        END IF
+
+                    END IF
+
+                ELSE
+
+                    IF( FIRSTLOOP ) THEN
+                        L = LEN_TRIM( SEGMENT( 2 ) )
+                        WRITE( MESG,94010 ) 
+     &                    'WARNING: AERMOD sector type "'// 
+     &                    SEGMENT( 2 )( 1:L )// '" at line', IREC, 
+     &                    'is not currently supported.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+
+                END IF
+
 C.............  BY options affecting inputs needed
             CASE( 'BY' )
 

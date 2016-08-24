@@ -50,6 +50,12 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CPDESC, CSOURC, STKHT, STKDM, STKTK, STKVE,
      &                      XLOCA, YLOCA, FUGHGT, FUGWID, FUGLEN, FUGANG
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID, ONLY:  NCOLS, NROWS, XORIG, YORIG, XOFF, YOFF,
+     &                      GDTYP, XCELL, YCELL, XCENT, YCENT,
+     &                      P_ALP, P_BET, P_GAM, OFFLAG, GRDNM,
+     &                      XOFF_A, YOFF_A, XDIFF, YDIFF, NGRID
+
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: SCCDESC, SCCDLEV, SICDESC, MACTDESC, 
      &                      NAICSDESC
@@ -73,7 +79,8 @@ C.........  This module contains Smkreport-specific settings
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
-     &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH
+     &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
+     &                      LAMBFMT
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -95,17 +102,15 @@ C.........  This module contains the arrays for state and county summaries
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: MXCHRS, NCHARS, BYEAR
-        
+
+C.........  MODULES for I/O API INTERFACEs, geo-transform codes:
+        USE M3UTILIO 
+        USE MODGCTP
+
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-
-C...........  EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)  CRLF
-        INTEGER       WKDAY
-        
-        EXTERNAL   CRLF, WKDAY
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(IN   ) :: FDEV
@@ -142,6 +147,10 @@ C...........   Other local variables
         INTEGER     YEAR                      ! 4-digit year
         INTEGER     STIDX                     ! starting index of loop
         INTEGER     EDIDX                     ! ending index of loop
+
+        REAL*8      LAMBX, LAMBY, UTM_X, UTM_Y, UTM_Z ! grid lambert/utm coord for point sources
+        REAL*8      DLAT, DLON, DXORIG, DYORIG    ! grid lambert/utm coord for cell center 
+        REAL*8      X0(1,1), Y0(1,1)              ! grid lambert/utm coord for cell center 
 
         INTEGER, SAVE :: PRCNT = 0
 
@@ -733,6 +742,45 @@ C.............  Include lat/lons for point sources
                     STRING = STRING( 1:LE ) // BUFFER
                     MXLE = MXLE + LTLNWIDTH
                     LE = MIN( MXLE, STRLEN )
+                END IF
+
+C.............  Include grid lambert/utm coordinates for point source
+                IF( RPT_%GRDCOR ) THEN
+
+                    LAMBX = 0.0D0
+                    LAMBY = 0.0D0
+                    UTM_X = 0.0D0
+                    UTM_Y = 0.0D0
+                    UTM_Z = 0.0D0
+                    DLON  = XLOCA( S )
+                    DLAT  = YLOCA( S )
+
+C.....................  Compute lamber x&Y and utm x&y coordinates for point source
+                    CALL XY2XY( GDTYP  , P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                          LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          DLON, DLAT, LAMBX, LAMBY )
+
+                    UTM_Z = DBLE( FLOOR( ( ( XLOCA( S ) + 180.0 ) / 6.0 ) + 1.0 ) )
+                    CALL XY2XY( UTMGRD3, UTM_Z, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          DLON, DLAT, UTM_X, UTM_Y )
+
+C.....................  Compute the LL for grid cell center UTM zone
+                    DXORIG = XORIG + XCELL * ( BINX( I ) - 1 )
+                    DYORIG = YORIG + YCELL * ( BINY( I ) - 1 )
+                    CALL GRID2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                            GDTYP, P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                            1, 1, DXORIG, DYORIG, XCELL, YCELL,
+     &                            X0, Y0 )
+                    UTM_Z = DBLE( FLOOR( ( ( X0(1,1) + 180.0 ) / 6.0 ) + 1.0 ) )
+
+                    S = BINSMKID( I )
+                    BUFFER = ' '
+                    WRITE( BUFFER, LAMBFMT ) LAMBX, LAMBY, UTM_X, UTM_Y, UTM_Z 
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + LAMBWIDTH
+                    LE = MIN( MXLE, STRLEN )
+
                 END IF
 
 C.............  Include elevated sources flag

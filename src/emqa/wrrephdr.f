@@ -70,7 +70,8 @@ C.........  This module contains Smkreport-specific settings
      &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
      &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
-     &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH
+     &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
+     &                      LAMBFMT
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -182,7 +183,12 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRFUGWD= 60
         INTEGER, PARAMETER :: IHDRFUGLN= 61
         INTEGER, PARAMETER :: IHDRFUGAN= 62
-        INTEGER, PARAMETER :: NHEADER  = 62
+        INTEGER, PARAMETER :: IHDRLAMBX= 63
+        INTEGER, PARAMETER :: IHDRLAMBY= 64
+        INTEGER, PARAMETER :: IHDRUTMX = 65
+        INTEGER, PARAMETER :: IHDRUTMY = 66
+        INTEGER, PARAMETER :: IHDRUTMZ = 67
+        INTEGER, PARAMETER :: NHEADER  = 67
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -248,7 +254,12 @@ C...........   Local parameters
      &                              'Fug Ht           ',
      &                              'Fug Wdt          ',
      &                              'Fug Len          ',
-     &                              'Fug Ang          ' / )
+     &                              'Fug Ang          ',
+     &                              'Lambert-X        ',
+     &                              'Lambert-Y        ',
+     &                              'UTM_X            ',
+     &                              'UTM_Y            ',
+     &                              'UTM Zone         ' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LGEO1USE ( NGEOLEV1 )
@@ -1312,6 +1323,49 @@ C.........  Point-source latitude and longitude
             
         END IF
 
+C.........  Point-source grid lamber-x&y, and grid utm_x,y,zone 
+        IF( RPT_%GRDCOR ) THEN
+
+            J = LEN_TRIM( HEADERS( IHDRLAMBX ) )
+            PWIDTH( 1 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 1 ), HEADERS( IHDRLAMBX ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 1 ), '    ', LU, UNTBUF )
+
+            J = LEN_TRIM( HEADERS( IHDRLAMBY ) )
+            PWIDTH( 2 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 2 ), HEADERS( IHDRLAMBY ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 2 ), '     ', LU, UNTBUF )
+
+            J = LEN_TRIM( HEADERS( IHDRUTMX ) )
+            PWIDTH( 3 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 3 ), HEADERS( IHDRUTMX ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 3 ), '    ', LU, UNTBUF )
+
+            J = LEN_TRIM( HEADERS( IHDRUTMY ) )
+            PWIDTH( 4 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 4 ), HEADERS( IHDRUTMY ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 4 ), '     ', LU, UNTBUF )
+
+            J = LEN_TRIM( HEADERS( IHDRUTMZ ) )
+            PWIDTH( 5 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 5 ), HEADERS( IHDRUTMZ ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 5 ), '     ', LU, UNTBUF )
+
+            WRITE( LAMBFMT, 94643 ) PWIDTH( 1 ), RPT_%DELIM,
+     &                              PWIDTH( 2 ), RPT_%DELIM,
+     &                              PWIDTH( 3 ), RPT_%DELIM,
+     &                              PWIDTH( 4 ), RPT_%DELIM,
+     &                              PWIDTH( 5 ), RPT_%DELIM
+
+            LAMBWIDTH = SUM( PWIDTH( 1:5 ) ) + 5*LV
+
+        END IF
+
 C.........  Elevated flag column
         IF( RPT_%BYELEV ) THEN
             J = LEN_TRIM( HEADERS( IHDRELEV ) )
@@ -1958,6 +2012,9 @@ C...........   Internal buffering formats............ 94xxx
      &          '1X,F', I2.2, '.2,"', A, '")' )
 
 94642   FORMAT( '(1X,F',I2.2,'.8,"', A,'",1X,F',I2.2,'.8,"',A,'")' )  ! lat/lons
+
+94643   FORMAT( '(', 4('1X,F', I2.2, '.2,"', A, '",'), 
+     &          '1X,F', I2.2, '.2,"', A, '")' )
 
 94645   FORMAT( '(I', I1, ',"', A, '")' )
 

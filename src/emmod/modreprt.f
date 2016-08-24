@@ -155,6 +155,7 @@
             LOGICAL       :: CHKPROJ       ! true: check projctns vs. rpt
             LOGICAL       :: CHKCNTL       ! true: check controls vs. rpt
             LOGICAL       :: LATLON        ! true: output stack coordinates
+            LOGICAL       :: GRDCOR        ! true: output grid coordinates 
             LOGICAL       :: LAYFRAC       ! true: use PLAY file
             LOGICAL       :: NORMCELL      ! true: normalize by cell area
             LOGICAL       :: NORMPOP       ! true: normalize by county pop
@@ -294,6 +295,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: GEO1WIDTH =0 ! width of geo level 1 name column
         INTEGER      , PUBLIC :: HOURWIDTH =0 ! width of hour column
         INTEGER      , PUBLIC :: LTLNWIDTH =0 ! width of lat/lon columns
+        INTEGER      , PUBLIC :: LAMBWIDTH =0 ! width of lambert coord columns
         INTEGER      , PUBLIC :: LABELWIDTH=0 ! width of user-defined label
         INTEGER      , PUBLIC :: LAYRWIDTH =0 ! width of layer number label
         INTEGER      , PUBLIC :: PDSCWIDTH =0 ! width of plant description col
@@ -336,6 +338,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         CHARACTER(50),  PUBLIC :: DATEFMT     ! format string for date column
         CHARACTER(50),  PUBLIC :: HOURFMT     ! format string for hour column
         CHARACTER(50),  PUBLIC :: LTLNFMT     ! format string for lat/lons
+        CHARACTER(70),  PUBLIC :: LAMBFMT     ! format string for lambert coord 
         CHARACTER(50),  PUBLIC :: LAYRFMT     ! format string for layer column
         CHARACTER(50),  PUBLIC :: REGNFMT     ! format string for region column
         CHARACTER(50),  PUBLIC :: STKGFMT     ! format string for stack group IDs 
