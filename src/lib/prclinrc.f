@@ -826,6 +826,7 @@ C.............  AERMOD support report
 
                     TSFLAG         = .TRUE.      ! By TSUP file
                     RPT_%BYMON     = .TRUE.      ! By monthly profile ID
+                    RPT_%BYDOM     = .TRUE.      ! By day-month profile ID
                     RPT_%BYWEK     = .TRUE.      ! By weekly profile ID
                     RPT_%BYMND     = .TRUE.
                     RPT_%BYTUE     = .TRUE.
