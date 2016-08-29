@@ -760,11 +760,6 @@ C.....................  Compute lamber x&Y and utm x&y coordinates for point sou
      &                          LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
      &                          DLON, DLAT, LAMBX, LAMBY )
 
-                    UTM_Z = DBLE( FLOOR( ( ( XLOCA( S ) + 180.0 ) / 6.0 ) + 1.0 ) )
-                    CALL XY2XY( UTMGRD3, UTM_Z, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
-     &                          LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
-     &                          DLON, DLAT, UTM_X, UTM_Y )
-
 C.....................  Compute the LL for grid cell center UTM zone
                     DXORIG = XORIG + XCELL * ( BINX( I ) - 1 )
                     DYORIG = YORIG + YCELL * ( BINY( I ) - 1 )
@@ -773,6 +768,10 @@ C.....................  Compute the LL for grid cell center UTM zone
      &                            1, 1, DXORIG, DYORIG, XCELL, YCELL,
      &                            X0, Y0 )
                     UTM_Z = DBLE( FLOOR( ( ( X0(1,1) + 180.0 ) / 6.0 ) + 1.0 ) )
+
+                    CALL XY2XY( UTMGRD3, UTM_Z, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          DLON, DLAT, UTM_X, UTM_Y )
 
                     S = BINSMKID( I )
                     BUFFER = ' '
