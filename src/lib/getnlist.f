@@ -115,7 +115,10 @@ C.........  Check for comments, and use to set the end of the line
         END IF
 
 C.........  Skip blank lines
-        IF( L .EQ. 0 ) RETURN
+        IF( L .EQ. 0 ) THEN
+            GETNLIST = 0
+            RETURN
+        END IF
 
 C.........  Initialize count and flags
         NCNT    = 0
