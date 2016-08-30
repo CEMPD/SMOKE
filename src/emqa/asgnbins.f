@@ -316,6 +316,17 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
 
             ELSE
 
+C.................  Reporting by plant doesn't assume that the plant ID is unique across counties.
+C.................  When building the sorting array, the SRCID for the first source of a plant/county
+C.................  combination will be used for all sources at that plant. This happens later in the
+C.................  code, so for now save space for the SRCID.
+                IF( RPT_%BYPLANT ) THEN
+                    IJ = II + 7
+                    SRCID = OUTSRC( I )
+                    WRITE( SORTBUF( I )( II:IJ ), '( I8.8 )' ) SRCID
+                    II = IJ + 1
+                END IF
+
                 IF( RPT_%BYCNTY ) THEN
                     IJ = II + FIPLEN3 - 1
                     CFIP  = CIFIP( OUTSRC( I ) )
@@ -484,7 +495,7 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
                 END IF
                 SORTBUF( I )( II:IJ ) = PLANT
             END DO
-            II = IJ + PLTLEN3
+            II = IJ + 1
 
         END IF          !!  if report-by-plant
 
@@ -542,7 +553,7 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
             IF ( RPT_%BYSRCTYP ) THEN
                 IJ = II + STPLEN3 - 1
                 SORTBUF( I )( II:IJ ) =  CSRCTYP( OUTSRC( I ) )
-                II = IJ + STPLEN3
+                II = IJ + 1
             END IF          !!  if report-by-sourcetype
 
 
@@ -556,7 +567,7 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
             IF ( RPT_%BYINTGR ) THEN
                 IJ = II + INTLEN3 - 1
                 SORTBUF( I )( II:IJ ) = CINTGR( OUTSRC( I ) )
-                II = IJ + INTLEN3
+                II = IJ + 1
             END IF          !!  if report-by-integrate
 
             SORTBUF( I )( II: ) = ' '
