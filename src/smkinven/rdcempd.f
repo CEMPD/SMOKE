@@ -227,9 +227,9 @@ C.............  Get environment variable for calculating flow rate
             MESG = 'Heat input factor for calculating flow rate ' //
      &             '(ft^3/MMBTU)'
             FLOWFAC = ENVREAL( 'FLOW_RATE_FACTOR', MESG, 0, IOS )
+            FLOWPOS = MXSPDAT + CODFLAG3
             
             IF( FLOWFAC > 0. ) THEN
-                FLOWPOS = MXSPDAT + CODFLAG3
                 MESG = 'NOTE: Hourly flow rates will be calculated ' //
      &                 'from CEM data'
                 CALL M3MSG2( MESG )
@@ -270,9 +270,7 @@ C.............  Read emissions from inventory file
 
 C.........  Set variable status
         EASTAT = 1 
-        IF( FLOWFAC > 0. ) THEN
-            SPSTAT( MXSPDAT ) = 1 
-        END IF
+        SPSTAT( MXSPDAT ) = 1
 
 C.............  Allocate memory for bad ORIS IDs
         IF ( .NOT. GETSIZES             .AND. 
@@ -542,11 +540,9 @@ C               hourly value is valid
                         CALL STORE_SOURCE_DATA( S, PTR, V, EMISVAL )
                     END DO
                     
-                    IF( FLOWFAC > 0. ) THEN
-                        FLOWVAL = 0.
-                        CALL STORE_SOURCE_DATA( S, PTR, FLOWPOS, 
-     &                                          FLOWVAL )
-                    END IF
+                    FLOWVAL = 0.0
+                    CALL STORE_SOURCE_DATA( S, PTR, FLOWPOS, FLOWVAL )
+
                 END DO
                 
                 CYCLE
@@ -689,6 +685,14 @@ C.................  Calculate rate for each stack corresponding to ORIS/boiler
                     CALL STORE_SOURCE_DATA( S, PTR, FLOWPOS, 
      &                                      STKVAL( J ) )
                 END DO
+
+            ELSE                     ! Store annfac to LAY1F special variable for AERMOD support
+                DO I = 0, NS - 1
+
+                    S = OBSRCNM( S1 + I )
+                    CALL STORE_SOURCE_DATA( S, PTR, FLOWPOS, ANNFAC )
+
+                END DO
             END IF
 
         END DO          ! end loop over lines in file
@@ -739,11 +743,10 @@ C           all ORIS/boilers are accounted for
      &                                                  V, EMISVAL )
                             END DO
                             
-                            IF( FLOWFAC > 0. ) THEN
-                                FLOWVAL = 0.
-                                CALL STORE_SOURCE_DATA( S, PTR, FLOWPOS, 
-     &                                                  FLOWVAL )
-                            END IF                           
+                            FLOWVAL = 0.
+                            CALL STORE_SOURCE_DATA( S, PTR, FLOWPOS, 
+     &                                              FLOWVAL )
+
                         END DO
                     END IF
                 END DO
