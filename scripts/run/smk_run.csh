@@ -37,7 +37,7 @@ endif
 if ( $?DEBUG_EXE ) then
    set debug_exe = $DEBUG_EXE
 else
-   set debug_exe = dbx
+   set debug_exe = idb
 endif
 
 ### Ensure new controller variables are set
@@ -95,8 +95,8 @@ if ( $?RUN_SMKINVEN ) then
          setenv LOGFILE $TMPLOG
 
          if ( $debugmode == Y ) then
-            if ( -e $IV_SRC/smkinven.debug ) then
-               $debug_exe $IV_SRC/smkinven.debug
+            if ( -e $SMK_BIN/smkinven ) then
+               $debug_exe $SMK_BIN/smkinven
             else
                 set debugexestat = 1
             endif
@@ -122,143 +122,7 @@ if ( $?RUN_SMKINVEN ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: smkinven.debug program does not exist in:'
-	 echo '              '$IV_SRC
-         set exitstat = 1
-      endif
-
    endif
-endif
-
-#
-### County or gridded landuse import
-#
-set debugexestat = 0
-set exestat = 0
-setenv TMPLOG   $OUTLOG/rawbio.$SRCABBR.$INVEN.$GRID.log
-if ( $?RUN_RAWBIO ) then
-
-   if ( $RUN_RAWBIO == 'Y' && $RUN_PART1 == Y ) then
-
-      # Use summer emission factors, if they are set for first rawbio run
-      if ( $?S_BFAC ) then
-          setenv BFAC $S_BFAC
-
-      else
-
-         if ( $?BFAC ) then
-            echo 'SCRIPT WARNING: default biogenic emission factors, BFAC file:'
-            echo '               '$BFAC
-            echo '                are used directly based on user setting.'
-
-         else
-            echo 'SCRIPT ERROR: neither BFAC nor S_BFAC environment variables are set'
-            set exitstat = 1
-
-         endif
-
-      endif
-
-      set season = n
-      # Use summer-specific processing if season-switch option in use
-      if ( $?BIOSW_YN ) then
-         if ( $BIOSW_YN == Y ) then
-            set season = y
-            setenv TMPLOG $OUTLOG/rawbio.$SRCABBR.sumr.$INVEN.$GRID.log
-         endif  
-      endif  
-
-      if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.csh
-      endif
-
-      if ( $exitstat == 0 ) then         # Run program for standard or summer
-         setenv LOGFILE $TMPLOG
-
-         if ( $debugmode == Y ) then
-            if ( -e $BG_SRC/rawbio.debug ) then
-               $debug_exe $BG_SRC/rawbio.debug
-            else
-                set debugexestat = 1
-            endif
-         else
-            if ( -e $SMK_BIN/rawbio ) then
-               time $SMK_BIN/rawbio
-            else
-               set exestat = 1 
-            endif
-         endif
-      endif
-
-      if ( -e $SCRIPTS/fort.99 ) then
-         mv $LOGFILE $LOGFILE.tmp
-         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
-         /bin/rm -rf $LOGFILE.tmp
-         /bin/rm -rf $SCRIPTS/fort.99
-      endif
-
-      # Now do winter-specific processing, if season-switch option in use
-      if ( $season == y ) then
-
-         if ( $?W_BFAC && $?BGRDW ) then
-            # Set input file 
-            setenv BFAC $W_BFAC
-            setenv BGRD $BGRDW
-            setenv TMPLOG $OUTLOG/rawbio.$SRCABBR.wntr.$INVEN.$GRID.log
-
-            if ( -e $TMPLOG ) then
-	       source $SCRIPTS/run/movelog.csh
-            endif
-
-            if ( $exitstat == 0 ) then         # Run program for winter
-               setenv LOGFILE $TMPLOG
-
-               if ( $debugmode == Y ) then
-                  if ( -e $BG_SRC/rawbio.debug ) then
-                     $debug_exe $BG_SRC/rawbio.debug
-                  else
-                      set debugexestat = 1
-                  endif
-               else
-                  if ( -e $SMK_BIN/rawbio ) then
-                     time $SMK_BIN/rawbio
-                  else
-                     set exestat = 1 
-                  endif
-               endif
-            endif
-
-         if ( -e $SCRIPTS/fort.99 ) then
-            mv $LOGFILE $LOGFILE.tmp
-            cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
-            /bin/rm -rf $LOGFILE.tmp
-            /bin/rm -rf $SCRIPTS/fort.99
-         endif
-
-         else
-      	    echo 'SCRIPT ERROR: BIOSW_YN (biogenics seasonality switch) set to'
-            echo '              Y, but W_BFAC (winter biogenic factors input) and/or'
-            echo '              BGRDW (winter normalized emissions) environment'
-            echo '              variables are not defined.'
-	    set exitstat = 1
-         endif
-    
-      endif
-   endif
-
-   if ( $exestat == 1 ) then
-      echo 'SCRIPT ERROR: rawbio program does not exist in:'
-      echo '              '$SMK_BIN
-      set exitstat = 1
-   endif
-
-   if ( $debugexestat == 1 ) then
-      echo 'SCRIPT ERROR: rawbio.debug program does not exist in:'
-      echo '              '$BG_SRC
-      set exitstat = 1
-   endif
-
 endif
 
 #
@@ -289,8 +153,8 @@ if ( $?RUN_NORMBEIS3 ) then
          setenv LOGFILE $TMPLOG
 
          if ( $debugmode == Y ) then
-            if ( -e $BG_SRC/normbeis3.debug ) then
-               $debug_exe $BG_SRC/normbeis3.debug
+            if ( -e $SMK_BIN/normbeis3 ) then
+               $debug_exe $SMK_BIN/normbeis3
             else
                 set debugexestat = 1
             endif
@@ -318,12 +182,6 @@ if ( $?RUN_NORMBEIS3 ) then
       set exitstat = 1
    endif
 
-   if ( $debugexestat == 1 ) then
-      echo 'SCRIPT ERROR: normbeis3.debug program does not exist in:'
-      echo '              '$BG_SRC
-      set exitstat = 1
-   endif
-
 endif
 
 #
@@ -343,8 +201,8 @@ if ( $?RUN_SPCMAT ) then
          setenv LOGFILE $TMPLOG
 
          if ( $debugmode == Y ) then
-            if ( -e $SP_SRC/spcmat.debug ) then
-               $debug_exe $SP_SRC/spcmat.debug
+            if ( -e $SMK_BIN/spcmat ) then
+               $debug_exe $SMK_BIN/spcmat
             else
                 set debugexestat = 1
             endif
@@ -370,12 +228,6 @@ if ( $?RUN_SPCMAT ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: spcmat.debug program does not exist in:'
-	 echo '              '$SP_SRC
-         set exitstat = 1
-      endif
-
    endif
 endif
 
@@ -396,8 +248,8 @@ if ( $?RUN_GRDMAT ) then
          setenv LOGFILE $TMPLOG
 
          if ( $debugmode == Y ) then
-            if ( -e $GD_SRC/grdmat.debug ) then
-               $debug_exe $GD_SRC/grdmat.debug
+            if ( -e $SMK_BIN/grdmat ) then
+               $debug_exe $SMK_BIN/grdmat
             else
                 set debugexestat = 1
             endif
@@ -423,11 +275,6 @@ if ( $?RUN_GRDMAT ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: grdmat.debug program does not exist in:'
-	 echo '              '$GD_SRC
-         set exitstat = 1
-      endif
    endif
 endif
 
@@ -447,8 +294,8 @@ if ( $?RUN_METSCAN ) then
       if ( $exitstat == 0 ) then         # Run program
         setenv LOGFILE $TMPLOG
         if ( $debugmode == Y ) then
-            if ( -e $UT_SRC/metscan.debug ) then
-               $debug_exe $UT_SRC/metscan.debug
+            if ( -e $SMK_BIN/metscan ) then
+               $debug_exe $SMK_BIN/metscan
             else
                 set debugexestat = 1
             endif
@@ -474,11 +321,6 @@ if ( $?RUN_METSCAN ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: metscan.debug program does not exist in:'
-	 echo '              '$UT_SRC
-         set exitstat = 1
-      endif
    endif
 endif
 
@@ -502,8 +344,8 @@ if ( $?RUN_TEMPORAL ) then
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
         if ( $debugmode == Y ) then
-            if ( -e $TM_SRC/temporal.debug ) then
-               $debug_exe $TM_SRC/temporal.debug
+            if ( -e $SMK_BIN/temporal ) then
+               $debug_exe $SMK_BIN/temporal
             else
                 set debugexestat = 1
             endif
@@ -529,11 +371,6 @@ if ( $?RUN_TEMPORAL ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: temporal.debug program does not exist in:'
-	 echo '              '$TM_SRC
-         set exitstat = 1
-      endif
    endif
 endif
 
@@ -561,8 +398,8 @@ if ( $?RUN_ELEVPOINT ) then
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
         if ( $debugmode == Y ) then
-            if ( -e $PT_SRC/elevpoint.debug ) then
-               $debug_exe $PT_SRC/elevpoint.debug
+            if ( -e $SMK_BIN/elevpoint ) then
+               $debug_exe $SMK_BIN/elevpoint
             else
                 set debugexestat = 1
             endif
@@ -588,11 +425,6 @@ if ( $?RUN_ELEVPOINT ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: elevpoint.debug program does not exist in:'
-	 echo '              '$PT_SRC
-         set exitstat = 1
-      endif
    endif
 endif
 
@@ -618,8 +450,8 @@ if ( $?RUN_LAYPOINT ) then
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
         if ( $debugmode == Y ) then
-            if ( -e $PT_SRC/laypoint.debug ) then
-               $debug_exe $PT_SRC/laypoint.debug
+            if ( -e $SMK_BIN/laypoint ) then
+               $debug_exe $SMK_BIN/laypoint
             else
                 set debugexestat = 1
             endif
@@ -645,68 +477,6 @@ if ( $?RUN_LAYPOINT ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: laypoint.debug program does not exist in:'
-	 echo '              '$PT_SRC
-         set exitstat = 1
-      endif
-   endif
-endif
-
-#
-### Temporal Allocation - biogenic sources
-# 
-set debugexestat = 0
-set exestat = 0
-setenv TMPLOG   $OUTLOG/tmpbio.$SRCABBR.$INVEN.$ESDATE.$GRID.log
-if ( $?RUN_TMPBIO ) then
-   if ( $RUN_TMPBIO == 'Y' && $RUN_PART2 == Y ) then
-
-      if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.csh
-      endif
-
-      if ( -e $METLIST ) /bin/rm -rf $METLIST
-      if ( -e $RADLIST ) /bin/rm -rf $RADLIST
-
-      ls $MET_FILE1 > $METLIST
-      ls $MET_FILE2 > $RADLIST
-
-      if ( $exitstat == 0 ) then         # Run program
-        setenv LOGFILE $TMPLOG
-        if ( $debugmode == Y ) then
-            if ( -e $BG_SRC/tmpbio.debug ) then
-               $debug_exe $BG_SRC/tmpbio.debug
-            else
-                set debugexestat = 1
-            endif
-         else
-            if ( -e $SMK_BIN/tmpbio ) then
-               time $SMK_BIN/tmpbio
-            else
-               set exestat = 1 
-            endif
-         endif
-      endif
-
-      if ( -e $SCRIPTS/fort.99 ) then
-         mv $LOGFILE $LOGFILE.tmp
-         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
-         /bin/rm -rf $LOGFILE.tmp
-         /bin/rm -rf $SCRIPTS/fort.99
-      endif
-
-      if ( $exestat == 1 ) then
-	 echo 'SCRIPT ERROR: tmpbio program does not exist in:'
-	 echo '              '$SMK_BIN
-         set exitstat = 1
-      endif
-
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: tmpbio.debug program does not exist in:'
-	 echo '              '$BG_SRC
-         set exitstat = 1
-      endif
    endif
 endif
 
@@ -727,8 +497,8 @@ if ( $?RUN_TMPBEIS3 ) then
       if ( $exitstat == 0 ) then         # Run program
         setenv LOGFILE $TMPLOG
         if ( $debugmode == Y ) then
-            if ( -e $BG_SRC/tmpbeis3.debug ) then
-               $debug_exe $BG_SRC/tmpbeis3.debug
+            if ( -e $SMK_BIN/tmpbeis3 ) then
+               $debug_exe $SMK_BIN/tmpbeis3
             else
                 set debugexestat = 1
             endif
@@ -754,11 +524,6 @@ if ( $?RUN_TMPBEIS3 ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: tmpbeis3.debug program does not exist in:'
-	 echo '              '$BG_SRC
-         set exitstat = 1
-      endif
    endif
 endif
 
@@ -814,8 +579,8 @@ if ( $?RUN_SMKMERGE ) then
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
          if ( $debugmode == Y ) then
-            if ( -e $MG_SRC/smkmerge.debug ) then
-               $debug_exe $MG_SRC/smkmerge.debug
+            if ( -e $SMK_BIN/smkmerge ) then
+               $debug_exe $SMK_BIN/smkmerge
             else
                 set debugexestat = 1
             endif
@@ -841,11 +606,6 @@ if ( $?RUN_SMKMERGE ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: smkmerge.debug program does not exist in:'
-	 echo '              '$MG_SRC
-         set exitstat = 1
-      endif
    endif
 endif
 
@@ -899,8 +659,8 @@ if ( $?RUN_MOVESMRG ) then
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
          if ( $debugmode == Y ) then
-            if ( -e $MV_SRC/movesmrg.debug ) then
-               $debug_exe $MV_SRC/movesmrg.debug
+            if ( -e $SMK_BIN/movesmrg ) then
+               $debug_exe $SMK_BIN/movesmrg
             else
                 set debugexestat = 1
             endif
@@ -926,11 +686,6 @@ if ( $?RUN_MOVESMRG ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: movesmrg.debug program does not exist in:'
-	 echo '              '$MV_SRC
-         set exitstat = 1
-      endif
    endif
 endif
 
@@ -977,8 +732,8 @@ if ( $?RUN_MRGGRID ) then
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
          if ( $debugmode == Y ) then
-            if ( -e $MG_SRC/mrggrid.debug ) then
-               $debug_exe $MG_SRC/mrggrid.debug
+            if ( -e $SMK_BIN/mrggrid ) then
+               $debug_exe $SMK_BIN/mrggrid
             else
                 set debugexestat = 1
             endif
@@ -1004,11 +759,6 @@ if ( $?RUN_MRGGRID ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: mrggrid.debug program does not exist in:'
-	 echo '              '$MG_SRC
-         set exitstat = 1
-      endif
    endif
 endif
 
@@ -1028,8 +778,8 @@ if ( $?RUN_SMK2EMIS ) then
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
          if ( $debugmode == Y ) then
-            if ( -e $UT_SRC/smk2emis.debug ) then
-               $debug_exe $UT_SRC/smk2emis.debug
+            if ( -e $SMK_BIN/smk2emis ) then
+               $debug_exe $SMK_BIN/smk2emis
             else
                 set debugexestat = 1
             endif
@@ -1055,11 +805,6 @@ if ( $?RUN_SMK2EMIS ) then
          set exitstat = 1
       endif
 
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: smk2emis.debug program does not exist in:'
-	 echo '              '$UT_SRC
-         set exitstat = 1
-      endif
    endif
 endif
 
