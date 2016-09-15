@@ -497,6 +497,7 @@ C.........................  Reset report settings to defaults
                         RPT_%CHKCNTL   = .FALSE.
                         RPT_%ELVSTKGRP = .FALSE.
                         RPT_%LATLON    = .FALSE.
+                        RPT_%GRDCOR    = .FALSE.
                         RPT_%LAYFRAC   = .FALSE.
                         RPT_%NORMCELL  = .FALSE.
                         RPT_%NORMPOP   = .FALSE.
