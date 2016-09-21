@@ -1,0 +1,380 @@
+#/bin/csh -fx
+#
+## HEADER ##################################################################
+#
+#  SMOKE ASSIGNS file (sets up for area, biogenic, mobile, nonroad, and point sources)
+#
+#  Version @(#)$Id$
+#  Path    $Source$
+#  Date    $Date$
+#
+#  Scenario Description:
+#     This assigns file sets up the environment variables for use of 
+#     SMOKE Version 2.1 outside of the Models-3 system.
+#
+#  Usage:
+#     source <Assign>
+#     Note: First set the SMK_HOME env variable to the base SMOKE installation
+#
+## END HEADER ##############################################################
+
+## Determine operating system for compiling SMOKE
+#  Set executable format, makeing allownces for 64-bit archtecnture
+#  example: Linux2_x86_64ifort (Intel), Linux2_x86_64pg (Portland group), Linux2_x86_64gfort (gfortran)...
+#
+   setenv BIN    Linux2_x86_64ifort    # Intel Fortran 64-bit compiler
+
+## I/O Naming roots
+#
+   setenv INVID     nei2005      # Inventory input identifier
+   setenv INVOP     HEMI_108k    # Base year inventory output name
+   setenv INVEN     HEMI_108k    # Base year inventory name with version
+
+   setenv ABASE     HEMI_108k    # Area base case output name
+   setenv BBASE     HEMI_108k    # Biogenics base case output name
+   setenv MBASE     HEMI_108k    # Mobile base case output name
+   setenv PBASE     HEMI_108k    # Point base case output name
+
+   setenv EBASE     HEMI_108k    # Output merged base case name
+
+   setenv METSCEN      108km             # Met scenario name
+   setenv GRID         NH108k            # Gridding root for naming
+   setenv IOAPI_GRIDNAME_1 HEMI_108k     # Grid selected from GRIDDESC file
+   setenv IOAPI_ISPH   20                # Specifies spheroid type associated with grid
+   setenv SPC          cmaq_cb05_soa     # Speciation type
+
+## Mobile episode variables
+   setenv EPI_STDATE 2005191     # Julian start date
+   setenv EPI_STTIME  000000     # start time (HHMMSS)
+   setenv EPI_RUNLEN 0240000     # run length (HHHMMSS)
+   setenv EPI_NDAY   1           # number of full run days
+
+## Per-period environment variables
+   setenv G_STDATE  2005191      # Julian start date
+   setenv G_STTIME   000000      # start time (HHMMSS)
+   setenv G_TSTEP     10000      # time step  (HHMMSS)
+   setenv G_RUNLEN   250000      # run length (HHMMSS)
+   setenv ESDATE   20050710      # Start date of emis time-based files/dirs
+   setenv MSDATE   20050710      # Start date of met  time-based files
+   setenv NDAYS           1      # Duration in days of each emissions file
+   setenv MDAYS           1      # Duration in days of met  time-based files
+   setenv YEAR         2005      # Base year for year-specific files
+
+## Reset days if overrides are available
+   if ( $?G_STDATE_ADVANCE ) then
+       set date = $G_STDATE
+       @ date = $date + $G_STDATE_ADVANCE
+       setenv G_STDATE $date 
+# org       setenv ESDATE `$IOAPIDIR/datshift $G_STDATE 0`
+       setenv ESDATE `$IOAPIDIR/jul2greg $G_STDATE`
+   endif
+
+## User-defined I/O directory settings
+   setenv SMK_SUBSYS  $SMK_HOME/subsys              # SMOKE subsystem dir
+   setenv SMKROOT     $SMK_SUBSYS/smoke             # System root dir
+   setenv SMKDAT      $SMK_HOME/data                # Data root dir
+   setenv ASSIGNS     $SMKROOT/assigns              # smoke assigns files
+#
+## Override speciation setting, if override variable is set
+if ( $?SPC_OVERRIDE ) then
+   if ( $SPC != " " ) then
+      setenv SPC $SPC_OVERRIDE
+   endif
+endif
+#
+## Override year setting, if override variable is set
+if ( $?YEAR_OVERRIDE ) then
+   setenv YEAR $YEAR_OVERRIDE
+endif
+#
+## Make changes to names for future year and/or control strategy
+set outstat = 0
+source $ASSIGNS/set_case.scr
+if ( $status > 0 ) then
+   set outstat = 1
+endif
+
+## Set dependent directory names
+#
+source $ASSIGNS/set_dirs.scr
+
+## Check script settings
+source $ASSIGNS/check_settings.scr
+
+##########  SMOKE formatted raw inputs #############
+#
+## Area-source input files
+if ( $SMK_SOURCE == 'A' ) then
+   setenv ARINV           $INVDIR/$SRCABBR/arinv.$SRCABBR.lst    # Stationary area emission inventory
+   setenv REPCONFIG       $INVDIR/$SRCABBR/REPCONFIG.area.txt    # Default report configurations
+   setenv GSPRO           $GE_DAT/gspro.$SPC.txt                 # Speciation profiles
+   setenv GSREF           $GE_DAT/EDGAR/gsref.edgar.txt          # Speciation x-ref
+   setenv ATREF           $GE_DAT/EDGAR/atref_edgar.txt          # Temporal x-ref
+   setenv ATPRO_MONTHLY   $GE_DAT/EDGAR/atpro_edgar_monthly.txt  # Monthly Temporal profiles
+   setenv ATPRO_WEEKLY    $GE_DAT/EDGAR/atpro_edgar_weekly.txt   # Weekly Temporal profiles
+   setenv ATPRO_HOURLY    $GE_DAT/EDGAR/atpro_edgar_hourly.txt   # Hourly Temporal profiles
+
+endif
+#
+## Shared input files
+   setenv GEOCODE_LEVEL1   $GE_DAT/EDGAR/geocode1_edgar.txt      # Geographical level 1 (country code)
+   setenv GEOCODE_LEVEL2   $GE_DAT/EDGAR/geocode2_edgar.txt      # Geographical level 2 (state code)
+   setenv GEOCODE_LEVEL3   $GE_DAT/EDGAR/geocode3_edgar.txt      # Geographical level 3 (county code)
+   setenv GEOCODE_LEVEL4   $GE_DAT/EDGAR/geocode4_edgar.txt      # Geographical level 4 (tribal code)
+   setenv GRIDMASK         $GE_DAT/EDGAR/GRIDMASK_EDGAR.ncf      # GRIDMASK for EDGAR inv processing
+   setenv GRID_CRO_2D      $GE_DAT/EDGAR/GRIDCRO2D_HEMI_108k     # GRIDMASK for EDGAR inv processing
+   setenv GRIDDESC         $GE_DAT/GRIDDESC                      # Grid descriptions.
+   setenv COSTCY           $GE_DAT/costcy.txt                    # country/state/county info
+   setenv HOLIDAYS         $GE_DAT/holidays.txt                  # holidays for day change
+   setenv SCCDESC          $GE_DAT/scc_desc.txt                  # SCC descriptions
+   setenv GSCNV            $GE_DAT/gscnv.$SPC.txt                # ROG to TOG conversion facs
+   setenv GCNTL            $GE_DAT/EDGAR/gcntl.HEMI_108k.txt     # control/growth factors
+   setenv INVTABLE    $INVDIR/other/invtable_hapcap_cb05soa.txt  # Inventory table
+#
+## Override shared inputs
+if ( $?INVTABLE_OVERRIDE ) then
+   if ( $INVTABLE_OVERRIDE != " " ) then
+      setenv INVTABLE $INVDIR/other/$INVTABLE_OVERRIDE
+   endif
+endif
+
+#
+## Miscellaeous input files
+   if ( $RUN_MRGGRID == Y ) then
+      setenv FILELIST   $INVDIR/other/filelist.mrggrid.txt
+   endif
+   if ( $RUN_GEOFAC == Y ) then
+      setenv AGTS     $OUTPUT/no_file_set
+      setenv GEOMASK  $INVDIR/other/no_file_set
+      setenv SPECFACS $INVDIR/other/no_file_set
+      setenv AGTSFAC  $INVDIR/other/no_file_set
+   endif
+   if ( $RUN_PKTREDUC == Y ) then
+      setenv GCNTL_OUT $INVDIR/no_file_set   # 
+   endif
+   if ( $RUN_SMK2EMIS == Y ) then
+      setenv VNAMMAP  $GE_DAT/VNAMMAP.dat
+      setenv UAM_AGTS $OUTPUT/uam_agts_l.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
+      setenv UAM_BGTS $OUTPUT/uam_bgts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
+      setenv UAM_MGTS $OUTPUT/uam_mgts_l.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+      setenv UAM_PGTS $OUTPUT/uam_pgts_l.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
+      setenv UAM_EGTS $OUTPUT/uam_egts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+   endif
+   if( $RUN_UAMEMIS == Y ) then
+      setenv UAMEMIS $OUTPUT/no_file_set
+      setenv E2DNCF  $OUTPUT/e2dncf.ncf
+   endif
+
+## Meteorology IO/API input files (MCIP output files)
+#
+   setenv METDAT $SMKDAT/met/run_$METSCEN
+      setenv GRID_CRO_2D $METDAT/GRIDCRO2D
+      setenv MET_CRO_2D  $METDAT/METCRO2D_$G_STDATE
+      setenv MET_DOT_3D  $METDAT/METDOT3D_$G_STDATE
+      setenv MET_FILE1   $MET_CRO_2D
+      setenv MET_FILE2   $MET_CRO_2D
+#     setenv GRID_CRO_3D # no longer needed due to inline option in CMAQ 
+#     setenv MET_CRO_3D  # no longer needed due to inline option in CMAQ 
+
+#
+##########################################################################
+#
+## Output and Intermediate files
+#
+## Area source intermediate and output files
+#
+if ( $SMK_SOURCE == 'A' ) then
+   setenv ADAY     $INVOPD/aday.$SRCABBR.$INVOP.ncf       # Area NetCDF day-specific
+   setenv ASCC     $INVOPD/ASCC.$SRCABBR.$FYIOP.txt
+   setenv REPINVEN $REPSTAT/repinven.$SRCABBR.$INVOP.txt
+   setenv ATSUPNAME $SMKDAT/run_${ASCEN}/scenario/atsup.$SRCABBR.$ASCEN.
+   setenv ATSUP    $ATSUPNAME$G_STDATE.txt
+   setenv ASSUP    $SMKDAT/run_$ABASE/static/assup.$SRCABBR.$SPC.$ABASE.txt
+   setenv AGSUP    $SMKDAT/run_$ABASE/static/agsup.$SRCABBR.$GRID.$ABASE.txt
+   setenv ACREP    $REPSTAT/acrep.$SRCABBR.$ASCEN.rpt           
+   setenv APROJREP $REPSTAT/aprojrep.$SRCABBR.$ASCEN.rpt
+   setenv AREACREP $REPSTAT/areacrep.$SRCABBR.$ASCEN.rpt
+   setenv ACSUMREP $REPSTAT/acsumrep.$SRCABBR.$ASCEN.rpt
+   setenv ACTLWARN $REPSTAT/actlwarn.$SRCABBR.$ASCEN.txt
+   setenv AREA_O   $INVOPD/area.$SRCABBR.map.$FYINV.txt
+   setenv ARINV_O  $ARDAT/arinv_o.$SRCABBR.$FYINV.orl.txt
+endif
+
+if ( $SMK_SOURCE == A || $RUN_SMKMERGE == Y && $MRG_AREA == Y ) then
+   setenv AREA     $INVOPD/area.map.$SRCABBR.$FYIOP.txt   # Area inventory map
+   setenv ATMPNAME $SMKDAT/run_$ASCEN/scenario/atmp.$SRCABBR.$ASCEN.
+   setenv ATMP     $ATMPNAME$G_STDATE.ncf
+   setenv ASMAT_S  $SMKDAT/run_$ABASE/static/asmat_s.$SRCABBR.$SPC.$ABASE.ncf
+   setenv ASMAT_L  $SMKDAT/run_$ABASE/static/asmat_l.$SRCABBR.$SPC.$ABASE.ncf
+   setenv ARMAT_L  $SMKDAT/run_$ASCEN/static/armat_l.$SRCABBR.$SPC.$ASCEN.ncf
+   setenv ARMAT_S  $SMKDAT/run_$ASCEN/static/armat_s.$SRCABBR.$SPC.$ASCEN.ncf
+   setenv ARSUP    $SMKDAT/run_$ASCEN/static/arsup.$SRCABBR.$ASCEN.txt
+   setenv ACMAT    $SMKDAT/run_$ASCEN/static/acmat.$SRCABBR.$ASCEN.ncf          
+   setenv AGMAT    $SMKDAT/run_$ABASE/static/agmat.$SRCABBR.$GRID.$ABASE.ncf
+   setenv APMAT    $SMKDAT/run_$ASCEN/static/apmat.$SRCABBR.$ASCEN.ncf
+   setenv SRCGROUPS_OUT $OUTPUT/source_groups_out.$SRCABBR.$GRID.$ASCEN.ncf
+   setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$ASCEN.txt
+endif
+
+## Biogenic source intermediate and output files
+#
+if ( $SMK_SOURCE == 'B' ) then
+   setenv BGRD      $INVOPD/bgrd.summer.$GRID.$BSCEN.ncf  # Summer/default normalized bio emis
+   setenv BGRDW     $INVOPD/bgrd.winter.$GRID.$BSCEN.ncf  # Winter grd normalized bio emis
+   setenv BIOSEASON $GE_DAT/bioseason.$YEAR.us36.ncf
+   setenv B3GRD     $INVOPD/b3grd.$GRID.$BSCEN.ncf
+   setenv SOILOUT   $STATIC/soil.beis312.$GRID.$SPC.ncf  # NO soil output file
+endif
+
+if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
+   setenv BGTS_L    $B_OUT/b3gts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
+   setenv BGTS_S    $B_OUT/b3gts_s.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
+   setenv B3GTS_L   $B_OUT/b3gts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
+   setenv B3GTS_S   $B_OUT/b3gts_s.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
+   setenv BGTS_L_O  $B_OUT/bgts_l_o.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
+   setenv BGTS_S_O  $B_OUT/bgts_s_o.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
+   setenv B3GTS_L_O $B_OUT/b3gts_l_o.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
+   setenv B3GTS_S_O $B_OUT/b3gts_s_o.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
+   setenv SRCGROUPS_OUT $OUTPUT/source_groups_out.$SRCABBR.$GRID.$BSCEN.ncf
+   setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$BSCEN.txt
+endif
+
+# Mobile source intermediate and output files 
+#
+if ( $SMK_SOURCE == 'M' ) then
+   setenv MSCC      $INVOPD/MSCC.$SRCABBR.$FYIOP.txt
+   setenv REPINVEN  $REPSTAT/repinven.$SRCABBR.$INVOP.txt
+   setenv MTSUPNAME $SMKDAT/run_${MSCEN}/scenario/mtsup.$SRCABBR.$MSCEN.
+   setenv MTSUP     $MTSUPNAME$G_STDATE.txt
+   setenv MSSUP     $SMKDAT/run_${MBASE}/static/mssup.$SRCABBR.$SPC.$MBASE.txt
+   setenv MGSUP     $SMKDAT/run_$MBASE/static/mgsup.$SRCABBR.$GRID.$MBASE.txt
+   setenv MCREP     $REPSTAT/mcrep.$SRCABBR.$MSCEN.rpt
+   setenv MPROJREP  $REPSTAT/mprojrep.$SRCABBR.$MSCEN.rpt
+   setenv MREACREP  $REPSTAT/mreacrep.$SRCABBR.$MSCEN.rpt
+   setenv MCSUMREP  $REPSTAT/mcsumrep.$SRCABBR.$MSCEN.rpt
+   setenv MCTLWARN  $REPSTAT/mctlwarn.$SRCABBR.$MSCEN.txt
+   #      HOURLYT      automaticall set and created by emisfac_run.scr script
+   #      MEFLIST      automatically set and created by smk_run.scr script
+   setenv SPDSUM       $STATIC/spdsum.$SRCABBR.$MSCEN.txt # Speed summary file
+   setenv MOBL_O   $INVOPD/mobl.map.$SRCABBR.$FYINV.txt
+   setenv MBINV_O  $MBDAT/mbinv_o.$SRCABBR.$FYINV.emis.txt
+   setenv MBINV_AO $MBDAT/mbinv_o.$SRCABBR.$FYINV.actv.txt
+endif
+
+if ( $SMK_SOURCE == M || $RUN_SMKMERGE == Y && $MRG_MOBILE == Y ) then
+   setenv MOBL     $INVOPD/mobl.map.$SRCABBR.$FYIOP.txt   # Mobile inventory map
+   setenv MTMPNAME $SMKDAT/run_$MSCEN/scenario/mtmp.$SRCABBR.$MSCEN.
+   setenv MTMP     $MTMPNAME$G_STDATE.ncf
+   setenv MSMAT_L  $SMKDAT/run_$MBASE/static/msmat_l.$SRCABBR.$SPC.$MBASE.ncf
+   setenv MSMAT_S  $SMKDAT/run_$MBASE/static/msmat_s.$SRCABBR.$SPC.$MBASE.ncf
+   setenv MRMAT_L  $SMKDAT/run_$MSCEN/static/mrmat_l.$SRCABBR.$SPC.$MSCEN.ncf
+   setenv MRMAT_S  $SMKDAT/run_$MSCEN/static/mrmat_s.$SRCABBR.$SPC.$MSCEN.ncf
+   setenv MRSUP    $SMKDAT/run_$MSCEN/static/mrsup.$SRCABBR.$MSCEN.txt
+   setenv MCMAT    $SMKDAT/run_$MSCEN/static/mcmat.$SRCABBR.$MSCEN.ncf
+   setenv MUMAT    $SMKDAT/run_$MBASE/static/mumat.$SRCABBR.$GRID.$MBASE.ncf
+   setenv MGMAT    $SMKDAT/run_$MBASE/static/mgmat.$SRCABBR.$GRID.$MBASE.ncf
+   setenv MPMAT    $SMKDAT/run_$MSCEN/static/mpmat.$SRCABBR.$MSCEN.ncf
+   setenv SRCGROUPS_OUT $OUTPUT/source_groups_out.$SRCABBR.$GRID.$MSCEN.ncf
+   setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$MSCEN.txt
+endif
+
+## Point source intermediate and output files
+#
+if ( $SMK_SOURCE == 'P' ) then
+   setenv PDAY      $INVOPD/pday.$SRCABBR.$INVOP.ncf       # Point NetCDF day-specific
+   setenv PHOUR     $INVOPD/phour.$SRCABBR.$INVOP.ncf      # Point NetCDF hour-specific
+   setenv PHOURPRO  $INVOPD/phourpro.$SRCABBR.$INVOP.ncf   # Pt NetCDF src-spec dnl profs
+   setenv REPINVEN  $REPSTAT/repinven.$SRCABBR.$INVOP.txt
+   setenv PTREF_ALT $INVOPD/ptref.$SRCABBR.smkout.txt      # Point temporal x-ref
+   setenv PTSUPNAME $SMKDAT/run_${PSCEN}/scenario/ptsup.$SRCABBR.$PSCEN.
+   setenv PTSUP     $PTSUPNAME$G_STDATE.txt
+   setenv PSSUP     $SMKDAT/run_${PBASE}/static/pssup.$SRCABBR.$SPC.$PBASE.txt
+   setenv PCREP     $REPSTAT/pcrep.$SRCABBR.$PSCEN.rpt           
+   setenv PPROJREP  $REPSTAT/pprojrep.$SRCABBR.$PSCEN.rpt
+   setenv PREACREP  $REPSTAT/preacrep.$SRCABBR.$PSCEN.rpt
+   setenv PCSUMREP  $REPSTAT/pcsumrep.$SRCABBR.$PSCEN.rpt
+   setenv PCTLWARN  $REPSTAT/pctlwarn.$SRCABBR.$PSCEN.txt
+   setenv PNTS_O    $INVOPD/pnts.map.$SRCABBR.$FYINV.txt
+   setenv PTINV_O   $PTDAT/ptinv_o.$SRCABBR.$FYINV.orl.txt
+   setenv REPPELV   $REPSTAT/reppelv.$SRCABBR.$PSCEN.rpt
+endif
+
+if ( $SMK_SOURCE == P || $RUN_SMKMERGE == Y && $MRG_POINT == Y ) then
+   setenv PNTS     $INVOPD/pnts.map.$SRCABBR.$FYIOP.txt   # Point inventory map
+   setenv PSCC     $INVOPD/PSCC.$SRCABBR.$FYIOP.txt       # Point unique SCC list
+   setenv PTMPNAME $SMKDAT/run_$PSCEN/scenario/ptmp.$SRCABBR.$PSCEN.
+   setenv PTMP     $PTMPNAME$G_STDATE.ncf
+   setenv PSMAT_L  $SMKDAT/run_$PBASE/static/psmat_l.$SRCABBR.$SPC.$PBASE.ncf
+   setenv PSMAT_S  $SMKDAT/run_$PBASE/static/psmat_s.$SRCABBR.$SPC.$PBASE.ncf
+   setenv PRMAT_L  $SMKDAT/run_$PSCEN/static/prmat_l.$SRCABBR.$SPC.$PSCEN.ncf
+   setenv PRMAT_S  $SMKDAT/run_$PSCEN/static/prmat_s.$SRCABBR.$SPC.$PSCEN.ncf
+   setenv PRSUP    $SMKDAT/run_$PSCEN/static/prsup.$SRCABBR.$PSCEN.txt
+   setenv PCMAT    $SMKDAT/run_$PSCEN/static/pcmat.$SRCABBR.$PSCEN.ncf
+   setenv PGMAT    $SMKDAT/run_$PBASE/static/pgmat.$SRCABBR.$GRID.$PBASE.ncf
+   setenv PPMAT    $SMKDAT/run_$PSCEN/static/ppmat.$SRCABBR.$PSCEN.ncf
+   setenv STACK_GROUPS $OUTPUT/stack_groups.$SRCABBR.$GRID.$PBASE.ncf
+   setenv SRCGROUPS_OUT $OUTPUT/source_groups_out.$SRCABBR.$GRID.$PSCEN.ncf
+   setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$PSCEN.txt
+   setenv INLNTS_L $OUTPUT/inlnts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
+   setenv PLAY     $SMKDAT/run_$PBASE/scenario/play.$SRCABBR.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
+   setenv PLAY_EX  $SMKDAT/run_$PBASE/scenario/play_ex.$SRCABBR.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
+   setenv PELV     $STATIC/PELV.$SRCABBR.$PBASE.txt       # Elev/PinG pt source list
+endif
+
+# Cumstomized Smkmerge output file names when merging all souce sectors
+# If using Smkmerge to merge all sectors
+   
+   if ( $SMKMERGE_CUSTOM_OUTPUT == Y && $RUN_SMKMERGE == Y || $MOVESMRG_CUSTOM_OUTPUT == Y && $RUN_MOVESMRG == Y   ) then
+
+         setenv EOUT  $OUTPUT/egts_l.$SRCABBR.$ESDATE.$NDAYS.$SPC.$GRID.$ESCEN.ncf 
+         setenv AOUT  $A_OUT/agts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf 
+         setenv BOUT  $B_OUT/bgts_l_o.$SRCABBR.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
+         setenv POUT  $P_OUT/pgts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
+         setenv MOUT  $M_OUT/mgts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+         setenv PING  $OUTPUT/pingts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf 
+         setenv ELEV  $OUTPUT/elevts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$PSCEN.txt 
+         setenv REPEG $REPSCEN/rep_${MM}_all_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPAG $REPSCEN/rep_${MM}_${SRCABBR}_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPBG $REPSCEN/rep_${MM}_${SRCABBR}_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPPG $REPSCEN/rep_${MM}_${SRCABBR}_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPMG $REPSCEN/rep_${MM}_${SRCABBR}_${ESDATE}_${GRID}_${SPC}.txt
+         setenv AGTS_L    $AOUT 
+         setenv PGTS_L    $POUT
+         setenv PGTS3D_L  $POUT
+         setenv EGTS_L    $EOUT
+         setenv REPB3GTS_L $REPSCEN/repb3gts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+         setenv REPB3GTS_S $REPSCEN/repb3gts_s.$SRCABBR.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+    else
+
+      source $ASSIGNS/setmerge_files.scr    #  Define merging output file names 
+
+    endif
+
+#  Make directory for executables
+   setenv SMK_BIN "$SMKROOT/$BIN"
+   if( ! -e $SMK_BIN ) mkdir -p $SMK_BIN
+
+#  Create and change permissions for output directories
+   $ASSIGNS/smk_mkdir
+   if ( $status > 0 ) then
+      set outstat = 1   
+   endif
+#
+#  Delete appropriate NetCDF files for the programs that are being run
+   if ( -e $ASSIGNS/smk_rmfiles.scr ) then
+      $ASSIGNS/smk_rmfiles.scr
+   else
+      echo "NOTE: missing smk_rmfiles.scr in ASSIGNS directory for"
+      echo "      automatic removal of SMOKE I/O API intermediate and"
+      echo "      output files"
+   endif
+#
+#  Unset temporary environment variables
+   source $ASSIGNS/unset.scr
+
+if ( $outstat == 1 ) then
+   echo "ERROR: Problem found while setting up SMOKE."
+   echo "       See messages above."
+   exit( 1 )
+endif
+
