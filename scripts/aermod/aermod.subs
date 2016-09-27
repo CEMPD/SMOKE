@@ -31,23 +31,18 @@ sub read_profiles {
 
 sub get_factors {
   my ($headers_ref, $data_ref, $monthly_ref, $weekly_ref, $daily_ref) = @_;
-  my %headers = %{$headers_ref};
-  my @data = @{$data_ref};
-  my %monthly = %{$monthly_ref};
-  my %weekly = %{$weekly_ref};
-  my %daily = %{$daily_ref};
 
   my $qflag = '';
-  my $monthly_prof = $data[$headers{'Monthly Prf'}];
-  my $weekly_prof = $data[$headers{'Weekly Prf'}];
-  my $monday_prof = $data[$headers{'Mon Diu Prf'}];
+  my $monthly_prof = $data_ref->[$headers_ref->{'Monthly Prf'}];
+  my $weekly_prof = $data_ref->[$headers_ref->{'Weekly Prf'}];
+  my $monday_prof = $data_ref->[$headers_ref->{'Mon Diu Prf'}];
   # check if all days use same profile
-  if ($monday_prof eq $data[$headers{'Tue Diu Prf'}] &&
-      $monday_prof eq $data[$headers{'Wed Diu Prf'}] &&
-      $monday_prof eq $data[$headers{'Thu Diu Prf'}] &&
-      $monday_prof eq $data[$headers{'Fri Diu Prf'}] &&
-      $monday_prof eq $data[$headers{'Sat Diu Prf'}] &&
-      $monday_prof eq $data[$headers{'Sun Diu Prf'}]) {
+  if ($monday_prof eq $data_ref->[$headers_ref->{'Tue Diu Prf'}] &&
+      $monday_prof eq $data_ref->[$headers_ref->{'Wed Diu Prf'}] &&
+      $monday_prof eq $data_ref->[$headers_ref->{'Thu Diu Prf'}] &&
+      $monday_prof eq $data_ref->[$headers_ref->{'Fri Diu Prf'}] &&
+      $monday_prof eq $data_ref->[$headers_ref->{'Sat Diu Prf'}] &&
+      $monday_prof eq $data_ref->[$headers_ref->{'Sun Diu Prf'}]) {
     # check if day-of-week is uniform
     if ($weekly_prof eq '7') {
       # check if hour-of-day is uniform
@@ -61,10 +56,10 @@ sub get_factors {
     $qflag = 'MHRDOW' unless $qflag;
   } else {
     # check if all weekdays use same profile
-    if ($monday_prof eq $data[$headers{'Tue Diu Prf'}] &&
-        $monday_prof eq $data[$headers{'Wed Diu Prf'}] &&
-        $monday_prof eq $data[$headers{'Thu Diu Prf'}] &&
-        $monday_prof eq $data[$headers{'Fri Diu Prf'}]) {
+    if ($monday_prof eq $data_ref->[$headers_ref->{'Tue Diu Prf'}] &&
+        $monday_prof eq $data_ref->[$headers_ref->{'Wed Diu Prf'}] &&
+        $monday_prof eq $data_ref->[$headers_ref->{'Thu Diu Prf'}] &&
+        $monday_prof eq $data_ref->[$headers_ref->{'Fri Diu Prf'}]) {
       $qflag = 'MHRDOW';
     } else {
       $qflag = 'MHRDOW7';
@@ -73,16 +68,16 @@ sub get_factors {
   
   my @factors;
   if ($qflag eq 'MONTH') {
-    die "Unknown monthly profile code: $monthly_prof" unless exists $monthly{$monthly_prof};
-    @factors = @{$monthly{$monthly_prof}};
+    die "Unknown monthly profile code: $monthly_prof" unless exists $monthly_ref->{$monthly_prof};
+    @factors = @{$monthly_ref->{$monthly_prof}};
   } elsif ($qflag eq 'HROFDY') {
-    die "Unknown hourly profile code: $monday_prof" unless exists $daily{$monday_prof};
-    @factors = @{$daily{$monday_prof}};
+    die "Unknown hourly profile code: $monday_prof" unless exists $daily_ref->{$monday_prof};
+    @factors = @{$daily_ref->{$monday_prof}};
   } else {
-    die "Unknown monthly profile code: $monthly_prof" unless exists $monthly{$monthly_prof};
-    my @monthly_factors = @{$monthly{$monthly_prof}};
-    die "Unknown weekly profile code: $weekly_prof" unless exists $weekly{$weekly_prof};
-    my @weekly_factors = @{$weekly{$weekly_prof}};
+    die "Unknown monthly profile code: $monthly_prof" unless exists $monthly_ref->{$monthly_prof};
+    my @monthly_factors = @{$monthly_ref->{$monthly_prof}};
+    die "Unknown weekly profile code: $weekly_prof" unless exists $weekly_ref->{$weekly_prof};
+    my @weekly_factors = @{$weekly_ref->{$weekly_prof}};
     
     my @days;
     my $index;
@@ -102,10 +97,10 @@ sub get_factors {
 
     foreach my $day_ref (@days) {
       my ($day, $index) = @$day_ref;
-      my $prof = $data[$headers{"$day Diu Prf"}];
+      my $prof = $data_ref->[$headers_ref->{"$day Diu Prf"}];
 
-      die "Unknown hourly profile code: $prof" unless exists $daily{$prof};
-      my @daily_factors = @{$daily{$prof}};
+      die "Unknown hourly profile code: $prof" unless exists $daily_ref->{$prof};
+      my @daily_factors = @{$daily_ref->{$prof}};
 
       foreach my $month_factor (@monthly_factors) {
         push @factors, map { $_ * $weekly_factors[$index] * $month_factor } @daily_factors;
