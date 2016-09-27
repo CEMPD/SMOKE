@@ -116,4 +116,48 @@ sub get_factors {
   return ($qflag, @factors);
 }
 
+sub skip_line() {
+  my ($line) = @_;
+  
+  return 1 unless $line;
+  return 1 if $line =~ /^# /;
+  
+  return 0;
+}
+
+sub parse_report_line() {
+  my ($line) = @_;
+  
+  # check for header line
+  my $is_header = ($line =~ s/^#//);
+  
+  my @data;
+  foreach my $field (split(/;/, $line)) {
+    # remove leading and trailing spaces
+    $field =~ s/^\s+//;
+    $field =~ s/\s+$//;
+    push @data, $field;
+  }
+  
+  return ($is_header, @data);
+}
+
+sub parse_header() {
+  my ($data_ref, $headers_ref, $pollutants_ref) = @_;
+  
+  my $col_count = 0;
+  my $is_pollutant = 0;
+  foreach my $field (@$data_ref) {
+    $headers_ref->{$field} = $col_count;
+    $col_count++;
+    
+    if ($is_pollutant) {
+      push @$pollutants_ref, $field;
+    }
+    if ($field eq 'Plt Name') {
+      $is_pollutant = 1;
+    }
+  }
+}
+
 1;

@@ -58,34 +58,12 @@ my %facilities;
 print "Processing AERMOD sources...\n";
 while (my $line = <$in_fh>) {
   chomp $line;
-  next unless $line;
-  next if $line =~ /^# /;
-  
-  # check for header line
-  my $is_header = ($line =~ s/^#//);
-  
-  my @data;
-  foreach my $field (split(/;/, $line)) {
-    # remove leading and trailing spaces
-    $field =~ s/^\s+//;
-    $field =~ s/\s+$//;
-    push @data, $field;
-  }
+  next if skip_line($line);
+
+  my ($is_header, @data) = parse_report_line($line);
   
   if ($is_header) {
-    my $col_count = 0;
-    my $is_pollutant = 0;
-    foreach my $field (@data) {
-      $headers{$field} = $col_count;
-      $col_count++;
-      
-      if ($is_pollutant) {
-        push @pollutants, $field;
-      }
-      if ($field eq 'Plt Name') {
-        $is_pollutant = 1;
-      }
-    }
+    parse_header(\@data, \%headers, \@pollutants);
     next;
   }
   
