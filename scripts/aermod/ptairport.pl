@@ -8,6 +8,8 @@ use List::Util qw(sum);
 use Text::CSV;
 use Geo::Coordinates::UTM;
 
+require 'aermod.subs';
+
 # check environment variables
 foreach my $envvar (qw(REPORT RUNWAYS PTPRO_MONTHLY PTPRO_WEEKLY PTPRO_HOURLY OUTPUT_DIR)) {
   die "Environment variable '$envvar' must be set" unless $ENV{$envvar};
@@ -209,73 +211,7 @@ while (my $line = <$in_fh>) {
   }
 
   # prepare temporal profiles output
-  my $qflag = '';
-  my $monthly_prof = $data[$headers{'Monthly Prf'}];
-  my $weekly_prof = $data[$headers{'Weekly Prf'}];
-  my $monday_prof = $data[$headers{'Mon Diu Prf'}];
-  # check if all days use same profile
-  if ($monday_prof eq $data[$headers{'Tue Diu Prf'}] &&
-      $monday_prof eq $data[$headers{'Wed Diu Prf'}] &&
-      $monday_prof eq $data[$headers{'Thu Diu Prf'}] &&
-      $monday_prof eq $data[$headers{'Fri Diu Prf'}] &&
-      $monday_prof eq $data[$headers{'Sat Diu Prf'}] &&
-      $monday_prof eq $data[$headers{'Sun Diu Prf'}]) {
-    # check if day-of-week is uniform
-    if ($weekly_prof eq '7') {
-      # check if hour-of-day is uniform
-      if ($monday_prof eq '24') {
-        $qflag = 'MONTH';
-      # check if month-of-year is uniform
-      } elsif ($monthly_prof eq '262') {
-        $qflag = 'HROFDY';
-      }
-    }
-    $qflag = 'MHRDOW' unless $qflag;
-  } else {
-    # check if all weekdays use same profile
-    if ($monday_prof eq $data[$headers{'Tue Diu Prf'}] &&
-        $monday_prof eq $data[$headers{'Wed Diu Prf'}] &&
-        $monday_prof eq $data[$headers{'Thu Diu Prf'}] &&
-        $monday_prof eq $data[$headers{'Fri Diu Prf'}]) {
-      $qflag = 'MHRDOW';
-    } else {
-      $qflag = 'MHRDOW7';
-    }
-  }
-  
-  my @factors;
-  if ($qflag eq 'MONTH') {
-    @factors = @{$monthly{$monthly_prof}};
-  } elsif ($qflag eq 'HROFDY') {
-    @factors = @{$daily{$monday_prof}};
-  } else {
-    my @monthly_factors = @{$monthly{$monthly_prof}};
-    my @weekly_factors = @{$weekly{$weekly_prof}};
-    
-    my @days;
-    my $index;
-    # for MHRDOW, check that all weekdays use the same factor
-    if ($qflag eq 'MHRDOW' &&
-        $weekly_factors[0] == $weekly_factors[1] &&
-        $weekly_factors[0] == $weekly_factors[2] &&
-        $weekly_factors[0] == $weekly_factors[3] &&
-        $weekly_factors[0] == $weekly_factors[4]) {
-      my $i = 4;
-      @days = map { [$_, $i++] } qw/Fri Sat Sun/;
-    } else {
-      $qflag = 'MHRDOW7';
-      my $i = 0;
-      @days = map { [$_, $i++] } qw/Mon Tue Wed Thu Fri Sat Sun/;
-    }
-
-    foreach my $day_ref (@days) {
-      my ($day, $index) = @$day_ref;
-      my @daily_factors = @{$daily{$data[$headers{"$day Diu Prf"}]}};
-      foreach my $month_factor (@monthly_factors) {
-        push @factors, map { $_ * $weekly_factors[$index] * $month_factor } @daily_factors;
-      }
-    }
-  }
+  my ($qflag, @factors) = get_factors(\%headers, \@data, \%monthly, \%weekly, \%daily);
   
   if ($is_runway) {
     my $runway_ct = 0;
@@ -330,33 +266,3 @@ close $area_tmp_fh;
 close $x_fh;
 
 print "Done.\n";
-
-sub read_profiles {
-  my ($filename, $num_factors) = @_;
-  my %profiles;
-  
-  open (my $fh, '<', $filename) or die "Could not open file '$filename' $!";
-  while (my $line = <$fh>) {
-    chomp $line;
-    next unless $line;
-    next if $line =~ /^#/;
-    
-    my @data = split(/,/, $line);
-    next unless scalar @data >= ($num_factors + 1);
-    next unless looks_like_number($data[1]);
-    
-    my @factors = @data[1..$num_factors];
-    my $average = sum(@factors) / scalar @factors;
-    
-    unless ($average == 0) {
-      @factors = map { $_ / $average } @factors;
-    }
-
-    my $prof_id = $data[0];
-    $prof_id =~ s/"//g;
-    $profiles{$prof_id} = \@factors;
-  }
-  close $fh;
-  
-  return %profiles;
-}
