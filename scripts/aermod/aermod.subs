@@ -73,11 +73,15 @@ sub get_factors {
   
   my @factors;
   if ($qflag eq 'MONTH') {
+    die "Unknown monthly profile code: $monthly_prof" unless exists $monthly{$monthly_prof};
     @factors = @{$monthly{$monthly_prof}};
   } elsif ($qflag eq 'HROFDY') {
+    die "Unknown hourly profile code: $monday_prof" unless exists $daily{$monday_prof};
     @factors = @{$daily{$monday_prof}};
   } else {
+    die "Unknown monthly profile code: $monthly_prof" unless exists $monthly{$monthly_prof};
     my @monthly_factors = @{$monthly{$monthly_prof}};
+    die "Unknown weekly profile code: $weekly_prof" unless exists $weekly{$weekly_prof};
     my @weekly_factors = @{$weekly{$weekly_prof}};
     
     my @days;
@@ -98,7 +102,11 @@ sub get_factors {
 
     foreach my $day_ref (@days) {
       my ($day, $index) = @$day_ref;
-      my @daily_factors = @{$daily{$data[$headers{"$day Diu Prf"}]}};
+      my $prof = $data[$headers{"$day Diu Prf"}];
+
+      die "Unknown hourly profile code: $prof" unless exists $daily{$prof};
+      my @daily_factors = @{$daily{$prof}};
+
       foreach my $month_factor (@monthly_factors) {
         push @factors, map { $_ * $weekly_factors[$index] * $month_factor } @daily_factors;
       }
