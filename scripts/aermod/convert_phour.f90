@@ -53,7 +53,9 @@ program convert_phour
   end do
   
   do srcidx = 1, nrows3d
-    write(phourout, '(I, 8760(",", F))') indxh(srcidx), annfac(srcidx, :)
+    write(phourout, '(I5, ",", I4, 8760(",", F9.6))') indxh(srcidx), year, annfac(srcidx, :)
   end do
+  
+  call m3exit(progname, 0, 0, ' ', 0)
 
 end program convert_phour
