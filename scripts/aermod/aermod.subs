@@ -1,3 +1,5 @@
+use Scalar::Util qw(looks_like_number);
+use List::Util qw(sum);
 
 sub read_profiles {
   my ($filename, $num_factors) = @_;

@@ -3,10 +3,8 @@
 use strict;
 use warnings;
 
-use Scalar::Util qw(looks_like_number);
-use List::Util qw(sum);
-use Text::CSV;
-use Geo::Coordinates::UTM;
+use Text::CSV ();
+use Geo::Coordinates::UTM qw(latlon_to_utm);
 
 require 'aermod.subs';
 

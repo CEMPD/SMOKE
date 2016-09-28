@@ -3,9 +3,6 @@
 use strict;
 use warnings;
 
-use Scalar::Util qw(looks_like_number);
-use List::Util qw(sum);
-
 require 'aermod.subs';
 
 # check environment variables
