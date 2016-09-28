@@ -71,3 +71,36 @@ The Perl script ptairport.pl reads the Smkreport file, temporal profile files, a
     airport_srcid_emis.csv
 
 The shell script run_ptairport.sh sets up the environment variables needed by ptairport.pl ($REPORT, $RUNWAYS, $PTPRO\_MONTHLY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY, and $OUTPUT\_DIR).
+
+## ptegu sector
+
+When running Smkinven, the environment variable FLOW\_RATE\_FACTOR should not be set. The environment variable OUTPUT\_LOCAL\_TIME should be set to Y.
+
+The utility program convert\_phour is used to read the NetCDF PHOUR file created by Smkinven, and output a text file containing the hourly factors for the CEM sources. To compile convert\_phour, run `make`.
+
+The PHOUR file output from Smkinven needs to contain all hours of the year, at least 365*24 timesteps. convert\_phour determines the first time step to read from PHOUR using the YEAR environment variable. The first time step will be January 1st of the specified year, hour 0.
+
+### Smkreport configuration
+
+    SMK_SOURCE P
+
+    /NEWFILE/ REPORT1
+
+    /CREATE REPORT/
+        AERMOD POINT PTEGU
+    /END/
+
+This uses the same grouping as the ptnonipm sector. Sources that use hourly CEM data will have their temporal profile ID reported as 'HR' + source ID.
+
+### Post-processing
+
+The Perl script ptegu.pl reads the Smkreport file, temporal profile files, and text version of the PHOUR file to create the AERMOD helper outputs:
+
+    point_location.csv
+    point_point_srcparam.csv
+    point_fug_srcparam.csv
+    point_temporal.csv
+    <facility_id>_hourly.csv
+    point_srcid_emis.csv
+
+The shell script run_ptegu.sh runs both convert\_phour and ptegu.pl. convert\_phour uses the environment variables $PHOUR, $PHOUR\_OUT, and $YEAR. ptegu.pl uses $REPORT, $PHOUR\_OUT, $PTPRO\_MONTHLY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY, and $OUTPUT\_DIR.
