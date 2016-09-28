@@ -155,4 +155,42 @@ sub parse_header() {
   }
 }
 
+sub open_input() {
+  my ($name) = @_;
+  
+  open (my $fh, '<', $name) or die "Could not open file '$input' $!";
+  return $fh;
+}
+
+sub open_output() {
+  my ($name) = @_;
+  
+  open (my $fh, '>', $name) or die "Could not open file '$name' $!";
+  return $fh;
+}
+
+sub write_point_location_header() {
+  my ($fh) = @_;
+  
+  print $fh "facility_id,facility_name,src_id,grid_x,grid_y,longitude,latitude,utm_x,utm_y,utm_zone,col,row\n";
+}
+
+sub write_line_location_header() {
+  my ($fh) = @_;
+  
+  print $fh "facility_id,facility_name,src_id,xs1,ys1,xs2,ys2,utm_zone,col,row\n";
+}
+
+sub write_temporal_header() {
+  my ($fh) = @_;
+  
+  print $fh "facility_id,facility_name,src_id,qflag,Scalar1,Scalar2,Scalar3,Scalar4,Scalar5,Scalar6,Scalar7,Scalar8,Scalar9,Scalar10,Scalar11,Scalar12\n";
+}
+
+sub write_crosswalk_header() {
+  my ($fh) = @_;
+  
+  print $fh "facility_id,rel_point_id,scc,src_id,poll,ann_value\n";
+}
+
 1;

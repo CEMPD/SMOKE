@@ -16,13 +16,11 @@ foreach my $envvar (qw(REPORT RUNWAYS PTPRO_MONTHLY PTPRO_WEEKLY PTPRO_HOURLY OU
 }
 
 # open report file
-my $input = $ENV{'REPORT'};
-open (my $in_fh, '<', $input) or die "Could not open file '$input' $!";
+my $in_fh = open_input($ENV{'REPORT'});
 
 # load runway data
 print "Reading runway data...\n";
-my $runways_file = $ENV{'RUNWAYS'};
-open (my $runway_fh, '<', $runways_file) or die "Could not open file '$runways_file' $!";
+my $runway_fh = open_input($ENV{'RUNWAYS'});
 
 my $csv_parser = Text::CSV->new();
 my $header = $csv_parser->getline($runway_fh);
@@ -53,37 +51,28 @@ print "Creating output files...\n";
 my $output_dir = $ENV{'OUTPUT_DIR'};
 
 # runway files
-my $line_locations = "$output_dir/airport_line_locations.csv";
-open (my $line_loc_fh, '>', $line_locations) or die "Could not open file '$line_locations' $!";
-print $line_loc_fh "facility_id,facility_name,src_id,xs1,ys1,xs2,ys2,utm_zone,col,row\n";
+my $line_loc_fh = open_output("$output_dir/airport_line_locations.csv");
+write_line_location_header($line_loc_fh);
 
-my $line_params = "$output_dir/airport_line_params.csv";
-open (my $line_param_fh, '>', $line_params) or die "Could not open file '$line_params' $!";
+my $line_param_fh = open_output("$output_dir/airport_line_params.csv");
 print $line_param_fh "facility_id,facility_name,src_id,src_type,area,fract,relhgt,width,szinit\n";
 
-my $line_temporal = "$output_dir/airport_line_temporal.csv";
-open (my $line_tmp_fh, '>', $line_temporal) or die "Could not open file '$line_temporal' $!";
-print $line_tmp_fh "facility_id,facility_name,src_id,qflag,Scalar1,Scalar2,Scalar3,Scalar4,Scalar5,Scalar6,Scalar7,
-Scalar8,Scalar9,Scalar10,Scalar11,Scalar12\n";
+my $line_tmp_fh = open_output("$output_dir/airport_line_temporal.csv");
+write_temporal_header($line_tmp_fh);
 
 # non-runway files
-my $area_locations = "$output_dir/airport_nonrunway_locations.csv";
-open (my $area_loc_fh, '>', $area_locations) or die "Could not open file '$area_locations' $!";
-print $area_loc_fh "facility_id,facility_name,src_id,grid_x,grid_y,longitude,latitude,utm_x,utm_y,utm_zone,col,row\n";
+my $area_loc_fh = open_output("$output_dir/airport_nonrunway_locations.csv");
+write_point_location_header($area_loc_fh);
 
-my $area_params = "$output_dir/airport_nonrunway_params.csv";
-open (my $area_param_fh, '>', $area_params) or die "Could not open file '$area_params' $!";
+my $area_param_fh = open_output("$output_dir/airport_nonrunway_params.csv");
 print $area_param_fh "facility_id,facility_name,src_id,relhgt,lengthx,lengthy,angle,szinit\n";
 
-my $area_temporal = "$output_dir/airport_nonrunway_temporal.csv";
-open (my $area_tmp_fh, '>', $area_temporal) or die "Could not open file '$area_temporal' $!";
-print $area_tmp_fh "facility_id,facility_name,src_id,qflag,Scalar1,Scalar2,Scalar3,Scalar4,Scalar5,Scalar6,Scalar7,
-Scalar8,Scalar9,Scalar10,Scalar11,Scalar12\n";
+my $area_tmp_fh = open_output("$output_dir/airport_nonrunway_temporal.csv");
+write_temporal_header($area_tmp_fh);
 
 # emissions crosswalk file
-my $crosswalk = "$output_dir/airport_srcid_emis.csv";
-open (my $x_fh, '>', $crosswalk) or die "Could not open file '$crosswalk' $!";
-print $x_fh "facility_id,rel_point_id,scc,src_id,poll,ann_value\n";
+my $x_fh = open_output("$output_dir/airport_srcid_emis.csv");
+write_crosswalk_header($x_fh);
 
 my %headers;
 my @pollutants;

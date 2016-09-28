@@ -14,8 +14,7 @@ foreach my $envvar (qw(REPORT PTPRO_MONTHLY PTPRO_WEEKLY PTPRO_HOURLY OUTPUT_DIR
 }
 
 # open report file
-my $input = $ENV{'REPORT'};
-open (my $in_fh, '<', $input) or die "Could not open file '$input' $!";
+my $in_fh = open_input($ENV{'REPORT'});
 
 # load temporal profiles
 print "Reading temporal profiles...\n";
@@ -31,25 +30,21 @@ my %daily = read_profiles($prof_file, 24);
 # open output files
 print "Creating output files...\n";
 my $output_dir = $ENV{'OUTPUT_DIR'};
-my $locations = "$output_dir/point_location.csv";
-open (my $loc_fh, '>', $locations) or die "Could not open file '$locations' $!";
-print $loc_fh "facility_id,facility_name,src_id,grid_x,grid_y,longitude,latitude,utm_x,utm_y,utm_zone,col,row\n";
 
-my $point_params = "$output_dir/point_point_srcparam.csv";
-open (my $pt_fh, '>', $point_params) or die "Could not open file '$point_params' $!";
+my $loc_fh = open_output("$output_dir/point_location.csv");
+write_point_location_header($loc_fh);
+
+my $pt_fh = open_output("$output_dir/point_point_srcparam.csv");
 print $pt_fh "facility_id,facility_name,src_id,aermod_src_type,height,temp,velocity,diameter\n";
 
-my $area_params = "$output_dir/point_fug_srcparam.csv";
-open (my $ar_fh, '>', $area_params) or die "Could not open file '$area_params' $!";
+my $ar_fh = open_output("$output_dir/point_fug_srcparam.csv");
 print $ar_fh "facility_id,facility_name,src_id,aermod_src_type,rel_ht,x_length,y_length,angle,szinit\n";
 
-my $temporal = "$output_dir/point_temporal.csv";
-open (my $tmp_fh, '>', $temporal) or die "Could not open file '$temporal' $!";
-print $tmp_fh "facility_id,facility_name,src_id,qflag,Scalar1,Scalar2,Scalar3,Scalar4,Scalar5,Scalar6,Scalar7,Scalar8,Scalar9,Scalar10,Scalar11,Scalar12\n";
+my $tmp_fh = open_output("$output_dir/point_temporal.csv");
+write_temporal_header($tmp_fh);
 
-my $crosswalk = "$output_dir/point_srcid_emis.csv";
-open (my $x_fh, '>', $crosswalk) or die "Could not open file '$crosswalk' $!";
-print $x_fh "facility_id,rel_point_id,scc,src_id,poll,ann_value\n";
+my $x_fh = open_output("$output_dir/point_srcid_emis.csv");
+write_crosswalk_header($x_fh);
 
 my %headers;
 my @pollutants;
