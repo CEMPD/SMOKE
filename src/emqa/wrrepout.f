@@ -747,6 +747,7 @@ C.............  Include lat/lons for point sources
 C.............  Include grid lambert/utm coordinates for point source
                 IF( RPT_%GRDCOR ) THEN
 
+                    S = BINSMKID( I )
                     LAMBX = 0.0D0
                     LAMBY = 0.0D0
                     UTM_X = 0.0D0
@@ -773,7 +774,6 @@ C.....................  Compute the LL for grid cell center UTM zone
      &                          LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
      &                          DLON, DLAT, UTM_X, UTM_Y )
 
-                    S = BINSMKID( I )
                     BUFFER = ' '
                     WRITE( BUFFER, LAMBFMT ) LAMBX, LAMBY, UTM_X, UTM_Y, UTM_Z 
                     STRING = STRING( 1:LE ) // BUFFER

@@ -497,6 +497,7 @@ C.........................  Reset report settings to defaults
                         RPT_%CHKCNTL   = .FALSE.
                         RPT_%ELVSTKGRP = .FALSE.
                         RPT_%LATLON    = .FALSE.
+                        RPT_%GRDCOR    = .FALSE.
                         RPT_%LAYFRAC   = .FALSE.
                         RPT_%NORMCELL  = .FALSE.
                         RPT_%NORMPOP   = .FALSE.
@@ -836,6 +837,8 @@ C.............  AERMOD support report
                     RPT_%BYSAT     = .TRUE.
                     RPT_%BYSUN     = .TRUE.
 
+                    RPT_%LATLON    = .TRUE.      ! include lat-lon coords in report
+
                     IF( SEGMENT( 3 ) .EQ. 'PTNONIPM' .OR.
      &                  SEGMENT( 3 ) .EQ. 'PTEGU'         ) THEN
 
@@ -844,7 +847,6 @@ C.............  AERMOD support report
                         RPT_%STKPARM   = .TRUE.   ! By fugitive parameters
                         RPT_%FUGPARM   = .TRUE.
                         RPT_%BYLATLON  = .TRUE.   ! By lat and long coordinates
-                        RPT_%LATLON    = .TRUE.
 
                         IF( SEGMENT( 4 ) .EQ. 'EMIS' ) THEN
                             TFLAG          = .TRUE.    ! read PTMP file
