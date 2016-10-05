@@ -39,6 +39,10 @@
 
         INCLUDE 'EMPRVT3.EXT'   !  private emissions string widths parameters
 
+
+!.........  Perform duplicate-checks in XREFTBL() ?  (false for fractional spc xrefs)
+        LOGICAL, SAVE :: XDUPCHK = .TRUE.
+
 !.........  Per-source arrays with temporal profile indices to tables
         INTEGER, ALLOCATABLE :: MDEX ( :,: ) ! monthly       profile subscript
         INTEGER, ALLOCATABLE :: WDEX ( :,: ) ! weeky         profile subscript
@@ -406,3 +410,4 @@
                                           ! source chars // SCC // MACT // SIC // pollutant
 
         END MODULE MODXREF
+

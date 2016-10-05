@@ -211,7 +211,7 @@ C...........   Local parameters
      &                              'Primary Srg      ',
      &                              'Fallbk Srg       ',
      &                              'Monthly Prf      ',
-     &                              'Weekly Prf       ',
+     &                              'Weekly  Prf      ',
      &                              'Day-Month Prf    ',
      &                              'Mon Diu Prf      ',
      &                              'Tue Diu Prf      ',

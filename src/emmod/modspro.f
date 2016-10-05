@@ -123,13 +123,63 @@
 !.........  These arrays work with the INVCFIP array in MODLISTS
         INTEGER, PARAMETER, PUBLIC :: CMBMAX = 10
 
-        INTEGER,            ALLOCATABLE, PUBLIC :: CMBNP( : )
-        REAL,               ALLOCATABLE, PUBLIC :: CMBWGHT( :,: )
-        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: CMBSPCD( :,: )
+        INTEGER,                         PUBLIC :: CMBCNT = 0       !  number of fractional profiles
+        INTEGER,            ALLOCATABLE, PUBLIC :: CMBNP( : )       !  (CMBCNT) or (NINVFIP)
+        REAL,               ALLOCATABLE, PUBLIC :: CMBWGHT( :,: )   !  (CMBCNT,CMBMAX) or (NINVFIP,CMBMAX)
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: CMBSPCD( :,: )   !  (CMBCNT,CMBMAX) or (NINVFIP,CMBMAX)
 
 !.........  Array of 1-d species names, needed for tagging.
-        INTEGER,                         PUBLIC :: NSPCALL      ! length of SPCLIST
-        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: SPCLIST( : ) ! 1-d array of all species
+        INTEGER,                         PUBLIC :: NSPCALL          ! length of SPCLIST
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: SPCLIST( : )     ! 1-d array of all species
+
+        CONTAINS  !!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+!.........  Fractional-profile profile-name::subscript functions
+!.........  CMBPRF() creates a distinct/unused profile-name
+!.........  CMBDEX() converts profile-name to subscript into CMB* arrays:
+!.........      0 -- not an CMB* profile
+!.........      -9999:  out-of-range/invalid CMB* profile
+!.........      1-CMBCNT:  CMB* subscript
+        
+        CHARACTER(SPNLEN3) FUNCTION CMBPRF( M )
+            INTEGER, INTENT( IN ) :: M
+
+            CHARACTER(SPNLEN3) PROFNAME
+
+            WRITE( PROFNAME, '( A, I9.9 )' ) '_', M
+            CMBPRF = PROFNAME
+            RETURN
+        END FUNCTION CMBPRF
+
+        
+        INTEGER FUNCTION CMBDEX( PRF )
+            CHARACTER(SPNLEN3), INTENT( IN ) :: PRF
+
+            INTEGER             IOS, M
+            CHARACTER(SPNLEN3)  PSCR
+            CHARACTER(256)      MESG
+            
+            PSCR = ADJUSTL( PRF )
+            IF ( PSCR(1:1) .NE. '_' ) THEN
+                CMBDEX = 0
+                RETURN      !!  not a CMB=fractional-profile case
+            END IF
+            
+            READ( PSCR(2:SPNLEN3 ), *, IOSTAT=IOS ) M
+            IF ( IOS .NE. 0 ) THEN
+                M    = -9999
+                MESG = 'Invalid XREF=FRAC profile-ID ' // PSCR
+                CALL M3MESG( MESG )
+            ELSE IF ( M .LT. 1 .OR. M .GT. CMBCNT ) THEN
+                M    = -9999
+                MESG = 'Out-of-range XREF=FRAC profile-ID ' // PSCR
+                CALL M3MESG( MESG )
+            END IF
+            
+            CMBDEX = M
+            RETURN
+
+        END FUNCTION CMBDEX
 
 
         END MODULE MODSPRO

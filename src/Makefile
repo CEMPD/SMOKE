@@ -99,7 +99,7 @@ LIBSRC = \
  tagtable.f     ungridbv.f      unitfac.f           \
  unitmatch.f    useexpgeo.f     verchar.f           \
  wrchrscc.f     wrdaymsg.f      wrorlout.f          \
- wrsrcgrps.f    xreftbl.f
+ wrsrcgrps.f    xfractbl.f      xreftbl.f
 
 LIBOBJ = $(LIBSRC:.f=.o)
 
