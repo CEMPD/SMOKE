@@ -122,6 +122,8 @@ FILOBJ = \
  openset.o           promptset.o          \
  readset.o           writeset.o
 
+FIL  = $(FILSRC:.f=.mod)
+
 #  biog:
 
 BIOSRC = \
@@ -211,7 +213,7 @@ PNTOBJ =  $(PNTSRC:.f=.o)
 #  smkinven:
 
 INVSRC = \
- asgnar2pt.f    asgnnhapx.f    chklstfl.f     \
+ adjustinv.f    asgnar2pt.f    asgnnhapx.f    chklstfl.f     \
  fixstk.f       formlist.f     genmedsout.f   \
  genpdout.f     gethdr.f       getpdinfo.f    \
  grwinven.f     initinfo.f     opengrwout.f   \
@@ -266,7 +268,7 @@ TMPSRC = \
 TMPOBJ =  $(TMPSRC:.f=.o)
 
 OBJ  =  $(MODOBJ) $(FILOBJ) $(LIBOBJ) $(BIOOBJ) $(CTLOBJ) $(RPTOBJ) $(UTIOBJ) \
-        $(GRDOBJ) $(MOVOBJ) $(PNTSRC) $(INVOBJ) $(MRGOBJ) $(SPCOBJ) $(TMPOBJ)
+        $(GRDOBJ) $(MOVOBJ) $(PNTOBJ) $(INVOBJ) $(MRGOBJ) $(SPCOBJ) $(TMPOBJ)
 
 MLIB  = libemmod.a
 
@@ -324,7 +326,7 @@ tmprl:  temporal
 util :  ${UTIL}
 
 clean:
-	cd ${OBJDIR}; rm -f ${OBJ} ${EXE} ${MOD} ${MLIB} ${SLIB} ${FLIB}
+	cd ${OBJDIR}; rm -f ${OBJ} ${EXE} ${MOD} ${FIL} ${MLIB} ${SLIB} ${FLIB}
 
 rmexe:
 	cd ${OBJDIR}; rm ${EXE}
