@@ -42,7 +42,7 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CIFIP, NPCNT, IPOSCOD, TPFLAG, INVYR,
      &                      POLVAL, CSOURC, CSCC, CINTGR,
      &                      XLOCA, YLOCA, CELLID, CEXTORL,
-     &                      CISIC, CSRCTYP, CMACT, CNAICS
+     &                      CISIC, CSRCTYP, CMACT, CNAICS, CSHAPE
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: AR2PTIDX, AR2PTTBL, AR2PTCNT
@@ -85,6 +85,7 @@ C...........   Local pointers
         CHARACTER(STPLEN3), POINTER :: OLDCSRCTYP( : )  ! source type code
         CHARACTER(EXTLEN3), POINTER :: OLDCEXTORL( : )  ! extended orl
         CHARACTER(INTLEN3), POINTER :: OLDCINTGR ( : )  ! integrate status 
+        CHARACTER(SHPLEN3), POINTER :: OLDCSHAPE ( : )  ! area-ff10 SHAPE-ID 
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: REPIDX( : )      ! index for sorting
@@ -197,10 +198,14 @@ C.............  Associate temporary pointers with sorted arrays
                 OLDCEXTORL   => CEXTORL
             END IF
 
+            IF( ASSOCIATED( CSHAPE ) ) THEN
+                OLDCSHAPE   => CSHAPE
+            END IF
+
 C.............  Nullify original sorted arrays
             NULLIFY( CIFIP, CISIC, NPCNT, IPOSCOD, TPFLAG, INVYR,
      &               POLVAL, CSOURC, CSCC, CMACT, CSRCTYP, CNAICS,
-     &               CEXTORL, CINTGR )
+     &               CEXTORL, CINTGR, CSHAPE )
 
 C.............  Deallocate original X and Y location arrays
 C               Don't need to store old values since they aren't set
@@ -255,6 +260,13 @@ C.............  Allocate memory for larger sorted arrays
                 CALL CHECKMEM( IOS, 'CEXTORL', PROGNAME )
                 
                 CEXTORL = ' '   ! array
+            END IF
+
+            IF( ASSOCIATED( OLDCSHAPE ) ) THEN
+                ALLOCATE( CSHAPE( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'CSHAPE', PROGNAME )
+
+                CSHAPE = ' '   ! array
             END IF
 
             ALLOCATE( XLOCA( NSRC ), STAT=IOS )
@@ -353,6 +365,10 @@ C.........................  Increment source position and copy source info
                             CEXTORL( NEWSRCPOS ) = OLDCEXTORL( S )
                         END IF
 
+                        IF( ASSOCIATED( OLDCSHAPE ) ) THEN
+                            CSHAPE( NEWSRCPOS ) = OLDCSHAPE( S )
+                        END IF
+
 C.........................  Store X and Y locations
                         XLOCA( NEWSRCPOS ) = AR2PTABL( ROW+J,TBLE )%LON
                         YLOCA( NEWSRCPOS ) = AR2PTABL( ROW+J,TBLE )%LAT
@@ -439,6 +455,10 @@ C                   then need to copy information to new arrays
                         CEXTORL( NEWSRCPOS ) = OLDCEXTORL( S )
                     END IF
 
+                    IF( ASSOCIATED( OLDCSHAPE ) ) THEN
+                        CSHAPE( NEWSRCPOS ) = OLDCSHAPE( S )
+                    END IF
+
                     DO K = OLDRECPOS, OLDRECPOS + OLDNPCNT( S ) - 1
                         
                         NEWRECPOS = NEWRECPOS + 1
@@ -457,20 +477,24 @@ C                   then need to copy information to new arrays
 
 C.........  Deallocate old source and emissions arrays
         IF( NA2PSRCS > 0 ) THEN
-            DEALLOCATE( OLDCIFIP, OLDCISIC, OLDNPCNT, OLDIPOSCOD, 
-     &                  OLDTPFLAG, OLDINVYR, OLDPOLVAL, OLDCSOURC, 
-     &                  OLDCSCC, OLDCSRCTYP )
+            NULLIFY( OLDCIFIP, OLDCISIC, OLDNPCNT, OLDIPOSCOD, 
+     &               OLDTPFLAG, OLDINVYR, OLDPOLVAL, OLDCSOURC, 
+     &               OLDCSCC, OLDCSRCTYP )
      
             IF( ASSOCIATED( OLDCMACT ) ) THEN
-                DEALLOCATE( OLDCMACT, OLDCNAICS )
+                NULLIFY( OLDCMACT, OLDCNAICS )
             END IF
 
             IF( ASSOCIATED( OLDCINTGR ) ) THEN
-                DEALLOCATE( OLDCINTGR )
+                NULLIFY( OLDCINTGR )
             END IF
 
             IF( ASSOCIATED( OLDCEXTORL ) ) THEN
-                DEALLOCATE( OLDCEXTORL )
+                NULLIFY( OLDCEXTORL )
+            END IF
+
+            IF( ASSOCIATED( OLDCSHAPE ) ) THEN
+                NULLIFY( OLDCSHAPE )
             END IF
 
         END IF
