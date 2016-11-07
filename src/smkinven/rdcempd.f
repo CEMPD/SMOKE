@@ -123,7 +123,7 @@ C.........  File names and unit numbers
         CHARACTER(IOVLEN3) :: ANAME  ! emis ASCII inven logical name
 
 C...........   Other local variables
-        INTEGER          I, J, L, N, S, S1, V  ! counters and indices
+        INTEGER          I, J, L, N, S, S1, V, T  ! counters and indices
 
         INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
@@ -764,7 +764,9 @@ C.........  Update output starting date/time and ending date/time
 
         EDATE = RDATE
         ETIME = RTIME
-        DO I = 1, MAXPTR - 1
+        T = 1
+        IF( LFLAG ) T = 0      ! add additional hour when outputing in local time to overwrap next day
+        DO I = 1, MAXPTR - T
             CALL NEXTIME( EDATE, ETIME, TSTEP )
         END DO
 
