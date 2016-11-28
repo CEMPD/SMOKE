@@ -36,7 +36,7 @@ sub get_factors {
 
   my $qflag = '';
   my $monthly_prof = $data_ref->[$headers_ref->{'Monthly Prf'}];
-  my $weekly_prof = $data_ref->[$headers_ref->{'Weekly Prf'}];
+  my $weekly_prof = $data_ref->[$headers_ref->{'Weekly  Prf'}];
   my $monday_prof = $data_ref->[$headers_ref->{'Mon Diu Prf'}];
   # check if all days use same profile
   if ($monday_prof eq $data_ref->[$headers_ref->{'Tue Diu Prf'}] &&
