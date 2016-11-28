@@ -498,6 +498,7 @@ C.........................  Reset report settings to defaults
                         RPT_%ELVSTKGRP = .FALSE.
                         RPT_%LATLON    = .FALSE.
                         RPT_%GRDCOR    = .FALSE.
+                        RPT_%GRDPNT    = .FALSE.
                         RPT_%LAYFRAC   = .FALSE.
                         RPT_%NORMCELL  = .FALSE.
                         RPT_%NORMPOP   = .FALSE.
@@ -815,12 +816,13 @@ C.............  AERMOD support report
                 GFLAG           = .TRUE.
                 RPT_%USEGMAT    = .TRUE.
                 RPT_%BYCELL     = .TRUE.    ! reporty by cell
-                RPT_%GRDCOR     = .TRUE.    ! calculate grid lambert_x-y and utm x_y with zone
                 YFLAG           = .TRUE.    ! read costcy input file
-                RPT_%BYSTAT     = .TRUE.    ! report by state
                 RPT_%USEASCELEV = .FALSE.
 
                 IF( SEGMENT( 2 ) .EQ. 'POINT' ) THEN
+
+                    RPT_%BYSTAT    = .TRUE.      ! report by state
+                    RPT_%GRDCOR    = .TRUE.      ! calculate grid lambert_x-y and utm x_y with zone
 
                     RPT_%BYPLANT   = .TRUE.      ! By Plant ID
                     RPT_%SRCNAM    = .TRUE.      ! By Plant Name
@@ -854,6 +856,24 @@ C.............  AERMOD support report
                         END IF
 
                     END IF
+
+                ELSE IF( SEGMENT( 2 ) .EQ. 'NONPOINT' ) THEN
+
+                    RPT_%BYCNTY = .TRUE.   ! By county
+                    RPT_%BYSCC  = .TRUE.   ! By SCC
+                    RPT_%GRDPNT = .TRUE.   ! report grid corner coordinates
+
+                    TSFLAG      = .TRUE.   ! By TSUP file
+                    RPT_%BYMON  = .TRUE.   ! By monthly profile ID
+                    RPT_%BYDOM  = .TRUE.   ! By day-month profile ID
+                    RPT_%BYWEK  = .TRUE.   ! By weekly profile ID
+                    RPT_%BYMND  = .TRUE.
+                    RPT_%BYTUE  = .TRUE.
+                    RPT_%BYWED  = .TRUE.
+                    RPT_%BYTHU  = .TRUE.
+                    RPT_%BYFRI  = .TRUE.
+                    RPT_%BYSAT  = .TRUE.
+                    RPT_%BYSUN  = .TRUE.
 
                 ELSE
 

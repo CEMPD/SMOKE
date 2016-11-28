@@ -80,7 +80,7 @@ C.........  This module contains Smkreport-specific settings
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
      &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
-     &                      LAMBFMT
+     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -151,6 +151,8 @@ C...........   Other local variables
         REAL*8      LAMBX, LAMBY, UTM_X, UTM_Y, UTM_Z ! grid lambert/utm coord for point sources
         REAL*8      DLAT, DLON, DXORIG, DYORIG    ! grid lambert/utm coord for cell center 
         REAL*8      X0(1,1), Y0(1,1)              ! grid lambert/utm coord for cell center 
+        
+        REAL*8      SWLAT, SWLON, NWLAT, NWLON, NELAT, NELON, SELAT, SELON ! lat-lon coords of grid cell
 
         INTEGER, SAVE :: PRCNT = 0
 
@@ -162,7 +164,7 @@ C...........   Other local variables
         CHARACTER(17)       OUTCARB           !  output date string for CARB QADEF report
         CHARACTER(12)       OUTDATE           !  output date string
         CHARACTER(100)   :: BADRGNM = 'Name unknown'
-        CHARACTER(100)      BUFFER            !  string building buffer
+        CHARACTER(200)      BUFFER            !  string building buffer
         CHARACTER(300)      MESG              !  message buffer
         CHARACTER(STRLEN)   STRING            !  output string
         CHARACTER(SCCLEN3)  TSCC              ! tmp SCC string
@@ -780,6 +782,42 @@ C.....................  Compute the LL for grid cell center UTM zone
                     MXLE = MXLE + LAMBWIDTH
                     LE = MIN( MXLE, STRLEN )
 
+                END IF
+
+C.............  Include grid cell corner coordinates
+                IF( RPT_%GRDPNT ) THEN
+                
+                    DXORIG = XORIG + XCELL * ( BINX( I ) - 1 )  ! SW corner
+                    DYORIG = YORIG + YCELL * ( BINY( I ) - 1 )
+                    
+                    CALL XY2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          GDTYP  , P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                          DXORIG, DYORIG, SWLON, SWLAT )
+                    
+                    DYORIG = DYORIG + YCELL  ! NW corner
+                    
+                    CALL XY2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          GDTYP  , P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                          DXORIG, DYORIG, NWLON, NWLAT )
+                    
+                    DXORIG = DXORIG + XCELL  ! NE corner
+                    
+                    CALL XY2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          GDTYP  , P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                          DXORIG, DYORIG, NELON, NELAT )
+                    
+                    DYORIG = DYORIG - YCELL  ! SE corner
+                    
+                    CALL XY2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          GDTYP  , P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                          DXORIG, DYORIG, SELON, SELAT )
+                    
+                    BUFFER = ' '
+                    WRITE( BUFFER, LLGRDFMT ) SWLAT, SWLON, NWLAT, NWLON, NELAT, NELON, SELAT, SELON
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + LLGRDWIDTH
+                    LE = MIN( MXLE, STRLEN )
+                
                 END IF
 
 C.............  Include elevated sources flag
