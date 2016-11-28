@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Text::CSV ();
+use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 
 require 'aermod.subs';
 require 'aermod_np.subs';
@@ -147,21 +148,50 @@ for my $fh (@in_fh) {
 
       # prepare location output
       my @output = @common;
-      push @output, 'utmx'; # TODO southwest corner of grid cell
-      push @output, 'utmy'; # TODO southwest corner of grid cell
-      push @output, 'utm_zone'; # TODO zone for utmx and utmy
-      push @output, 'lon'; # TODO longitude of southwest corner
-      push @output, 'lat'; # TODO latitude of southwest corner
+      my $sw_lat = $data[$headers{'SW Latitude'}];
+      my $sw_lon = $data[$headers{'SW Longitude'}];
+      my ($zone, $utm_x, $utm_y) = latlon_to_utm(23, $sw_lat, $sw_lon);
+      push @output, $utm_x;
+      push @output, $utm_y;
+      push @output, $zone;
+      push @output, $sw_lon;
+      push @output, $sw_lat;
       print $loc_fh join(',', @output) . "\n";
   
       # prepare parameters output
       @output = @common;
       push @output, $group_params{$run_group}{'release_height'};
       push @output, "4"; # number of vertices
-      push @output, $group_params{$run_group}{'sigma_z'}; # sigma z
-      push @output, 'utmx'; # TODO southwest corner of grid cell
-      push @output, 'utmy'; # TODO southwest corner
-      # TODO remaining corners of grid cell in UTM, then in lat-lon
+      push @output, $group_params{$run_group}{'sigma_z'};
+      push @output, $utm_x;
+      push @output, $utm_y;
+
+      my $nw_lat = $data[$headers{'NW Latitude'}];
+      my $nw_lon = $data[$headers{'NW Longitude'}];
+      ($zone, $utm_x, $utm_y) = latlon_to_utm_force_zone(23, $zone, $nw_lat, $nw_lon);
+      push @output, $utm_x;
+      push @output, $utm_y;
+
+      my $ne_lat = $data[$headers{'NE Latitude'}];
+      my $ne_lon = $data[$headers{'NE Longitude'}];
+      ($zone, $utm_x, $utm_y) = latlon_to_utm_force_zone(23, $zone, $ne_lat, $ne_lon);
+      push @output, $utm_x;
+      push @output, $utm_y;
+
+      my $se_lat = $data[$headers{'SE Latitude'}];
+      my $se_lon = $data[$headers{'SE Longitude'}];
+      ($zone, $utm_x, $utm_y) = latlon_to_utm_force_zone(23, $zone, $se_lat, $se_lon);
+      push @output, $utm_x;
+      push @output, $utm_y;
+
+      push @output, $sw_lon;
+      push @output, $sw_lat;
+      push @output, $nw_lon;
+      push @output, $nw_lat;
+      push @output, $ne_lon;
+      push @output, $ne_lat;
+      push @output, $se_lon;
+      push @output, $se_lat;
       print $param_fh join(',', @output) . "\n";
     
       # prepare temporal profile output
