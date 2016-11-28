@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 require 'aermod.subs';
+require 'aermod_pt.subs';
 
 # check environment variables
 foreach my $envvar (qw(REPORT PTPRO_MONTHLY PTPRO_WEEKLY PTPRO_HOURLY OUTPUT_DIR)) {
@@ -55,7 +56,7 @@ while (my $line = <$in_fh>) {
   my ($is_header, @data) = parse_report_line($line);
   
   if ($is_header) {
-    parse_header(\@data, \%headers, \@pollutants);
+    parse_header(\@data, \%headers, \@pollutants, 'Plt Name');
     next;
   }
   
