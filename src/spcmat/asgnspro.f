@@ -711,8 +711,8 @@ C.............  NOTE:SREFDEX( SPCODE ) =
 C                   0 -- not an SREF* profile
 C                   -9999:  out-of-range/invalid SREF* profile
 C                   1-SREFCNT:  SREF* subscript
-
             F = CMBDEX( SPCODE )
+
             IF ( F .LT. 0 ) THEN
 
                 MESG = 'INTERNAL ERROR:  invalid CMB-fraction profile '
@@ -837,6 +837,8 @@ C                   don't look for the default)
      &                     ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
                         IF( ERRCNT(5) <= MXERR ) CALL M3MESG( MESG )
                         ERRCNT(5) = ERRCNT(5) + 1
+                        EFLAG = .TRUE.
+                        CYCLE
                     
                     ELSE IF ( USEFRACS ) THEN
 
@@ -848,6 +850,8 @@ C                   don't look for the default)
      &                     ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
                         IF( ERRCNT(5) <= MXERR ) CALL M3MESG( MESG )
                         ERRCNT(5) = ERRCNT(5) + 1
+                        EFLAG = .TRUE.
+                        CYCLE
                     
                     ELSE
 
@@ -874,8 +878,6 @@ C                   don't look for the default)
                         END IF
 
                     END IF
-                    EFLAG = .TRUE.
-                    CYCLE
 
                 END IF
 

@@ -39,8 +39,7 @@
 
         INCLUDE 'EMPRVT3.EXT'   !  private emissions string widths parameters
 
-
-!.........  Perform duplicate-checks in XREFTBL() ?  (false for fractional spc xrefs)
+!.........  Turn on/off xref duplicate-checking in "lib/xreftbl.f":
         LOGICAL, SAVE :: XDUPCHK = .TRUE.
 
 !.........  Per-source arrays with temporal profile indices to tables
@@ -410,4 +409,3 @@
                                           ! source chars // SCC // MACT // SIC // pollutant
 
         END MODULE MODXREF
-

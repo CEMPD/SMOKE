@@ -51,6 +51,10 @@ C.........  This module contains the information about the source category
      &                     SCCLEV3, LSCCEND, SC_ENDP, SC_BEGP, 
      &                     JSCC, RSCCBEG, PLTIDX, EANAM, NIACT,
      &                     NCHARS
+
+C.........  This module contains the speciation profiles
+        USE MODSPRO, ONLY: CMBDEX
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -1225,4 +1229,3 @@ C......................................................................
 C----------------------------------------------------------------------
 
         END SUBROUTINE XREFTBL
-

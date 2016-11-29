@@ -31,12 +31,13 @@ C.........  MODULES for public variables
 
         USE MODSPRO, ONLY:
      &        CMBMAX, CMBCNT, CMBNP, CMBWGHT, CMBSPCD, CMBPRF, CMBDEX
+        USE MODXREF, ONLY: CFIPTA, CSCCTA, ISPTA, CMACTA, CISICA, CSPRNA
+        USE MODINFO, ONLY: EINAM, NCHARS
 
         IMPLICIT NONE
 
 C...........   INCLUDES
 
-        INCLUDE 'PARMS3.EXT'   !  emissions constant parameters
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   Local parameters
@@ -59,13 +60,19 @@ C...........   EXTERNAL FUNCTIONS:
 
 C...........   Local variabless
 
-        INTEGER     I, J, JJ, K, KK, L, M, N, IOS
-        INTEGER     NDUP
+        INTEGER     I, J, JJ, K, KK, L, L2, M, N, IOS
+        INTEGER     NFREF
         LOGICAL     AFLAG, EFLAG, SUMCHECK
         REAL        WT, WSUM
 
         CHARACTER(SPNLEN3)  ASPRF
+        CHARACTER(FIPLEN3)  AFIP
+        CHARACTER(SCCLEN3)  ASCC
+        CHARACTER(SICLEN3)  ASIC
+        CHARACTER(MACLEN3)  AMCT
+        CHARACTER(POLLEN3)  APOL
         CHARACTER(256)      MESG
+        CHARACTER(300)      BUFFER
 
         CHARACTER(16), PARAMETER :: PROGNAME = 'XFRACTBL' ! subroutine name
 
@@ -92,56 +99,76 @@ C   Begin body of subroutine COMBOTBL
 C.............  Count this-pollutant fractional (duplicate) references:
 
         EFLAG = .FALSE.
-        NDUP  = 0
+        NFREF = 0
         J     = 1
-        DO N = 1, NXREF
+        DO              !!  looping on J by number L of duplicates...
 
             K = INDX( J )
+            CALL FMTCSRC( CSRC(K), NCHARS, BUFFER, L2 )
 
             IF ( FRAC(K) .GE. 0.0 ) THEN
                 L = 1
-                DO JJ = N+1, NXREF
+                DO JJ = J+1, NXREF
                     KK = INDX( JJ )
                     IF ( CSRC(K) .EQ. CSRC(KK) ) THEN
                         L = L + 1
-                        IF ( FRAC(KK) .LT. 0.0 )  EFLAG = .TRUE.
+                        IF ( FRAC(KK) .LT. 0.0 )  THEN
+                            EFLAG = .TRUE.
+                            MESG  = 'Inconsistent XREFs for '//
+     &                               TRIM( BUFFER ) // BLANK // 
+     &                               EINAM( ISPTA( K ) )
+                            CALL M3MESG( MESG )
+                        END IF
                     ELSE
                         EXIT
                     END IF
                 END DO
-                NDUP = NDUP + 1
+                NFREF = NFREF + 1
 
-                J    = J + L
-
-            ELSE        !!  frac(k) < 0
-                DO JJ = N+1, NXREF
-                J    = J + 1
+            ELSE        !!  frac(k) < 0:  not a fractions xref
+                L = 1
+                DO JJ = J+1, NXREF
                     KK = INDX( JJ )
                     IF ( CSRC(K) .EQ. CSRC(KK) ) THEN
-                        IF ( FRAC(KK) .GE. 0.0 )  EFLAG = .TRUE.
+                        L = L + 1
+                        IF ( FRAC(KK) .GE. 0.0 )  THEN
+                            EFLAG = .TRUE.
+                            MESG  = 'Inconsistent XREFs for '//
+     &                               TRIM( BUFFER ) // BLANK //
+     &                               EINAM( ISPTA( K ) )
+                            CALL M3MESG( MESG )
+                        END IF
                     ELSE
                         EXIT
                     END IF
                 END DO
+                IF ( L .GT. 1 ) THEN
+                    WRITE( MESG, '( A, I3, A  )' )
+     &                   'XREF has', L, ' duplicates for ' //
+     &                   TRIM( BUFFER ) // BLANK // EINAM( ISPTA( K ) )
+                    CALL M3MESG( MESG )
+                END IF
 
             END IF
+
+            J = J + L
             
             IF ( J .GT. NXREF ) EXIT
             
-        END DO
+        END DO      !!  end loop on J
 
         IF ( EFLAG ) THEN
-            MESG = 'ERROR:  mixed XREF profile-fractions/non-fractions for the same source'
+            MESG = 'ERROR:  mixed profile-fractions/non-fractions for the same XREF(s)'
             CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
         END IF
 
-        IF ( NDUP .EQ. 0 )   RETURN
+        IF ( NFREF .EQ. 0 )   RETURN
 
 C.............  Allocate arrays for tables
 
-        ALLOCATE(   CMBNP( NDUP ),
-     &            CMBWGHT( NDUP,CMBMAX ),
-     &            CMBSPCD( NDUP,CMBMAX ), STAT=IOS )
+        ALLOCATE(   CMBNP( NFREF ),
+     &            CMBWGHT( NFREF,CMBMAX ),
+     &            CMBSPCD( NFREF,CMBMAX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CMBNP:CMBSPCD', PROGNAME )
 
         AFLAG = .FALSE.
@@ -184,7 +211,14 @@ C.............  Allocate arrays for tables
                     SPRF( KK )     = ASPRF 
                 END DO
 
-                IF ( NOT_ONE( WSUM ) )  AFLAG = .TRUE.
+                IF ( NOT_ONE( WSUM ) )  THEN
+                    CALL FMTCSRC( CSRC(K), NCHARS, BUFFER, L2 )
+                    APOL  = EINAM( ISPTA( K ) )
+                    MESG = 'WARNING: XREF fracs do not add up to 1 for ' //
+     &                     TRIM( BUFFER ) // BLANK // EINAM( ISPTA( K ) )
+                    CALL M3MESG( MESG )
+                    AFLAG = .TRUE.
+                END IF
 
             END IF
 
@@ -192,13 +226,9 @@ C.............  Allocate arrays for tables
 
         CMBCNT = M
 
-        IF ( AFLAG ) THEN
-            MESG = 'XREF profile-fractions do not add up to 1.0'
-            IF ( SUMCHECK ) THEN
-                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
-            ELSE
-                CALL M3WARN( PROGNAME, 0,0, MESG )
-            END IF
+        IF ( AFLAG .AND. SUMCHECK ) THEN
+            MESG = 'ERROR:  XREF profile-fractions do not add up to 1.0'
+            CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
         END IF
 
         RETURN
