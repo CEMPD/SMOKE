@@ -36,7 +36,7 @@ sub get_factors {
 
   my $qflag = '';
   my $monthly_prof = $data_ref->[$headers_ref->{'Monthly Prf'}];
-  my $weekly_prof = $data_ref->[$headers_ref->{'Weekly Prf'}];
+  my $weekly_prof = $data_ref->[$headers_ref->{'Weekly  Prf'}];
   my $monday_prof = $data_ref->[$headers_ref->{'Mon Diu Prf'}];
   # check if all days use same profile
   if ($monday_prof eq $data_ref->[$headers_ref->{'Tue Diu Prf'}] &&
@@ -140,7 +140,7 @@ sub parse_report_line() {
 }
 
 sub parse_header() {
-  my ($data_ref, $headers_ref, $pollutants_ref) = @_;
+  my ($data_ref, $headers_ref, $pollutants_ref, $last_non_pollutant) = @_;
   
   my $col_count = 0;
   my $is_pollutant = 0;
@@ -151,7 +151,7 @@ sub parse_header() {
     if ($is_pollutant) {
       push @$pollutants_ref, $field;
     }
-    if ($field eq 'Plt Name') {
+    if ($field eq $last_non_pollutant) {
       $is_pollutant = 1;
     }
   }
@@ -169,30 +169,6 @@ sub open_output() {
   
   open (my $fh, '>', $name) or die "Could not open file '$name' $!";
   return $fh;
-}
-
-sub write_point_location_header() {
-  my ($fh) = @_;
-  
-  print $fh "facility_id,facility_name,src_id,grid_x,grid_y,longitude,latitude,utm_x,utm_y,utm_zone,col,row\n";
-}
-
-sub write_line_location_header() {
-  my ($fh) = @_;
-  
-  print $fh "facility_id,facility_name,src_id,xs1,ys1,xs2,ys2,utm_zone,col,row\n";
-}
-
-sub write_temporal_header() {
-  my ($fh) = @_;
-  
-  print $fh "facility_id,facility_name,src_id,qflag,Scalar1,Scalar2,Scalar3,Scalar4,Scalar5,Scalar6,Scalar7,Scalar8,Scalar9,Scalar10,Scalar11,Scalar12\n";
-}
-
-sub write_crosswalk_header() {
-  my ($fh) = @_;
-  
-  print $fh "facility_id,rel_point_id,scc,src_id,poll,ann_value\n";
 }
 
 1;

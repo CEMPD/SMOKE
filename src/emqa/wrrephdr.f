@@ -71,7 +71,7 @@ C.........  This module contains Smkreport-specific settings
      &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
      &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
-     &                      LAMBFMT
+     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -188,7 +188,15 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRUTMX = 65
         INTEGER, PARAMETER :: IHDRUTMY = 66
         INTEGER, PARAMETER :: IHDRUTMZ = 67
-        INTEGER, PARAMETER :: NHEADER  = 67
+        INTEGER, PARAMETER :: IHDRSWLAT= 68
+        INTEGER, PARAMETER :: IHDRSWLON= 69
+        INTEGER, PARAMETER :: IHDRNWLAT= 70
+        INTEGER, PARAMETER :: IHDRNWLON= 71
+        INTEGER, PARAMETER :: IHDRNELAT= 72
+        INTEGER, PARAMETER :: IHDRNELON= 73
+        INTEGER, PARAMETER :: IHDRSELAT= 74
+        INTEGER, PARAMETER :: IHDRSELON= 75
+        INTEGER, PARAMETER :: NHEADER  = 75
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -259,7 +267,15 @@ C...........   Local parameters
      &                              'Lambert-Y        ',
      &                              'UTM_X            ',
      &                              'UTM_Y            ',
-     &                              'UTM Zone         ' / )
+     &                              'UTM Zone         ',
+     &                              'SW Latitude      ',
+     &                              'SW Longitude     ',
+     &                              'NW Latitude      ',
+     &                              'NW Longitude     ',
+     &                              'NE Latitude      ',
+     &                              'NE Longitude     ',
+     &                              'SE Latitude      ',
+     &                              'SE Longitude     ' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LGEO1USE ( NGEOLEV1 )
@@ -1366,6 +1382,70 @@ C.........  Point-source grid lamber-x&y, and grid utm_x,y,zone
 
         END IF
 
+C.........  Grid cell corner coordinates
+        IF( RPT_%GRDPNT ) THEN
+        
+            J = LEN_TRIM( HEADERS( IHDRSWLAT ) )
+            PWIDTH( 1 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 1 ), HEADERS( IHDRSWLAT ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 1 ), '    ', LU, UNTBUF )
+        
+            J = LEN_TRIM( HEADERS( IHDRSWLON ) )
+            PWIDTH( 2 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 2 ), HEADERS( IHDRSWLON ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 2 ), '    ', LU, UNTBUF )
+        
+            J = LEN_TRIM( HEADERS( IHDRNWLAT ) )
+            PWIDTH( 3 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 3 ), HEADERS( IHDRNWLAT ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 3 ), '    ', LU, UNTBUF )
+        
+            J = LEN_TRIM( HEADERS( IHDRNWLON ) )
+            PWIDTH( 4 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 4 ), HEADERS( IHDRNWLON ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 4 ), '    ', LU, UNTBUF )
+        
+            J = LEN_TRIM( HEADERS( IHDRNELAT ) )
+            PWIDTH( 5 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 5 ), HEADERS( IHDRNELAT ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 5 ), '    ', LU, UNTBUF )
+        
+            J = LEN_TRIM( HEADERS( IHDRNELON ) )
+            PWIDTH( 6 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 6 ), HEADERS( IHDRNELON ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 6 ), '    ', LU, UNTBUF )
+        
+            J = LEN_TRIM( HEADERS( IHDRSELAT ) )
+            PWIDTH( 7 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 7 ), HEADERS( IHDRSELAT ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 7 ), '    ', LU, UNTBUF )
+        
+            J = LEN_TRIM( HEADERS( IHDRSELON ) )
+            PWIDTH( 8 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 8 ), HEADERS( IHDRSELON ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 8 ), '    ', LU, UNTBUF )
+            
+            WRITE( LLGRDFMT, 94644 ) PWIDTH( 1 ), RPT_%DELIM,
+     &                               PWIDTH( 2 ), RPT_%DELIM,
+     &                               PWIDTH( 3 ), RPT_%DELIM,
+     &                               PWIDTH( 4 ), RPT_%DELIM,
+     &                               PWIDTH( 5 ), RPT_%DELIM,
+     &                               PWIDTH( 6 ), RPT_%DELIM,
+     &                               PWIDTH( 7 ), RPT_%DELIM,
+     &                               PWIDTH( 8 ), RPT_%DELIM
+        
+            LLGRDWIDTH = SUM( PWIDTH( 1:8 ) ) + 8*LV
+        
+        END IF
+
 C.........  Elevated flag column
         IF( RPT_%BYELEV ) THEN
             J = LEN_TRIM( HEADERS( IHDRELEV ) )
@@ -2015,6 +2095,8 @@ C...........   Internal buffering formats............ 94xxx
 
 94643   FORMAT( '(', 4('1X,F', I2.2, '.2,"', A, '",'), 
      &          '1X,F', I2.2, '.2,"', A, '")' )
+
+94644   FORMAT( '(', 8('1X,F', I2.2, '.8,"', A, '",'), ')' )
 
 94645   FORMAT( '(I', I1, ',"', A, '")' )
 
