@@ -118,7 +118,7 @@ C...........   Other local variables
         INTEGER         SSC              ! surrogates code
         INTEGER      :: NLINES = 0       ! number of lines in input file
 
-        INTEGER, PARAMETER :: MXSEG = 5           ! # of potential line segments
+        INTEGER, PARAMETER :: MXSEG = 10           ! # of potential line segments
 
 C...........   Other arrays
         CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
@@ -134,7 +134,7 @@ C...........   Other arrays
 
         CHARACTER(FIPLEN3)  CFIP             ! country/state/county code
         CHARACTER(FIPLEN3)  LFIP             ! tmp country/state/county code
-        CHARACTER(60)       LINE             ! Read buffer for a line
+        CHARACTER(200)      LINE             ! Read buffer for a line
         CHARACTER(300)      MESG             !  message buffer
         CHARACTER(256)      NAMBUF           !  surrogate file name buffer
         CHARACTER(256)      NAMBUFT          !  tmp surrogate file name buffer

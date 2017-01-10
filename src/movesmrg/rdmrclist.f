@@ -86,7 +86,7 @@ C...........   Other local variables
         INTEGER         PFIP        ! previous ref. county FIP
         INTEGER         PMONTH      ! previous fuel month
         INTEGER         TMONTH      ! tmp. fuel month
-        INTEGER         TDEV        ! tmp. file unit
+        INTEGER      :: TDEV = 0    ! tmp. file unit
         INTEGER         TIDX        ! tmp. index
         
         LOGICAL      :: EFLAG = .FALSE.   ! true: error found

@@ -106,7 +106,10 @@ C...........   Other local variables
 
         INTEGER          C, F, I, J, K, L, L2, N, V  ! counters and indices
         INTEGER          IOS            ! i/o status
-        INTEGER          KA, KB, KM, KP ! tmp search indices
+        INTEGER       :: KA = 0         ! tmp search indices
+        INTEGER       :: KB = 0         ! tmp search indices
+        INTEGER       :: KM = 0         ! tmp search indices
+        INTEGER       :: KP = 0         ! tmp search indices
         INTEGER, SAVE :: MAXCYWID       ! max width of county names
         INTEGER, SAVE :: MAXSTWID       ! max width of state names
         INTEGER, SAVE :: NC             ! tmp no. counties in domain

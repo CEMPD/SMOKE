@@ -76,8 +76,8 @@ C.........  Other local variables
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  record counter
         INTEGER         NLINES  !  number of lines
-        INTEGER         PERIOD  !  period to use to match to GSPRO_COMBO file
         INTEGER         PER     !  tmp period from input file
+        INTEGER       :: PERIOD = 0  !  period to use to match to GSPRO_COMBO file
         INTEGER, SAVE :: MXERR                ! max no. errors
         INTEGER, SAVE :: MXWARN               ! max no. warnings
         INTEGER         NP      !  tmp number of profiles per combo

@@ -85,7 +85,7 @@ C...........   Other local variables
         INTEGER     I, J, L, LJ, L1, N, P, V  ! counters and indexes
         INTEGER     IOS         ! error status
         INTEGER  :: IREC = 0    ! record counter
-        INTEGER     TDEV        ! tmp. file unit
+        INTEGER  :: TDEV = 0    ! tmp. file unit
         INTEGER     SCCIDX
         INTEGER     TMPIDX
         INTEGER     NSCC        ! no of processing SCCs

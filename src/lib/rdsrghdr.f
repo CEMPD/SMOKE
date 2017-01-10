@@ -111,7 +111,7 @@ C...........   Local variables
 
         CHARACTER(7)       PROJUNIT   ! Projection units
         CHARACTER(80)      MSGEND     ! tmp end of message
-        CHARACTER(300)     LINE       ! Read buffer for a line
+        CHARACTER(320)     LINE       ! Read buffer for a line
         CHARACTER(300)     MESG       ! Message buffer
         CHARACTER(IOVLEN3) COORD3D    ! coordinate system name 
         CHARACTER(IOVLEN3) COORUN3D   ! coordinate system projection units

@@ -288,9 +288,9 @@ C...........   Other local variables
         LOGICAL       :: YFLAG = .FALSE.  ! true: use hourly velocities
         LOGICAL       :: ZSTATIC = .TRUE. ! true: Get heights from GRID_CRO file
         LOGICAL          LFG( 9 )         ! true: source characteristic is valid
-        LOGICAL          AIRFLAG          ! true: calculate plumes for aircraft/EDMS data
-        LOGICAL          FIREFLAG         ! true: calculate plumes for fire data
-        LOGICAL          HOURFIRE         ! true: use hourly fire data
+        LOGICAL       :: AIRFLAG = .FALSE.! true: calculate plumes for aircraft/EDMS data
+        LOGICAL       :: FIREFLAG =.FALSE.! true: calculate plumes for fire data
+        LOGICAL       :: HOURFIRE =.FALSE.! true: use hourly fire data
         LOGICAL, SAVE :: WILDFLAG =.TRUE. ! true: calculate plumes for fire data (NO BLUESKY USE)
 
         CHARACTER(50)    CHARS( 9 )!  tmp source characeristics 

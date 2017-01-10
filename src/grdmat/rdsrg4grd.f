@@ -69,7 +69,7 @@ C...........   Subroutine arguments
 
 C...........   Local parameters
 
-        INTEGER, PARAMETER :: MXSEG = 5           ! # of potential line segments
+        INTEGER, PARAMETER :: MXSEG = 10          ! # of potential line segments
         
         CHARACTER(200), ALLOCATABLE :: SORTBUF( : ) ! concatenated info for sorting
 
@@ -102,7 +102,7 @@ C...........   Local variables
 
         CHARACTER(FIPLEN3) CFIP               ! tmp country/state/county code
         CHARACTER(FIPLEN3) LFIP               ! county code from prev iteration
-        CHARACTER(80)   LINE                  ! Read buffer for a line
+        CHARACTER(200)  LINE                  ! Read buffer for a line
         CHARACTER(300)  MESG                  ! Message buffer
 
         CHARACTER(16) :: PROGNAME = 'RDSRG4GRD'    !  program name

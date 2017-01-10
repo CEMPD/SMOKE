@@ -73,7 +73,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.
 
 C...........   Local parameters
-        INTEGER,            PARAMETER :: MXCOL   = 13     !!  add col "M" for pt-src sref-fracs
+        INTEGER,            PARAMETER :: MXCOL   = 15     !!  add col "M" for pt-src sref-fracs
         CHARACTER(FIPLEN3), PARAMETER :: FIPZERO = REPEAT('0', FIPLEN3 ) !  buffer for zero Cy/St/Co code
         CHARACTER(SCCLEN3), PARAMETER :: SCCZERO = REPEAT('0', SCCLEN3 ) !  buffer for zero SCC
         CHARACTER(SICLEN3), PARAMETER :: SICZERO = REPEAT('0', SICLEN3 ) !  buffer for zero SIC

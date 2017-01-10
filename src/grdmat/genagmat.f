@@ -100,7 +100,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local allocatable arrays...
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Local parameters
-        INTEGER, PARAMETER :: MXSEG = 5           ! # of potential line segments
+        INTEGER, PARAMETER :: MXSEG = 10           ! # of potential line segments
 
 C...........   Other arrays
         CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
@@ -151,7 +151,7 @@ C...........   Other local variables
 
         CHARACTER(FIPLEN3) CFIP   ! tmp country/state/county code
         CHARACTER(FIPLEN3) LFIP   ! cy/st/co code from previous iteration
-        CHARACTER(60)   LINE      ! Read buffer for a line
+        CHARACTER(200)  LINE      ! Read buffer for a line
         CHARACTER(16)   COORUNIT  !  coordinate system projection units
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  MESG      !  message buffer 

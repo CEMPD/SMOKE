@@ -1366,7 +1366,7 @@ C.............  Local subprogram variables
             INTEGER      K, L, L1, L2, M, N  ! indices and counters
             INTEGER      MX                 ! max of MXPNGCHK and MXELVCHK
             INTEGER      NC                 ! local no. of src chars to output
-            INTEGER      NM                 ! local no. of max vals before emis
+            INTEGER   :: NM = 0             ! local no. of max vals before emis
 
             LOGICAL      DFLAG              ! true: OR was true
             LOGICAL   :: FIRSTIME = .TRUE.  ! true: first time subprogram called

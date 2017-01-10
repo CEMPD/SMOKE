@@ -94,12 +94,6 @@ C...........   LOCAL PARAMETERS
      &  CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
-C...........   Local parameters
-        INTEGER, PARAMETER :: MXSEG = 5           ! # of potential line segments
-
-C...........   Other arrays
-        CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
-
 C...........   Gridding Matrix
 
         INTEGER, ALLOCATABLE :: GMAT( : )          ! Contiguous gridding matrix

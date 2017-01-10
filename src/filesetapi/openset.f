@@ -78,7 +78,7 @@
 
        LOGICAL, SAVE :: INITIAL = .TRUE. ! true: first time through function
        LOGICAL            FILEEXIST   ! true: individual file exists on disk
-       LOGICAL            SETEXIST    ! true: file set exists on disk
+       LOGICAL         :: SETEXIST = .FALSE.   ! true: file set exists on disk
        LOGICAL            TEMPEXIST   ! true: temporary file name exists on disk
        LOGICAL            EFLAG       ! true: error occured
 

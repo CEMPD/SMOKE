@@ -93,8 +93,8 @@ C...........   Other local variables
         INTEGER          LS      !  length of speciation name joiner
         INTEGER          LT      !  length of emission type name joiner
         INTEGER          MXDATALL!  maximum input data for memory allocation
-        INTEGER          NDATA   !  tmp number of data variables per report
-        INTEGER          NDATALL !  no. of all input data
+        INTEGER       :: NDATA=0  !  tmp number of data variables per report
+        INTEGER       :: NDATALL=0 !  no. of all input data
         INTEGER          NPOL    !  no. of pollutants
 
         LOGICAL       :: SKIP    = .FALSE. !  true: skipping selecting output species 

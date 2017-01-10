@@ -69,7 +69,7 @@ C...........   Subroutine arguments
 
 C...........   Local parameters
 
-        INTEGER, PARAMETER :: MXSEG = 5           ! # of potential line segments
+        INTEGER, PARAMETER :: MXSEG = 10          ! # of potential line segments
 
 C...........   Other arrays
 
@@ -106,7 +106,7 @@ C...........   Local variables
         CHARACTER(FIPLEN3) LFIP               ! county code from prev iteration
         CHARACTER(20)   COLRANGE              ! buffer w/ column range
         CHARACTER(20)   ROWRANGE              ! buffer w/ row range
-        CHARACTER(80)   LINE                  ! Read buffer for a line
+        CHARACTER(200)  LINE                  ! Read buffer for a line
         CHARACTER(600)  MESG                  ! Message buffer
 
         CHARACTER(16) :: PROGNAME = 'RDSRG'    !  program name

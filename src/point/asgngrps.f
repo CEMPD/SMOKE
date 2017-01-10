@@ -133,7 +133,7 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         CHARACTER(FIPLEN3) CFIP      ! tmp FIPS code
         CHARACTER(FIPLEN3) PFIP      ! previous FIPS code
         CHARACTER(300)  BUFFER       ! src description buffers
-        CHARACTER(300)  MESG         ! msg buffer
+        CHARACTER(400)  MESG         ! msg buffer
 
         CHARACTER(CHRLEN3) PLT   ! tmp facility ID
         CHARACTER(CHRLEN3) PPLT  ! tmp facility ID
@@ -463,7 +463,7 @@ C               the same stack locations.
                     WRITE( MESG,94078 ) 'WARNING: Source latitude',
      &                     YLOCA( I ), 'is inconsistent with group' // 
      &                     CRLF() // BLANK10 // 'latitude', GRPLAT(G),
-     &                     'taken from the first source in the group, '
+     &                     'taken from the first source in the group '
      &                     // 'for source:' // CRLF() // BLANK10 //
      &                     BUFFER( 1:L2 ) 
                     IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
@@ -473,7 +473,7 @@ C               the same stack locations.
                     WRITE( MESG,94078 ) 'WARNING: Source longitude',
      &                     XLOCA( I ), 'is inconsistent with group' // 
      &                     CRLF() // BLANK10 // 'longitude', GRPLON(G),
-     &                     'taken from the first source in the group, '
+     &                     'taken from the first source in the group '
      &                     // 'for source:' // CRLF() // BLANK10 //
      &                     BUFFER( 1:L2 ) 
                     IF( NWARN <= MXWARN )CALL M3MESG( MESG )
@@ -498,7 +498,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10 ( A, :, I8, :, 2X  ) )
 
-94078   FORMAT( A, 1X, F6.2, 1X, A, 1X, F6.2, 1X, A )
+94078   FORMAT( A, 1X, F8.2, 1X, A, 1X, F8.2, 1X, A )
 
         END SUBROUTINE ASGNGRPS
 

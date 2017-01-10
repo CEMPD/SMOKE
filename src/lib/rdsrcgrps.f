@@ -427,6 +427,7 @@ C.........  Output source groups report
 C.........  Assign sources to source groups
         ALLOCATE( ISRCGRP( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ISRCGRP', PROGNAME )
+        ISRCGRP = 0
         
         DO I = 1, NSRC
             

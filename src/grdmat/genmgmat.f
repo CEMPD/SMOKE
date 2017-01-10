@@ -113,7 +113,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local allocatable arrays...
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Local parameters
-        INTEGER, PARAMETER :: MXSEG = 5           ! # of potential line segments
+        INTEGER, PARAMETER :: MXSEG = 10          ! # of potential line segments
 
 C...........   Other arrays
         CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
@@ -197,12 +197,12 @@ C...........   Other local variables
         LOGICAL      :: XYSET = .FALSE.    ! true: X/Y available for src
         LOGICAL      :: LASTIME = .FALSE.  ! true: X/Y available for src
         LOGICAL      :: CFLAG   = .FALSE.  ! true: called by sizgmat, false: called by gen[a|m]gmat
-        LOGICAL         WFLAG              ! true: per iteration warning flag
+        LOGICAL      :: WFLAG = .FALSE.    ! true: per iteration warning flag
 
         CHARACTER(FIPLEN3) CFIP   !  tmp country/state/county code
         CHARACTER(FIPLEN3) LFIP   !  cy/st/co code from previous iteration
         CHARACTER(FIPLEN3) LLFIP  !  cy/st/co code from previous iteration
-        CHARACTER(100)  LINE      !  Read buffer for a line
+        CHARACTER(200)  LINE      !  Read buffer for a line
         CHARACTER(16)   COORUNIT  !  coordinate system projection units
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  BUFFER    !  source fields buffer
