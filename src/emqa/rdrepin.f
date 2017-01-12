@@ -208,7 +208,7 @@ C.........  Set local variables for determining input inventory variables
      &                  ANY_TRUE( NREPORT, ALLRPT%BYPLANT ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYORIS ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYSPC ) .OR.
-     &                  ANY_CVAL( NREPORT, ALLRPT%REGNNAM )     )
+     &                  ANY_CVAL( NREPORT, ALLRPT%REGNNAM ) .OR. YFLAG )
 
 C.........  Build array of inventory variable names based on report settings
 C.........  Region code
