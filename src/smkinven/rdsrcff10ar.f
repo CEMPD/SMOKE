@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDSRCFF10AR( LINE, CFIP, TSCC, NPOLPERLN, 
+        SUBROUTINE RDSRCFF10AR( LINE, CFIP, TSCC, NPOLPERLN,
      &                         HDRFLAG, EFLAG )
 
 C***********************************************************************
@@ -15,6 +15,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C      Created by B.H. Baek   Aug 2011
+C       Version 10/2016 by C. Coats:  USE M3UTILIO
 C
 C**************************************************************************
 C
@@ -24,18 +25,19 @@ C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C.........  This module contains the lists of unique inventory information
@@ -43,19 +45,14 @@ C.........  This module contains the lists of unique inventory information
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG, FF10INVFLAG
-        
+
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        INTEGER         FINDC
-        LOGICAL         CHKINT
-        LOGICAL         USEEXPGEO
-
-        EXTERNAL    CRLF, FINDC, CHKINT, USEEXPGEO
+        LOGICAL, EXTERNAL :: CHKINT, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT (IN) :: LINE      ! input line
@@ -64,7 +61,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,            INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
         LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
         LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
-       
+
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
         INTEGER, PARAMETER :: NSEG = 60      ! number of segments in line
@@ -77,25 +74,24 @@ C...........   Other local variables
         INTEGER         IOS      !  i/o status
         INTEGER, SAVE:: NPOA     !  number of pollutants in file
 
-        LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
- 
         CHARACTER(50)      SEGMENT( NSEG ) ! segments of line
         CHARACTER(CASLEN3) TCAS            ! tmp cas number
-        CHARACTER(300)     MESG            !  message buffer
+        CHARACTER(300)     MESG            ! message buffer
+        CHARACTER(500)     LBUF            ! line  buffer
 
         CHARACTER(16) :: PROGNAME = 'RDSRCFF10AR' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDSRCFF10AR
 
-C.........  Scan for header lines and check to ensure all are set 
+C.........  Scan for header lines and check to ensure all are set
 C           properly (country and year required)
-        CALL GETHDR( MXDATFIL, .NOT. USEEXPGEO(), .TRUE., .FALSE., 
+        CALL GETHDR( MXDATFIL, .NOT. USEEXPGEO(), .TRUE., .FALSE.,
      &               LINE, ICC, INY, NPOA, IOS )
 
 C.........  Interpret error status
         IF( IOS == 4 ) THEN
-            WRITE( MESG,94010 ) 
+            WRITE( MESG,94010 )
      &             'Maximum allowed data variables ' //
      &             '(MXDATFIL=', MXDATFIL, CRLF() // BLANK10 //
      &             ') exceeded in input file'
@@ -109,20 +105,21 @@ C.........  Interpret error status
 C.........  If a header line was encountered, set flag and return
         IF( IOS >= 0 ) THEN
 
-C.............  Determine whether processing daily/hourly inventories or not 
-            CALL UPCASE( LINE )
+C.............  Determine whether processing daily/hourly inventories or not
+            LBUF = LINE
+            CALL UPCASE( LBUF )
 
-            L1 = INDEX( LINE, 'FF10_DAILY_' )
-            L2 = INDEX( LINE, 'FF10_HOURLY_' )
+            L1 = INDEX( LBUF, 'FF10_DAILY_' )
+            L2 = INDEX( LBUF, 'FF10_HOURLY_' )
 
-            IF( INDEX( LINE, '_POINT'  ) > 0 ) THEN 
+            IF( INDEX( LBUF, '_POINT'  ) > 0 ) THEN
                 MESG = 'ERROR: Can not process POINT inventory '//
      &                 'as AREA inventory'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
             IF( FF10INVFLAG ) THEN
-              IF( .NOT. DAYINVFLAG .AND. L1  > 0 ) THEN 
+              IF( .NOT. DAYINVFLAG .AND. L1  > 0 ) THEN
                 MESG = 'ERROR: MUST set DAY_SPECIFIC_YN to Y '//
      &               'to process daily FF10_DAILY inventory'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -159,7 +156,7 @@ C           the various data fields
             CFIP(  4: 9 ) = ADJUSTR( SEGMENT( 2 )( 1:6 ) )
             CFIP( 10:12 ) = ADJUSTR( SEGMENT( 3 )( 1:3 ) )
         ELSE
-            WRITE( CFIP( FIPEXPLEN3+1:FIPEXPLEN3+1 ), '(I1)' ) ICC  ! country code of FIPS        
+            WRITE( CFIP( FIPEXPLEN3+1:FIPEXPLEN3+1 ), '(I1)' ) ICC  ! country code of FIPS
             CFIP( FIPEXPLEN3+2:FIPEXPLEN3+6 ) = ADJUSTR( SEGMENT( 2 )( 1:5 ) )  ! state/county code
         END IF
 
@@ -172,7 +169,7 @@ C.........  Determine number of pollutants for this line based on CAS number
         IF( FF10INVFLAG ) THEN
             TSCC = SEGMENT( 8 )                           ! SCC code
             TCAS = ADJUSTL( SEGMENT( 9 ) )
-        ELSE 
+        ELSE
             TSCC = SEGMENT( 6 )                           ! SCC code
             TCAS = ADJUSTL( SEGMENT( 8 ) )
         END IF
@@ -184,10 +181,7 @@ C.........  Determine number of pollutants for this line based on CAS number
             NPOLPERLN = UCASNKEP( I )
         END IF
 
-C.........  Make sure routine knows it's been called already
-        FIRSTIME = .FALSE.
-
-C.........  Return from subroutine 
+C.........  Return from subroutine
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************

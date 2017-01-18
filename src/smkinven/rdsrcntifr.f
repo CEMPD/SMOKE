@@ -77,7 +77,7 @@ C...........   Other local variables
         INTEGER         I, J       ! counters and indices
 
         INTEGER, SAVE:: ICC     !  position of CNTRY in CTRYNAM
-        INTEGER         INY     !  inventory year
+        INTEGER, SAVE:: INY     !  inventory year
         INTEGER         IOS     !  i/o status
         INTEGER, SAVE:: NDAT = -1 !  number of pollutants in file
  

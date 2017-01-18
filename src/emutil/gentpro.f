@@ -1456,8 +1456,8 @@ C.................  Skip if begining/ending hours are out of range
 
 C.................  Skip if data is missing
                 IF( TASRC( S ) == 0.0 ) THEN  ! temp in Kevin 
-                    WRITE( MESG,94010 )'ERROR: Incorrect temperature '//
-     &                  'value on'//MMDDYY( JDATE )//' of county ',
+                     MESG = 'ERROR: Incorrect temperature '//
+     &                  'value on'//MMDDYY( JDATE )//' of county '//
      &                  SRGFIPS( S )
                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                 END IF
@@ -1624,8 +1624,8 @@ C.........  Reset annual total to 1.0 if it is zero
             IF( ANNSRC( S ) == 0.0 ) THEN
                 ANNSRC( S ) = 1.0
                 DO I = 1, NSCC
-                    WRITE( MESG,94010 ) 'CRITICAL WARNING: All temporal'//
-     &               ' profiles are ZERO for county: ', SRGFIPS( S ), 
+		     MESG = 'CRITICAL WARNING: All temporal'//
+     &               ' profiles are ZERO for county: '//SRGFIPS( S )// 
      &               ' and SCC: ' // SCCLIST( I )
                     CALL M3MSG2( MESG ) 
                 END DO
@@ -1659,7 +1659,7 @@ C.........  Compute month of year temporal profiles
 
 C.............  Output monthly profiles by county
             DO S = 1, NSRGFIPS
-                WRITE( MODEV, "(I5.5, 12(A,E10.3))" ) SRGFIPS( S ),
+                WRITE( MODEV, "(A,12(A,E10.3))" ) SRGFIPS( S ),
      &              ((',', PROF_MON( S,NP )), NP = 1,12 )
             END DO
 
@@ -1690,7 +1690,7 @@ C.................  Output daily profiles by county
                 IF( MONTH /= TMPMNTH ) THEN
 
                     DO S = 1, NSRGFIPS
-                        WRITE( DODEV, "(I5.5,A,I2.2,31(A,E10.3))" )
+                        WRITE( DODEV, "(A,A,I2.2,31(A,E10.3))" )
      &                      SRGFIPS( S ), ',', MONTH,
      &                      ( (',', PROF_DAY( S,NP ) ), NP = 1,31 )
                     END DO

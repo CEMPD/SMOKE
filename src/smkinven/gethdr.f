@@ -323,23 +323,21 @@ C........................  Look for variable in Inventory Pollutant codes
 
 C.......................   If pollutant is not "kept", then take it
 C                          out of the count and the list
-                        IF ( ITKEEPA( COD ) ) THEN
+                        IF( COD .GT. 0 ) THEN
+                            IF( .NOT. ITKEEPA( COD ) ) CYCLE
+                            COD = INDEX1( ITNAMA(COD), MXIDAT, INVDNAM )
+                            DATPOS( V ) = COD
 
-                            IF( COD .GT. 0 ) THEN
-                                COD = INDEX1( ITNAMA(COD), MXIDAT, INVDNAM )
-                                DATPOS( V ) = COD
+                            NFINAL = NFINAL + 1
+                            TMPNAM( NFINAL ) = CVAR
 
-                                NFINAL = NFINAL + 1
-                                TMPNAM( NFINAL ) = CVAR
-
-C.............................  If not found in list of names or codes, then error
-                            ELSE
-                                EOS = 1
-                                MESG = 'ERROR: Data variable "' // 
-     &                               CVAR( 1:L )// '" not in master '//
-     &                               'data variable list!'
-                                CALL M3MSG2( MESG )
-                            END IF
+C.........................  If not found in list of names or codes, then error
+                        ELSE
+                            EOS = 1
+                            MESG = 'ERROR: Data variable "' // 
+     &                           CVAR( 1:L )// '" not in master '//
+     &                           'data variable list!'
+                            CALL M3MSG2( MESG )
                         END IF
 
 C.....................  Variable found in SMOKE names

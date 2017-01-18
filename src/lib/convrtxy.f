@@ -15,7 +15,9 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C     Added POLGRD3 as a supported coord sys type - E. Giroux CNRC 03/2004
+C       Added POLGRD3 as a supported coord sys type - E. Giroux CNRC 03/2004
+!
+!       Version 10/2016 by C. Coats:  USE M3UTILIO
 C
 C****************************************************************************/
 C
@@ -37,12 +39,9 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
         IMPLICIT NONE
-
-C...........   INCLUDES
-
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER,      INTENT    (IN) :: NSRC          !  actual source count
@@ -56,28 +55,28 @@ C.........  SUBROUTINE ARGUMENTS
         REAL,         INTENT(IN OUT) :: XVALS( NSRC ) !  x location (input lon)
         REAL,         INTENT(IN OUT) :: YVALS( NSRC ) !  y location (input lat)
 
-C...........   EXTERNAL FUNCTIONS
-        LOGICAL       LAMBERT
-        LOGICAL       LL2LAM
-        LOGICAL       LL2POL
-        LOGICAL       POLSTE
-
-        EXTERNAL      LAMBERT, LL2LAM, LL2POL, POLSTE
-
 C...........   Other local variables
-        INTEGER       UZONE               ! UTM zone
-        INTEGER       S
+        INTEGER     UZONE               ! UTM zone
+        INTEGER     S
 
-        REAL          XLOC, XX, YLOC, YY  ! tmp x and y coordinates
+        REAL        ALP, BET, GAM, XC, YC
+        REAL        XLOC, XX, YLOC, YY  ! tmp x and y coordinates
 
-        LOGICAL    :: EFLAG =.FALSE.   ! true: error detected
+        LOGICAL     EFLAG               ! true: error detected
 
-        CHARACTER(256) MESG                !  message buffer
+        CHARACTER(256) MESG             !  message buffer
 
         CHARACTER(16) :: PROGNAME = 'CONVRTXY' ! program name
 
 C***********************************************************************
 C   begin body of subroutine CONVRTXY
+
+        EFLAG    =.FALSE.
+        ALP      = P_ALP
+        BET      = P_BET
+        GAM      = P_GAM
+        XC       = XCENT
+        YC       = YCENT
 
         IF ( CTYPE .EQ. LATGRD3 ) THEN
             RETURN
@@ -101,8 +100,7 @@ C   begin body of subroutine CONVRTXY
 
         ELSE IF ( CTYPE .EQ. LAMGRD3 ) THEN
 
-            IF( .NOT. LAMBERT( GDNAM, P_ALP, P_BET, P_GAM, 
-     &                         XCENT, YCENT )) THEN
+            IF( .NOT. LAMBERT( GDNAM, ALP, BET, GAM, XC, YC ) ) THEN
                 MESG = 'ERROR: Could not initialize Lambert grid.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
@@ -135,8 +133,7 @@ C   begin body of subroutine CONVRTXY
 
         ELSE IF ( CTYPE .EQ. POLGRD3 ) THEN
 
-            IF( .NOT. POLSTE( GDNAM, P_ALP, P_BET, P_GAM, 
-     &                        XCENT, YCENT ) ) THEN
+            IF( .NOT. POLSTE( GDNAM, ALP, BET, GAM, XC, YC ) ) THEN
                 MESG = 'ERROR: Could not initialize Polar ' //
      &                 'Stereographic grid.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -189,4 +186,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END
+        END SUBROUTINE CONVRTXY

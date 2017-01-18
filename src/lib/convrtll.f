@@ -16,6 +16,8 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created based on CONVRTXY 07/13 by C. Seppanen
+!
+!       Version 10/2016 by C. Coats:  USE M3UTILIO
 C
 C****************************************************************************/
 C
@@ -37,18 +39,18 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER,            INTENT (IN) :: NSRC          !  actual source count
         INTEGER,            INTENT (IN) :: CTYPE         !  coord sys type
-        CHARACTER(IOVLEN3), INTENT (IN) :: GDNAM         !  grid name
+        CHARACTER(NAMLEN3), INTENT (IN) :: GDNAM         !  grid name
         REAL(8),            INTENT (IN) :: P_ALP         !  first, second, third map
         REAL(8),            INTENT (IN) :: P_BET         !  projection descriptive
         REAL(8),            INTENT (IN) :: P_GAM         !  parameters
@@ -57,24 +59,16 @@ C.........  SUBROUTINE ARGUMENTS
         REAL,               INTENT(IN OUT) :: XVALS( NSRC ) !  x location (input grid coord)
         REAL,               INTENT(IN OUT) :: YVALS( NSRC ) !  y location (input grid coord)
 
-C...........   EXTERNAL FUNCTIONS
-        LOGICAL       LAMBERT
-        LOGICAL       LAM2LL
-        LOGICAL       POL2LL
-        LOGICAL       POLSTE
-
-        EXTERNAL      LAMBERT, LAM2LL, POL2LL, POLSTE
-
 C...........   Other local variables
-        INTEGER       UZONE               ! UTM zone
-        INTEGER       S
+        INTEGER     UZONE               ! UTM zone
+        INTEGER     S
+        REAL        ALP, BET, GAM, XC, YC
+        REAL        XLOC, XX, YLOC, YY  ! tmp x and y coordinates
 
-        REAL          XLOC, XX, YLOC, YY  ! tmp x and y coordinates
+        LOGICAL     EFLAG               ! true: error detected
 
-        LOGICAL    :: EFLAG =.FALSE.   ! true: error detected
-
-        CHARACTER(IOVLEN3) TMPGDNAM        ! temporary grid name
-        CHARACTER(256)     MESG            ! message buffer
+        CHARACTER(NAMLEN3) TMPGDNAM     ! temporary grid name
+        CHARACTER(256)     MESG         ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'CONVRTLL' ! program name
 
@@ -83,7 +77,14 @@ C   begin body of subroutine CONVRTLL
 
 C.........  Copy input grid name to temporary variable since I/O API
 C           routines may change it to the coordinate system name
+        
         TMPGDNAM = GDNAM
+        EFLAG    =.FALSE.
+        ALP      = P_ALP
+        BET      = P_BET
+        GAM      = P_GAM
+        XC       = XCENT
+        YC       = YCENT
 
         IF ( CTYPE .EQ. LATGRD3 ) THEN
             RETURN
@@ -107,8 +108,7 @@ C           routines may change it to the coordinate system name
 
         ELSE IF ( CTYPE .EQ. LAMGRD3 ) THEN
 
-            IF( .NOT. LAMBERT( TMPGDNAM, P_ALP, P_BET, P_GAM, 
-     &                         XCENT, YCENT )) THEN
+            IF( .NOT.LAMBERT( TMPGDNAM, ALP, BET, GAM, XC, YC ) ) THEN
                 MESG = 'ERROR: Could not initialize Lambert grid.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
@@ -141,8 +141,7 @@ C           routines may change it to the coordinate system name
 
         ELSE IF ( CTYPE .EQ. POLGRD3 ) THEN
 
-            IF( .NOT. POLSTE( TMPGDNAM, P_ALP, P_BET, P_GAM, 
-     &                        XCENT, YCENT ) ) THEN
+            IF( .NOT. POLSTE( TMPGDNAM, ALP, BET, GAM, XC, YC ) ) THEN
                 MESG = 'ERROR: Could not initialize Polar ' //
      &                 'Stereographic grid.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -195,4 +194,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END
+        END SUBROUTINE CONVRTLL

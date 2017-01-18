@@ -144,7 +144,9 @@ C...........   Other local variables
         INTEGER          L0, L1, L2, L3, L4, L5
         INTEGER          ES, NS, SS       ! end src, tmp no. src, start sourc
 
-        INTEGER          D, SD, N1, N2
+        INTEGER          D, SD
+        INTEGER       :: N1 = 0
+        INTEGER       :: N2 = 0
 
         INTEGER          CIDX             ! CAS data index
         INTEGER          COD              ! data index
@@ -158,7 +160,7 @@ C...........   Other local variables
         INTEGER          JTIME            ! tmp HHMMSS time
         INTEGER          ESTIME           ! tmp HHMMSS episode start time
         INTEGER          EETIME           ! tmp HHMMSS episode end time
-        INTEGER          LFIP             ! previous st/co FIPS code
+        INTEGER       :: LFIP = 0         ! previous st/co FIPS code
         INTEGER, SAVE :: LOOPNO = 0       ! no. of loops
         INTEGER, SAVE :: MAXPTR           ! maximum time step reference pointer
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer

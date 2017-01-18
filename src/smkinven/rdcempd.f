@@ -226,7 +226,7 @@ C.............  Give note if file is being read as a daily file
 C.............  Get environment variable for calculating flow rate
             MESG = 'Heat input factor for calculating flow rate ' //
      &             '(ft^3/MMBTU)'
-            FLOWFAC = ENVREAL( 'FLOW_RATE_FACTOR', MESG, 0, IOS )
+            FLOWFAC = ENVREAL( 'FLOW_RATE_FACTOR', MESG, 0.0, IOS )
             FLOWPOS = MXSPDAT + CODFLAG3
             
             IF( FLOWFAC > 0. ) THEN

@@ -140,7 +140,7 @@ C.........  Write all variables for each pollutant or activity
                 MESG = 'Could not write "'// TRIM( VNAMESET(J+1) )
      &                 // '" to file:'// CRLF()// BLANK10// 
      &                 TRIM( FPHYS )
-                CALL M3EXIT( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
             END IF
 
         END DO

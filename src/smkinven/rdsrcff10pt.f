@@ -1,6 +1,6 @@
 
         SUBROUTINE RDSRCFF10PT( LINE, CFIP, FCID, PTID, SKID, SGID, TSCC,
-     &                         NPOLPERLN, HDRFLAG, EFLAG )
+     &                          NPOLPERLN, HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -14,7 +14,8 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C      Created by Dongmei Yang (Oct, 2011) based on rdsrcntipt.f
+C       Created 10/2011 by Dongmei Yang based on rdsrcntipt.f
+C       Version 10/2016 by C. Coats:  USE M3UTILIO
 C
 C**************************************************************************
 C
@@ -24,18 +25,19 @@ C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C.........  This module contains the lists of unique inventory information
@@ -50,12 +52,8 @@ C...........   INCLUDES
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)           CRLF
-        INTEGER                FINDC
-        LOGICAL         CHKINT
-        LOGICAL         USEEXPGEO
-        
-        EXTERNAL   CRLF, FINDC, CHKINT, USEEXPGEO
+
+        LOGICAL, EXTERNAL :: CHKINT, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT (IN) :: LINE      ! input line
@@ -81,25 +79,24 @@ C...........   Other local variables
         INTEGER         IOS     !  i/o status
         INTEGER, SAVE:: NPOL    !  number of pollutants in file
 
-        LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
- 
         CHARACTER(50)      SEGMENT( NSEG ) ! segments of line
         CHARACTER(CASLEN3) TCAS            ! tmp cas number
         CHARACTER(300)     MESG            ! message buffer
+        CHARACTER(500)     LBUF            ! line buffer
 
         CHARACTER(16) :: PROGNAME = 'RDSRFF10LPT' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDSRCORLPT
 
-C.........  Scan for header lines and check to ensure all are set 
+C.........  Scan for header lines and check to ensure all are set
 C           properly
-        CALL GETHDR( MXPOLFIL, .NOT. USEEXPGEO(), .TRUE., .FALSE., 
+        CALL GETHDR( MXPOLFIL, .NOT. USEEXPGEO(), .TRUE., .FALSE.,
      &               LINE, ICC, INY, NPOL, IOS )
 
 C.........  Interpret error status
         IF( IOS == 4 ) THEN
-            WRITE( MESG,94010 ) 
+            WRITE( MESG,94010 )
      &             'Maximum allowed data variables ' //
      &             '(MXPOLFIL=', MXPOLFIL, CRLF() // BLANK10 //
      &             ') exceeded in input file'
@@ -113,22 +110,23 @@ C.........  Interpret error status
 C.........  If a header line was encountered, set flag and return
         IF( IOS >= 0 ) THEN
 C.............  Determine whether processing daily/hourly inventories or not
-            CALL UPCASE( LINE )
+            LBUF = LINE
+            CALL UPCASE( LBUF )
 
             IF( FF10INVFLAG ) THEN
-              L1 = INDEX( LINE, 'FF10_DAILY_POINT' )
-              L2 = INDEX( LINE, 'FF10_HOURLY_POINT' )
+              L1 = INDEX( LBUF, 'FF10_DAILY_POINT' )
+              L2 = INDEX( LBUF, 'FF10_HOURLY_POINT' )
 
               IF( .NOT. DAYINVFLAG .AND. L1  > 0 ) THEN
-                MESG = 'ERROR: MUST set DAY_SPECIFIC_YN to Y '//
-     &               'to process daily FF10_DAILY_POINT inventory'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                  MESG = 'ERROR: MUST set DAY_SPECIFIC_YN to Y '//
+     &                 'to process daily FF10_DAILY_POINT inventory'
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
               END IF
 
               IF( .NOT. HRLINVFLAG .AND. L2 > 0 ) THEN
-                MESG = 'ERROR: MUST set HOUR_SPECIFIC_YN to Y '//
-     &               'to process hourly FF10_HOURLY_POINT inventory'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                  MESG = 'ERROR: MUST set HOUR_SPECIFIC_YN to Y '//
+     &                 'to process hourly FF10_HOURLY_POINT inventory'
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
               END IF
             END IF
 
@@ -140,7 +138,7 @@ C.............  Determine whether processing daily/hourly inventories or not
 
 C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
-        
+
 C.........  Use the file format definition to parse the line into
 C           the various data fields
         CFIP = REPEAT( '0', FIPLEN3 )
@@ -149,11 +147,11 @@ C           the various data fields
             CFIP(  4: 9 ) = ADJUSTR( SEGMENT( 2 )( 1:6 ) )
             CFIP( 10:12 ) = ADJUSTR( SEGMENT( 3 )( 1:3 ) )
         ELSE
-            WRITE( CFIP( FIPEXPLEN3+1:FIPEXPLEN3+1 ), '(I1)' ) ICC  ! country code of FIPS     
+            WRITE( CFIP( FIPEXPLEN3+1:FIPEXPLEN3+1 ), '(I1)' ) ICC  ! country code of FIPS
             CFIP( FIPEXPLEN3+2:FIPEXPLEN3+6 ) = ADJUSTR( SEGMENT( 2 )( 1:5 ) )  ! state/county code
         END IF
 
-C.........  Replace blanks with zeros        
+C.........  Replace blanks with zeros
         DO I = 1,FIPLEN3
             IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
         END DO
@@ -178,11 +176,8 @@ C.........  Determine number of pollutants for this line based on CAS number
         ELSE
             NPOLPERLN = UCASNKEP( I )
         END IF
-        
-C.........  Make sure routine knows it's been called already
-        FIRSTIME = .FALSE.
 
-C.........  Return from subroutine 
+C.........  Return from subroutine
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************

@@ -508,7 +508,7 @@ C...............  Process line depending on file format and source category
 
                 CASE( ORLFMT )
                     ORLFLG = .TRUE.
-                    
+
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )   ! used for nonroad only
                         CALL RDSRCORLAR( LINE, CFIP, TSCC, NPOLPERLN,

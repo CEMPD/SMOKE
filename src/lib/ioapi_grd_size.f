@@ -15,7 +15,11 @@ C  PRECONDITIONS REQUIRED:
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C     Created by C. Seppanen 3/03
+C       Created by C. Seppanen 3/03
+!
+!       Version 10/2016 by C. Coats:
+C            Update for I/O API 3.1 or later;
+C            USE M3UTILIO
 C
 C**************************************************************************
 C
@@ -36,6 +40,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
        IMPLICIT NONE
        
@@ -51,8 +56,6 @@ C........  Other local variables
        INTEGER              HDRSIZE    ! size of header in bytes
        INTEGER              RECSIZE    ! size of single record in bytes
 
-       CHARACTER(16) :: PROGNAME = 'IOAPI_GRD_SIZE'  ! program name
-
 C***********************************************************************
 C   begin body of function IOAPI_GRD_SIZE
 
@@ -60,13 +63,13 @@ C........  Calculate number of grid cells
        NCELLS = NCOLS * NROWS
        
 C........  Calculate size of header
-       HDRSIZE = ( 9860 + 116 * NVARS + 4 * NLAYS ) / 1000000
+       HDRSIZE = 9860 + 4 * MXLAYS3 + 116 * MXVARS3 + 160 * MXDESC3
        
 C........  Calculate size of individual records
-       RECSIZE = ( 8 * NVARS + 4 * NLAYS * NVARS * NCELLS ) / 1000000
+       RECSIZE = ( 8 * NVARS + 4 * NLAYS * NVARS * NCELLS )
 
 C........  Calculate total number of bytes in file       
-       IOAPI_GRD_SIZE = HDRSIZE + RECSIZE * NSTEPS
+       IOAPI_GRD_SIZE = ( HDRSIZE + RECSIZE * NSTEPS ) / 1000000
 
        RETURN
       

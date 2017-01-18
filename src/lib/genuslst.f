@@ -82,7 +82,8 @@ C...........   Local allocateable arrays for ORIS lists
         CHARACTER(DSCLEN3), ALLOCATABLE :: INVODSCA( : ) ! plant description from inventory
 
 C...........   Other local variables
-        INTEGER          I, J, J1, J2, L1, L2, N, NS, S
+        INTEGER          I, J, J1, L1, L2, N, NS, S
+        INTEGER       :: J2 = 0
         INTEGER          IOS                 ! allocate i/o status
 
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error has occurred
@@ -151,6 +152,7 @@ C.................  Count number of unique codes
 C.................  Allocate memory for country/state/county lists
                 ALLOCATE( INVCFIP( NINVIFIP ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INVCFIP', PROGNAME )
+                INVCFIP = ''
 
 C.................  Create unique country/state/county codes list
                 PCFIP = ' '

@@ -46,7 +46,7 @@ C.........  Function arguments
 C***********************************************************************
 C   begin body of function FLTERR
         
-        FLTERR = ((P - Q)**2 .GT. 1.0E-12*( P*P + Q*Q + 1.0E-5 ))
+        FLTERR = ((P - Q)**2 .GT. 1.0E-11*( P*P + Q*Q + 1.0E-5 ))
 
         RETURN
         
