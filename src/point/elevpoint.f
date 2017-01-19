@@ -183,7 +183,7 @@ C...........   File units and logical/physical names
         CHARACTER(16)   MNAME   !  plume-in-grid srcs stack groups output file
 
 C...........   Other local variables
-        INTEGER         G, I, J, K, S, L, L2, N, V, I1,J1,T    ! indices and counters
+        INTEGER         G, I, J, K, DS, S, L, L2, N, V, I1,J1,T    ! indices and counters
 
         INTEGER         COL           ! tmp column number
         INTEGER      :: ELEVTYPE = 0  ! code for elevated source approach
@@ -212,10 +212,10 @@ C...........   Other local variables
         INTEGER      :: TSTEP = 10000 ! time step HHMMSS
         INTEGER      :: TSTEP_T       ! unsued timestep from environment
         INTEGER         TZONE         ! output time zone
-        INTEGER      :: DAY_NSRC, MY_INDEX,MY_LOOP
+        INTEGER      :: DAY_NSRC
         INTEGER      :: JDATE, JTIME
 
-        REAL            DM            ! tmp inside stack diameter [m]
+        REAL            DM, DMVAL     ! tmp inside stack diameter [m]
         REAL            FL            ! tmp stack exit flow rate [m^3/s]
         REAL            HT            ! tmp inside stack diameter [m]
         REAL            LAT           ! tmp latitude [degrees]
@@ -226,7 +226,7 @@ C...........   Other local variables
         REAL            MINTK         ! min stack group temperature
         REAL            MINVE         ! min stack group velocity
         REAL            TK            ! tmp stack exit temperature [K]
-        REAL            VE            ! tmp stack exit velocity diameter [m/s]
+        REAL            VE, VEVAL     ! tmp stack exit velocity diameter [m/s]
 
         LOGICAL :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL :: SFLAG    = .FALSE. ! true: store group info
@@ -617,30 +617,23 @@ C.............  Check to see if appropriate variable list exists
             JDATE = SDATE
             JTIME = STIME
             DO T = 1, NSTEPS
-            CALL SAFE_READ3( DAYNAME, 'ACRESBURNED', ALLAYS3,
-     &          JDATE, JTIME, DAY_ACRES )   ! Wildfire inventory format
 
-                   IF ( .NOT. READ3( DAYNAME, 'INDXD', ALLAYS3,
-     &                        JDATE, JTIME, DAY_INDEX ) ) THEN
+                CALL SAFE_READ3( DAYNAME, 'ACRESBURNED', ALLAYS3,
+     &                           JDATE, JTIME, DAY_ACRES )   ! Wildfire inventory format
 
-                       MESG = 'Could not read "INDXD" from file "'//
+                IF ( .NOT. READ3( DAYNAME, 'INDXD', ALLAYS3,
+     &                            JDATE, JTIME, DAY_INDEX ) ) THEN
+
+                    MESG = 'Could not read "INDXD" from file "'//
      &                         TRIM( DAYNAME ) // '".'
-                       CALL M3EXIT( PROGNAME, SDATE, STIME, MESG, 2 )
+                    CALL M3EXIT( PROGNAME, SDATE, STIME, MESG, 2 )
 
-                   END IF
+                END IF
 
-                   DO S = 1, NSRC
-                      MY_INDEX = -1
-                      DO MY_LOOP = 1, DAY_NSRC
-                         IF(S == DAY_INDEX(MY_LOOP) ) MY_INDEX = MY_LOOP
-                      ENDDO
-                      IF(MY_INDEX .GT. 0) THEN
-                         IF ((DAY_ACRES( MY_INDEX )) .GT. ACRES(S)) THEN
-                             ACRES(S) = DAY_ACRES( MY_INDEX )
-                         ENDIF
-                      ENDIF         
-
-                   ENDDO
+                DO DS = 1, DAY_NSRC 
+                    S = DAY_INDEX( DS )
+                    IF( S > 0 ) ACRES( S ) = DAY_ACRES( DS )
+                ENDDO
 
                 CALL NEXTIME(JDATE, JTIME,10000)
             
@@ -702,7 +695,9 @@ C               (include emissions TOTAL for group).
             VALS( DM_IDX ) = DM
             VALS( TK_IDX ) = TK
             VALS( VE_IDX ) = VE
-            VALS( FL_IDX ) = 0.25 * PI * DM * DM * VE
+            IF( DM == BADVAL3 ) DMVAL = 0.0
+            IF( VE == BADVAL3 ) VEVAL = 0.0
+            VALS( FL_IDX ) = 0.25 * PI * DMVAL * DMVAL * VEVAL 
             VALS( SRC_IDX )= S
             !VALS( FIP_IDX )= CFIP
             CHRS( PLT_IDX )= ADJUSTL( PLT )
@@ -1003,7 +998,9 @@ C.................  Store the rest of the group settings in output arrays
                     GRPHT ( G ) = STKHT ( S )
                     GRPTK ( G ) = STKTK ( S )
                     GRPVE ( G ) = STKVE ( S )
-                    GRPFL ( G ) = 0.25 * PI * GRPDM(G)*GRPDM(G)*GRPVE(G)
+                    IF( GRPDM( G ) == BADVAL3 ) DMVAL = 0.0
+                    IF( GRPVE( G ) == BADVAL3 ) VEVAL = 0.0
+                    GRPFL ( G ) = 0.25 * PI * DMVAL * DMVAL * VEVAL
                     GRPFIP( G ) = CIFIP ( S )
                     IF (FFLAG) GRPACRES( G ) = ACRES( S)
                     IF (LMAJOR(S)) GRPLMAJOR( G ) = 1
@@ -1476,7 +1473,7 @@ C.............  Add label, group number, stack parameters, and emissions
             WRITE( BUFFER, 94791 ) TRIM( BUFFER ), LABEL, IGRP,
      &             VALS( HT_IDX ), VALS( DM_IDX ), VALS( TK_IDX ),
      &             VALS( VE_IDX ), VALS( FL_IDX )
-            
+
 C.............  If needed, add plume rise value
             IF ( LCUTOFF ) THEN
                 WRITE( BUFFER, 94792 ) TRIM( BUFFER ), RISE( S )
