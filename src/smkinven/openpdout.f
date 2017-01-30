@@ -191,10 +191,10 @@ C.........  Set up default file name and prompting message
             MESG = 'Enter logical name for ' // TRIM( SCRNAM ) //
      &              '-SPECIFIC output file'
             FNAME = CRL // TYPNAM
-
         END IF
 
 C.........  Prompt for output file
+        CALL UPCASE( FNAME )
         FNAME = PROMPTMFILE( MESG, FSUNKN3, FNAME, PROGNAME )
 
 C.........  If format is CEM format, prompt for report output file name
