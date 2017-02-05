@@ -112,7 +112,7 @@ for my $fh (@in_fh) {
     my ($is_header, @data) = parse_report_line($line);
   
     if ($is_header) {
-      parse_header(\@data, \%headers, \@pollutants, 'Sun Diu Prf');
+      parse_header(\@data, \%headers, \@pollutants, 'SE Longitude');
       next;
     }
     
