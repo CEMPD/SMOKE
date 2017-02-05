@@ -133,7 +133,7 @@ while (my $line = <$in_fh>) {
   my $resolution_id = ((($x_4k - 1) % 3) + 1) +
                       ((($y_4k - 1) % 3) * 3);
   
-  my $source_id = join(":::", $run_group, $cell);
+  my $source_id = join(":::", $run_group, $cell, $resolution_id);
   unless (exists $sources{$source_id}) {
     $sources{$source_id} = 1;
 
@@ -213,13 +213,13 @@ while (my $line = <$in_fh>) {
   
 # prepare crosswalk output
 for my $emis_id (keys %emissions) {
-  my ($run_group, $cell, $region, $poll) = split(/:::/, $emis_id);
+  my ($run_group, $cell, $resolution_id, $region, $poll) = split(/:::/, $emis_id);
 
   my @output;
   push @output, $run_group;
   push @output, $region;
   push @output, $cell;
-  push @output, "4_1";
+  push @output, "4_${resolution_id}";
   push @output, $group_params{$run_group}{'source_group'};
   push @output, $poll;
   push @output, $emissions{$emis_id};
