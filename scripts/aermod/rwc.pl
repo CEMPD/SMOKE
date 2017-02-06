@@ -328,6 +328,7 @@ for my $cell (sort keys %gridded_emissions) {
     # check if current county has greater emissions than previous for this grid cell
     if ($gridded_emissions{$cell}{$region}{'all'} > $prev_emis) {
       $cell_assignment = $region;
+      $prev_emis = $gridded_emissions{$cell}{$region}{'all'};
     }
   }
   
