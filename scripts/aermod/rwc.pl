@@ -71,7 +71,7 @@ my $prof_file = $ENV{'ATPRO_MONTHLY'};
 my %monthly = read_profiles($prof_file, 12);
 
 $prof_file = $ENV{'ATPRO_DAILY'};
-my %dayofmonth = read_profiles($prof_file, 31);
+my %dayofmonth = read_dom_profiles($prof_file, 31, \@days_in_month);
 
 $prof_file = $ENV{'ATPRO_WEEKLY'};
 my %weekly = read_profiles($prof_file, 7);
@@ -221,10 +221,10 @@ while (my $line = <$in_fh>) {
     my @monthly_factors = @{$monthly{$monthly_prof}};
     
     my $dom_prof = $data[$headers{'Day-Month Prf'}];
-    my @dom_factors;
+    my %dom_factors;
     if ($dom_prof) {
       die "Unknown day-of-month profile code: $dom_prof" unless exists $dayofmonth{$dom_prof};
-      @dom_factors = @{$dayofmonth{$dom_prof}};
+      %dom_factors = %{$dayofmonth{$dom_prof}};
     }
     
     my $weekly_prof = $data[$headers{'Weekly  Prf'}];
@@ -251,18 +251,19 @@ while (my $line = <$in_fh>) {
     my $month = 1;
     my $day_of_week = 2;  # Jan. 1, 2014 was a Wednesday
     foreach my $month_factor (@monthly_factors) {
+      # note: factors average to 1 rather than summing to 1, so adjust when fractions are needed
       if ($dom_prof) {
         my $day_of_month = 1;
-        foreach my $dom_factor (@dom_factors) {
+        foreach my $dom_factor (@{$dom_factors{$month}}) {
           last if $day_of_month > $days_in_month[$month];
-          push @factors, map { $_ * $dom_factor * $month_factor } @hourly_factors;
+          push @factors, map { $_/24 * $dom_factor/$days_in_month[$month] * $month_factor/12 } @hourly_factors;
           $day_of_month++;
         }
       } else {
+        my $month_to_week = 7 / $days_in_month[$month];
         for (my $day_of_month = 1; $day_of_month <= $days_in_month[$month]; $day_of_month++) {
-          push @factors, map { $_ * $weekly_factors[$day_of_week] * $month_factor } @hourly_factors;
-          $day_of_week++;
-          $day_of_week = 0 if $day_of_week > 6;
+          push @factors, map { $_/24 * $weekly_factors[$day_of_week]/7 * $month_to_week * $month_factor/12 } @hourly_factors;
+          $day_of_week = ($day_of_week + 1) % 7;
         }
       }
       $month++;
@@ -297,7 +298,7 @@ for my $region (sort keys %county_emissions) {
         push @output, $month;
         push @output, $day_of_month;
         push @output, $hour;
-        push @output, sprintf('%.4f', $hourly_emissions / $total_emissions);
+        push @output, sprintf('%.4f', 8760 * $hourly_emissions / $total_emissions);
         print $tmp_fh join(',', @output) . "\n";
         
         $index++;
