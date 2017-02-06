@@ -152,10 +152,12 @@ for my $fh (@in_fh) {
       my $sw_lat = $data[$headers{'SW Latitude'}];
       my $sw_lon = $data[$headers{'SW Longitude'}];
       my ($zone, $utm_x, $utm_y) = latlon_to_utm(23, $sw_lat, $sw_lon);
+      my $outzone = $zone;
+      $outzone =~ s/\D//g; # strip latitude band designation from UTM zone
       push @output, "AREAPOLY";
       push @output, $utm_x;
       push @output, $utm_y;
-      push @output, $zone;
+      push @output, $outzone;
       push @output, $sw_lon;
       push @output, $sw_lat;
       print $loc_fh join(',', @output) . "\n";
@@ -216,6 +218,7 @@ for my $fh (@in_fh) {
     }
     
     my $region = $data[$headers{'Region'}];
+    $region = substr($region, -5);
     foreach my $poll (@pollutants) {
       my $emis_id = join(":::", $source_id, $region, $poll);
       unless (exists $emissions{$emis_id}) {
@@ -241,7 +244,7 @@ for my $emis_id (keys %emissions) {
   push @output, $region;
   push @output, $cell;
   push @output, "12_1";
-  push @output, $group_params{$run_group}{'source_group'};
+  push @output, '"'.$group_params{$run_group}{'source_group'}.'"';
   push @output, $poll;
   
   my $total = $emissions{$emis_id}{'winter'} +

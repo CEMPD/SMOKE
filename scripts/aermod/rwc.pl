@@ -145,10 +145,12 @@ while (my $line = <$in_fh>) {
     my $sw_lat = $data[$headers{'SW Latitude'}];
     my $sw_lon = $data[$headers{'SW Longitude'}];
     my ($zone, $utm_x, $utm_y) = latlon_to_utm(23, $sw_lat, $sw_lon);
+    my $outzone = $zone;
+    $outzone =~ s/\D//g; # strip latitude band designation from UTM zone
     push @output, "AREAPOLY";
     push @output, $utm_x;
     push @output, $utm_y;
-    push @output, $zone;
+    push @output, $outzone;
     push @output, $sw_lon;
     push @output, $sw_lat;
     print $loc_fh join(',', @output) . "\n";
@@ -192,6 +194,7 @@ while (my $line = <$in_fh>) {
 
   # store emissions
   my $region = $data[$headers{'Region'}];
+  $region = substr($region, -5);
   
   unless (exists $county_emissions{$region}{'all'}) {
     $county_emissions{$region}{'all'} = 0;
@@ -322,7 +325,7 @@ for my $cell (sort keys %gridded_emissions) {
       push @output, $region;
       push @output, $cell;
       push @output, "12_1";
-      push @output, $group_params{$rwc_run_group}{'source_group'};
+      push @output, '"'.$group_params{$rwc_run_group}{'source_group'}.'"';
       push @output, $poll;
       push @output, $gridded_emissions{$cell}{$region}{$poll};
       print $x_fh join(',', @output) . "\n";
