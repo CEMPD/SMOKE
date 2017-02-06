@@ -11,7 +11,7 @@ require 'aermod_np.subs';
 
 my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 
-my $rwc_run_group = 'RWC';
+my $rwc_run_group;
 
 # check environment variables
 foreach my $envvar (qw(REPORT SOURCE_GROUPS GROUP_PARAMS 
@@ -124,8 +124,11 @@ while (my $line = <$in_fh>) {
   unless (exists $scc_groups{$scc}) {
     die "No run group defined for SCC $scc";
   }
+  
+  # all SCCs must use the same run group, so save the first one seen and check subsequent SCCs
+  $rwc_run_group = $scc_groups{$scc} unless $rwc_run_group;
   unless ($scc_groups{$scc} eq $rwc_run_group) {
-    die "Non-RWC run group '$scc_groups{$scc}' found for SCC $scc";
+    die "SCC $scc uses different run group '$scc_groups{$scc}' than default group '$rwc_run_group'";
   }
 
   # build cell identifier
