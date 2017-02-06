@@ -129,7 +129,8 @@ while (my $line = <$in_fh>) {
   }
 
   # build cell identifier
-  my $cell = "G$data[$headers{'X cell'}]R$data[$headers{'Y cell'}]";
+  my $cell = "G" . sprintf("%03d", $data[$headers{'X cell'}]) .
+             "R" . sprintf("%03d", $data[$headers{'Y cell'}]);
 
   unless (exists $sources{$cell}) {
     $sources{$cell} = 1;

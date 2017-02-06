@@ -135,7 +135,8 @@ for my $fh (@in_fh) {
     my $run_group = $scc_groups{$scc};
   
     # build cell identifier
-    my $cell = "G$data[$headers{'X cell'}]R$data[$headers{'Y cell'}]";
+    my $cell = "G" . sprintf("%03d", $data[$headers{'X cell'}]) .
+               "R" . sprintf("%03d", $data[$headers{'Y cell'}]);
 
     my $source_id = join(":::", $run_group, $cell);
     unless (exists $sources{$source_id}) {

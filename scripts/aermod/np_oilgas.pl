@@ -128,7 +128,8 @@ while (my $line = <$in_fh>) {
   my $y_4k = $data[$headers{'Y cell'}];
   my $x_12k = int(($x_4k + 2) / 3);
   my $y_12k = int(($y_4k + 2) / 3);
-  my $cell = "G${x_12k}R${y_12k}";
+  my $cell = "G" . sprintf("%03d", $x_12k) .
+             "R" . sprintf("%03d", $y_12k);
   
   my $resolution_id = ((($x_4k - 1) % 3) + 1) +
                       ((($y_4k - 1) % 3) * 3);
