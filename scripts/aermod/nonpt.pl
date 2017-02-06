@@ -141,6 +141,7 @@ while (my $line = <$in_fh>) {
     my $sw_lat = $data[$headers{'SW Latitude'}];
     my $sw_lon = $data[$headers{'SW Longitude'}];
     my ($zone, $utm_x, $utm_y) = latlon_to_utm(23, $sw_lat, $sw_lon);
+    push @output, "AREAPOLY";
     push @output, $utm_x;
     push @output, $utm_y;
     push @output, $zone;

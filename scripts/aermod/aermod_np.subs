@@ -1,7 +1,7 @@
 sub write_location_header() {
   my ($fh) = @_;
   
-  print $fh "run_group,met_cell,src_id,utmx,utmy,utm_zone,lon,lat\n";
+  print $fh "run_group,met_cell,src_id,src_type,utmx,utmy,utm_zone,lon,lat\n";
 }
 
 sub write_parameter_header() {
