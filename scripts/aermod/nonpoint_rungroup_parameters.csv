@@ -1,6 +1,7 @@
 run_group,release_height,sigma_z
 OILGAS4,10,4.7
 NPH12,10,4.7
+NPHI12,10,4.7
 NP10m,3.9,3.6
 NPLO12,3.9,3.6
 NPlow,3.9,3.6
@@ -21,3 +22,6 @@ OR_LD,0,0
 OR_HD,0,0
 CMV_P,0,0
 CMV_UW,0,0
+NR-CMV,0,0
+BIOGENICS,0,0
+FIRE,0,0

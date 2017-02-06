@@ -50,19 +50,19 @@ $csv_parser->column_names(@$header);
 my %scc_groups;
 while (my $row = $csv_parser->getline_hr($group_fh)) {
   # pad SCCs to 20 characters to match SMOKE 4.0 output
-  my $scc = sprintf "%020s", $row->{'SCC'};
+  my $scc = sprintf "%020s", $row->{'scc'};
 
   if (exists $scc_groups{$scc}) {
-    die "Duplicate SCC $row->{'SCC'} in source groups file";
+    die "Duplicate SCC $row->{'scc'} in source groups file";
   }
   
-  my $run_group = $row->{'Run Group'};
+  my $run_group = $row->{'run_group'};
   unless (exists $group_params{$run_group}) {
     die "Unknown run group name $run_group in source group/SCC mapping file";
   }
 
   $scc_groups{$scc} = $run_group;
-  $group_params{$run_group}{'source_group'} = $row->{'source group'};
+  $group_params{$run_group}{'source_group'} = $row->{'source_group'};
 }
 close $group_fh;
 
