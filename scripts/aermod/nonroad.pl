@@ -112,6 +112,7 @@ for my $fh (@in_fh) {
     my ($is_header, @data) = parse_report_line($line);
   
     if ($is_header) {
+      @pollutants = ();
       parse_header(\@data, \%headers, \@pollutants, 'SE Longitude');
       next;
     }
@@ -145,7 +146,7 @@ for my $fh (@in_fh) {
       my @common;
       push @common, $run_group;
       push @common, $cell;
-      push @common, "12_";
+      push @common, "12_1";
 
       # prepare location output
       my @output = @common;
