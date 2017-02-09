@@ -41,7 +41,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
-        USE MODSOURC, ONLY: CIFIP, CSOURC, HEATCONTENT
+        USE MODSOURC, ONLY: CIFIP, CSOURC, HEATCONTENT, INTGRFLAG
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP, UCASNKEP, NUNIQCAS,
@@ -166,7 +166,7 @@ C...........   Other local variables
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer
         INTEGER          MONTH            ! tmp month number
         INTEGER, SAVE :: MXWARN           !  maximum number of warnings
-        INTEGER, SAVE :: NWARN( 6 )       ! warnings counter
+        INTEGER, SAVE :: NWARN( 5 )       ! warnings counter
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
         INTEGER, SAVE :: NACRBND = 0      ! no. of acres burned var
         INTEGER, SAVE :: NFUELD  = 0      ! no. of fuel loading var
@@ -206,7 +206,7 @@ C...........   Other local variables
 C.........  Temporary local character variables
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
         CHARACTER(CASLEN3) CDAT      ! tmp data name (*16)
-        CHARACTER(IOVLEN3) CNAM      ! tmp SMOKE name
+        CHARACTER(IOVLEN3) CNAM,PNAM ! tmp SMOKE name
         CHARACTER(IOVLEN3) CTMP      ! tmp data name (*16)
         CHARACTER(PLTLEN3) FCID      ! tmp facility ID (*15)
         CHARACTER(CHRLEN3) SKID      ! tmp stack ID (*15) = LocID
@@ -579,9 +579,13 @@ C.............  Store maximum time step number as compared to rference
 C.............  Look up pollutant name in unique sorted array of
 C               Inventory pollutant names
             CDAT  = SEGMENT( 5 )
+            CALL UPCASE( CDAT )
+
+C.............  Look up pollutant name in unique sorted array of
+C               Inventory pollutant names
             CIDX  = FINDC( CDAT, NUNIQCAS, UNIQCAS )
 
-C.............  Check pollutant code and set index I
+C.............  Check to see if data name is in inventory list
             COD  = INDEX1( CDAT, NIPPA, EANAM )
 
 C.............  If pollutant name is not in Inventory Table list
@@ -599,28 +603,12 @@ C                   special integer so can ID these records later.
 C................  If not in list of special names, check to see
 C                  if it's a SMOKE pollutant name (intermediate name)
                 ELSE IF ( CIDX .LE. 0 ) THEN
-
-                    CIDX= INDEX1( CDAT, NIPPA, EANAM )
-
-C....................  If a SMOKE pollutant name, write out warning message
-C                      accordingly.
-                    IF( CIDX .GT. 0 . AND.
-     &                  WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
+                    IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
                         WRITE( MESG,94010 )
-     &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
-     &                   '" at line', IREC, '- incorrect use of '//
-     &                   'Inventory Data Name instead of Inventory '//
-     &                   'Pollutant Code.'
-                        CALL M3MESG( MESG )
-                        NWARN( 2 ) = NWARN( 2 ) + 1
-
-C....................  Otherwise, if not in any list, write out warning
-                    ELSE IF( WARNOUT .AND. NWARN( 3 ) .LE. MXWARN ) THEN
-                       WRITE( MESG,94010 )
      &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
      &                   '" at line', IREC, '- not in Inventory Table'
                         CALL M3MESG( MESG )
-                        NWARN( 3 ) = NWARN( 3 ) + 1
+                        NWARN( 2 ) = NWARN( 2 ) + 1
                     END IF
                     CYCLE      !  to head of loop
 
@@ -663,16 +651,46 @@ C................  Get Inventory Data SMOKE name from Inventory Table arrays/ind
 C................  Look up SMOKE name in list of annual EI pollutants
                COD = INDEX1( CNAM, NIPPA, EANAM )
 
+C................  Check to ensure that it handles NOI and NONHAP pollutants
+C                  while combining VOC + HAPs
+               IF( INTGRFLAG .AND. COD < 1 ) THEN
+
+C....................  Preventing processing precomputed NONHAP[VOC|TOG]
+                   IF( INDEX( CNAM,'NONHAP' ) > 0 ) THEN
+                       MESG = 'ERROR: Can NOT process precomputed '// TRIM(CNAM)//
+     &                     ' when SMK_PROCESS_HAPS was set to process anuual inventory'
+                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                   END IF
+
+                   PNAM = TRIM( CNAM ) // '_NOI'
+                   COD = INDEX1( PNAM, NIPPA, EANAM )
+                   IF( COD .LE. 0 ) THEN
+                       L = INDEX( CNAM, ETJOIN )
+                       LL= LEN_TRIM( CNAM )
+                       PNAM = CNAM
+                       IF( L > 0 ) PNAM = CNAM( L+2:LL )
+                       IF( PNAM == 'VOC' .OR. PNAM == 'TOG' ) THEN
+                           IF( L > 0 ) THEN
+                               PNAM = CNAM(1:L+1) // 'NONHAP' //
+     &                                CNAM(L+2:LL)
+                           ELSE
+                               PNAM = 'NONHAP' // TRIM( CNAM )
+                           END IF
+                       END IF
+                       COD   = INDEX1( PNAM, NIPPA, EANAM )
+                   END IF
+               END IF
+
 C................  Check to ensure that the SMOKE intermediate name
 C                  set by the Inventory Table is actually in the annual
 C                  inventory.  If not, write warning message and cycle.
                IF( COD .LE. 0 ) THEN
-                   IF( WARNOUT .AND. NWARN( 4 ) .LE. MXWARN ) THEN
+                   IF( WARNOUT .AND. NWARN( 5 ) .LE. MXWARN ) THEN
                        WRITE( MESG,94010 )
      &                   'WARNING: Skipping pollutant "'// TRIM(CNAM)//
      &                   '" at line', IREC, '- not in annual inventory.'
                        CALL M3MESG( MESG )
-                       NWARN( 4 ) = NWARN( 4 ) + 1
+                       NWARN( 5 ) = NWARN( 5 ) + 1
                    END IF
                    CYCLE
 
@@ -808,12 +826,12 @@ C                   invoked once.
                     BADSRC( NBADSRC ) = CSRC
 
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-                    IF( NWARN( 5 ) .LE. MXWARN ) THEN
+                    IF( NWARN( 3 ) .LE. MXWARN ) THEN
                         MESG = 'WARNING: Period-specific record does '//
      &                         'not match inventory sources: '//
      &                         CRLF() // BLANK10 // BUFFER( 1:L2 )
                         CALL M3MESG( MESG )
-                        NWARN( 5 ) = NWARN( 5 ) + 1
+                        NWARN( 3 ) = NWARN( 3 ) + 1
                     END IF
 
                 END IF

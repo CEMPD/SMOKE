@@ -43,7 +43,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
-        USE MODSOURC, ONLY: CIFIP, CSOURC
+        USE MODSOURC, ONLY: CIFIP, CSOURC, INTGRFLAG
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVTBL, ITFACA, ITNAMA,
@@ -129,7 +129,7 @@ C...........   Temporary read arrays
         REAL            TDAT( 31,24 )       ! temporary data values
 
 C...........   Other local variables
-        INTEGER          D, H, HS, I, J, N, L, L1, L2, S, T    ! counters and indices
+        INTEGER          D, H, HS, I, J, N, L, LL, L1, L2, S, T    ! counters and indices
         INTEGER          ES, NS, SS    ! end src, tmp no. src, start sourc
 
         INTEGER          CIDX             ! tmp data index
@@ -186,7 +186,7 @@ C...........   Other local variables
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
         CHARACTER(FIPLEN3) LFIP      ! previous st/co FIPS code
         CHARACTER(CASLEN3) CDAT      ! tmp Inventory data (input) name
-        CHARACTER(IOVLEN3) CNAM      ! tmp SMOKE name
+        CHARACTER(IOVLEN3) CNAM,PNAM ! tmp SMOKE name
         CHARACTER(PLTLEN3) FCID      ! tmp facility ID
         CHARACTER(CHRLEN3) SKID      ! tmp stack ID
         CHARACTER(CHRLEN3) DVID      ! tmp device ID
@@ -219,9 +219,6 @@ C.............  Get processing base year info
      &                 'daily/hourly-specific inventory'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
-            NDAYS  = MON_DAYS( INV_MON )
-            LYEAR =  INT( 1 / YR2DAY( B_YEAR ) )   ! convert year to days
-            IF( LYEAR > 365 .AND. MONTH == 2 ) NDAYS = 29
 
 C.............  Get maximum number of warnings
             MXWARN = ENVINT( WARNSET , ' ', 100, I )
@@ -392,7 +389,9 @@ C.............  Set the number of fields, depending on day- or hour-specific
 
 C.............  Skip non-processing month/day 
             IF( INV_MON > 0 ) THEN
-
+                NDAYS  = MON_DAYS( INV_MON )
+                LYEAR =  INT( 1 / YR2DAY( B_YEAR ) )   ! convert year to days
+                IF( LYEAR > 365 .AND. MONTH == 2 ) NDAYS = 29
                 FSTDATE = 1000 * B_YEAR + JULIAN( B_YEAR, INV_MON, 1 )
                 LSTDATE = 1000 * B_YEAR + JULIAN( B_YEAR, INV_MON, NDAYS )
                 CALL NEXTIME( FSTDATE, JTIME, -240000 )     ! include the last day of previous month
@@ -547,31 +546,12 @@ C.................  Check to see if data name is in list of special names
 C.................  Store status of special data and flag code with
 C                   special integer so can ID these records later.
                 IF( CIDX .GT. 0 ) THEN
-
                     SPSTAT( CIDX ) = CIDX 
                     COD = CODFLAG3 + CIDX
 
-C................  If not in list of special names, check to see
-C                  if it's a SMOKE pollutant name (intermediate name)
                 ELSE IF ( CIDX .LE. 0 ) THEN
-
-                    CIDX= INDEX1( CDAT, NIPPA, EANAM )
-
-C....................  If a SMOKE pollutant name, write out warning message
-C                      accordingly.
-                    IF( CIDX .GT. 0 . AND.
-     &                  WARNOUT .AND. NWARN( 4 ) .LE. MXWARN ) THEN
+                    IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
                         WRITE( MESG,94010 )
-     &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
-     &                   '" at line', IREC, '- incorrect use of '//
-     &                   'Inventory Data Name instead of Inventory '//
-     &                   'Pollutant Code.'
-                        CALL M3MESG( MESG )
-                        NWARN( 4 ) = NWARN( 4 ) + 1
-
-C....................  Otherwise, if not in any list, write out warning
-                    ELSE IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
-                       WRITE( MESG,94010 )
      &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
      &                   '" at line', IREC, '- not in Inventory Table'
                         CALL M3MESG( MESG )
@@ -603,6 +583,37 @@ C................  Get Inventory Data SMOKE name from Inventory Table arrays/ind
 
 C................  Look up SMOKE name in list of annual EI pollutants
                COD = INDEX1( CNAM, NIPPA, EANAM )
+
+C................  Check to ensure that it handles NOI and NONHAP pollutants
+C                  while combining VOC + HAPs
+               IF( INTGRFLAG .AND. COD < 1 ) THEN
+
+C....................  Preventing processing precomputed NONHAP[VOC|TOG]
+                   IF( INDEX( CNAM,'NONHAP' ) > 0 ) THEN
+                       MESG = 'ERROR: Can NOT process precomputed '// TRIM(CNAM)//
+     &                     ' when SMK_PROCESS_HAPS was set to process anuual inventory'
+                       CALL M3EXIT( PROGNAME, 0, 0, MESG , 2 )
+                   END IF
+
+                   PNAM = TRIM( CNAM ) // '_NOI'
+                   COD = INDEX1( PNAM, NIPPA, EANAM )
+                   IF( COD < 1 ) THEN
+                       L = INDEX( CNAM, ETJOIN )
+                       LL= LEN_TRIM( CNAM )
+                       PNAM = CNAM
+                       IF( L > 0 ) PNAM = CNAM( L+2:LL )
+                       IF( PNAM == 'VOC' .OR. PNAM == 'TOG' ) THEN
+                           IF( L > 0 ) THEN
+                               PNAM = CNAM(1:L+1) // 'NONHAP' //
+     &                                CNAM(L+2:LL)
+                           ELSE
+                               PNAM = 'NONHAP' // TRIM( CNAM )
+                           END IF
+                       END IF
+                       COD = INDEX1( PNAM, NIPPA, EANAM )
+                   END IF
+
+               END IF
 
 C................  Check to ensure that the SMOKE intermediate name
 C                  set by the Inventory Table is actually in the annual
@@ -663,10 +674,10 @@ C.............  If available, set total value from hourly file
 
                 IF( SEGMENT( S1-1 ) .NE. ' ' ) THEN
                     TOTAL = STR2REAL( SEGMENT( S1-1 ) )
-                    IF( TOTAL .LT. 0.0 ) THEN
+                    IF( TOTAL < 0.0 ) THEN
                         EFLAG = .TRUE.
                         WRITE( MESG,94010 ) 'ERROR: Bad line', IREC,
-     &                    ': total value "' // LINE(L1:L2) // '"'
+     &                    ': total value "'//TRIM(SEGMENT( S1-1 ))//'"' 
                         CALL M3MESG( MESG )
                         CYCLE  ! to head of read loop
                     END IF

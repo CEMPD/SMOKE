@@ -430,17 +430,17 @@ C               if this is a fire inventory, scan inventory data names
 C               to see if HFLUX is present. If so, FIREFLAG = .true.
             IF ( INDEX1( 'HFLUX',NIPPA,EANAM ) .GT. 0 ) FIREFLAG= .TRUE.
 
-            NINVARR = 4
+            NINVARR = 5
             IVARNAMS( 1 ) = 'CIFIP'   ! In case CEM input
             IVARNAMS( 2 ) = 'CSOURC'  ! In case non-CEM input
             IVARNAMS( 3 ) = 'CSCC'    ! In case CEM input (for reporting)
             IVARNAMS( 4 ) = 'CPDESC'  ! In case CEM input
+            IVARNAMS( 5 ) = 'CINTGR'  ! for VOC + HAPs integration
 
             IF ( .NOT. FIREFLAG ) THEN
                 NINVARR = 7
-                IVARNAMS( 5 ) = 'CORIS'   ! In case CEM input
-                IVARNAMS( 6 ) = 'CBLRID'  ! In case CEM input
-                IVARNAMS( 7 ) = 'CINTGR'  ! for VOC + HAPs integration
+                IVARNAMS( 6 ) = 'CORIS'   ! In case CEM input
+                IVARNAMS( 7 ) = 'CBLRID'  ! In case CEM input
             END IF
 
             CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR,

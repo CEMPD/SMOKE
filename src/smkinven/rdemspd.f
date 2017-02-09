@@ -45,7 +45,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
-        USE MODSOURC, ONLY: CIFIP, CSOURC
+        USE MODSOURC, ONLY: CIFIP, CSOURC, INTGRFLAG
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVTBL, ITFACA, ITNAMA,
@@ -459,27 +459,9 @@ C                   special integer so can ID these records later.
                     SPSTAT( CIDX ) = CIDX
                     COD = CODFLAG3 + CIDX
 
-C................  If not in list of special names, check to see
-C                  if it's a SMOKE pollutant name (intermediate name)
                 ELSE IF ( CIDX .LE. 0 ) THEN
-
-                    CIDX= INDEX1( CDAT, NIPPA, EANAM )
-
-C....................  If a SMOKE pollutant name, write out warning message
-C                      accordingly.
-                    IF( CIDX .GT. 0 . AND.
-     &                  WARNOUT .AND. NWARN( 4 ) .LE. MXWARN ) THEN
+                    IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
                         WRITE( MESG,94010 )
-     &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
-     &                   '" at line', IREC, '- incorrect use of '//
-     &                   'Inventory Data Name instead of Inventory '//
-     &                   'Pollutant Code.'
-                        CALL M3MESG( MESG )
-                        NWARN( 4 ) = NWARN( 4 ) + 1
-
-C....................  Otherwise, if not in any list, write out warning
-                    ELSE IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
-                       WRITE( MESG,94010 )
      &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
      &                   '" at line', IREC, '- not in Inventory Table'
                         CALL M3MESG( MESG )
@@ -504,20 +486,6 @@ C                   one time.
                        CALL M3MESG( MESG )
                    END IF
                    CYCLE
-               ELSE IF ( UCASNKEP(CIDX) .GT. 1 .AND.
-     &                   WARNMULT(CIDX)              ) THEN
-                   WARNMULT( CIDX ) = .FALSE.
-                   IF( GETSIZES ) THEN
-                       WRITE( MESG,94010 )
-     &                   'WARNING: Skipping all lines for pollutant "'//
-     &                   TRIM( CDAT )// '" because Inventory Table '//
-     &                   'splits it into',UCASNKEP(CIDX),'pollutants.'//
-     &                   CRLF()//BLANK10//'The SMOKE code needs to '//
-     &                   'be enhanced to support this approach for '//
-     &                   'day- and hour-specific data.'
-                       CALL M3MESG( MESG )
-                   END IF
-                   CYCLE
                END IF
 
 C................  Get Inventory Data SMOKE name from Inventory Table arrays/indices
@@ -528,12 +496,21 @@ C................  Look up SMOKE name in list of annual EI pollutants
 
 C................  Check to ensure that it handles NOI and NONHAP pollutants
 C                  while combining VOC + HAPs
-               IF( COD .LE. 0 ) THEN
+               IF( INTGRFLAG .AND. COD < 1 ) THEN
+
+C....................  Preventing processing precomputed NONHAP[VOC|TOG]
+                   IF( INDEX( CNAM,'NONHAP' ) > 0 ) THEN
+                       MESG = 'ERROR: Can NOT process precomputed '// TRIM(CNAM)//
+     &                     ' when SMK_PROCESS_HAPS was set to process anuual inventory'
+                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                   END IF
+
                    PNAM = TRIM( CNAM ) // '_NOI'
                    COD = INDEX1( PNAM, NIPPA, EANAM )
                    IF( COD .LE. 0 ) THEN
                        L = INDEX( CNAM, ETJOIN )
                        LL= LEN_TRIM( CNAM )
+                       PNAM = CNAM
                        IF( L > 0 ) PNAM = CNAM( L+2:LL )
                        IF( PNAM == 'VOC' .OR. PNAM == 'TOG' ) THEN
                            IF( L > 0 ) THEN
@@ -544,7 +521,6 @@ C                  while combining VOC + HAPs
                            END IF
                        END IF
                        COD   = INDEX1( PNAM, NIPPA, EANAM )
-                       CIDX  = FINDC( CDAT, NUNIQCAS, UNIQCAS )    ! search for NONHAP
                    END IF
                END IF
 

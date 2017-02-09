@@ -42,7 +42,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: CINTGR
+        USE MODSOURC, ONLY: CINTGR, INTGRFLAG
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPPA, NSPDAT, EANAM, NCOMP, VAR_FORMULA,
@@ -111,7 +111,6 @@ C.........  Other local variables
         INTEGER         NPPCAS           !  no. of pollutants per CAS number
         
         LOGICAL       :: DFLAG    = .FALSE.  ! true: day-specific processing
-        LOGICAL       :: NHAPFLAG = .FALSE.  ! true: VOC + HAPs processing
 
         CHARACTER(IOVLEN3) INVNAM   ! temporary pollutant name
         CHARACTER(IOVLEN3) POLNAM   ! temporary pollutant name
@@ -151,6 +150,12 @@ C.........  Perform case-specific settings
 
         END SELECT
 
+C.........  Determine whether combining VOC and HAPs together or not 
+        DO V = 1, NIPPA
+            IF( INDEX( EANAM(V),'_NOI'  ) > 0 ) INTGRFLAG = .TRUE. 
+            IF( INDEX( EANAM(V),'NONHAP') > 0 ) INTGRFLAG = .TRUE.
+        END DO
+
 C.........  Ensure that input file is a list-formatted file
         INVFMT = GETFORMT( FDEV, -1 )
 
@@ -187,12 +192,6 @@ C           MXPDSRC
      &                 FNAME, SDATE, STIME, NSTEPS, FILFMT, 
      &                 EASTAT, SPSTAT )
 
-C.........  Determine whether combining VOC and HAPs together or not 
-        DO V = 1, NIPPA
-            IF( INDEX( EANAM(V),'_NOI'  ) > 0 ) NHAPFLAG = .TRUE. 
-            IF( INDEX( EANAM(V),'NONHAP') > 0 ) NHAPFLAG = .TRUE. 
-        END DO
-
 C.........  Check whether processing CEM dataset or not
         NV = 0
         DO V = 1, NIPPA
@@ -223,6 +222,7 @@ C               Find code corresponding to current pollutant before you add
                     IF( NV > 0 ) THEN
                         N = N + 1
                         EAIDX( N ) = NV
+                        CYCLE
                     END IF 
 
 C.....................  Add new NOI pollutant for non-integration
@@ -232,7 +232,9 @@ C.....................  Add new NOI pollutant for non-integration
                     IF( NV > 0 .AND. IV < 1 ) THEN
                         N = N + 1 
                         EAIDX( N ) = NV
+                        CYCLE
                     END IF
+
 C.....................  Add new NONHAPVOC for integration
                     L  = INDEX( POLNAM, ETJOIN )
                     LL = LEN_TRIM( POLNAM )
@@ -251,6 +253,7 @@ C.....................  Add new NONHAPVOC for integration
                         IF( NV > 0 .AND. IV < 1 ) THEN
                             N = N + 1
                             EAIDX( N ) = NV
+                            CYCLE
                         END IF
                     END IF
 

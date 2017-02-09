@@ -40,6 +40,9 @@
 
         INCLUDE 'EMPRVT3.EXT'   !  emissions private parameters
 
+!.........  Flag to indicate whether source is intergrated or not 
+        LOGICAL, SAVE :: INTGRFLAG = .FALSE.
+
 !.........  Sorted list of point sources for SMOKE inventory file
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLAS( : )  !  road class number
         INTEGER, ALLOCATABLE, PUBLIC:: IVTYPE( : )  !  vehicle type code
