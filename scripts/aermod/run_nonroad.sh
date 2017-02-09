@@ -16,7 +16,7 @@ export REPORT_DEC=$REPSCEN/rep_nonroad_dec_2011ek_cb6v2_v6_11g_aermod.txt
 
 # locations of source groups data files
 export GROUP_PARAMS=$SCRIPTS/aermod/nonpoint_rungroup_parameters.csv
-export SOURCE_GROUPS=$GE_DAT/NP_NR_OR_SourceGroup_to_SCC_CrossReference_07212016.csv
+export SOURCE_GROUPS=$GE_DAT/hem_aermod_groups_2014.csv
 
 # locations of temporal profile files
 export ATPRO_MONTHLY=$GE_DAT/amptpro_general_2011platform_tpro_monthly_20nov2015_v2

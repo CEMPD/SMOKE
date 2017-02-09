@@ -16,8 +16,9 @@ sub read_profiles {
     next unless looks_like_number($data[1]);
     
     my @factors = @data[1..$num_factors];
-    my $average = sum(@factors) / scalar @factors;
     
+    # adjust factors so they average to 1 and sum to the number of factors
+    my $average = sum(@factors) / scalar @factors;
     unless ($average == 0) {
       @factors = map { $_ / $average } @factors;
     }
@@ -25,6 +26,39 @@ sub read_profiles {
     my $prof_id = $data[0];
     $prof_id =~ s/"//g;
     $profiles{$prof_id} = \@factors;
+  }
+  close $fh;
+  
+  return %profiles;
+}
+
+sub read_dom_profiles {
+  my ($filename, $num_factors, $days_ref) = @_;
+  my %profiles;
+  
+  open (my $fh, '<', $filename) or die "Could not open file '$filename' $!";
+  while (my $line = <$fh>) {
+    chomp $line;
+    next unless $line;
+    next if $line =~ /^#/;
+    
+    my @data = split(/,/, $line);
+    next unless scalar @data >= ($num_factors + 2);
+    next unless looks_like_number($data[2]);
+    
+    my $month_id = $data[1];
+    my $num_days = $days_ref->[$month_id];
+    my @factors = @data[2..$num_days + 1];
+    
+    # adjust factors so they average to 1 and sum to the number of factors
+    my $average = sum(@factors) / scalar @factors;
+    unless ($average == 0) {
+      @factors = map { $_ / $average } @factors;
+    }
+    
+    my $prof_id = $data[0];
+    $prof_id =~ s/"//g;
+    $profiles{$prof_id}{$month_id} = \@factors;
   }
   close $fh;
   

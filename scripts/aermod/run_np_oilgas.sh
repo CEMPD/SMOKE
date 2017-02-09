@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # location of AERMOD-source report created by Smkreport
-export REPORT=$REPSCEN/rep_nonpt_jan_2011ek_cb6v2_v6_11g_aermod.txt
+export REPORT=$REPSCEN/rep_np_oilgas_2011ek_cb6v2_v6_11g_aermod.txt
 
 # locations of source groups data files
 export GROUP_PARAMS=$SCRIPTS/aermod/nonpoint_rungroup_parameters.csv
@@ -15,4 +15,4 @@ export ATPRO_HOURLY=$GE_DAT/amptpro_general_2011platform_tpro_hourly_13nov2014_v
 # directory where output files should be created
 export OUTPUT_DIR=$OUTPUT/aermod
 
-$SCRIPTS/aermod/nonpt.pl
+$SCRIPTS/aermod/np_oilgas.pl

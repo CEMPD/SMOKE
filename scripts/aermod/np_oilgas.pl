@@ -76,16 +76,16 @@ my %daily = read_profiles($prof_file, 24);
 print "Creating output files...\n";
 my $output_dir = $ENV{'OUTPUT_DIR'};
 
-my $loc_fh = open_output("$output_dir/nonpt_locations.csv");
+my $loc_fh = open_output("$output_dir/np_oilgas_locations.csv");
 write_location_header($loc_fh);
 
-my $param_fh = open_output("$output_dir/nonpt_area_params.csv");
+my $param_fh = open_output("$output_dir/np_oilgas_area_params.csv");
 write_parameter_header($param_fh);
 
-my $tmp_fh = open_output("$output_dir/nonpt_temporal.csv");
+my $tmp_fh = open_output("$output_dir/np_oilgas_temporal.csv");
 write_temporal_header($tmp_fh);
 
-my $x_fh = open_output("$output_dir/nonpt_emis.csv");
+my $x_fh = open_output("$output_dir/np_oilgas_emis.csv");
 print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value\n";
 
 my %headers;
@@ -104,17 +104,17 @@ while (my $line = <$in_fh>) {
     parse_header(\@data, \%headers, \@pollutants, 'SE Longitude');
     next;
   }
-  
+
   # override assigned temporal profiles
   $data[$headers{'Monthly Prf'}] = '262';
   $data[$headers{'Weekly  Prf'}] = '7';
-  $data[$headers{'Mon Diu Prf'}] = '26';
-  $data[$headers{'Tue Diu Prf'}] = '26';
-  $data[$headers{'Wed Diu Prf'}] = '26';
-  $data[$headers{'Thu Diu Prf'}] = '26';
-  $data[$headers{'Fri Diu Prf'}] = '26';
-  $data[$headers{'Sat Diu Prf'}] = '26';
-  $data[$headers{'Sun Diu Prf'}] = '26';
+  $data[$headers{'Mon Diu Prf'}] = '24';
+  $data[$headers{'Tue Diu Prf'}] = '24';
+  $data[$headers{'Wed Diu Prf'}] = '24';
+  $data[$headers{'Thu Diu Prf'}] = '24';
+  $data[$headers{'Fri Diu Prf'}] = '24';
+  $data[$headers{'Sat Diu Prf'}] = '24';
+  $data[$headers{'Sun Diu Prf'}] = '24';
 
   # look up run group based on SCC
   my $scc = $data[$headers{'SCC'}];
@@ -124,17 +124,24 @@ while (my $line = <$in_fh>) {
   my $run_group = $scc_groups{$scc};
 
   # build cell identifier
-  my $cell = "G" . sprintf("%03d", $data[$headers{'X cell'}]) .
-             "R" . sprintf("%03d", $data[$headers{'Y cell'}]);
-
-  my $source_id = join(":::", $run_group, $cell);
+  my $x_4k = $data[$headers{'X cell'}];
+  my $y_4k = $data[$headers{'Y cell'}];
+  my $x_12k = int(($x_4k + 2) / 3);
+  my $y_12k = int(($y_4k + 2) / 3);
+  my $cell = "G" . sprintf("%03d", $x_12k) .
+             "R" . sprintf("%03d", $y_12k);
+  
+  my $resolution_id = ((($x_4k - 1) % 3) + 1) +
+                      ((($y_4k - 1) % 3) * 3);
+  
+  my $source_id = join(":::", $run_group, $cell, $resolution_id);
   unless (exists $sources{$source_id}) {
     $sources{$source_id} = 1;
 
     my @common;
     push @common, $run_group;
     push @common, $cell;
-    push @common, "12_1";
+    push @common, "4_${resolution_id}";
 
     # prepare location output
     my @output = @common;
@@ -211,13 +218,13 @@ while (my $line = <$in_fh>) {
   
 # prepare crosswalk output
 for my $emis_id (keys %emissions) {
-  my ($run_group, $cell, $region, $poll) = split(/:::/, $emis_id);
+  my ($run_group, $cell, $resolution_id, $region, $poll) = split(/:::/, $emis_id);
 
   my @output;
   push @output, $run_group;
   push @output, $region;
   push @output, $cell;
-  push @output, "12_1";
+  push @output, "4_${resolution_id}";
   push @output, '"'.$group_params{$run_group}{'source_group'}.'"';
   push @output, $poll;
   push @output, $emissions{$emis_id};

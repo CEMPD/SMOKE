@@ -50,19 +50,19 @@ $csv_parser->column_names(@$header);
 my %scc_groups;
 while (my $row = $csv_parser->getline_hr($group_fh)) {
   # pad SCCs to 20 characters to match SMOKE 4.0 output
-  my $scc = sprintf "%020s", $row->{'SCC'};
+  my $scc = sprintf "%020s", $row->{'scc'};
 
   if (exists $scc_groups{$scc}) {
-    die "Duplicate SCC $row->{'SCC'} in source groups file";
+    die "Duplicate SCC $row->{'scc'} in source groups file";
   }
   
-  my $run_group = $row->{'Run Group'};
+  my $run_group = $row->{'run_group'};
   unless (exists $group_params{$run_group}) {
     die "Unknown run group name $run_group in source group/SCC mapping file";
   }
 
   $scc_groups{$scc} = $run_group;
-  $group_params{$run_group}{'source_group'} = $row->{'source group'};
+  $group_params{$run_group}{'source_group'} = $row->{'source_group'};
 }
 close $group_fh;
 
@@ -112,7 +112,8 @@ for my $fh (@in_fh) {
     my ($is_header, @data) = parse_report_line($line);
   
     if ($is_header) {
-      parse_header(\@data, \%headers, \@pollutants, 'Sun Diu Prf');
+      @pollutants = ();
+      parse_header(\@data, \%headers, \@pollutants, 'SE Longitude');
       next;
     }
     
@@ -135,7 +136,8 @@ for my $fh (@in_fh) {
     my $run_group = $scc_groups{$scc};
   
     # build cell identifier
-    my $cell = "G$data[$headers{'X cell'}]R$data[$headers{'Y cell'}]";
+    my $cell = "G" . sprintf("%03d", $data[$headers{'X cell'}]) .
+               "R" . sprintf("%03d", $data[$headers{'Y cell'}]);
 
     my $source_id = join(":::", $run_group, $cell);
     unless (exists $sources{$source_id}) {
@@ -144,16 +146,19 @@ for my $fh (@in_fh) {
       my @common;
       push @common, $run_group;
       push @common, $cell;
-      push @common, "12_";
+      push @common, "12_1";
 
       # prepare location output
       my @output = @common;
       my $sw_lat = $data[$headers{'SW Latitude'}];
       my $sw_lon = $data[$headers{'SW Longitude'}];
       my ($zone, $utm_x, $utm_y) = latlon_to_utm(23, $sw_lat, $sw_lon);
+      my $outzone = $zone;
+      $outzone =~ s/\D//g; # strip latitude band designation from UTM zone
+      push @output, "AREAPOLY";
       push @output, $utm_x;
       push @output, $utm_y;
-      push @output, $zone;
+      push @output, $outzone;
       push @output, $sw_lon;
       push @output, $sw_lat;
       print $loc_fh join(',', @output) . "\n";
@@ -214,6 +219,7 @@ for my $fh (@in_fh) {
     }
     
     my $region = $data[$headers{'Region'}];
+    $region = substr($region, -5);
     foreach my $poll (@pollutants) {
       my $emis_id = join(":::", $source_id, $region, $poll);
       unless (exists $emissions{$emis_id}) {
@@ -239,7 +245,7 @@ for my $emis_id (keys %emissions) {
   push @output, $region;
   push @output, $cell;
   push @output, "12_1";
-  push @output, $group_params{$run_group}{'source_group'};
+  push @output, '"'.$group_params{$run_group}{'source_group'}.'"';
   push @output, $poll;
   
   my $total = $emissions{$emis_id}{'winter'} +
