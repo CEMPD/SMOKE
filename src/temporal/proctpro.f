@@ -1449,7 +1449,8 @@ C.............  Local variables:
             INTEGER     IDINDX( IDCNT )
             INTEGER     NSORT, NLINES, NDATA, FDEV
             INTEGER     JDATE, JTIME, NRECS, MON, MDAY
-            LOGICAL     LEAPYEAR, EFLAG
+            LOGICAL     LEAPYEAR
+            LOGICAL  :: EFLAG = .FALSE.
 
             CHARACTER(  16) :: THISID, LASTID, AKEY, MISS
             CHARACTER(  16) :: IDSORT( IDCNT )
