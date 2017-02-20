@@ -68,7 +68,8 @@ C...........   Local variables
         INTEGER         COL   ! tmp column number
         INTEGER         ROW   ! tmp row number
         INTEGER         CSAV  ! saved value of C
-        INTEGER         NROWS, NCOLS  ! No. of rows, columns, and cells
+        INTEGER      :: NROWS = 0  ! No. of rows, columns, and cells
+        INTEGER      :: NCOLS = 0  ! No. of rows, columns, and cells
 
         REAL            XX, YY, XDUM, YDUM ! tmp X and Y coordinates
         REAL            XX0, YY0  ! X and Y origin in coordinates of grid
@@ -119,7 +120,7 @@ C.........  Initialize scratch gridding matrix - before sparse storage
             SN( I ) = I
 
         END DO        !  end loop on sources I, computing gridding matrix.
-        
+
         IF( NCOLS * NROWS .NE. NGRID ) THEN
 
             MESG = 'INTERNAL ERROR: Number of cells in "' //
