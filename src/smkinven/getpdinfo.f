@@ -72,8 +72,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FINDC
         INTEGER         FIND1
         INTEGER         INDEX1 
+        INTEGER         INDEXINT1 
 
-        EXTERNAL        CRLF, GETFLINE, GETFORMT, FIND1, FINDC, INDEX1
+        EXTERNAL        CRLF, GETFLINE, GETFORMT, FIND1, FINDC, INDEX1, INDEXINT1
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN):: FDEV          ! file unit no.
@@ -103,7 +104,7 @@ C.........  Local arrats
 
 C.........  Other local variables
         INTEGER         I, J, N, V, NV, IV, L, LL          ! counters and indices
-        INTEGER         COD, NCOD        ! tmp data index
+        INTEGER         CIDX, NCIDX        ! tmp data index
         INTEGER         FILFMT           ! format code of files in list
         INTEGER         INVFMT           ! inventory format code
         INTEGER         IOS              ! i/o status
@@ -212,53 +213,21 @@ C.............  Processing CEM data
 C.............  Add multiple inventory pollutant(s) with same CAS name
 C               Find code corresponding to current pollutant before you add
             IF( EASTAT( V ) > 0 ) THEN
-                COD    = EASTAT( V )
-                NPPCAS = UCASNKEP( COD )
-
-                DO J = 0, NPPCAS - 1
-                    NCOD   = UCASIDX( COD ) + J
-                    POLNAM = ITNAMA( SCASIDX( NCOD ) )
+                N = N + 1
+                EAIDX( N ) = V
+                CIDX   = EASTAT( V )
+                NPPCAS = UCASNKEP( CIDX )
+                IF( NPPCAS > 1 ) THEN
+                  DO J = 2, NPPCAS
+                    NCIDX   = UCASIDX( CIDX ) + J - 1
+                    POLNAM = ITNAMA( SCASIDX( NCIDX ) )
                     NV = INDEX1( POLNAM, NIPPA, EANAM )
-                    IF( NV > 0 ) THEN
+                    IF( INDEXINT1( NV, NIPPA, EAIDX ) < 1 .AND. NV > 0 ) THEN
                         N = N + 1
                         EAIDX( N ) = NV
-                        CYCLE
-                    END IF 
-
-C.....................  Add new NOI pollutant for non-integration
-                    INVNAM = TRIM( POLNAM ) // '_NOI'
-                    NV = INDEX1( INVNAM, NIPPA, EANAM )
-                    IV = FIND1( NV, N, EAIDX )
-                    IF( NV > 0 .AND. IV < 1 ) THEN
-                        N = N + 1 
-                        EAIDX( N ) = NV
-                        CYCLE
                     END IF
-
-C.....................  Add new NONHAPVOC for integration
-                    L  = INDEX( POLNAM, ETJOIN )
-                    LL = LEN_TRIM( POLNAM )
-                    INVNAM = TRIM( POLNAM )
-                    IF( L > 0  ) INVNAM = TRIM( POLNAM(L+2:LL) )
-
-                    IF( INVNAM == 'VOC' .OR. INVNAM == 'TOG' ) THEN
-                        IF( L > 0 ) THEN 
-                             INVNAM = POLNAM(1:L+1) // 'NONHAP'
-     &                                // POLNAM(L+2:LL)
-                        ELSE
-                             INVNAM = 'NONHAP' // TRIM( POLNAM )
-                        END IF
-                        NV = INDEX1( INVNAM, NIPPA, EANAM )
-                        IV = FIND1( NV, N, EAIDX )
-                        IF( NV > 0 .AND. IV < 1 ) THEN
-                            N = N + 1
-                            EAIDX( N ) = NV
-                            CYCLE
-                        END IF
-                    END IF
-
-                END DO
-
+                  END DO
+                END IF
             END IF
 
         END DO

@@ -43,12 +43,13 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
-        USE MODSOURC, ONLY: CIFIP, CSOURC, INTGRFLAG
+        USE MODSOURC, ONLY: CIFIP, CSOURC, INTGRFLAG, CINTGR
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVTBL, ITFACA, ITNAMA,
-     &                      ITKEEPA, SORTCAS, SCASIDX, NUNIQCAS,
-     &                      UCASNPOL, UNIQCAS, UCASIDX, UCASNKEP
+     &                      ITKEEPA, SORTCAS, SCASIDX, NUNIQCAS, INVDVTS,
+     &                      UCASNPOL, UNIQCAS, UCASIDX, UCASNKEP, MXIDAT,
+     &                      INVDNAM
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPPA, NSRC, EANAM, NCHARS, INV_MON
@@ -129,7 +130,7 @@ C...........   Temporary read arrays
         REAL            TDAT( 31,24 )       ! temporary data values
 
 C...........   Other local variables
-        INTEGER          D, H, HS, I, J, N, L, LL, L1, L2, S, T    ! counters and indices
+        INTEGER          D, H, HS, I, J, N, NV, L, LL, L1, L2, S, T    ! counters and indices
         INTEGER          ES, NS, SS    ! end src, tmp no. src, start sourc
 
         INTEGER          CIDX             ! tmp data index
@@ -523,167 +524,7 @@ C.............  Store maximum time step number as compared to reference
 
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
 
-C.............  Check pollutant code and set index I
-            CDAT = TRIM( SEGMENT( 9 ) )     ! pollutant name
-
-C.............  Left justify and convert pollutant name to upper case
-            CDAT = ADJUSTL( CDAT ) 
-            CALL UPCASE( CDAT ) 
-
-C.............  Look up pollutant name in unique sorted array of
-C               Inventory pollutant names
-            CIDX  = FINDC( CDAT, NUNIQCAS, UNIQCAS )
-
-C.............  Check to see if data name is in inventory list
-            COD  = INDEX1( CDAT, NIPPA, EANAM )
-
-C.............  If pollutant name is not in Inventory Table list
-            IF ( CIDX .LE. 0 ) THEN
-
-C.................  Check to see if data name is in list of special names
-                CIDX= INDEX1( CDAT, MXSPDAT, SPDATNAM )
-
-C.................  Store status of special data and flag code with
-C                   special integer so can ID these records later.
-                IF( CIDX .GT. 0 ) THEN
-                    SPSTAT( CIDX ) = CIDX 
-                    COD = CODFLAG3 + CIDX
-
-                ELSE IF ( CIDX .LE. 0 ) THEN
-                    IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
-                        WRITE( MESG,94010 )
-     &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
-     &                   '" at line', IREC, '- not in Inventory Table'
-                        CALL M3MESG( MESG )
-                        NWARN( 2 ) = NWARN( 2 ) + 1
-                    END IF
-                    CYCLE      !  to head of loop
-
-                END IF
-
-C.............  Otherwise, pollutant is in list of Inventory Data Names
-            ELSE
-
-C.................  Write warning if pollutant is not kept.  Write only
-C                   one time.
-               IF( UCASNKEP(CIDX) .LE. 0 ) THEN
-                   IF( GETSIZES .AND. WARNKEEP(CIDX) ) THEN 
-                       WRITE( MESG,94010 )
-     &                   'WARNING: Skipping all lines for pollutant "'//
-     &                   TRIM( CDAT )// '" because pollutant is not '//
-     &                   'kept by Inventory Table.'
-                       CALL M3MESG( MESG )
-                   END IF 
-                   WARNKEEP( CIDX ) = .FALSE.
-                   CYCLE
-               END IF
-
-C................  Get Inventory Data SMOKE name from Inventory Table arrays/indices
-               CNAM = ITNAMA( SCASIDX( UCASIDX( CIDX ) ) )
-
-C................  Look up SMOKE name in list of annual EI pollutants
-               COD = INDEX1( CNAM, NIPPA, EANAM )
-
-C................  Check to ensure that it handles NOI and NONHAP pollutants
-C                  while combining VOC + HAPs
-               IF( INTGRFLAG .AND. COD < 1 ) THEN
-
-C....................  Preventing processing precomputed NONHAP[VOC|TOG]
-                   IF( INDEX( CNAM,'NONHAP' ) > 0 ) THEN
-                       MESG = 'ERROR: Can NOT process precomputed '// TRIM(CNAM)//
-     &                     ' when SMK_PROCESS_HAPS was set to process anuual inventory'
-                       CALL M3EXIT( PROGNAME, 0, 0, MESG , 2 )
-                   END IF
-
-                   PNAM = TRIM( CNAM ) // '_NOI'
-                   COD = INDEX1( PNAM, NIPPA, EANAM )
-                   IF( COD < 1 ) THEN
-                       L = INDEX( CNAM, ETJOIN )
-                       LL= LEN_TRIM( CNAM )
-                       PNAM = CNAM
-                       IF( L > 0 ) PNAM = CNAM( L+2:LL )
-                       IF( PNAM == 'VOC' .OR. PNAM == 'TOG' ) THEN
-                           IF( L > 0 ) THEN
-                               PNAM = CNAM(1:L+1) // 'NONHAP' //
-     &                                CNAM(L+2:LL)
-                           ELSE
-                               PNAM = 'NONHAP' // TRIM( CNAM )
-                           END IF
-                       END IF
-                       COD = INDEX1( PNAM, NIPPA, EANAM )
-                   END IF
-
-               END IF
-
-C................  Check to ensure that the SMOKE intermediate name
-C                  set by the Inventory Table is actually in the annual
-C                  inventory.  If not, write warning message and cycle.
-               IF( COD .LE. 0 ) THEN
-                   IF( WARNOUT .AND. NWARN( 5 ) .LE. MXWARN ) THEN
-                       WRITE( MESG,94010 )
-     &                   'WARNING: Skipping pollutant "'// TRIM(CNAM)//
-     &                   '" at line', IREC, '- not in annual inventory.'
-                       CALL M3MESG( MESG )
-                       NWARN( 5 ) = NWARN( 5 ) + 1
-                   END IF
-                   CYCLE
-
-C................  If it's found, then record that this pollutant was found
-               ELSE
-                   EASTAT( COD ) = CIDX 
-               END IF
-
-            END IF  ! if cidx le 0 or not
-
-C.............  If only getting dates and pollutant information, go 
-C               to next loop iteration
-            IF( GETSIZES ) CYCLE
-
-C.............  Determine time step pointer based on actual start time
-            PTR = SECSDIFF( SDATESAV,STIMESAV,JDATE,JTIME ) / TDIVIDE + 1
-
-C.............  Skip record if it is out of range of output file
-C.............  NOTE - this is only useful if reading only part of data
-            IF( PTR. LT. 1 .OR. PTR .GT. NSTEPS ) CYCLE
-
-C.............  Count estimated record count per time step
-            DO T = PTR, MIN( PTR + 23, NSTEPS )
-                MXPDPT( T ) = MXPDPT( T ) + 1
-            END DO
-
-C.............  If only counting records per time step, go to next loop
-C               iteration
-            IF( GETCOUNT ) CYCLE
-
-C.............  Check and set emissions values
-            S1 = 15   ! pollutant field start position
-
-            N = 0
-            DO J = FSTLOC, LSTLOC
-                IF( DAYFLAG ) THEN
-                    N = N + 1                   ! N is equal to NFIELD for day-specific
-                    TDAT( N,: )  = STR2REAL( SEGMENT( S1-1+J ) )
-                ELSE
-                    TDAT( :,J )  = STR2REAL( SEGMENT( S1-1+J ) )
-                ENDIF 
-            END DO
-
-C.............  If available, set total value from hourly file
-            TOTAL = 0.
-            IF( SFLAG .OR. .NOT. DAYFLAG ) THEN
-
-                IF( SEGMENT( S1-1 ) .NE. ' ' ) THEN
-                    TOTAL = STR2REAL( SEGMENT( S1-1 ) )
-                    IF( TOTAL < 0.0 ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( MESG,94010 ) 'ERROR: Bad line', IREC,
-     &                    ': total value "'//TRIM(SEGMENT( S1-1 ))//'"' 
-                        CALL M3MESG( MESG )
-                        CYCLE  ! to head of read loop
-                    END IF
-                END IF
-            END IF
-
+C.............  Find source ID
 C.............  Set key for searching sources
             IF( CATEGORY == 'POINT' ) THEN
                 FCID = ADJUSTL( SEGMENT( 4 ) )   ! EIS_FACILITY_ID in FF10&IDA (PlantID in ORL)
@@ -802,8 +643,176 @@ C                   invoked once.
 C.............  Otherwise, update master list of sources in the inventory
             ELSE
                 S = SS - 1 + J         ! calculate source number
-                LPDSRC( S ) = .TRUE.
 
+            END IF
+
+C.............  Check pollutant code and set index I
+            CDAT = TRIM( SEGMENT( 9 ) )     ! pollutant name
+
+C.............  Left justify and convert pollutant name to upper case
+            CDAT = ADJUSTL( CDAT ) 
+            CALL UPCASE( CDAT ) 
+
+C.............  Look up pollutant name in unique sorted array of
+C               Inventory pollutant names
+            CIDX  = FINDC( CDAT, NUNIQCAS, UNIQCAS )
+
+C.............  Check to see if data name is in inventory list
+            COD  = INDEX1( CDAT, NIPPA, EANAM )
+
+C.............  If pollutant name is not in Inventory Table list
+            IF ( CIDX .LE. 0 ) THEN
+
+C.................  Check to see if data name is in list of special names
+                CIDX= INDEX1( CDAT, MXSPDAT, SPDATNAM )
+
+C.................  Store status of special data and flag code with
+C                   special integer so can ID these records later.
+                IF( CIDX .GT. 0 ) THEN
+                    SPSTAT( CIDX ) = CIDX 
+                    COD = CODFLAG3 + CIDX
+
+                ELSE IF ( CIDX .LE. 0 ) THEN
+                    IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
+                        WRITE( MESG,94010 )
+     &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
+     &                   '" at line', IREC, '- not in Inventory Table'
+                        CALL M3MESG( MESG )
+                        NWARN( 2 ) = NWARN( 2 ) + 1
+                    END IF
+                    CYCLE      !  to head of loop
+
+                END IF
+
+C.............  Otherwise, pollutant is in list of Inventory Data Names
+            ELSE
+
+C.................  Write warning if pollutant is not kept.  Write only
+C                   one time.
+               IF( UCASNKEP(CIDX) .LE. 0 ) THEN
+                   IF( GETSIZES .AND. WARNKEEP(CIDX) ) THEN 
+                       WRITE( MESG,94010 )
+     &                   'WARNING: Skipping all lines for pollutant "'//
+     &                   TRIM( CDAT )// '" because pollutant is not '//
+     &                   'kept by Inventory Table.'
+                       CALL M3MESG( MESG )
+                   END IF 
+                   WARNKEEP( CIDX ) = .FALSE.
+                   CYCLE
+               END IF
+
+C................  Get Inventory Data SMOKE name from Inventory Table arrays/indices
+               CNAM = ITNAMA( SCASIDX( UCASIDX( CIDX ) ) )
+
+C................  Look up SMOKE name in list of annual EI pollutants
+               COD = INDEX1( CNAM, NIPPA, EANAM )
+
+C................  Check to ensure that it handles NOI and NONHAP pollutants
+C                  while combining VOC + HAPs
+               IF( INTGRFLAG ) THEN
+
+C....................  Preventing processing precomputed NONHAP[VOC|TOG]
+                   IF( INDEX( CNAM,'NONHAP' ) > 0 ) THEN
+                       MESG = 'ERROR: Can NOT process precomputed '// TRIM(CNAM)//
+     &                     ' when SMK_PROCESS_HAPS was set to process anuual inventory'
+                       CALL M3EXIT( PROGNAME, 0, 0, MESG , 2 )
+                   END IF
+
+                   NV = INDEX1( CNAM, MXIDAT, INVDNAM )
+
+                   IF( CINTGR( S ) == 'N' .AND. INVDVTS( NV ) /= 'N' ) THEN
+                       PNAM = TRIM( CNAM ) // '_NOI'
+                       COD = INDEX1( PNAM, NIPPA, EANAM )
+
+                   ELSE IF( CINTGR( S ) == 'Y' ) THEN
+                       L = INDEX( CNAM, ETJOIN )
+                       LL= LEN_TRIM( CNAM )
+                       PNAM = CNAM
+                       IF( L > 0 ) PNAM = CNAM( L+2:LL )
+                       IF( PNAM == 'VOC' .OR. PNAM == 'TOG' ) THEN
+                           IF( L > 0 ) THEN
+                               PNAM = CNAM(1:L+1) // 'NONHAP' //
+     &                                CNAM(L+2:LL)
+                           ELSE
+                               PNAM = 'NONHAP' // TRIM( CNAM )
+                           END IF
+                           COD = INDEX1( PNAM, NIPPA, EANAM )
+                       END IF
+
+                   END IF
+
+               END IF
+
+C................  Check to ensure that the SMOKE intermediate name
+C                  set by the Inventory Table is actually in the annual
+C                  inventory.  If not, write warning message and cycle.
+               IF( COD .LE. 0 ) THEN
+                   IF( WARNOUT .AND. NWARN( 5 ) .LE. MXWARN ) THEN
+                       WRITE( MESG,94010 )
+     &                   'WARNING: Skipping pollutant "'// TRIM(CNAM)//
+     &                   '" at line', IREC, '- not in annual inventory.'
+                       CALL M3MESG( MESG )
+                       NWARN( 5 ) = NWARN( 5 ) + 1
+                   END IF
+                   CYCLE
+
+C................  If it's found, then record that this pollutant was found
+               ELSE
+                   EASTAT( COD ) = CIDX
+               END IF
+
+            END IF  ! if cidx le 0 or not
+
+C.............  If only getting dates and pollutant information, go 
+C               to next loop iteration
+            IF( GETSIZES ) CYCLE
+
+C.............  Determine time step pointer based on actual start time
+            PTR = SECSDIFF( SDATESAV,STIMESAV,JDATE,JTIME ) / TDIVIDE + 1
+
+C.............  Skip record if it is out of range of output file
+C.............  NOTE - this is only useful if reading only part of data
+            IF( PTR. LT. 1 .OR. PTR .GT. NSTEPS ) CYCLE
+
+C.............  Count estimated record count per time step
+            DO T = PTR, MIN( PTR + 23, NSTEPS )
+                MXPDPT( T ) = MXPDPT( T ) + 1
+            END DO
+
+C.............  If only counting records per time step, go to next loop
+C               iteration
+            IF( GETCOUNT ) CYCLE
+
+C.............  Store source ID
+            LPDSRC( S ) = .TRUE.
+
+C.............  Check and set emissions values
+            S1 = 15   ! pollutant field start position
+
+            N = 0
+            DO J = FSTLOC, LSTLOC
+                IF( DAYFLAG ) THEN
+                    N = N + 1                   ! N is equal to NFIELD for day-specific
+                    TDAT( N,: )  = STR2REAL( SEGMENT( S1-1+J ) )
+                ELSE
+                    TDAT( :,J )  = STR2REAL( SEGMENT( S1-1+J ) )
+                ENDIF 
+            END DO
+
+C.............  If available, set total value from hourly file
+            TOTAL = 0.
+            IF( SFLAG .OR. .NOT. DAYFLAG ) THEN
+
+                IF( SEGMENT( S1-1 ) .NE. ' ' ) THEN
+                    TOTAL = STR2REAL( SEGMENT( S1-1 ) )
+                    IF( TOTAL < 0.0 ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: Bad line', IREC,
+     &                    ': total value "'//TRIM(SEGMENT( S1-1 ))//'"' 
+                        CALL M3MESG( MESG )
+                        CYCLE  ! to head of read loop
+                    END IF
+                END IF
             END IF
 
 C.............  Set conversion factor from Inventory Table. Default is

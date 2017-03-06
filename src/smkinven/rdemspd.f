@@ -45,12 +45,13 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
-        USE MODSOURC, ONLY: CIFIP, CSOURC, INTGRFLAG
+        USE MODSOURC, ONLY: CIFIP, CSOURC, INTGRFLAG, CINTGR
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVTBL, ITFACA, ITNAMA,
      &                      ITKEEPA, SORTCAS, SCASIDX, NUNIQCAS,
-     &                      UCASNPOL, UNIQCAS, UCASIDX, UCASNKEP
+     &                      UCASNPOL, UNIQCAS, UCASIDX, UCASNKEP,
+     &                      INVDVTS, MXIDAT, INVDNAM
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPPA, NSRC, EANAM, NCHARS
@@ -98,7 +99,7 @@ C...........   Temporary read arrays
         REAL            TDAT( 24 )       ! temporary data values
 
 C...........   Other local variables
-        INTEGER          H, HS, I, J, L, LL, L1, L2, S, T    ! counters and indices
+        INTEGER          H, HS, I, J, L, LL, L1, L2, NV, S, T    ! counters and indices
         INTEGER          ES, NS, SS    ! end src, tmp no. src, start sourc
 
         INTEGER          CIDX             ! tmp data index
@@ -427,6 +428,125 @@ C.............  Store minimum time step number as compared to reference
 C.............  Store maximum time step number as compared to reference
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
 
+C.............  Set key for searching sources
+            FIP  = ICC * 100000 +
+     &             1000 * STR2INT( LINE( 1:2 ) ) +
+     &                    STR2INT( LINE( 3:5 ) )
+            WRITE( CFIP,94020 ) FIP
+
+            FCID = ADJUSTL( LINE( 6:20 ) )
+            SKID = ADJUSTL( LINE( 21:32 ) )   ! point ID in IDA
+            DVID = ADJUSTL( LINE( 33:44 ) )   ! stack ID in IDA
+            PRID = ADJUSTL( LINE( 45:56 ) )   ! segment in IDA
+
+            TSCC = ' '
+C.............  If FIPS code is not the same as last time, then
+C               look it up and get indidies
+            IF( FIP .NE. LFIP ) THEN
+                J = FINDC( CFIP, NINVIFIP, INVCFIP )
+                IF( J .LE. 0 ) THEN
+                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not '//
+     &                     'find FIPS code', FIP, 'in internal list.'
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+                END IF
+
+                SS = STARTSRC( J )
+                ES = ENDSRC( J )
+                NS = ES - SS + 1
+                LFIP = FIP
+
+            END IF
+
+C.............  If SCCs are needed for matching...
+            IF ( TFLAG ) THEN
+                IF ( DAYFLAG ) THEN
+                    TSCC = ADJUSTL( LINE( 92:101) )
+                ELSE IF ( WIDE_FORMAT ) THEN
+                    TSCC = ADJUSTL( LINE( 373:380 ) )
+                ELSE ! hourly standard format
+                    TSCC = ADJUSTL( LINE( 250:259 ) )
+                END IF
+                IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
+                CHAR4 = TSCC
+
+C.................  Build source characteristics field for searching inventory
+                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
+     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
+
+C.................  Search for this record in sources
+                J = FINDC( CSRC, NS, CSOURC( SS ) )
+
+C.............  If SCCs are not being used for matching (at least not yet)...
+            ELSE
+
+C.................  Build source characteristics field for searching inventory
+                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
+     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
+
+C.................  Search for this record in sources
+                J = FINDC( CSRC, NS, CSOURC( SS ) )
+
+C.................  If source is not found for day-specific processing, see
+C                   if reading the SCC in helps (needed for IDA format)
+                IF( J .LE. 0 ) THEN
+
+                    IF ( DAYFLAG ) THEN
+                        TSCC = ADJUSTL( LINE( 92:101) )
+                    ELSE IF ( WIDE_FORMAT ) THEN
+                        TSCC = ADJUSTL( LINE( 373:380 ) )
+                    ELSE
+                        TSCC = ADJUSTL( LINE( 250:259 ) )
+                    END IF
+                    IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
+                    CHAR4 = TSCC
+
+C.....................  Build source characteristics field for searching inventory
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
+     &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
+
+C.....................  Search for this record in sources
+                    J = FINDC( CSRC, NS, CSOURC( SS ) )
+                    IF ( J .GT. 0 ) TFLAG = .TRUE.
+
+                END IF
+
+            END IF
+
+C.............  Store source in list of bad sources
+C.............  Print warning about sources not found in the inventory
+            IF( J .LE. 0 ) THEN
+
+C.................  Search for source in list of bad sources
+                J = INDEX1( CSRC, NBADSRC, BADSRC )
+
+C.................  If source is not found, give a message.  Don't need the
+C                   WARNOUT controller because this section only gets
+C                   invoked once.
+                IF( J .LE. 0 ) THEN
+
+                    NBADSRC = NBADSRC + 1
+                    BADSRC( NBADSRC ) = CSRC
+
+                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+                    IF( NWARN( 3 ) .LE. MXWARN ) THEN
+                        MESG = 'WARNING: Period-specific record does '//
+     &                         'not match inventory sources: '//
+     &                         CRLF() // BLANK10 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                        NWARN( 3 ) = NWARN( 3 ) + 1
+                    END IF
+
+                END IF
+
+                CYCLE               !  to head of read loop
+
+C.............  Otherwise, update master list of sources in the inventory
+            ELSE
+                S = SS - 1 + J         ! calculate source number
+
+            END IF
+
 C.............  Check pollutant code and set index I
             IF( NFLAG ) THEN
                 CDAT = LINE( S1:S2 )
@@ -496,18 +616,22 @@ C................  Look up SMOKE name in list of annual EI pollutants
 
 C................  Check to ensure that it handles NOI and NONHAP pollutants
 C                  while combining VOC + HAPs
-               IF( INTGRFLAG .AND. COD < 1 ) THEN
+               IF( INTGRFLAG ) THEN
 
 C....................  Preventing processing precomputed NONHAP[VOC|TOG]
                    IF( INDEX( CNAM,'NONHAP' ) > 0 ) THEN
                        MESG = 'ERROR: Can NOT process precomputed '// TRIM(CNAM)//
      &                     ' when SMK_PROCESS_HAPS was set to process anuual inventory'
-                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                       CALL M3EXIT( PROGNAME, 0, 0, MESG , 2 )
                    END IF
 
-                   PNAM = TRIM( CNAM ) // '_NOI'
-                   COD = INDEX1( PNAM, NIPPA, EANAM )
-                   IF( COD .LE. 0 ) THEN
+                   NV = INDEX1( CNAM, MXIDAT, INVDNAM )
+
+                   IF( CINTGR( S ) == 'N' .AND. INVDVTS( NV ) /= 'N' ) THEN
+                       PNAM = TRIM( CNAM ) // '_NOI'
+                       COD = INDEX1( PNAM, NIPPA, EANAM )
+
+                   ELSE IF( CINTGR( S ) == 'Y' ) THEN
                        L = INDEX( CNAM, ETJOIN )
                        LL= LEN_TRIM( CNAM )
                        PNAM = CNAM
@@ -519,9 +643,11 @@ C....................  Preventing processing precomputed NONHAP[VOC|TOG]
                            ELSE
                                PNAM = 'NONHAP' // TRIM( CNAM )
                            END IF
+                           COD = INDEX1( PNAM, NIPPA, EANAM )
                        END IF
-                       COD   = INDEX1( PNAM, NIPPA, EANAM )
+
                    END IF
+
                END IF
 
 C................  Check to ensure that the SMOKE intermediate name
@@ -627,129 +753,8 @@ C.............  If available, set total value from hourly file
                 END IF
             END IF
 
-C.............  Set key for searching sources
-            FIP  = ICC * 100000 +
-     &             1000 * STR2INT( LINE( 1:2 ) ) +
-     &                    STR2INT( LINE( 3:5 ) )
-            WRITE( CFIP,94020 ) FIP
-
-            FCID = ADJUSTL( LINE( 6:20 ) )
-
-            SKID = ADJUSTL( LINE( 21:32 ) )   ! point ID in IDA
-
-            DVID = ADJUSTL( LINE( 33:44 ) )   ! stack ID in IDA
-
-            PRID = ADJUSTL( LINE( 45:56 ) )   ! segment in IDA
-
-            TSCC = ' '
-
-C.............  If FIPS code is not the same as last time, then
-C               look it up and get indidies
-            IF( FIP .NE. LFIP ) THEN
-                J = FINDC( CFIP, NINVIFIP, INVCFIP )
-                IF( J .LE. 0 ) THEN
-                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not '//
-     &                     'find FIPS code', FIP, 'in internal list.'
-                    CALL M3MSG2( MESG )
-                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-                END IF
-
-                SS = STARTSRC( J )
-                ES = ENDSRC( J )
-                NS = ES - SS + 1
-                LFIP = FIP
-
-            END IF
-
-C.............  If SCCs are needed for matching...
-            IF ( TFLAG ) THEN
-                IF ( DAYFLAG ) THEN
-                    TSCC = ADJUSTL( LINE( 92:101) )
-                ELSE IF ( WIDE_FORMAT ) THEN
-                    TSCC = ADJUSTL( LINE( 373:380 ) )
-                ELSE ! hourly standard format
-                    TSCC = ADJUSTL( LINE( 250:259 ) )
-                END IF
-                IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
-                CHAR4 = TSCC
-
-C.................  Build source characteristics field for searching inventory
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
-     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
-
-C.................  Search for this record in sources
-                J = FINDC( CSRC, NS, CSOURC( SS ) )
-
-C.............  If SCCs are not being used for matching (at least not yet)...
-            ELSE
-
-C.................  Build source characteristics field for searching inventory
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
-     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
-
-C.................  Search for this record in sources
-                J = FINDC( CSRC, NS, CSOURC( SS ) )
-
-C.................  If source is not found for day-specific processing, see
-C                   if reading the SCC in helps (needed for IDA format)
-                IF( J .LE. 0 ) THEN
-
-                    IF ( DAYFLAG ) THEN
-                        TSCC = ADJUSTL( LINE( 92:101) )
-                    ELSE IF ( WIDE_FORMAT ) THEN
-                        TSCC = ADJUSTL( LINE( 373:380 ) )
-                    ELSE
-                        TSCC = ADJUSTL( LINE( 250:259 ) )
-                    END IF
-                    IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
-                    CHAR4 = TSCC
-
-C.....................  Build source characteristics field for searching inventory
-                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
-     &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
-
-C.....................  Search for this record in sources
-                    J = FINDC( CSRC, NS, CSOURC( SS ) )
-                    IF ( J .GT. 0 ) TFLAG = .TRUE.
-
-                END IF
-
-            END IF
-
-C.............  Store source in list of bad sources
-C.............  Print warning about sources not found in the inventory
-            IF( J .LE. 0 ) THEN
-
-C.................  Search for source in list of bad sources
-                J = INDEX1( CSRC, NBADSRC, BADSRC )
-
-C.................  If source is not found, give a message.  Don't need the
-C                   WARNOUT controller because this section only gets
-C                   invoked once.
-                IF( J .LE. 0 ) THEN
-
-                    NBADSRC = NBADSRC + 1
-                    BADSRC( NBADSRC ) = CSRC
-
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-                    IF( NWARN( 3 ) .LE. MXWARN ) THEN
-                        MESG = 'WARNING: Period-specific record does '//
-     &                         'not match inventory sources: '//
-     &                         CRLF() // BLANK10 // BUFFER( 1:L2 )
-                        CALL M3MESG( MESG )
-                        NWARN( 3 ) = NWARN( 3 ) + 1
-                    END IF
-
-                END IF
-
-                CYCLE               !  to head of read loop
-
-C.............  Otherwise, update master list of sources in the inventory
-            ELSE
-                S = SS - 1 + J         ! calculate source number
-                LPDSRC( S ) = .TRUE.
-
-            END IF
+C.............  Store source ID
+            LPDSRC( S ) = .TRUE.
 
 C.............  Set conversion factor from Inventory Table. Default is
 C               1., which is also what is used in all but a handful of
