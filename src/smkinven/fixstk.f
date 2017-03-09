@@ -46,7 +46,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: CSOURC, CSCC, CIFIP, 
+        USE MODSOURC, ONLY: CSOURC, CSCC, CIFIP, CERPTYP, 
      &                      STKHT, STKDM, STKVE, STKTK
 
         IMPLICIT NONE
@@ -69,9 +69,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         ENVINT
         LOGICAL         USEEXPGEO
         REAL            ENVREAL
+        LOGICAL         ENVYN
 
         EXTERNAL        BLKORCMT, CRLF, FINDC, GETFLINE, STR2REAL,
-     &                  STR2INT, ENVINT, USEEXPGEO, ENVREAL
+     &                  STR2INT, ENVINT, USEEXPGEO, ENVREAL, ENVYN
 
 C...........   ARGUMENTS and their descriptions:
 
@@ -139,6 +140,7 @@ C.........  Other local variables
         REAL   MINVE, MAXVE      !  min/max stack velocity
 
         LOGICAL      :: EFLAG = .FALSE.  !  error flag
+        LOGICAL      :: SFLAG = .FALSE.  ! true: skip applying stack para for fugitive src
         LOGICAL         DFLAG( NSRC )    ! true if source getting default parms
 
         CHARACTER(300)     BUFFER    !  temporary buffer
@@ -168,6 +170,10 @@ C.........   Get maximum number of warnings
         MXWARN = ENVINT( WARNSET , ' ', 100, IOS )
 
         CALL M3MSG2( 'Reading default stack parameters...' )
+
+C.........  Skip if sources are fugitive
+        MESG  = 'Skip replacing stack parameters for fugitive sources'
+        SFLAG = ENVYN( 'NO_STACK_REPLACE_FUGITIVE',MESG,.FALSE.,IOS )
 
 C.........  Define min/max ranges of stack parameters
         MESG = 'Define minimum stack height in unit of meter'
@@ -416,6 +422,17 @@ C...........   Treat parameters equal to 0 as missing
 
             K = 0                ! Initialize K to test if replacements made
             DFLAG( S ) = .FALSE. ! Initialize DFLAG to test if defaults used
+
+C.............  Skip for fugitive source (01)
+            IF( SFLAG ) THEN
+                IF( STR2INT( CERPTYP(S) ) == 1 ) THEN
+                    STKHT( S ) = 0.0
+                    STKDM( S ) = 0.0
+                    STKTK( S ) = 0.0
+                    STKVE( S ) = 0.0
+                    CYCLE
+                END IF
+            END IF
 
 C.............  Set up temporary character strings
             CFIP = CIFIP( S )
