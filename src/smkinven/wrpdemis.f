@@ -103,15 +103,15 @@ C...........   Local arrays
         INTEGER, ALLOCATABLE, SAVE :: SPIDX2( : )
         INTEGER, ALLOCATABLE       :: SIDX( : )      ! start index of a source
         INTEGER, ALLOCATABLE       :: EIDX( : )      ! end index of a source
-        INTEGER, ALLOCATABLE, SAVE :: NMODPOS( : )   ! positions of NONHAPVOCs
+        INTEGER, ALLOCATABLE, SAVE :: NHAPPOS( : )   ! positions of NONHAPVOCs
 
 C...........   LOCAL PARAMETERS
         CHARACTER(16), PARAMETER   :: FORMEVNM = 'SMKINVEN_FORMULA'
-        CHARACTER( 3 ),ALLOCATABLE,SAVE :: NMODNAM( : )
+        CHARACTER(3),  ALLOCATABLE, SAVE :: NHAPMOD( : )
 
 C...........   Other local variables
-        INTEGER          I, J, K, LK, LN, M, N, S, V, V2, NC, NV, IV
-        INTEGER          II, JJ, VV, F, NP, L, LL, L1, L2, LS
+        INTEGER          I, J, K, LK, LN, M, N, S, V, V2, NC, NV, IV, CV
+        INTEGER          II, JJ, VV, F, NP, L, LL, L2, LS
 
         INTEGER          IOS                  ! i/o status
         INTEGER, SAVE :: NWARN = 0            ! warning count
@@ -123,13 +123,13 @@ C...........   Other local variables
         INTEGER          IDXA                 ! position of first variable in source index
         INTEGER          IDXB                 ! position of second in iable in source index
         INTEGER          NVPOS                ! position of calculated new variable in source index
+        INTEGER, SAVE :: NNHV = 0             ! no of NONHAPVOCs
         INTEGER          NVOC                 ! no of NONHAPVOCs
-        INTEGER, SAVE::  NMOD                 ! no of modes
         INTEGER          NHAP                 ! no of HAPs
         INTEGER          NHVPOS               ! position of NONHAPVOC in PTDAY
         INTEGER          VOCPOS               ! position of VOC in PTDAY
         INTEGER          NVRAW                ! raw position of variable in source index
-        INTEGER       :: WARNCNT = 0          ! number of times warnings
+        INTEGER          WARNCNT              ! number of times warnings
 
         LOGICAL       :: FND_VINA = .FALSE.   ! true: found formula pollutant
         LOGICAL       :: FND_VINB = .FALSE.  ! true: found formula pollutant
@@ -189,29 +189,30 @@ C.............  Create reverse index for pollutants and activities
             CALL CHECKMEM( IOS, 'EAIDX2', PROGNAME )
             EAIDX2 = 0
 
-            NMOD = 0
+            NNHV = 0
             DO V = 1, NVAR
                 POLNAM = EANAM( EAIDX( V ) )
                 L = INDEX( POLNAM, 'NONHAP' )
-                IF( L > 0 ) NMOD = NMOD + 1
+                IF( L > 0 ) NNHV = NNHV + 1
                 EAIDX2( EAIDX( V ) ) = V
             END DO
 
 C.............  Create array to store original no of VOC/TOG values
-            IF( ASSOCIATED( CINTGR ) ) THEN
-                ALLOCATE( NMODNAM( NMOD ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'NMODNAM', PROGNAME )
-                ALLOCATE( NMODPOS( NMOD ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'NMODPOS', PROGNAME )
-                NMODNAM = ' '
-                NMODPOS = 0
+            IF( INTGRFLAG ) THEN
+                ALLOCATE( NHAPMOD( NNHV ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'NHAPMOD', PROGNAME )
+                ALLOCATE( NHAPPOS( NNHV ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'NHAPPOS', PROGNAME )
+                NHAPMOD = ''
+                NHAPPOS = 0
             END IF
-
-            N = 0
+ 
+C..............  Build mode array
+            NNHV = 0
             DO V = 1, NVAR
-
                 POLNAM = EANAM( EAIDX( V ) )
-                IF( INDEX( POLNAM, 'NONHAP' ) < 1 ) CYCLE
+                L = INDEX( POLNAM, 'NONHAP' )
+                IF( L < 1 ) CYCLE
 
                 L  = INDEX( POLNAM, ETJOIN )
                 LL = LEN_TRIM ( POLNAM )
@@ -219,18 +220,17 @@ C.............  Create array to store original no of VOC/TOG values
                     TMPMOD = POLNAM( 1:L-1 )
                     INVNAM = POLNAM( L+2:LL )
                 ELSE
-                    TMPMOD = 'ORG'
+                    TMPMOD = 'TMP'
                     INVNAM = POLNAM
                 END IF
 
-                M = INDEX1( TMPMOD, NMOD, NMODNAM )
-                IF( M < 1 ) THEN
-                    N = N + 1
-                    NMODNAM( N ) = TMPMOD
-                    NMODPOS( N ) = EAIDX2( EAIDX( V ) )
+                IF( INDEX1( TMPMOD, NNHV, NHAPMOD ) < 1 ) THEN
+                    NNHV = NNHV + 1
+                    NHAPMOD( NNHV ) = TMPMOD
+                    NHAPPOS( NNHV ) = V
                 END IF
             END DO
-
+                        
 C.............  Create reverse index for special variables
             IF( ALLOCATED (SPIDX2)) DEALLOCATE (SPIDX2)
             ALLOCATE( SPIDX2( MXSPDAT ), STAT=IOS )
@@ -266,6 +266,7 @@ C.........  Store sorted records for this hour
         LS = 0  ! previous source
         LN = -9 ! previous Inventory Data Code position in UNIQCAS
         K  = 0
+        LK = 0
         DO I = 1, MIN( NPDPT( TIDX ), MXPDSRC )
 
           J = IDXSRC( I,TIDX )
@@ -273,25 +274,26 @@ C.........  Store sorted records for this hour
           V = CODEA ( J,TIDX )
           N = CIDXA ( J,TIDX )
 
+          POLNAM = EANAM( V ) 
+
 C...........  Add multiple inventory pollutant(s) with same CAS name
 C             Find code corresponding to current pollutant before you
+          NPPCAS = UCASNKEP( N )
+
           IF( CFLAG ) THEN
               NPPCAS = 1
+              CV     = V
               NCOMP = 0
               INTGRFLAG = .FALSE.
-          ELSE
-              NPPCAS = UCASNKEP( N )
           END IF
 
           DO NP = 0, NPPCAS - 1
 
-            IF( .NOT. CFLAG ) THEN
-                NC = UCASIDX( N ) + NP
-                POLNAM = ITNAMA( SCASIDX( NC ) )
-                V = INDEX1( POLNAM, NIPPA, EANAM )
-            END IF
-
+            NC = UCASIDX( N ) + NP
+            IF( NP > 0 ) POLNAM = ITNAMA( SCASIDX( NC ) )
+            V = INDEX1( POLNAM, NIPPA, EANAM )
             IF( NP > 0 ) LN = 0
+            IF( CFLAG  ) V = CV                  ! restore original poll idx
             IF( V < 1  ) CYCLE                   ! skip if it is not listed in ann inv poll
 
 C.............  Intialize as not a special data variable (e.g., not flow rate)
@@ -320,7 +322,6 @@ C.................  Count no of source
                 IF( S .NE. LS ) THEN
                      K = K + 1
                      PDIDX( K ) = S
-                     LS         = S
                 END IF 
 
 C.................  Get the location of start and end index 
@@ -411,6 +412,7 @@ C.............................  Check for negative values for daily value
                                 END IF
 c                                CALL M3MESG( MESG )
                                 PDDATA( LK,NVPOS ) = 0.0
+                                PDTOTL( LK,NVPOS ) = 0.0
                             END IF 
 
                         ELSE IF( WARNCNT .LE. MXWARN ) THEN
@@ -433,80 +435,116 @@ C.................  Combine VOC + HAPs for integrate/non-integrate option
 C.................  Determine no of VOCs and store VOC/NONHAPVOC positions
 C                   for later NONHAPVOC calculation by substracting
                 IF( INTGRFLAG .AND. I > 1 ) THEN
-                IF( CINTGR( S ) == 'Y'    ) THEN
 
-C.....................  Search for NONHAPVOC  & VOC and its position for later
-C                       computing NONHAPVOC for integrated sources and also count no of HAPs
-                    NVOC = 0
+C.....................  Count no of HAPs
                     NHAP = 0
-                    DO II = SIDX(LK), EIDX(LK)
-
+                    NVOC = 0
+                    DO II = SIDX(LK), EIDX(LK)    
                         JJ = IDXSRC( II,TIDX )
                         VV = CODEA ( JJ,TIDX )
                         IV = EAIDX2( VV )
 
                         POLNAM = EANAM( VV )
 
-C.........................  Skip VOC+HAPs if precomputed NONHAP[VOC|TOG] is existed in PTDAY
+C.........................  Store values when NONHAP[VOC|TOG] is found
                         IF( INDEX( POLNAM, 'NONHAP' ) > 0 ) THEN
                             NVOC = NVOC + 1
-                            PDDATA( LK,IV ) = 0.0 
-                            PDDATA( LK,IV ) = EMISVA( JJ,TIDX )
-                            PDTOTL( LK,IV ) = 0.0
-                            PDTOTL( LK,IV ) = DYTOTA( JJ,TIDX )
+                            IF( PDDATA( LK,IV ) > 0.0 ) THEN
+                                PDDATA( LK,IV ) = PDDATA( LK,IV )
+     &                                          + EMISVA( JJ,TIDX )
+                                PDTOTL( LK,IV ) = PDTOTL( LK,IV )
+     &                                          + DYTOTA( JJ,TIDX )
+                            ELSE
+                                PDDATA( LK,IV ) = EMISVA( JJ,TIDX )
+                                PDTOTL( LK,IV ) = DYTOTA( JJ,TIDX )
+                            END IF
                         END IF
 
-C.........................  Skip if it is activity data, skip
+C.........................  Skip if it is activity data, skip                          
 C.........................  Skip if pollutant is not part of VOC or TOG, cycle
                         NV = INDEX1( POLNAM, MXIDAT, INVDNAM )
-                        IF( INVSTAT( NV ) < 0 ) CYCLE
+                        IF( INVSTAT( NV ) <   0  ) CYCLE
                         IF( INVDVTS( NV ) == 'N' ) CYCLE
-                        
+
                         NHAP = NHAP + 1
 
                     END DO
 
-C.....................  Process integrated sources : NONHAPVOC = VOC - all HAPs
-                    IF( NVOC > 0 .AND. NHAP > 0 ) THEN
+C.....................  Process non-integrated sources
+                    IF( CINTGR( LS ) == 'N' ) THEN
 
+C.........................  Search for HAP to converted to HAP_NOI for non-integrated source
                         DO II = SIDX(LK), EIDX(LK)    
-
                             JJ = IDXSRC( II,TIDX )
-                            VV = CODEA ( JJ,TIDX )   ! NONHAP[VOC|TOG] index
+                            VV = CODEA ( JJ,TIDX )
+                            IV = EAIDX2( VV )
 
                             POLNAM = EANAM( VV )
+  
+C.................................  If pollutant is not a model species, set it to zero
+                            IF( INDEX( POLNAM, '_NOI' ) > 0 ) THEN
+                                INVNAM = POLNAM
+                                L  = INDEX( POLNAM,'_NOI' )
+                                IF( L > 0 ) INVNAM = POLNAM( 1:L-1 )
+                                NVRAW = INDEX1( INVNAM, NINVTBL, ITNAMA )
+                                IF( .NOT. ITMSPC( NVRAW ) ) EMISVA( JJ, TIDX ) = 0.0
+
+                                IF( PDDATA( LK,IV ) > 0.0 ) THEN
+                                    PDDATA( LK,IV ) = PDDATA( LK,IV )
+     &                                              + EMISVA( JJ,TIDX )
+                                    PDTOTL( LK,IV ) = PDTOTL( LK,IV )
+     &                                              + DYTOTA( JJ,TIDX )
+                                ELSE
+                                    PDDATA( LK,IV ) = EMISVA( JJ,TIDX )
+                                    PDTOTL( LK,IV ) = DYTOTA( JJ,TIDX )
+                                END IF
+                            END IF
+
+                        END DO
+
+C.....................  Process integrated sources : NONHAPVOC = VOC - all HAPs
+                    ELSE IF( CINTGR( LS ) == 'Y' ) THEN
+
+                      IF( NVOC > 0 .AND. NHAP > 0 ) THEN
+                        DO II = SIDX(LK), EIDX(LK)    
+                            JJ = IDXSRC( II,TIDX )
+                            VV = CODEA ( JJ,TIDX )
+
+                            POLNAM = EANAM( VV )
+                            NV = INDEX1( POLNAM, MXIDAT, INVDNAM )
 
 C.........................  Skip if it is activity data, skip
+                            IF( INVSTAT( NV ) < 0 ) CYCLE
+                            
 C.........................  Skip if pollutant is not part of VOC or TOG, cycle
-                            NV = INDEX1( POLNAM, MXIDAT, INVDNAM )
-                            IF( INVSTAT( NV ) <   0  ) CYCLE
                             IF( INVDVTS( NV ) == 'N' ) CYCLE
 
                             L  = INDEX( POLNAM, ETJOIN )
                             IF( L > 0  ) THEN
                                 TMPMOD = POLNAM( 1:L-1 )
                             ELSE
-                                TMPMOD = 'ORG'
+                                TMPMOD = 'TMP'
                             END IF
 
 C.............................  Retrieve NONHAPVOC positions
-                            M = INDEX1( TMPMOD, NMOD, NMODNAM )
-                            NHVPOS = NMODPOS( M )
+                            M = INDEX1( TMPMOD, NNHV, NHAPMOD )
+                            NHVPOS = NHAPPOS( M )
+
                             IF( NHVPOS < 1 ) CYCLE
 
 C.............................  Compute NONHAPVOCs
 C                               Subtract all mode-specific HAPs from Original VOC
                             PDDATA( LK,NHVPOS ) = PDDATA( LK,NHVPOS )
      &                                            - EMISVA( JJ,TIDX )
-     
                             PDTOTL( LK,NHVPOS ) = PDTOTL( LK,NHVPOS )
-     &                                            - DYTOTA( JJ,TIDX )     
-
+     &                                            - DYTOTA( JJ,TIDX )
+     
                             IF( PDDATA( LK,NHVPOS ) < 0.0 ) THEN
                                 PDDATA( LK,NHVPOS ) = 0.0
+                                PDTOTL( LK,NHVPOS ) = 0.0
                             END IF
 
-                          END DO    ! end of variable search loop
+                        END DO    ! end of variable search loop
 
 C.....................  Error if VOC or HAP is missing for integration 
                       ELSE IF( NVOC > 0 .AND. NHAP < 1 ) THEN
@@ -523,12 +561,21 @@ C.....................  Error if VOC or HAP is missing for integration
                         CALL M3MESG( MESG )
                         EFLAG = .TRUE.
 
+                      ELSE IF( NVOC < 1 .AND. NHAP < 1 ) THEN
+                        CALL FMTCSRC( CSOURC( LS ), NCHARS, BUFFER, L2 )
+                        MESG = 'ERROR: Both VOC|TOG and toxics are not found '//
+     &                       ' for the sourc:'//CRLF()//BLANK10//BUFFER(1:L2)
+                        CALL M3MESG( MESG )
+                        EFLAG = .TRUE.
                       END IF
 
                     END IF   ! integrated sources only
-
+                    
                 END IF
                 END IF   ! NP loop
+
+C.................  set previous source id
+                IF( S .NE. LS ) LS = S
 
 C............. If source is the same, look for duplicate data variables
             ELSE IF ( N .EQ. LN ) THEN
@@ -538,12 +585,12 @@ C............. If source is the same, look for duplicate data variables
 
 C.............  If emissions are not yet set for current source and variable
             IF( PDDATA( K,V ) .LT. AMISS3 ) THEN  ! PDDATA is blank
+
                 PDDATA( K,V ) = EMISVA( J,TIDX )
                 PDTOTL( K,V ) = DYTOTA( J,TIDX )
-            END IF
 
-C.............  Otherwise, sum emissions for duplicate sources, report, and set error if needed
-            IF( DUPFLAG ) THEN
+C.............  Otherwise, sum emissions, report, and set error if needed
+            ELSE 
 
                 IF( .NOT. LFLAG .AND. EMISVA( J,TIDX ) .GE. 0. )
      &              PDDATA( K,V )  = PDDATA( K,V ) + EMISVA( J,TIDX )
@@ -555,29 +602,34 @@ C.................  If the source is an actual duplicate (the same source
 C                   and Inventory Data Name), proceed accordingly.  Do
 C                   not write warnings for Inventory Data Names that
 C                   are combined into the same SMOKE name.
-                CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-                NWARN1 = NWARN1 + 1
+                IF ( DUPFLAG ) THEN
+                    CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                    NWARN1 = NWARN1 + 1
 
-                IF( DFLAG ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Duplicate source in inventory:'//
-     &                     CRLF() // BLANK10 // BUFFER( 1:L2 )
-                    IF( NWARN1 <= MXWARN ) CALL M3MESG( MESG )
-                    CYCLE
-                ELSE IF ( LFLAG ) THEN
-                    MESG = 'WARNING: Duplicate source in ' //
-     &                     'inventory. Will store only one value '//
-     &                     'for '// CRLF()// BLANK10//SPDATDSC(V2)//
-     &                     ':' // CRLF() // BLANK10 // BUFFER(1:L2)
-                    IF( NWARN1 <= MXWARN ) CALL M3MESG( MESG )
-                ELSE
-                    MESG = 'WARNING: Duplicate source in ' //
-     &                     'inventory will have summed emissions:' 
-     &                     //CRLF() // BLANK10 // BUFFER( 1:L2 )
-                    IF( NWARN1 <= MXWARN )CALL M3MESG( MESG )
-                END IF
+                    IF( NWARN1 <= MXWARN ) THEN
+                    IF( DFLAG ) THEN
+                        EFLAG = .TRUE.
+                        MESG = 'ERROR: Duplicate source in inventory:'//
+     &                         CRLF() // BLANK10 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                        CYCLE
+                    ELSE IF ( LFLAG ) THEN
+                        MESG = 'WARNING: Duplicate source in ' //
+     &                         'inventory. Will store only one value '//
+     &                         'for '// CRLF()// BLANK10//SPDATDSC(V2)//
+     &                         ':' // CRLF() // BLANK10 // BUFFER(1:L2)
+                        CALL M3MESG( MESG )
+                    ELSE
+                        MESG = 'WARNING: Duplicate source in ' //
+     &                         'inventory will have summed emissions:' 
+     &                         //CRLF() // BLANK10 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                    END IF
+                    END IF
 
-            END IF   !  If duplicate sources
+                END IF   !  If duplicate or not
+
+            END IF
 
             LN = N  ! Set LN for next iteration
 
