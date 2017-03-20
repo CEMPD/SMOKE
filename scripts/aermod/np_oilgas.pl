@@ -9,6 +9,8 @@ use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 require 'aermod.subs';
 require 'aermod_np.subs';
 
+my $grid_prefix = '4_';
+
 # check environment variables
 foreach my $envvar (qw(REPORT SOURCE_GROUPS GROUP_PARAMS 
                        ATPRO_MONTHLY ATPRO_WEEKLY ATPRO_HOURLY OUTPUT_DIR)) {
@@ -56,8 +58,8 @@ while (my $row = $csv_parser->getline_hr($group_fh)) {
     die "Unknown run group name $run_group in source group/SCC mapping file";
   }
 
-  $scc_groups{$scc} = $run_group;
-  $group_params{$run_group}{'source_group'} = $row->{'source_group'};
+  $scc_groups{$scc}{'run_group'} = $run_group;
+  $scc_groups{$scc}{'source_group'} = $row->{'source_group'};
 }
 close $group_fh;
 
@@ -72,21 +74,32 @@ my %weekly = read_profiles($prof_file, 7);
 $prof_file = $ENV{'ATPRO_HOURLY'};
 my %daily = read_profiles($prof_file, 24);
 
-# open output files
-print "Creating output files...\n";
+# check output directories
+print "Checking output directories...\n";
 my $output_dir = $ENV{'OUTPUT_DIR'};
+die "Missing output directory $output_dir" unless -d $output_dir;
 
-my $loc_fh = open_output("$output_dir/np_oilgas_locations.csv");
-write_location_header($loc_fh);
+foreach my $dir (qw(locations parameters temporal emis)) {
+  die "Missing output directory $output_dir/$dir" unless -d $output_dir . '/' . $dir;
+}
 
-my $param_fh = open_output("$output_dir/np_oilgas_area_params.csv");
-write_parameter_header($param_fh);
+# open output files
+# print "Creating output files...\n";
+# my $output_dir = $ENV{'OUTPUT_DIR'};
+# 
+# my $loc_fh = open_output("$output_dir/locations/np_oilgas_locations.csv");
+# write_location_header($loc_fh);
+# 
+# my $param_fh = open_output("$output_dir/parameters/np_oilgas_area_params.csv");
+# write_parameter_header($param_fh);
+# 
+# my $tmp_fh = open_output("$output_dir/temporal/np_oilgas_temporal.csv");
+# write_temporal_header($tmp_fh);
+# 
+# my $x_fh = open_output("$output_dir/emis/np_oilgas_emis.csv");
+# print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value\n";
 
-my $tmp_fh = open_output("$output_dir/np_oilgas_temporal.csv");
-write_temporal_header($tmp_fh);
-
-my $x_fh = open_output("$output_dir/np_oilgas_emis.csv");
-print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value\n";
+my %handles;
 
 my %headers;
 my @pollutants;
@@ -121,7 +134,8 @@ while (my $line = <$in_fh>) {
   unless (exists $scc_groups{$scc}) {
     die "No run group defined for SCC $scc";
   }
-  my $run_group = $scc_groups{$scc};
+  my $run_group = $scc_groups{$scc}{'run_group'};
+  my $source_group = $scc_groups{$scc}{'source_group'};
 
   # build cell identifier
   my $x_4k = $data[$headers{'X cell'}];
@@ -141,7 +155,7 @@ while (my $line = <$in_fh>) {
     my @common;
     push @common, $run_group;
     push @common, $cell;
-    push @common, "4_${resolution_id}";
+    push @common, "${grid_prefix}${resolution_id}";
 
     # prepare location output
     my @output = @common;
@@ -156,6 +170,13 @@ while (my $line = <$in_fh>) {
     push @output, $outzone;
     push @output, $sw_lon;
     push @output, $sw_lat;
+    my $file = "$output_dir/locations/${run_group}_locations.csv";
+    unless (exists $handles{$file}) {
+      my $fh = open_output($file);
+      write_location_header($fh);
+      $handles{$file} = $fh;
+    }
+    my $loc_fh = $handles{$file};
     print $loc_fh join(',', @output) . "\n";
 
     # prepare parameters output
@@ -192,6 +213,13 @@ while (my $line = <$in_fh>) {
     push @output, $ne_lat;
     push @output, $se_lon;
     push @output, $se_lat;
+    $file = "$output_dir/parameters/${run_group}_area_params.csv";
+    unless (exists $handles{$file}) {
+      my $fh = open_output($file);
+      write_parameter_header($fh);
+      $handles{$file} = $fh;
+    }
+    my $param_fh = $handles{$file};
     print $param_fh join(',', @output) . "\n";
   
     # prepare temporal profile output
@@ -200,14 +228,21 @@ while (my $line = <$in_fh>) {
     @output = @common;
     push @output, $qflag;
     push @output, map { sprintf('%.4f', $_) } @factors;
+    $file = "$output_dir/temporal/${run_group}_temporal.csv";
+    unless (exists $handles{$file}) {
+      my $fh = open_output($file);
+      write_temporal_header($fh);
+      $handles{$file} = $fh;
+    }
+    my $tmp_fh = $handles{$file};
     print $tmp_fh join(',', @output) . "\n";
   }
 
   # store emissions
   my $region = $data[$headers{'Region'}];
-  $region = substr($region, -5);
+  $region = substr($region, -6);
   foreach my $poll (@pollutants) {
-    my $emis_id = join(":::", $source_id, $region, $poll);
+    my $emis_id = join(":::", $source_id, $source_group, $region, $poll);
     unless (exists $emissions{$emis_id}) {
       $emissions{$emis_id} = 0;
     }
@@ -218,23 +253,30 @@ while (my $line = <$in_fh>) {
   
 # prepare crosswalk output
 for my $emis_id (keys %emissions) {
-  my ($run_group, $cell, $resolution_id, $region, $poll) = split(/:::/, $emis_id);
+  my ($run_group, $cell, $resolution_id, $source_group, $region, $poll) = split(/:::/, $emis_id);
+  next if $emissions{$emis_id} == 0.0;
 
   my @output;
   push @output, $run_group;
   push @output, $region;
   push @output, $cell;
-  push @output, "4_${resolution_id}";
-  push @output, '"'.$group_params{$run_group}{'source_group'}.'"';
+  push @output, "${grid_prefix}${resolution_id}";
+  push @output, $source_group;
   push @output, $poll;
   push @output, $emissions{$emis_id};
+  my $file = "$output_dir/emis/${grid_prefix}${run_group}_emis.csv";
+  unless (exists $handles{$file}) {
+    my $fh = open_output($file);
+    print $fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value\n";
+    $handles{$file} = $fh;
+  }
+  my $x_fh = $handles{$file};
   print $x_fh join(',', @output) . "\n";
 }
 
 close $in_fh;
-close $loc_fh;
-close $param_fh;
-close $tmp_fh;
-close $x_fh;
+foreach my $fh (values %handles) {
+  close $fh;
+}
 
 print "Done.\n";

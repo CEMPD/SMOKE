@@ -9,6 +9,8 @@ use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 require 'aermod.subs';
 require 'aermod_np.subs';
 
+my $grid_prefix = '12_';
+
 # check environment variables
 foreach my $envvar (qw(REPORT_JAN REPORT_FEB REPORT_MAR REPORT_APR REPORT_MAY REPORT_JUN 
                        REPORT_JUL REPORT_AUG REPORT_SEP REPORT_OCT REPORT_NOV REPORT_DEC 
@@ -61,8 +63,8 @@ while (my $row = $csv_parser->getline_hr($group_fh)) {
     die "Unknown run group name $run_group in source group/SCC mapping file";
   }
 
-  $scc_groups{$scc} = $run_group;
-  $group_params{$run_group}{'source_group'} = $row->{'source_group'};
+  $scc_groups{$scc}{'run_group'} = $run_group;
+  $scc_groups{$scc}{'source_group'} = $row->{'source_group'};
 }
 close $group_fh;
 
@@ -77,21 +79,32 @@ my %weekly = read_profiles($prof_file, 7);
 $prof_file = $ENV{'ATPRO_HOURLY'};
 my %daily = read_profiles($prof_file, 24);
 
-# open output files
-print "Creating output files...\n";
+# check output directories
+print "Checking output directories...\n";
 my $output_dir = $ENV{'OUTPUT_DIR'};
+die "Missing output directory $output_dir" unless -d $output_dir;
 
-my $loc_fh = open_output("$output_dir/nonroad_locations.csv");
-write_location_header($loc_fh);
+foreach my $dir (qw(locations parameters temporal emis)) {
+  die "Missing output directory $output_dir/$dir" unless -d $output_dir . '/' . $dir;
+}
 
-my $param_fh = open_output("$output_dir/nonroad_area_params.csv");
-write_parameter_header($param_fh);
+# open output files
+# print "Creating output files...\n";
+# my $output_dir = $ENV{'OUTPUT_DIR'};
+# 
+# my $loc_fh = open_output("$output_dir/locations/nonroad_locations.csv");
+# write_location_header($loc_fh);
+# 
+# my $param_fh = open_output("$output_dir/parameters/nonroad_area_params.csv");
+# write_parameter_header($param_fh);
+# 
+# my $tmp_fh = open_output("$output_dir/temporal/nonroad_temporal.csv");
+# write_temporal_header($tmp_fh);
+# 
+# my $x_fh = open_output("$output_dir/emis/nonroad_emis.csv");
+# print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value,winter,spring,summer,fall\n";
 
-my $tmp_fh = open_output("$output_dir/nonroad_temporal.csv");
-write_temporal_header($tmp_fh);
-
-my $x_fh = open_output("$output_dir/nonroad_emis.csv");
-print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value,winter,spring,summer,fall\n";
+my %handles;
 
 my %headers;
 my @pollutants;
@@ -101,7 +114,7 @@ my %emissions;
 print "Processing AERMOD sources...\n";
 
 my $month = 0;
-for my $fh (@in_fh) {
+foreach my $fh (@in_fh) {
   $month++;
   print "Reading report for month $month...\n";
 
@@ -133,7 +146,8 @@ for my $fh (@in_fh) {
     unless (exists $scc_groups{$scc}) {
       die "No run group defined for SCC $scc";
     }
-    my $run_group = $scc_groups{$scc};
+    my $run_group = $scc_groups{$scc}{'run_group'};
+    my $source_group = $scc_groups{$scc}{'source_group'};
   
     # build cell identifier
     my $cell = "G" . sprintf("%03d", $data[$headers{'X cell'}]) .
@@ -146,7 +160,7 @@ for my $fh (@in_fh) {
       my @common;
       push @common, $run_group;
       push @common, $cell;
-      push @common, "12_1";
+      push @common, "${grid_prefix}1";
 
       # prepare location output
       my @output = @common;
@@ -161,6 +175,13 @@ for my $fh (@in_fh) {
       push @output, $outzone;
       push @output, $sw_lon;
       push @output, $sw_lat;
+      my $file = "$output_dir/locations/${run_group}_locations.csv";
+      unless (exists $handles{$file}) {
+        my $fh = open_output($file);
+        write_location_header($fh);
+        $handles{$file} = $fh;
+      }
+      my $loc_fh = $handles{$file};
       print $loc_fh join(',', @output) . "\n";
   
       # prepare parameters output
@@ -197,6 +218,13 @@ for my $fh (@in_fh) {
       push @output, $ne_lat;
       push @output, $se_lon;
       push @output, $se_lat;
+      $file = "$output_dir/parameters/${run_group}_area_params.csv";
+      unless (exists $handles{$file}) {
+        my $fh = open_output($file);
+        write_parameter_header($fh);
+        $handles{$file} = $fh;
+      }
+      my $param_fh = $handles{$file};
       print $param_fh join(',', @output) . "\n";
     
       # prepare temporal profile output
@@ -205,6 +233,13 @@ for my $fh (@in_fh) {
       @output = @common;
       push @output, $qflag;
       push @output, map { sprintf('%.4f', $_) } @factors;
+      $file = "$output_dir/temporal/${run_group}_temporal.csv";
+      unless (exists $handles{$file}) {
+        my $fh = open_output($file);
+        write_temporal_header($fh);
+        $handles{$file} = $fh;
+      }
+      my $tmp_fh = $handles{$file};
       print $tmp_fh join(',', @output) . "\n";
     }
   
@@ -219,9 +254,9 @@ for my $fh (@in_fh) {
     }
     
     my $region = $data[$headers{'Region'}];
-    $region = substr($region, -5);
+    $region = substr($region, -6);
     foreach my $poll (@pollutants) {
-      my $emis_id = join(":::", $source_id, $region, $poll);
+      my $emis_id = join(":::", $source_id, $source_group, $region, $poll);
       unless (exists $emissions{$emis_id}) {
         $emissions{$emis_id} = {
           'winter' => 0,
@@ -231,41 +266,48 @@ for my $fh (@in_fh) {
         };
       }
       $emissions{$emis_id}{$season} = 
-        $emissions{$emis_id}{$season} + $data[$headers{$poll}];
+        $emissions{$emis_id}{$season} + $data[$headers{$poll}] / 12;
     }
   }
 }
 
 # prepare crosswalk output
-for my $emis_id (keys %emissions) {
-  my ($run_group, $cell, $region, $poll) = split(/:::/, $emis_id);
+foreach my $emis_id (keys %emissions) {
+  my ($run_group, $cell, $source_group, $region, $poll) = split(/:::/, $emis_id);
 
   my @output;
   push @output, $run_group;
   push @output, $region;
   push @output, $cell;
-  push @output, "12_1";
-  push @output, '"'.$group_params{$run_group}{'source_group'}.'"';
+  push @output, "${grid_prefix}1";
+  push @output, $source_group;
   push @output, $poll;
   
   my $total = $emissions{$emis_id}{'winter'} +
               $emissions{$emis_id}{'spring'} +
               $emissions{$emis_id}{'summer'} +
               $emissions{$emis_id}{'fall'};
+  next if $total == 0.0;
   push @output, $total;
   push @output, $emissions{$emis_id}{'winter'};
   push @output, $emissions{$emis_id}{'spring'};
   push @output, $emissions{$emis_id}{'summer'};
   push @output, $emissions{$emis_id}{'fall'};
+  my $file = "$output_dir/emis/${grid_prefix}${run_group}_emis.csv";
+  unless (exists $handles{$file}) {
+    my $fh = open_output($file);
+    print $fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value,winter,spring,summer,fall\n";
+    $handles{$file} = $fh;
+  }
+  my $x_fh = $handles{$file};
   print $x_fh join(',', @output) . "\n";
 }
 
-for my $fh (@in_fh) {
+foreach my $fh (@in_fh) {
   close $fh;
 }
-close $loc_fh;
-close $param_fh;
-close $tmp_fh;
-close $x_fh;
+foreach my $fh (values %handles) {
+  close $fh;
+}
 
 print "Done.\n";

@@ -9,6 +9,8 @@ use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 require 'aermod.subs';
 require 'aermod_np.subs';
 
+my $grid_prefix = '12_';
+
 my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 
 my $rwc_run_group;
@@ -60,8 +62,8 @@ while (my $row = $csv_parser->getline_hr($group_fh)) {
     die "Unknown run group name $run_group in source group/SCC mapping file";
   }
 
-  $scc_groups{$scc} = $run_group;
-  $group_params{$run_group}{'source_group'} = $row->{'source_group'};
+  $scc_groups{$scc}{'run_group'} = $run_group;
+  $scc_groups{$scc}{'source_group'} = $row->{'source_group'};
 }
 close $group_fh;
 
@@ -79,29 +81,40 @@ my %weekly = read_profiles($prof_file, 7);
 $prof_file = $ENV{'ATPRO_HOURLY'};
 my %daily = read_profiles($prof_file, 24);
 
-# open output files
-print "Creating output files...\n";
+# check output directories
+print "Checking output directories...\n";
 my $output_dir = $ENV{'OUTPUT_DIR'};
+die "Missing output directory $output_dir" unless -d $output_dir;
 
-my $loc_fh = open_output("$output_dir/rwc_locations.csv");
-write_location_header($loc_fh);
+foreach my $dir (qw(locations parameters temporal emis xwalk)) {
+  die "Missing output directory $output_dir/$dir" unless -d $output_dir . '/' . $dir;
+}
 
-my $param_fh = open_output("$output_dir/rwc_area_params.csv");
-write_parameter_header($param_fh);
+# open output files
+# print "Creating output files...\n";
+# my $output_dir = $ENV{'OUTPUT_DIR'};
+# 
+# my $loc_fh = open_output("$output_dir/locations/rwc_locations.csv");
+# write_location_header($loc_fh);
+# 
+# my $param_fh = open_output("$output_dir/parameters/rwc_area_params.csv");
+# write_parameter_header($param_fh);
+# 
+# my $tmp_fh = open_output("$output_dir/temporal/rwc_temporal.csv");
+# print $tmp_fh "run_group,fips,year,month,day,hour,scalar\n";
+# 
+# my $cnty_fh = open_output("$output_dir/xwalk/rwc_county_to_gridcell.csv");
+# print $cnty_fh "run_group,fips,met_cell\n";
+# 
+# my $x_fh = open_output("$output_dir/emis/rwc_emis.csv");
+# print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value\n";
 
-my $tmp_fh = open_output("$output_dir/rwc_temporal.csv");
-print $tmp_fh "run_group,fips,year,month,day,hour,scalar\n";
-
-my $cnty_fh = open_output("$output_dir/rwc_county_to_gridcell.csv");
-print $cnty_fh "run_group,fips,met_cell\n";
-
-my $x_fh = open_output("$output_dir/rwc_emis.csv");
-print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value\n";
+my %handles;
 
 my %headers;
 my @pollutants;
 my %sources;
-my %gridded_emissions;  # emissions by grid cell, county, and pollutant
+my %gridded_emissions;  # emissions by grid cell, source group, county, and pollutant
 
 # RWC-specific collections
 my %county_emissions;  # sum of all emissions by county and SCC
@@ -126,10 +139,12 @@ while (my $line = <$in_fh>) {
   }
   
   # all SCCs must use the same run group, so save the first one seen and check subsequent SCCs
-  $rwc_run_group = $scc_groups{$scc} unless $rwc_run_group;
-  unless ($scc_groups{$scc} eq $rwc_run_group) {
-    die "SCC $scc uses different run group '$scc_groups{$scc}' than default group '$rwc_run_group'";
+  $rwc_run_group = $scc_groups{$scc}{'run_group'} unless $rwc_run_group;
+  unless ($scc_groups{$scc}{'run_group'} eq $rwc_run_group) {
+    die "SCC $scc uses different run group '$scc_groups{$scc}{'run_group'}' than default group '$rwc_run_group'";
   }
+  
+  my $source_group = $scc_groups{$scc}{'source_group'};
 
   # build cell identifier
   my $cell = "G" . sprintf("%03d", $data[$headers{'X cell'}]) .
@@ -141,7 +156,7 @@ while (my $line = <$in_fh>) {
     my @common;
     push @common, $rwc_run_group;
     push @common, $cell;
-    push @common, "12_1";
+    push @common, "${grid_prefix}1";
 
     # prepare location output
     my @output = @common;
@@ -156,6 +171,13 @@ while (my $line = <$in_fh>) {
     push @output, $outzone;
     push @output, $sw_lon;
     push @output, $sw_lat;
+    my $file = "$output_dir/locations/${rwc_run_group}_locations.csv";
+    unless (exists $handles{$file}) {
+      my $fh = open_output($file);
+      write_location_header($fh);
+      $handles{$file} = $fh;
+    }
+    my $loc_fh = $handles{$file};
     print $loc_fh join(',', @output) . "\n";
 
     # prepare parameters output
@@ -192,12 +214,19 @@ while (my $line = <$in_fh>) {
     push @output, $ne_lat;
     push @output, $se_lon;
     push @output, $se_lat;
+    $file = "$output_dir/parameters/${rwc_run_group}_area_params.csv";
+    unless (exists $handles{$file}) {
+      my $fh = open_output($file);
+      write_parameter_header($fh);
+      $handles{$file} = $fh;
+    }
+    my $param_fh = $handles{$file};
     print $param_fh join(',', @output) . "\n";
   }
 
   # store emissions
   my $region = $data[$headers{'Region'}];
-  $region = substr($region, -5);
+  $region = substr($region, -6);
   
   unless (exists $county_emissions{$region}{'all'}) {
     $county_emissions{$region}{'all'} = 0;
@@ -205,18 +234,18 @@ while (my $line = <$in_fh>) {
   unless (exists $county_emissions{$region}{$scc}) {
     $county_emissions{$region}{$scc} = 0;
   }
-  unless (exists $gridded_emissions{$cell}{$region}{'all'}) {
-    $gridded_emissions{$cell}{$region}{'all'} = 0;
+  unless (exists $gridded_emissions{$cell}{$source_group}{$region}{'all'}) {
+    $gridded_emissions{$cell}{$source_group}{$region}{'all'} = 0;
   }
   
   foreach my $poll (@pollutants) {
-    unless (exists $gridded_emissions{$cell}{$region}{$poll}) {
-      $gridded_emissions{$cell}{$region}{$poll} = 0;
+    unless (exists $gridded_emissions{$cell}{$source_group}{$region}{$poll}) {
+      $gridded_emissions{$cell}{$source_group}{$region}{$poll} = 0;
     }
     my $emis_value = $data[$headers{$poll}];
     
-    $gridded_emissions{$cell}{$region}{$poll} += $emis_value;
-    $gridded_emissions{$cell}{$region}{'all'} += $emis_value;
+    $gridded_emissions{$cell}{$source_group}{$region}{$poll} += $emis_value;
+    $gridded_emissions{$cell}{$source_group}{$region}{'all'} += $emis_value;
     
     $county_emissions{$region}{$scc} += $emis_value;
     $county_emissions{$region}{'all'} += $emis_value;
@@ -283,6 +312,15 @@ while (my $line = <$in_fh>) {
 
 # prepare temporal profile output
 for my $region (sort keys %county_emissions) {
+  my $state = substr($region, 1, 2);
+  my $file = "$output_dir/temporal/${rwc_run_group}_${state}_hourly.csv";
+  unless (exists $handles{$file}) {
+    my $fh = open_output($file);
+    print $fh "run_group,region_cd,year,month,day,hour,factor\n";
+    $handles{$file} = $fh;
+  }
+  my $tmp_fh = $handles{$file};
+
   my $total_emissions = $county_emissions{$region}{'all'};
   
   my @common;
@@ -299,6 +337,8 @@ for my $region (sort keys %county_emissions) {
           next if $scc eq 'all';
           
           my $factors_ref = $hour_of_year_factors{$region}{$scc};
+          my $size = scalar(@$factors_ref);
+          die "$region, $scc, $size" unless $size == 8760;
           $hourly_emissions += $county_emissions{$region}{$scc} * $factors_ref->[$index];
         }
       
@@ -316,28 +356,37 @@ for my $region (sort keys %county_emissions) {
 }
   
 # prepare crosswalk output and grid cell / county assignment
+my $cnty_fh = open_output("$output_dir/xwalk/${rwc_run_group}_county-to-gridcell.csv");
+print $cnty_fh "run_group,region_cd,met_cell,src_id\n";
+
+my $x_fh = open_output("$output_dir/emis/${grid_prefix}${rwc_run_group}_emis.csv");
+print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value\n";
+
 for my $cell (sort keys %gridded_emissions) {
   my $cell_assignment;
   my $prev_emis = -999;
-  for my $region (sort keys %{$gridded_emissions{$cell}}) {
-    for my $poll (sort keys %{$gridded_emissions{$cell}{$region}}) {
-      next if $poll eq 'all';
+  for my $source_group (sort keys %{$gridded_emissions{$cell}}) {
+    for my $region (sort keys %{$gridded_emissions{$cell}{$source_group}}) {
+      for my $poll (sort keys %{$gridded_emissions{$cell}{$source_group}{$region}}) {
+        next if $poll eq 'all';
+        next if $gridded_emissions{$cell}{$source_group}{$region}{$poll} == 0.0;
 
-      my @output;
-      push @output, $rwc_run_group;
-      push @output, $region;
-      push @output, $cell;
-      push @output, "12_1";
-      push @output, '"'.$group_params{$rwc_run_group}{'source_group'}.'"';
-      push @output, $poll;
-      push @output, $gridded_emissions{$cell}{$region}{$poll};
-      print $x_fh join(',', @output) . "\n";
-    }
+        my @output;
+        push @output, $rwc_run_group;
+        push @output, $region;
+        push @output, $cell;
+        push @output, "${grid_prefix}1";
+        push @output, $source_group;
+        push @output, $poll;
+        push @output, $gridded_emissions{$cell}{$source_group}{$region}{$poll};
+        print $x_fh join(',', @output) . "\n";
+      }
     
-    # check if current county has greater emissions than previous for this grid cell
-    if ($gridded_emissions{$cell}{$region}{'all'} > $prev_emis) {
-      $cell_assignment = $region;
-      $prev_emis = $gridded_emissions{$cell}{$region}{'all'};
+      # check if current county has greater emissions than previous for this grid cell
+      if ($gridded_emissions{$cell}{$source_group}{$region}{'all'} > $prev_emis) {
+        $cell_assignment = $region;
+        $prev_emis = $gridded_emissions{$cell}{$source_group}{$region}{'all'};
+      }
     }
   }
   
@@ -345,13 +394,14 @@ for my $cell (sort keys %gridded_emissions) {
   push @output, $rwc_run_group;
   push @output, $cell_assignment;
   push @output, $cell;
+  push @output, "${grid_prefix}1";
   print $cnty_fh join(',', @output) . "\n";
 }
 
 close $in_fh;
-close $loc_fh;
-close $param_fh;
-close $tmp_fh;
+foreach my $fh (values %handles) {
+  close $fh;
+}
 close $cnty_fh;
 close $x_fh;
 
