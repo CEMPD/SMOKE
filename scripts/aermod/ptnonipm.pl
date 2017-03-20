@@ -29,19 +29,19 @@ my %daily = read_profiles($prof_file, 24);
 print "Creating output files...\n";
 my $output_dir = $ENV{'OUTPUT_DIR'};
 
-my $loc_fh = open_output("$output_dir/point_location.csv");
+my $loc_fh = open_output("$output_dir/locations/point_location.csv");
 write_point_location_header($loc_fh);
 
-my $pt_fh = open_output("$output_dir/point_point_srcparam.csv");
+my $pt_fh = open_output("$output_dir/parameters/point_point_srcparam.csv");
 print $pt_fh "facility_id,facility_name,src_id,aermod_src_type,height,temp,velocity,diameter\n";
 
-my $ar_fh = open_output("$output_dir/point_fug_srcparam.csv");
+my $ar_fh = open_output("$output_dir/parameters/point_fug_srcparam.csv");
 print $ar_fh "facility_id,facility_name,src_id,aermod_src_type,rel_ht,x_length,y_length,angle,szinit\n";
 
-my $tmp_fh = open_output("$output_dir/point_temporal.csv");
+my $tmp_fh = open_output("$output_dir/temporal/point_temporal.csv");
 write_temporal_header($tmp_fh);
 
-my $x_fh = open_output("$output_dir/point_srcid_emis.csv");
+my $x_fh = open_output("$output_dir/emis/point_srcid_emis.csv");
 write_crosswalk_header($x_fh);
 
 my %headers;

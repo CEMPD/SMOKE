@@ -50,27 +50,27 @@ print "Creating output files...\n";
 my $output_dir = $ENV{'OUTPUT_DIR'};
 
 # runway files
-my $line_loc_fh = open_output("$output_dir/airport_line_locations.csv");
+my $line_loc_fh = open_output("$output_dir/locations/airport_line_locations.csv");
 write_line_location_header($line_loc_fh);
 
-my $line_param_fh = open_output("$output_dir/airport_line_params.csv");
+my $line_param_fh = open_output("$output_dir/parameters/airport_line_params.csv");
 print $line_param_fh "facility_id,facility_name,src_id,src_type,area,fract,relhgt,width,szinit\n";
 
-my $line_tmp_fh = open_output("$output_dir/airport_line_temporal.csv");
+my $line_tmp_fh = open_output("$output_dir/temporal/airport_line_temporal.csv");
 write_temporal_header($line_tmp_fh);
 
 # non-runway files
-my $area_loc_fh = open_output("$output_dir/airport_nonrunway_locations.csv");
+my $area_loc_fh = open_output("$output_dir/locations/airport_nonrunway_locations.csv");
 write_point_location_header($area_loc_fh);
 
-my $area_param_fh = open_output("$output_dir/airport_nonrunway_params.csv");
+my $area_param_fh = open_output("$output_dir/parameters/airport_nonrunway_params.csv");
 print $area_param_fh "facility_id,facility_name,src_id,relhgt,lengthx,lengthy,angle,szinit\n";
 
-my $area_tmp_fh = open_output("$output_dir/airport_nonrunway_temporal.csv");
+my $area_tmp_fh = open_output("$output_dir/temporal/airport_nonrunway_temporal.csv");
 write_temporal_header($area_tmp_fh);
 
 # emissions crosswalk file
-my $x_fh = open_output("$output_dir/airport_srcid_emis.csv");
+my $x_fh = open_output("$output_dir/emis/airport_srcid_emis.csv");
 write_crosswalk_header($x_fh);
 
 my %headers;
