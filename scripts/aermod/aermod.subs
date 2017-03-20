@@ -42,9 +42,9 @@ sub read_dom_profiles {
     next unless $line;
     next if $line =~ /^#/;
     
-    my @data = split(/,/, $line);
+    my @data = split(/,/, $line, -1);
     next unless scalar @data >= ($num_factors + 2);
-    next unless looks_like_number($data[2]);
+    next unless looks_like_number($data[1]);
     
     my $month_id = $data[1];
     my $num_days = $days_ref->[$month_id];
