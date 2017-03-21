@@ -41,8 +41,8 @@ print $ar_fh "facility_id,facility_name,src_id,aermod_src_type,rel_ht,x_length,y
 my $tmp_fh = open_output("$output_dir/temporal/point_temporal.csv");
 write_temporal_header($tmp_fh);
 
-my $x_fh = open_output("$output_dir/emis/point_srcid_emis.csv");
-write_crosswalk_header($x_fh);
+my $x_fh = open_output("$output_dir/xwalk/point_srcid_emis.csv");
+print $x_fh "facility_id,facility_name,src_id,smoke_name,ann_value\n";
 
 my %headers;
 my @pollutants;
@@ -132,6 +132,8 @@ while (my $line = <$in_fh>) {
   
   # prepare crosswalk output
   foreach my $poll (@pollutants) {
+    next if $data[$headers{$poll}] == 0.0;
+    
     @output = @common;
     push @output, $poll;
     push @output, $data[$headers{$poll}];
