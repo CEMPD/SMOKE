@@ -70,8 +70,8 @@ my $area_tmp_fh = open_output("$output_dir/temporal/airport_nonrunway_temporal.c
 write_temporal_header($area_tmp_fh);
 
 # emissions crosswalk file
-my $x_fh = open_output("$output_dir/emis/airport_srcid_emis.csv");
-write_crosswalk_header($x_fh);
+my $x_fh = open_output("$output_dir/xwalk/airport_srcid_emis.csv");
+print $x_fh "facility_id,facility_name,smoke_name,ann_value\n";
 
 my %headers;
 my @pollutants;
@@ -100,7 +100,7 @@ while (my $line = <$in_fh>) {
   
   my $src_id;
   if ($is_runway) {
-    $src_id = 'S';
+    $src_id = 'AP';
   } else {
     $src_id = 'AP' . $facilities{$plant_id};
   }
@@ -172,7 +172,7 @@ while (my $line = <$in_fh>) {
     }
   } else {
     my @output = @common;
-    push @output, qw(3 10 10 0);
+    push @output, qw(3 10 10 0 3);
     print $area_param_fh join (',', @output) . "\n";
   }
 
@@ -196,24 +196,14 @@ while (my $line = <$in_fh>) {
   }
   
   # prepare crosswalk output
-  if ($is_runway) {
-    my $runway_ct = 0;
-    foreach my $runway (@{$runways{$plant_id}}) {
-      foreach my $poll (@pollutants) {
-        my @output = @common;
-        push @output, $src_id . ($facilities{$plant_id} + $runway_ct);
-        push @output, $poll;
-        push @output, $data[$headers{$poll}];
-        print $x_fh join(',', @output) . "\n";
-      }
-    }
-  } else {
-    foreach my $poll (@pollutants) {
-      my @output = @common;
-      push @output, $poll;
-      push @output, $data[$headers{$poll}];
-      print $x_fh join(',', @output) . "\n";
-    }
+  pop @common if !$is_runway;
+  foreach my $poll (@pollutants) {
+    next if $data[$headers{$poll}] == 0.0;
+    
+    my @output = @common;
+    push @output, $poll;
+    push @output, $data[$headers{$poll}];
+    print $x_fh join(',', @output) . "\n";
   }
   
   # update count of sources at facility for individual runways
