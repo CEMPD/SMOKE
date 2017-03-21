@@ -449,15 +449,8 @@ C.....................  Count no of HAPs
 C.........................  Store values when NONHAP[VOC|TOG] is found
                         IF( INDEX( POLNAM, 'NONHAP' ) > 0 ) THEN
                             NVOC = NVOC + 1
-                            IF( PDDATA( LK,IV ) > 0.0 ) THEN
-                                PDDATA( LK,IV ) = PDDATA( LK,IV )
-     &                                          + EMISVA( JJ,TIDX )
-                                PDTOTL( LK,IV ) = PDTOTL( LK,IV )
-     &                                          + DYTOTA( JJ,TIDX )
-                            ELSE
-                                PDDATA( LK,IV ) = EMISVA( JJ,TIDX )
-                                PDTOTL( LK,IV ) = DYTOTA( JJ,TIDX )
-                            END IF
+                            PDDATA( LK,IV ) = EMISVA( JJ,TIDX )
+                            PDTOTL( LK,IV ) = DYTOTA( JJ,TIDX )
                         END IF
 
 C.........................  Skip if it is activity data, skip                          
@@ -488,16 +481,8 @@ C.................................  If pollutant is not a model species, set it 
                                 IF( L > 0 ) INVNAM = POLNAM( 1:L-1 )
                                 NVRAW = INDEX1( INVNAM, NINVTBL, ITNAMA )
                                 IF( .NOT. ITMSPC( NVRAW ) ) EMISVA( JJ, TIDX ) = 0.0
-
-                                IF( PDDATA( LK,IV ) > 0.0 ) THEN
-                                    PDDATA( LK,IV ) = PDDATA( LK,IV )
-     &                                              + EMISVA( JJ,TIDX )
-                                    PDTOTL( LK,IV ) = PDTOTL( LK,IV )
-     &                                              + DYTOTA( JJ,TIDX )
-                                ELSE
-                                    PDDATA( LK,IV ) = EMISVA( JJ,TIDX )
-                                    PDTOTL( LK,IV ) = DYTOTA( JJ,TIDX )
-                                END IF
+                                PDDATA( LK,IV ) = EMISVA( JJ,TIDX )
+                                PDTOTL( LK,IV ) = DYTOTA( JJ,TIDX )
                             END IF
 
                         END DO
