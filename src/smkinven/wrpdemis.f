@@ -127,7 +127,6 @@ C...........   Other local variables
         INTEGER          NVOC                 ! no of NONHAPVOCs
         INTEGER          NHAP                 ! no of HAPs
         INTEGER          NHVPOS               ! position of NONHAPVOC in PTDAY
-        INTEGER          VOCPOS               ! position of VOC in PTDAY
         INTEGER          NVRAW                ! raw position of variable in source index
         INTEGER          WARNCNT              ! number of times warnings
 
@@ -261,7 +260,7 @@ C           ignored by the warning messages below.
 
         CALL SORTI2( NPDPT( TIDX ), IDXSRC( 1,TIDX ), 
      &               SPDIDA( 1,TIDX ), CIDXA( 1,TIDX ) )
-
+       
 C.........  Store sorted records for this hour
         LS = 0  ! previous source
         LN = -9 ! previous Inventory Data Code position in UNIQCAS
@@ -314,9 +313,10 @@ C.............  Otherwise, set index for period-specific pollutant or activity
 
 C.............  Initialize duplicates flag
             DUPFLAG = .FALSE.
+            NHVPOS = 0
 
 C.............  If current source is not equal to previous source
-            IF( S .NE. LS  .OR. I .EQ.  NPDPT( TIDX )) THEN
+            IF( S .NE. LS  .OR. I .EQ. NPDPT( TIDX )) THEN
 
 C.................  Count no of source
                 IF( S .NE. LS ) THEN
@@ -451,6 +451,10 @@ C.........................  Store values when NONHAP[VOC|TOG] is found
                             NVOC = NVOC + 1
                             PDDATA( LK,IV ) = EMISVA( JJ,TIDX )
                             PDTOTL( LK,IV ) = DYTOTA( JJ,TIDX )
+                            IF( I == NPDPT( TIDX ) ) THEN
+                                PDDATA( LK,IV ) = 0.0
+                                PDTOTL( LK,IV ) = 0.0
+                            END IF
                         END IF
 
 C.........................  Skip if it is activity data, skip                          
@@ -523,11 +527,6 @@ C                               Subtract all mode-specific HAPs from Original VO
      &                                            - EMISVA( JJ,TIDX )
                             PDTOTL( LK,NHVPOS ) = PDTOTL( LK,NHVPOS )
      &                                            - DYTOTA( JJ,TIDX )
-     
-                            IF( PDDATA( LK,NHVPOS ) < 0.0 ) THEN
-                                PDDATA( LK,NHVPOS ) = 0.0
-                                PDTOTL( LK,NHVPOS ) = 0.0
-                            END IF
 
                         END DO    ! end of variable search loop
 
