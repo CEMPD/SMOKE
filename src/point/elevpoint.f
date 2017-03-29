@@ -236,7 +236,7 @@ C...........   Other local variables
         CHARACTER(FIPLEN3) CFIP       ! tmp country/st/county code
         CHARACTER(SCCLEN3) SCC
         CHARACTER(80)   GDESC     !  grid description
-        CHARACTER(256)  BUFFER
+        CHARACTER(512)  BUFFER
         CHARACTER(256)  MESG
         CHARACTER(16) DAYNAME   !  daily inventory file name
 
@@ -443,7 +443,6 @@ C           to grid cells for the STACK_GROUPS file.
             NCOLS = NCOLS3D
             NROWS = NROWS3D
             NGRID = NCOLS * NROWS
-
         END IF            
         
 C.........  Convert source x,y locations to coordinates of the projected grid
@@ -657,7 +656,7 @@ C           program duration if source is in an inventory group
 
 C.............  Exclude sources that are outside of the grid
             IF( .NOT. INGRID( SRCXL( S ), SRCYL( S ),
-     &                            NCOLS, NROWS, COL, ROW ) ) CYCLE
+     &                        NCOLS, NROWS, COL, ROW ) ) CYCLE
 
 C.............  For sources in an inventory group...
             IF ( IGRP .GT. 0 ) THEN
@@ -695,6 +694,8 @@ C               (include emissions TOTAL for group).
             VALS( DM_IDX ) = DM
             VALS( TK_IDX ) = TK
             VALS( VE_IDX ) = VE
+            DMVAL = DM
+            VEVAL = VE
             IF( DM == BADVAL3 ) DMVAL = 0.0
             IF( VE == BADVAL3 ) VEVAL = 0.0
             VALS( FL_IDX ) = 0.25 * PI * DMVAL * DMVAL * VEVAL 
@@ -771,7 +772,6 @@ C.................  See if source matches criteria for elevated sources
 C.................  See if source matches criteria for elevated sources
                 EVSTAT = .FALSE.  ! array
 
-
                 IF ( FFLAG .AND. SMOLDER( S ) ) THEN
                     LMAJOR( S ) = .FALSE.
 
@@ -782,7 +782,6 @@ C.................  See if source matches criteria for elevated sources
                       NMAJOR = NMAJOR + 1
                       IF ( IGRP .NE. PGRP ) NMJRGRP = NMJRGRP + 1
                       LMAJOR( S ) = .TRUE.
-
                    END IF
                 END IF
             END IF            ! End elevated sources approach
@@ -1037,7 +1036,6 @@ C.................  Add pollutant value to VALS and set RANK for pollutants
 C.................  If source is PinG, write out for PinG
                 IF ( LPING( S ) ) THEN
 
-
 C..................... Evaluate PinG criteria again to get PGSTAT for writing;
 C                      if valid, then write report fields
                     IF ( EVALCRIT( NEVPVAR, NPNGCRIT, MXPNGCHK, VALS, 
@@ -1096,6 +1094,14 @@ C.........  Ensure that all is well with memory allocation
      &             G
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+        END IF
+
+C.........  If all values are zero, give error
+        IF ( NMAJOR .EQ. 0 .AND.
+     &       NPING  .EQ. 0       ) THEN
+            MESG = 'No groups, major sources, or '//
+     &             'plume-in-grid sources.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.............  Process the stack group coordinates for the current grid...
@@ -1165,16 +1171,6 @@ C.........  Write status of processing
             WRITE( MESG,94010 ) 
      &             'Number of plume-in-grid source groups:', NPINGGRP
             CALL M3MSG2( MESG )
-        END IF
-
-C.........  If all values are zero, give error
-        IF ( NMAJOR .EQ. 0 .AND.
-     &       NPING  .EQ. 0       ) THEN
-
-            MESG = 'No groups, major sources, or '//
-     &             'plume-in-grid sources.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
         END IF
 
 C.........  Open output files
@@ -1368,7 +1364,7 @@ C.............  Local subprogram variables
             LOGICAL      DFLAG              ! true: OR was true
             LOGICAL   :: FIRSTIME = .TRUE.  ! true: first time subprogram called
 
-            CHARACTER(512) BUFFER
+            CHARACTER(1014) BUFFER
             CHARACTER(256) FMTBUF
 
 C----------------------------------------------------------------------
