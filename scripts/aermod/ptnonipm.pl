@@ -42,7 +42,7 @@ my $tmp_fh = open_output("$output_dir/temporal/point_temporal.csv");
 write_temporal_header($tmp_fh);
 
 my $x_fh = open_output("$output_dir/xwalk/point_srcid_emis.csv");
-print $x_fh "facility_id,facility_name,src_id,smoke_name,ann_value\n";
+write_crosswalk_header($x_fh);
 
 my %headers;
 my @pollutants;
