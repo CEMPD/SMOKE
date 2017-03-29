@@ -19,7 +19,7 @@ sub write_temporal_header() {
 sub write_crosswalk_header() {
   my ($fh) = @_;
   
-  print $fh "facility_id,rel_point_id,scc,src_id,poll,ann_value\n";
+  print $fh "facility_id,facility_name,src_id,smoke_name,ann_value\n";
 }
 
 1;
