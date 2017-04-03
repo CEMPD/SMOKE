@@ -98,7 +98,9 @@ while (my $line = <$in_fh>) {
   push @common, $src_id;
   
   # prepare location output
-  my @output = @common;
+  my $state = substr($data[$headers{'Region'}], 7, 2);
+  my @output = $state;
+  push @output, @common;
   push @output, $data[$headers{'Lambert-X'}];
   push @output, $data[$headers{'Lambert-Y'}];
   push @output, $data[$headers{'Longitude'}];
@@ -147,9 +149,6 @@ while (my $line = <$in_fh>) {
   
   # prepare temporal profiles output
   unless (exists $hourly_files{$plant_id}) {
-    my $region = $data[$headers{'Region'}];
-    $region = substr($region, -6);
-    my $state = substr($region, 1, 2);
     my $fh = open_output("$output_dir/temporal/${plant_id}_${state}_hourly.csv");
     print $fh "facility_id,src_id,year,month,day,hour,hour_factor,stktemp,stkvel\n";
     $hourly_files{$plant_id} = $fh;
@@ -233,7 +232,8 @@ while (my $line = <$in_fh>) {
   
   # prepare crosswalk output
   foreach my $poll (@pollutants) {
-    @output = @common;
+    @output = $state;
+    push @output, @common;
     push @output, $poll;
     push @output, $data[$headers{$poll}];
     print $x_fh join(',', @output) . "\n";

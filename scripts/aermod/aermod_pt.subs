@@ -1,13 +1,13 @@
 sub write_point_location_header() {
   my ($fh) = @_;
   
-  print $fh "facility_id,facility_name,src_id,grid_x,grid_y,longitude,latitude,utm_x,utm_y,utm_zone,col,row\n";
+  print $fh "state,facility_id,facility_name,src_id,grid_x,grid_y,longitude,latitude,utm_x,utm_y,utm_zone,col,row\n";
 }
 
 sub write_line_location_header() {
   my ($fh) = @_;
   
-  print $fh "facility_id,facility_name,src_id,xs1,ys1,xs2,ys2,utm_zone,col,row\n";
+  print $fh "state,facility_id,facility_name,src_id,xs1,ys1,xs2,ys2,utm_zone,col,row\n";
 }
 
 sub write_temporal_header() {
@@ -19,7 +19,7 @@ sub write_temporal_header() {
 sub write_crosswalk_header() {
   my ($fh) = @_;
   
-  print $fh "facility_id,facility_name,src_id,smoke_name,ann_value\n";
+  print $fh "state,facility_id,facility_name,src_id,smoke_name,ann_value\n";
 }
 
 1;

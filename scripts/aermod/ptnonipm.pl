@@ -75,7 +75,9 @@ while (my $line = <$in_fh>) {
   push @common, $src_id;
   
   # prepare location output
-  my @output = @common;
+  my $state = substr($data[$headers{'Region'}], 7, 2);
+  my @output = $state;
+  push @output, @common;
   push @output, $data[$headers{'Lambert-X'}];
   push @output, $data[$headers{'Lambert-Y'}];
   push @output, $data[$headers{'Longitude'}];
@@ -134,7 +136,8 @@ while (my $line = <$in_fh>) {
   foreach my $poll (@pollutants) {
     next if $data[$headers{$poll}] == 0.0;
     
-    @output = @common;
+    @output = $state;
+    push @output, @common;
     push @output, $poll;
     push @output, $data[$headers{$poll}];
     print $x_fh join(',', @output) . "\n";
