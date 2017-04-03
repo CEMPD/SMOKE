@@ -90,25 +90,6 @@ foreach my $dir (qw(locations parameters temporal emis xwalk)) {
   die "Missing output directory $output_dir/$dir" unless -d $output_dir . '/' . $dir;
 }
 
-# open output files
-# print "Creating output files...\n";
-# my $output_dir = $ENV{'OUTPUT_DIR'};
-# 
-# my $loc_fh = open_output("$output_dir/locations/rwc_locations.csv");
-# write_location_header($loc_fh);
-# 
-# my $param_fh = open_output("$output_dir/parameters/rwc_area_params.csv");
-# write_parameter_header($param_fh);
-# 
-# my $tmp_fh = open_output("$output_dir/temporal/rwc_temporal.csv");
-# print $tmp_fh "run_group,fips,year,month,day,hour,scalar\n";
-# 
-# my $cnty_fh = open_output("$output_dir/xwalk/rwc_county_to_gridcell.csv");
-# print $cnty_fh "run_group,fips,met_cell\n";
-# 
-# my $x_fh = open_output("$output_dir/emis/rwc_emis.csv");
-# print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value\n";
-
 my %handles;
 
 my %headers;

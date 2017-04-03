@@ -83,21 +83,6 @@ foreach my $dir (qw(locations parameters temporal emis)) {
   die "Missing output directory $output_dir/$dir" unless -d $output_dir . '/' . $dir;
 }
 
-# open output files
-# print "Creating output files...\n";
-# 
-# my $loc_fh = open_output("$output_dir/locations/nonpt_locations.csv");
-# write_location_header($loc_fh);
-# 
-# my $param_fh = open_output("$output_dir/parameters/nonpt_area_params.csv");
-# write_parameter_header($param_fh);
-# 
-# my $tmp_fh = open_output("$output_dir/temporal/nonpt_temporal.csv");
-# write_temporal_header($tmp_fh);
-# 
-# my $x_fh = open_output("$output_dir/emis/nonpt_emis.csv");
-# print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value\n";
-
 my %handles;
 
 my %headers;
