@@ -202,7 +202,7 @@ while (my $line = <$in_fh>) {
       my $day_of_month = 1;
       foreach my $dom_factor (@{$dom_factors{$month}}) {
         last if $day_of_month > $days_in_month[$month];
-        push @factors, map { $dom_factor * $month_factor } @hourly_factors;
+        push @factors, map { $_ * $dom_factor * $month_factor } @hourly_factors;
         $day_of_month++;
       }
       $month++;
