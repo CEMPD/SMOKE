@@ -65,11 +65,11 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER*2     CRLF
         LOGICAL         ENVYN
-        INTEGER         FIND1
+        INTEGER         FINDC
         INTEGER         INDEX1
         INTEGER         STR2INT
 
-        EXTERNAL        CRLF, ENVYN, FIND1, INDEX1, STR2INT
+        EXTERNAL        CRLF, ENVYN, FINDC, INDEX1, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER      , INTENT (IN) :: RDEV           ! emissions unit no.
@@ -191,7 +191,6 @@ C.................  Store others in temporary variables
                 FIP  = STR2INT( CIFIP( S ) ) - COID * 100000
                 SIC  = CISIC( S )
                 YEAR = INVYR( S )
-
                 SCC  = CSCC ( S )
  
                 IF( ASSOCIATED( CMACT ) ) THEN
@@ -543,6 +542,7 @@ C.............  Subprogram arguments
 
 C.............  Subprogram local variables
             INTEGER     K
+            CHARACTER( FIPLEN3 ) CTRY
 
 C-------------------------------------------------------------------------
 
@@ -551,8 +551,10 @@ C-------------------------------------------------------------------------
             IF( COID .NE. LCOID .OR. YEAR .NE. LYEAR ) THEN
 
                 WRITE( CYEAR, '(I4)' ) YEAR
+                WRITE( CTRY,  '(I6)' ) COID
+                CALL PADZERO( CTRY ) 
 
-                K = FIND1( COID*100000, NCOUNTRY, CTRYCOD )
+                K = FINDC( CTRY, NCOUNTRY, CTRYCOD )
 
                 IF( K .GT. 0 ) THEN
 

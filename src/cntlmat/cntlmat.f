@@ -186,20 +186,23 @@ C.........  Set inventory variables to read for all source categories
 
 C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
-            NINVARR = 6
+            NINVARR = 7
             IVARNAMS( 4 ) = 'CISIC'
             IVARNAMS( 5 ) = 'CMACT'
             IVARNAMS( 6 ) = 'CSRCTYP'
+            IVARNAMS( 7 ) = 'CIFIP'
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
-            NINVARR = 4
+            NINVARR = 5
             IVARNAMS( 4 ) = 'CVTYPE'
+            IVARNAMS( 5 ) = 'CIFIP'
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-            NINVARR = 6
+            NINVARR = 7
             IVARNAMS( 4 ) = 'CISIC'
             IVARNAMS( 5 ) = 'CMACT'
             IVARNAMS( 6 ) = 'CSRCTYP'
+            IVARNAMS( 7 ) = 'CIFIP'
 
         END IF
 

@@ -538,7 +538,7 @@ C           named "ALL" and "PFAC"
 c note: the "all" feature is not documented in cntlmat because it has not
 C    n: been implemented
 
-        IVARNAMS( 1 ) = 'IFIP'
+        IVARNAMS( 1 ) = 'CIFIP'
         IVARNAMS( 2 ) = 'TZONES'
         IVARNAMS( 3 ) = 'TPFLAG'
         IVARNAMS( 4 ) = 'INVYR'
@@ -548,7 +548,7 @@ C    n: been implemented
         CASE ( 'AREA' )
             NINVARR = 11
             IVARNAMS( 5 )  = 'CELLID'
-            IVARNAMS( 6 )  = 'ISIC'
+            IVARNAMS( 6 )  = 'CISIC'
             IVARNAMS( 7 )  = 'CSCC'
             IVARNAMS( 8 )  = 'CSOURC'
             IVARNAMS( 9 )  = 'CMACT'
@@ -570,7 +570,7 @@ C    n: been implemented
 
         CASE ( 'POINT' )
             NINVARR = 22
-            IVARNAMS( 5  ) = 'ISIC'
+            IVARNAMS( 5  ) = 'CISIC'
             IVARNAMS( 6  ) = 'XLOCA'
             IVARNAMS( 7  ) = 'YLOCA'
             IVARNAMS( 8  ) = 'STKHT'
@@ -736,12 +736,6 @@ C                   and projection matrices
 
                     END IF
 
-                ELSE
-                	
-                    CEFF( S ) = 0.
-                    REFF( S ) = 0.
-                    RPEN( S ) = 0.
-                	  
                 END IF
 
 C.................  Set default factors
