@@ -16,11 +16,6 @@ if ( $status > 0 ) then
     set errstat = 1
 endif
 
-diff $ncrepdir/repagts_l.area.*0711* $repdir/repagts_l.area.*0711* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
 # Check biogenic sources
 echo 'Biogenic source differences' >> $errfile
 
@@ -29,22 +24,10 @@ if ( $status > 0 ) then
     set errstat = 1
 endif
 
-diff $ncrepdir/repb3gts_s.*0711* $repdir/repb3gts_s.*0711* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
-
-
 # Check nonroad area sources
 echo 'Nonroad source differences' >> $errfile
 
 diff $ncrepdir/repagts_l.nonroad.*0710* $repdir/repagts_l.nonroad.*0710* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
-diff $ncrepdir/repagts_l.nonroad.*0711* $repdir/repagts_l.nonroad.*0711* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
@@ -57,12 +40,6 @@ if ( $status > 0 ) then
     set errstat = 1
 endif
 
-diff $ncrepdir/reppgts_l.point.*0711* $repdir/reppgts_l.point.*0711* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
-
 # Check MOVES mobile sources
 echo 'MOVES rateperdistance source differences' >> $errfile
 
@@ -71,19 +48,9 @@ if ( $status > 0 ) then
     set errstat = 1
 endif
 
-diff $ncrepdir/repmgts_l.rateperdistance*0711* $repdir/repmgts_l.rateperdistance*0711* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
 echo 'MOVES rateperhour source differences' >> $errfile
 
 diff $ncrepdir/repmgts_l.rateperhour*0710* $repdir/repmgts_l.rateperhour*0710* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
-diff $ncrepdir/repmgts_l.rateperhour*0711* $repdir/repmgts_l.rateperhour*0711* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
@@ -96,20 +63,10 @@ if ( $status > 0 ) then
     set errstat = 1
 endif
 
-diff $ncrepdir/repmgts_l.ratepervehicle*0711* $repdir/repmgts_l.ratepervehicle*0711* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
 # Check MOVES rateperprofile sources
 echo 'MOVES rateperprofile source differences' >> $errfile
 
 diff $ncrepdir/repmgts_l.rateperprofile.*0710* $repdir/repmgts_l.rateperprofile.*0710* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
-diff $ncrepdir/repmgts_l.rateperprofile.*0711* $repdir/repmgts_l.rateperprofile.*0711* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
@@ -119,12 +76,6 @@ set num_log_file = `ls $LOGS | wc -l`
 set sav_dir = `pwd`
 cd $LOGS
 set num_success = `grep 'Normal Completion' * | wc -l`
-if( $num_log_file != $num_success ) then
-   echo ' '
-   echo 'All programs in your installation did not complete successfully\!'
-   echo 'Please look at the log files in $LOGS for more information.'
-   echo ' '
-endif
 cd $sav_dir
 
 if ( $errstat != 0 ) then
@@ -134,6 +85,8 @@ if ( $errstat != 0 ) then
    echo 'Please refer to file $SMKROOT/doc/install_diffs.txt for details.'
    echo ' '
 else
+   echo ' '
+   echo "CONGRATULATION !"
    echo ' '
    echo 'No differences found between your SMOKE report files and the comparison files.'
    echo 'Your installation and example SMOKE run have completed successfully\!'
