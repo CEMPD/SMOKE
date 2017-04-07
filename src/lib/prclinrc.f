@@ -516,6 +516,7 @@ C.........................  Reset report settings to defaults
                         RPT_%USEPRMAT  = .FALSE.
                         RPT_%USESLMAT  = .FALSE.
                         RPT_%USESSMAT  = .FALSE.
+                        RPT_%SRCMAP    = .FALSE.
                         LREGION        = .FALSE.
                         LSUBGRID       = .FALSE.
 
@@ -768,6 +769,10 @@ C.............  Gridding used for report
                     RPT_%USEGMAT  = .TRUE.
                 END IF
 
+C.............  Source mapping for report
+            CASE( 'CROSSWALK' )
+                IF( CATEGORY .EQ. 'POINT' ) RPT_%SRCMAP = .TRUE.
+
 C.............  Projection used for report
             CASE( 'PROJECTION' )
                 PRFLAG        = .TRUE.
@@ -823,6 +828,7 @@ C.............  AERMOD support report
 
                     RPT_%BYSTAT    = .TRUE.      ! report by state
                     RPT_%GRDCOR    = .TRUE.      ! calculate grid lambert_x-y and utm x_y with zone
+                    RPT_%SRCMAP    = .TRUE.      ! output source mapping output file
 
                     RPT_%BYPLANT   = .TRUE.      ! By Plant ID
                     RPT_%SRCNAM    = .TRUE.      ! By Plant Name

@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENRPRT( FDEV, RCNT, ADEV, ENAME, TNAME,
+        SUBROUTINE GENRPRT( FDEV, RCNT, ADEV, MDEV, ENAME, TNAME,
      &                      LNAME, OUTFMT, SMAT, ZEROFLAG, EFLAG )
 
 C***********************************************************************
@@ -46,12 +46,13 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: POLVAL
+        USE MODSOURC, ONLY: CSOURC, POLVAL
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: QAFMTL3, RPT_, SDATE, STIME, RPTNSTEP,
      &                      AFLAG, ASCREC, NSTEPS, EMLAYS, TSTEP,
-     &                      ALLRPT, ALLOUTHR, UCNVFAC, DLFLAG
+     &                      ALLRPT, ALLOUTHR, UCNVFAC, DLFLAG,
+     &                      LOC_BEGP, LOC_ENDP
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NSVARS, NOUTBINS, NOUTREC, BINDATA,
@@ -68,7 +69,7 @@ C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: ACUMATX, PRMAT
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC, NIPPA, EAREAD, EANAM
+        USE MODINFO, ONLY: NSRC, NIPPA, EAREAD, EANAM, MXCHRS, NCHARS
 
         IMPLICIT NONE
 
@@ -90,6 +91,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(IN   ) :: FDEV    ! output file unit number
         INTEGER     , INTENT(IN   ) :: RCNT    ! report number
         INTEGER     , INTENT(IN   ) :: ADEV    ! unit no. ASCII elevated file
+        INTEGER     , INTENT(IN   ) :: MDEV    ! unit no. source mapping file
         CHARACTER(*), INTENT(IN   ) :: ENAME   ! inventory file name
         CHARACTER(*), INTENT(IN   ) :: TNAME   ! hourly data file name
         CHARACTER(*), INTENT(IN   ) :: LNAME   ! layer fractions file name
@@ -99,13 +101,17 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT(IN   ) :: ZEROFLAG! true: report zero values
         LOGICAL     , INTENT(INOUT) :: EFLAG   ! true: error occured
 
+C...........   Arrays for source characteristics output formatting
+        CHARACTER(300) CHARS ( MXCHRS ) !  source fields for output
+        LOGICAL, ALLOCATABLE, SAVE :: LF ( : ) ! true if column should be output
+
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE, SAVE :: SIDX( : ) ! spc/dat idx for incl pol/act
         REAL   , ALLOCATABLE       :: LFRAC1L( : ) ! layer fractions
         REAL   , ALLOCATABLE       :: TMPBIN( :,:,:,: ) ! array layered data per each time step
 
 C...........   Other local variables
-        INTEGER         E, H, I, J, K, L, M, N, S, T, V   ! counters and indices
+        INTEGER         E, H, I, J, K, L, M, N, NC, S, T, V   ! counters and indices
         INTEGER         IS, ID, IE, IP, SE, SP, SS
 
         INTEGER         IOS               ! i/o status
@@ -123,6 +129,7 @@ C...........   Other local variables
         REAL*8          BSUM
 
         LOGICAL      :: FIRSTIME = .TRUE.  ! true: first time routine called
+        LOGICAL      :: FIRSTOUT = .TRUE.  ! true: first time routine called
         LOGICAL      :: SFLAG    = .FALSE. ! true: speciation applies to rpt
 
         CHARACTER(10)         POL         ! species from ASCII elevated file
@@ -143,7 +150,15 @@ C.............  Allocate memory for flagging output non-speciated data
             CALL CHECKMEM( IOS, 'SIDX', PROGNAME )
             
             FIRSTIME = .FALSE.
+        END IF
 
+C.............  Allocate memory for LF if not available already
+        IF( RPT_%SRCMAP ) THEN
+            IF( ALLOCATED( LF ) ) DEALLOCATE( LF )
+            ALLOCATE( LF( MXCHRS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LF', PROGNAME )
+            LF( 1:NCHARS ) = .TRUE.
+            WRITE( MDEV,'(A)' ) 'GROUPID, SRCID, FIPS, FAC_ID, UNIT_ID, REL_POINTID, PROC_ID'
         END IF
 
 C.........  Report-specific local settings
@@ -178,6 +193,7 @@ C.........  Initialize status of output non-speciated data for this report
         SIDX = 0    ! array
 
 C.........  Loop through time steps
+        FIRSTOUT = .TRUE.
         JDATE = SDATE
         JTIME = STIME
         DO T = 1, RPTNSTEP
@@ -385,10 +401,17 @@ C.............................  Gridding factor has normalization by cell area
      &                                                    LFRAC1L( S )   *
      &                                                    PRMAT  ( S,KP) *
      &                                                    ACUMATX( S,KM)
+                                        IF( RPT_%SRCMAP ) THEN
+                                            CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
+     &                                                     LOC_ENDP, LF, NC, CHARS )
+                                            IF( FIRSTOUT ) THEN
+                                                WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC-1 )
+                                            END IF
+                                        END IF
+
                                     END DO
 
                                     !!  .....  Add temporary bins values to output columns
-
                                     BSUM = BSUM * BINPOPDIV( N )
                                     IF ( IS .GT. 0 ) BINDATA( N,IS ) = BINDATA( N,IS ) + BSUM
                                     IF ( IE .GT. 0 ) BINDATA( N,IE ) = BINDATA( N,IE ) + BSUM
@@ -398,6 +421,7 @@ C.............................  Gridding factor has normalization by cell area
                                     IF ( SS .GT. 0 ) BINDATA( N,SS ) = BINDATA( N,SS ) + BSUM
 
                                 END DO
+                                FIRSTOUT = .FALSE.
 
                             ELSE      !  else not usegmat
 
@@ -421,10 +445,17 @@ C.............................  Sum non-gridded output records into tmp bins
      &                                                LFRAC1L( S )   *
      &                                                PRMAT  ( S,KP) *
      &                                                ACUMATX( S,KM)
+                                        IF( RPT_%SRCMAP ) THEN
+                                            CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
+     &                                                     LOC_ENDP, LF, NC, CHARS )
+                                            IF( FIRSTOUT ) THEN
+                                                WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC-1 )
+                                            END IF
+                                        END IF
+
                                     END DO
 
                                     !!  .....  Add temporary bins values to output columns
-
                                     BSUM = BSUM * BINPOPDIV( N )
                                     IF ( IS .GT. 0 ) BINDATA( N,IS ) = BINDATA( N,IS ) + BSUM
                                     IF ( IE .GT. 0 ) BINDATA( N,IE ) = BINDATA( N,IE ) + BSUM
@@ -434,6 +465,7 @@ C.............................  Sum non-gridded output records into tmp bins
                                     IF ( SS .GT. 0 ) BINDATA( N,SS ) = BINDATA( N,SS ) + BSUM
 
                                 END DO
+                                FIRSTOUT = .FALSE.
 
                             END IF      !  if usegmat, or not
 
@@ -476,15 +508,22 @@ C..........................  Gridding factor has normalization by cell area
      &                                                LFRAC1L( S )   *
      &                                                PRMAT  ( S,KP) *
      &                                                ACUMATX( S,KM)
+                                    IF( RPT_%SRCMAP ) THEN
+                                        CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
+     &                                                 LOC_ENDP, LF, NC, CHARS )
+                                        IF( FIRSTOUT ) THEN
+                                            WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC-1 )
+                                        END IF
+                                    END IF
                                 END DO
 
                                 !!  .....  Add temporary bins values to output columns
-
                                 BSUM = BSUM * BINPOPDIV( N )
                                 IF ( ID .GT. 0 ) BINDATA( N,ID ) = BINDATA( N,ID ) + BSUM
                                 IF ( IE .GT. 0 ) BINDATA( N,IE ) = BINDATA( N,IE ) + BSUM
 
                             END DO
+                            FIRSTOUT = .FALSE.
 
                         ELSE      !  else not usegmat
 
@@ -505,15 +544,23 @@ C.........................  Sum non-gridded output records into temporary bins
      &                                            LFRAC1L( S )   *
      &                                            PRMAT  ( S,KP) *
      &                                            ACUMATX( S,KM)
+                                    IF( RPT_%SRCMAP ) THEN
+                                        CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
+     &                                                 LOC_ENDP, LF, NC, CHARS )
+                                        IF( FIRSTOUT ) THEN
+                                            WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC-1 )
+                                        END IF
+                                    END IF
+
                                 END DO
 
                                 !!  .....  Add temporary bins values to output columns
-
                                 BSUM = BSUM * BINPOPDIV( N )
                                 IF ( ID .GT. 0 ) BINDATA( N,ID ) = BINDATA( N,ID ) + BSUM
                                 IF ( IE .GT. 0 ) BINDATA( N,IE ) = BINDATA( N,IE ) + BSUM
 
                             END DO
+                            FIRSTOUT = .FALSE.
 
                         END IF      !  if usegmat, or not
 
@@ -604,7 +651,7 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I10, :, 1X ) )
-
+94020   FORMAT( 2I8, 7( 1X, A ) )
 
         END SUBROUTINE GENRPRT
 

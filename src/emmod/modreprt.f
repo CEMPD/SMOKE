@@ -178,6 +178,8 @@
             LOGICAL       :: USEPRMAT      ! true: use projection matrix
             LOGICAL       :: USESLMAT      ! true: use mole spec
             LOGICAL       :: USESSMAT      ! true: use mass spec
+            LOGICAL       :: SRCMAP        ! true: output src mapping
+
             CHARACTER          :: DELIM         ! output delimeter
             CHARACTER(20)      :: DATAFMT       ! data format
             CHARACTER(LENLAB3) :: LABEL         ! user-defined label

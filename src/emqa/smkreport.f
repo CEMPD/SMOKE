@@ -96,6 +96,7 @@ C...........   File units and logical/physical names
         INTEGER :: NMDEV = 0  !  MACT descriptions
         INTEGER :: NNDEV = 0  !  NAICS descriptions
         INTEGER :: NODEV = 0  !  ORIS descriptions
+        INTEGER :: MODEV = 0  !  src mapping file 
         INTEGER :: PDEV = 0   !  speciation supplemental file
         INTEGER :: RDEV(3) = ( / 0,0,0 / ) !  ASCII reports from Cntlmat program
         INTEGER :: SDEV = 0   !  ASCII inven input file
@@ -325,7 +326,7 @@ C.....................  Close output file(s)
 
 C.................  Open new output file if current file number is different 
 C                   previous file number.
-                CALL OPENREPOUT( FNAME, ODEV )
+                CALL OPENREPOUT( FNAME, ODEV, MODEV )
 
             END IF
 
@@ -388,13 +389,13 @@ C               for the appropriate time resolution...
 
 C.............  For mole-based speciation...
                 IF( RPT_%USESLMAT ) THEN
-                    CALL GENRPRT( ODEV( J ), N, ADEV,  ENAME,
+                    CALL GENRPRT( ODEV( J ), N, ADEV, MODEV,  ENAME,
      &                     TNAME, LNAME, OUTFMT, SLMAT, ZEROFLAG, 
      &                     EFLAG )
 
 C.............  For mass-based and no speciation
                 ELSE
-                    CALL GENRPRT( ODEV( J ), N, ADEV,  ENAME,
+                    CALL GENRPRT( ODEV( J ), N, ADEV, MODEV, ENAME,
      &                     TNAME, LNAME, OUTFMT, SSMAT, ZEROFLAG, 
      &                     EFLAG )
                 END IF

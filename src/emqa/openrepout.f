@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENREPOUT( FILNAM, FDEV )
+        SUBROUTINE OPENREPOUT( FILNAM, FDEV, MDEV )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -60,6 +60,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FILNAM   ! physical or logical file name
         INTEGER     , INTENT(OUT) :: FDEV( RPT_%NUMFILES ) ! unit number of file
+        INTEGER     , INTENT(OUT) :: MDEV                  ! unit number of file for src mapping
 
 C...........   Local variables
         INTEGER         I, L, L2        ! counters and indices
@@ -85,18 +86,22 @@ C           defined environment variable
             MESG = 'Check of file name for logical status'
             VARBUF = FILNAM
             CALL ENVSTR( VARBUF, MESG, ' ', PNAME, IOS )
+        ELSE
+            MESG = 'Logical file name "'//TRIM(FILNAM)//
+     &             '" is exceeding max 16 characters'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  Open output file(s)
         DO I = 1, RPT_%NUMFILES
 
-C.........  If it is a defined environment variable, open as logical file name
+C.............  If it is a defined environment variable, open as logical file name
             IF( IOS .EQ. 0 ) THEN
 
-C.........  If muliple files are being output then open them
+C.................  If muliple files are being output then open them
                 IF( RPT_%RPTMODE .EQ. 1 ) THEN
 
-C.........  Create new file name
+C.....................  Create new file name
                     IF( I .GE. 10 ) THEN
                         FMT = '( A, I2 )'
                     ELSE IF( I .GE. 100 ) THEN
@@ -108,7 +113,7 @@ C.........  Create new file name
                     L = LEN_TRIM( PNAME )
                     WRITE( NNAME, FMT ) PNAME( 1:L )//'_', I
 
-C.........  Set logical file name to new file name
+C.....................  Set logical file name to new file name
                     IF( .NOT. SETENVVAR( FILNAM, NNAME ) ) THEN
                         MESG = 'Could not set logical file '//
      &                         'name for file ' // TRIM( NNAME )
@@ -120,8 +125,7 @@ C.........  Set logical file name to new file name
                 FDEV( I ) = GETEFILE( FILNAM, .FALSE.,
      &                                    .TRUE., PROGNAME )
 
-C.........  If it is not a defined environment variable, open as physical file
-C           name
+C.............  If it is not a defined environment variable, open as physical filename
             ELSE
 
                 IF( RPT_%RPTMODE .EQ. 1 ) THEN
@@ -136,10 +140,24 @@ C           name
                 OPEN( FDEV( I ),ERR=1006,FILE=NNAME,
      &                    STATUS='UNKNOWN',RECL=2500 )
 
-
             END IF
 
         END DO
+
+C.........  Open source mapping ancillary output file
+        IF( RPT_%SRCMAP ) THEN
+
+            NNAME = TRIM( PNAME )//'_src_crosswalk.txt'
+            IF( .NOT. SETENVVAR( 'SRC_CROSSWALK', NNAME ) ) THEN
+                 MESG = 'Could not set logical file '//
+     &                  'name for file ' // TRIM( NNAME )
+                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            MDEV = GETEFILE( 'SRC_CROSSWALK', .FALSE.,
+     &                            .TRUE., PROGNAME )
+
+        END IF
 
         RETURN
 
