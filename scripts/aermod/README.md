@@ -33,19 +33,20 @@ This creates a report where the inventory sources are grouped by:
 * fugitive parameters
 * latitude and longitude
 
-The report also includes the grid cell, coordinates in Lambert and UTM projections, and the facility name.
+The report also includes the grid cell, coordinates in Lambert and UTM projections, and the facility name. Smkreport also creates a crosswalk file, listing inventory sources that contribute to each record in the report output.
 
 ### Post-processing
 
-The Perl script ptnonipm.pl reads the Smkreport file and temporal profile files to create the AERMOD helper outputs:
+The Perl script ptnonipm.pl reads the Smkreport files and temporal profile files to create the AERMOD helper outputs:
 
-    point_location.csv
-    point_point_srcparam.csv
-    point_fug_srcparam.csv
-    point_temporal.csv
-    point_srcid_emis.csv
+    locations/point_location.csv
+    parameters/point_fug_srcparam.csv
+    parameters/point_point_srcparam.csv
+    temporal/point_temporal.csv
+    xwalk/point_srcid_emis.csv
+    xwalk/point_srcid_xwalk.csv
 
-The script uses environment variables to locate the input files ($REPORT, $PTPRO\_MONTHLY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY) and the directory where the outputs will be written ($OUTPUT\_DIR). The shell script run_ptnonipm.sh sets up the environment variables and runs ptnonipm.pl.
+The script uses environment variables to locate the input files ($REPORT, $REP\_XWALK, $PTPRO\_MONTHLY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY) and the directory where the outputs will be written ($OUTPUT\_DIR). The shell script run_ptnonipm.sh sets up the environment variables and runs ptnonipm.pl.
 
 ## ptairport sector
 
@@ -72,13 +73,13 @@ The report also includes the grid cell, coordinates in lat-lon, Lambert, and UTM
 
 The Perl script ptairport.pl reads the Smkreport file, temporal profile files, and the runway data file to create the AERMOD helper outputs:
 
-    airport_line_locations.csv
-    airport_line_params.csv
-    airport_line_temporal.csv
-    airport_nonrunway_locations.csv
-    airport_nonrunway_params.csv
-    airport_nonrunway_temporal.csv
-    airport_srcid_emis.csv
+    locations/airport_line_locations.csv
+    locations/airport_nonrunway_locations.csv
+    parameters/airport_line_params.csv
+    parameters/airport_nonrunway_params.csv
+    temporal/airport_line_temporal.csv
+    temporal/airport_nonrunway_temporal.csv
+    xwalk/airport_srcid_emis.csv
 
 The shell script run_ptairport.sh sets up the environment variables needed by ptairport.pl ($REPORT, $RUNWAYS, $PTPRO\_MONTHLY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY, and $OUTPUT\_DIR).
 
@@ -106,14 +107,14 @@ This uses the same grouping as the ptnonipm sector. Sources that use hourly CEM 
 
 The Perl script ptegu.pl reads the Smkreport file, temporal profile files, and text version of the PHOUR file to create the AERMOD helper outputs:
 
-    point_location.csv
-    point_point_srcparam.csv
-    point_fug_srcparam.csv
-    point_temporal.csv
-    <facility_id>_hourly.csv
-    point_srcid_emis.csv
+    locations/ptegu_location.csv
+    parameters/ptegu_fug_srcparam.csv
+    parameters/ptegu_point_srcparam.csv
+    temporal/<facility_id>_<state_code>_hourly.csv
+    xwalk/ptegu_srcid_emis.csv
+    xwalk/ptegu_srcid_xwalk.csv
 
-The shell script run_ptegu.sh runs both convert\_phour and ptegu.pl. convert\_phour uses the environment variables $PHOUR, $PHOUR\_OUT, and $YEAR. ptegu.pl uses $REPORT, $PHOUR\_OUT, $PTPRO\_MONTHLY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY, and $OUTPUT\_DIR.
+The shell script run_ptegu.sh runs both convert\_phour and ptegu.pl. convert\_phour uses the environment variables $PHOUR, $PHOUR\_OUT, and $YEAR. ptegu.pl uses $REPORT, $REP\_XWALK, $PHOUR\_OUT, $PTPRO\_MONTHLY, $PTPRO\_DAILY, $PTPRO\_HOURLY\_WINTER, $PTPRO\_HOURLY\_SUMMER, and $OUTPUT\_DIR.
 
 ## nonpoint sector
 
