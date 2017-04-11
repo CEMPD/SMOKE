@@ -22,4 +22,10 @@ sub write_crosswalk_header() {
   print $fh "state,facility_id,facility_name,src_id,smoke_name,ann_value\n";
 }
 
+sub write_source_header() {
+  my ($fh) = @_;
+  
+  print $fh "state,facility_id,facility_name,unit_id,process_id,rel_point_id,src_id\n";
+}
+
 1;

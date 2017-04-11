@@ -11,13 +11,14 @@ require 'aermod_pt.subs';
 my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 
 # check environment variables
-foreach my $envvar (qw(REPORT PHOUR_OUT 
+foreach my $envvar (qw(REPORT REP_XWALK PHOUR_OUT 
                        PTPRO_MONTHLY PTPRO_DAILY PTPRO_HOURLY_WINTER PTPRO_HOURLY_SUMMER OUTPUT_DIR)) {
   die "Environment variable '$envvar' must be set" unless $ENV{$envvar};
 }
 
 # open report file
 my $in_fh = open_input($ENV{'REPORT'});
+my $inx_fh = open_input($ENV{'REP_XWALK'});
 
 # load hourly factors file
 print "Reading hourly factors...\n";
@@ -66,12 +67,30 @@ print $ar_fh "facility_id,facility_name,src_id,aermod_src_type,rel_ht,x_length,y
 my $x_fh = open_output("$output_dir/xwalk/ptegu_srcid_emis.csv");
 write_crosswalk_header($x_fh);
 
+my $src_fh = open_output("$output_dir/xwalk/ptegu_srcid_xwalk.csv");
+write_source_header($src_fh);
+
+my %rep_xwalk;
+
+print "Reading AERMOD-to-inventory source info...\n";
+while (my $line = <$inx_fh>) {
+  chomp $line;
+  $line =~ s/^\s+//;
+  $line =~ s/\s+$//;
+  
+  next if $line =~ /^GROUPID/;
+  
+  my @data = split(/\s+/, $line);
+  push @{$rep_xwalk{$data[0]}}, \@data;
+}
+
 my %headers;
 my @pollutants;
 my %facilities;
 my %hourly_files;
 
 print "Processing AERMOD sources...\n";
+my $line_num = 0;
 while (my $line = <$in_fh>) {
   chomp $line;
   next if skip_line($line);
@@ -82,6 +101,17 @@ while (my $line = <$in_fh>) {
     parse_header(\@data, \%headers, \@pollutants, 'Plt Name');
     next;
   }
+  
+  $line_num++;
+  
+  # check if all emissions are zero
+  my $all_zero = 1;
+  foreach my $poll (@pollutants) {
+    next if $data[$headers{$poll}] == 0.0;
+    $all_zero = 0;
+    last;
+  }
+  next if $all_zero;
   
   # add to source count for current facility
   my $plant_id = $data[$headers{'Plant ID'}];
@@ -238,12 +268,29 @@ while (my $line = <$in_fh>) {
     push @output, $data[$headers{$poll}];
     print $x_fh join(',', @output) . "\n";
   }
+
+  # prepare inventory source output
+  foreach my $src_data (@{$rep_xwalk{$line_num}}) {
+    my $xstate = substr(@{$src_data}[2], 7, 2);
+    die "Report and crosswalk mismatch at data line $line_num" unless $xstate eq $state && @{$src_data}[3] eq $plant_id;
+  
+    @output = $state;
+    push @output, $plant_id;
+    push @output, '"' . $data[$headers{'Plt Name'}] . '"';
+    push @output, @{$src_data}[4]; # unit ID
+    push @output, @{$src_data}[5]; # process ID
+    push @output, @{$src_data}[6]; # release point
+    push @output, $src_id;
+    print $src_fh join(',', @output) . "\n";
+  }
 }
 
 close $in_fh;
+close $inx_fh;
 close $loc_fh;
 close $pt_fh;
 close $ar_fh;
 close $x_fh;
+close $src_fh;
 
 print "Done.\n";

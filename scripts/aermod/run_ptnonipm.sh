@@ -2,6 +2,7 @@
 
 # location of AERMOD-source report created by Smkreport
 export REPORT=$REPSCEN/pointgt.aermod.ptnonipm.12US2.2011ek.2011001.rpt
+export REP_XWALK=$REPSCEN/pointgt.aermod.ptnonipm.12US2.2011ek.2011001.rpt_src_crosswalk.txt
 
 # locations of temporal profile files
 export PTPRO_MONTHLY=$GE_DAT/amptpro_general_2011platform_tpro_monthly_20nov2015_v2
