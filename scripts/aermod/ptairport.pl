@@ -89,6 +89,15 @@ while (my $line = <$in_fh>) {
     next;
   }
   
+  # check if all emissions are zero
+  my $all_zero = 1;
+  foreach my $poll (@pollutants) {
+    next if $data[$headers{$poll}] == 0.0;
+    $all_zero = 0;
+    last;
+  }
+  next if $all_zero;
+  
   my $state = substr($data[$headers{'Region'}], 7, 2);
   my $plant_id = $data[$headers{'Plant ID'}];
   
