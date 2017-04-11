@@ -98,7 +98,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(QAFMTL3),
      &                INTENT(IN   ) :: OUTFMT  ! output record format
         REAL        , INTENT(IN   ) :: SMAT( NSRC, NSVARS ) ! mole spc matrix
-        LOGICAL     , INTENT(IN   ) :: ZEROFLAG! true: report zero values
+        LOGICAL     , INTENT(INOUT) :: ZEROFLAG! true: report zero values
         LOGICAL     , INTENT(INOUT) :: EFLAG   ! true: error occured
 
 C...........   Arrays for source characteristics output formatting
@@ -159,6 +159,7 @@ C.............  Allocate memory for LF if not available already
             CALL CHECKMEM( IOS, 'LF', PROGNAME )
             LF( 1:NCHARS ) = .TRUE.
             WRITE( MDEV,'(A)' ) 'GROUPID, SRCID, FIPS, FAC_ID, UNIT_ID, REL_POINTID, PROC_ID'
+            ZEROFLAG = .TRUE.    ! for a proper match, need to output all sources
         END IF
 
 C.........  Report-specific local settings
