@@ -231,6 +231,8 @@ C...........   Other local variables
         LOGICAL :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL :: SFLAG    = .FALSE. ! true: store group info
         LOGICAL    VFLAG              ! true: use variable grid
+        LOGICAL :: RFLAG    = .TRUE.  ! true: skip checking fake source
+        LOGICAL :: MFLAG    = .TRUE.  ! true: fill fake source
         LOGICAL :: LFLAG    = .TRUE.  ! true: write out lat/lon info
 
         CHARACTER(FIPLEN3) CFIP       ! tmp country/st/county code
@@ -264,6 +266,11 @@ C.........  Get environment variables that control this program
 
         MESG = 'Approach for defining major/minor sources'
         ELEVTYPE = ENVINT( 'SMK_ELEV_METHOD', MESG, 0, IOS )
+
+C.........  Define whether write out a fake source when there is no group
+        MESG = 'Define whether write out a fake source when ' //
+     &         'there is no group to output'
+        MFLAG = ENVYN( 'ELEV_WRITE_FAKE_SRC', MESG, .TRUE., IOS )
 
 C.........  Define whether write out lat/lon info for the elevated sources
         MESG = 'Define whether write out lat/lon info for the ' //
@@ -511,7 +518,6 @@ C           exactly
 
            ALLOCATE( GRPCNT( NINVGRP ), STAT=IOS )
            CALL CHECKMEM( IOS, 'GRPCNT', PROGNAME )
-
                       
            ALLOCATE( GRPGID( NINVGRP ), STAT=IOS )
            CALL CHECKMEM( IOS, 'GRPGID', PROGNAME )
@@ -752,7 +758,7 @@ C.............  Add pollutant value to VALS and set RANK for pollutants
 
 C.............  If PELVCONFIG used for elevated sources, check if source matches 
 C               criteria given
-            IF(  (ELEVTYPE .EQ. PELVCONFIG_APPROACH-1)) THEN
+            IF(  (ELEVTYPE .EQ. PELVCONFIG_APPROACH-1) ) THEN
 
 C.................  See if source matches criteria for elevated sources
                 EVSTAT = .FALSE.  ! array
@@ -825,6 +831,35 @@ C               a group, increase the total maximum group count.
             PGRP = IGRP
 
         END DO         ! End loop over sources
+
+C.........  Assign a fake source when there is no group for elevated and/or ping
+        IF( MFLAG .AND. NGROUP < 1 ) THEN
+            RFLAG = .FALSE.
+            NGROUP = 1
+            DO J = 1, NSRC
+                S    = GINDEX ( J )
+                IGRP = GROUPID( S )
+
+C.................  Select a source that are inside of the grid
+                IF( INGRID( SRCXL( S ), SRCYL( S ),
+     &                      NCOLS, NROWS, COL, ROW ) ) THEN
+
+                    IF( (ELEVTYPE .EQ. PELVCONFIG_APPROACH) .OR.
+     &                  (ELEVTYPE .EQ. PELVCONFIG_APPROACH-1) ) THEN
+                        NMAJOR = 1
+                        LMAJOR( S ) = .TRUE.
+                    END IF
+
+                    IF( (PINGTYPE .EQ. PELVCONFIG_APPROACH-1) ) THEN
+                        NPING = 1
+                        LPING ( S ) = .TRUE.
+                    END IF
+
+                    EXIT   ! exit once fill a fake source
+
+                END IF
+            END DO
+        END IF
 
 C.........  Now reset group arrays for major and PinG sources only. Groups
 C           are not used by SMOKE for other point sources.
@@ -1034,6 +1069,7 @@ C.................  Add pollutant value to VALS and set RANK for pollutants
                 END IF
 
 C.................  If source is PinG, write out for PinG
+                IF ( RFLAG ) THEN
                 IF ( LPING( S ) ) THEN
 
 C..................... Evaluate PinG criteria again to get PGSTAT for writing;
@@ -1082,6 +1118,7 @@ C.....................  Otherwise, internal error
 
 
                 END IF
+                END IF
 
             END IF  ! End if major or PinG sources
 
@@ -1104,9 +1141,9 @@ C.........  If all values are zero, give error
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.............  Process the stack group coordinates for the current grid...
+C.........  Process the stack group coordinates for the current grid...
 
-C.............  Convert x,y location to coordinates of the projected grid
+C.........  Convert x,y location to coordinates of the projected grid
         GRPXL = GRPLON
         GRPYL = GRPLAT
         CALL CONVRTXY( NGROUP, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
