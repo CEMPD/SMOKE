@@ -99,7 +99,7 @@ C...........  LOCAL PARAMETERS and their descriptions:
         REAL, PARAMETER :: BTU2M4PS3 = 0.00000258  ! conv. factor for bouyancy flux
 
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv4.5_Apr2017 $' ! CVS release tag
 
 C.........  Indicator for which public inventory arrays need to be read
         INTEGER,            PARAMETER :: NINVARR = 9  
