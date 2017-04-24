@@ -86,8 +86,9 @@
         CHARACTER(ERPLEN3), ALLOCATABLE, PUBLIC:: CERPTYP( : ) ! emission release point type
         CHARACTER(MACLEN3), POINTER,     PUBLIC:: CMACT  ( : ) ! MACT code
         CHARACTER(NAILEN3), POINTER,     PUBLIC:: CNAICS ( : ) ! NAICS code
-        CHARACTER(STPLEN3), POINTER,     PUBLIC:: CSRCTYP( : ) ! source type code
+        CHARACTER(STPLEN3), POINTER,     PUBLIC:: CSRCTYP( : ) ! source type code code
         CHARACTER(SICLEN3), POINTER,     PUBLIC:: CISIC  ( : ) ! SIC
+        CHARACTER(SHPLEN3), POINTER,     PUBLIC:: CSHAPE ( : ) ! area-source SHAPE_ID
        
         CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: )! spec prof
         CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CMON   ( : ) ! monthly profile code
@@ -128,6 +129,11 @@
         REAL   , ALLOCATABLE, PUBLIC:: STKVEA( : ) !  exhaust velocity    (m/s)
         REAL   , POINTER,     PUBLIC:: POLVLA( :,: )! emis-spec values. See BLDENAMS.
         REAL   , ALLOCATABLE, PUBLIC:: VMTA  ( : ) !  vehicle miles traveled
+
+        REAL   , ALLOCATABLE, PUBLIC:: FUGHGT( : ) !  fugitive emissions height
+        REAL   , ALLOCATABLE, PUBLIC:: FUGWID( : ) !  fugitive emissions width (YDIM)
+        REAL   , ALLOCATABLE, PUBLIC:: FUGLEN( : ) !  fugitive emissions length (XDIM)
+        REAL   , ALLOCATABLE, PUBLIC:: FUGANG( : ) !  fugitive emissions angle
 
         CHARACTER(SCCLEN3), POINTER,     PUBLIC:: CSCCA  ( : ) ! SCC
         CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC:: CORISA ( : ) ! DOE plant ID

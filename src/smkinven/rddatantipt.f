@@ -2,8 +2,8 @@
         SUBROUTINE RDDATAORLPT( LINE, READDATA, READPOL, IYEAR, DESC,
      &                          ERPTYP, SRCTYP, HT, DM, TK, FL, VL, SIC, 
      &                          MACT, NAICS, CTYPE, LAT, LON, UTMZ, 
-     &                          NEID, CORS, BLID, EXTORL, HDRFLAG,
-     &                          EFLAG )
+     &                          NEID, CORS, BLID, FUGHT, FUGAR,
+     &                          EXTORL, HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -17,8 +17,9 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C      Created by C. Seppanen (01/03) based on rddataidapt.f
+C       Created by C. Seppanen (01/03) based on rddataidapt.f
 C
+C       Version June 2016 by Carlie Coats:  add fugitive-emissions properties
 C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -78,6 +79,8 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(NEILEN3), INTENT (OUT) :: NEID                  ! NEI unique ID
         CHARACTER(ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID
         CHARACTER(BLRLEN3), INTENT (OUT) :: BLID                  ! boiler ID
+        CHARACTER(16),      INTENT (OUT) :: FUGHT                 ! RELEASE_HEIGHT_FUGITIVE
+        CHARACTER(16),      INTENT (OUT) :: FUGAR                 ! HORIZONTAL_AREA_FUGITIVE
         CHARACTER(EXTLEN3), INTENT (OUT) :: EXTORL                ! additional ext vars
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
@@ -168,6 +171,8 @@ C           the various data fields
         IF( NEID == ' ' ) NEID = '-9'
         CORS   = ADJUSTL( SEGMENT( 30 ) )  ! DOE plant ID
         BLID   = ADJUSTL( SEGMENT( 31 ) )  ! boiler ID
+        FUGAR  = SEGMENT( 38 )
+        FUGHT  = SEGMENT( 39 )
 
 C.........  Read extended orl variables and store it as string
         EXTORL = ' '

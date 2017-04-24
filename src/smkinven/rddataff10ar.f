@@ -1,6 +1,7 @@
 
         SUBROUTINE RDDATAFF10AR( LINE, READDATA, READPOL, IYEAR, 
-     &                  SRCTYP, SIC, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
+     &                           SRCTYP, SIC, SHAPE, EXTORL, 
+     &                           HDRFLAG, AVEFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -64,6 +65,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
         CHARACTER(STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
         CHARACTER(SICLEN3), INTENT (OUT) :: SIC                   ! SIC
+        CHARACTER(SHPLEN3), INTENT (OUT) :: SHAPE                 ! SHAPE_ID
         CHARACTER(EXTLEN3), INTENT (OUT) :: EXTORL                ! additional ext vars
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: AVEFLAG               ! true: Aveday inv is processed
@@ -144,7 +146,8 @@ C           the various data fields
         READDATA( 1,NRP ) = '-9'
 
         SRCTYP = ' '   ! source type code
-        SIC    = ADJUSTL( SEGMENT( 16 ) )
+        SIC    = ' '
+        SHAPE  = ADJUSTL( SEGMENT(  5 ) )
         EXTORL = ' '   ! extended orl (N/A)
 
 C.........  Compute annual total based on monthly total

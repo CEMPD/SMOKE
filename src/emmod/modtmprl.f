@@ -44,6 +44,9 @@
 
 C.........  Hourly-emissions file information
         INTEGER, PUBLIC :: NTPDAT   ! No. data values in hourly emissions file
+
+        LOGICAL, PUBLIC :: LTFLAG = .FALSE.    ! flag for output hourly emissions in local time
+
         CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: TPNAME( : )  ! data names
         CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: TPUNIT( : )  ! data units
         CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: TPDESC( : )  ! data descs

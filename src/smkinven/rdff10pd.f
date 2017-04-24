@@ -165,17 +165,19 @@ C...........   Other local variables
         INTEGER          YEAR             ! 4-digit year
         INTEGER       :: YR4 = 0          ! unused header year
         INTEGER          ZONE             ! source time zones
+        INTEGER          DZONE            ! time shift (ZONE-TZONE)
         INTEGER          FSTPRV, FSTDATE, LSTDATE, FSTLOC, LSTLOC   ! processing start/end dates
 
         REAL             CONVFAC          ! tmp conversion factor from Inventory Table
         REAL             TOTAL            ! tmp daily total of hourly file
 
-        LOGICAL, SAVE :: DFLAG  = .FALSE.  ! true: dates set by data
-        LOGICAL       :: EFLAG  = .FALSE.  ! TRUE iff ERROR
+        LOGICAL, SAVE :: DFLAG  = .FALSE. ! true: dates set by data
+        LOGICAL       :: EFLAG  = .FALSE. ! TRUE iff ERROR
         LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
-        LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
-        LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
+        LOGICAL, SAVE :: LFLAG = .FALSE.  ! true: output daily/hourly inv in local time
+        LOGICAL, SAVE :: SFLAG = .FALSE.  ! true: use daily total from hourly
+        LOGICAL, SAVE :: TFLAG = .FALSE.  ! true: use SCCs for matching with inv
 
         CHARACTER(256) :: BUFFER = ' '    ! src description buffer 
         CHARACTER(1920):: LINE   = ' '    ! line buffer 
@@ -204,6 +206,10 @@ C.............  NOTE - the hourly file will have been assigned as a daily
 C               file when it was opened.
             MESG = 'Use daily totals only from hourly data file'
             SFLAG = ENVYN( 'HOURLY_TO_DAILY', MESG, .FALSE., IOS )
+
+C.............  No time zone shift for AERMOD support
+            MESG = 'Outputs local time daily and/or hourly inventories (No time shift)'
+            LFLAG = ENVYN( 'OUTPUT_LOCAL_TIME', MESG, .FALSE., IOS )
 
 C.............  Get processing base year info
             MESG = 'Define Processing Base Year for daily/hourly-specific inventory'
@@ -469,30 +475,41 @@ C.............  If time zone name is not found, thenoutput error
                 CYCLE
             END IF
 
-C.............  Set time zone number
-            ZONE = GETTZONE( CFIP )
- 
-C.............  If daily emissions are not in the output time zone, print 
-C               warning
-            IF( WARNOUT .AND. .NOT. DAYFLAG .AND. ZONE .NE. TZONE .AND.
-     &          NWARN( 1 ) .LE. MXWARN ) THEN
-                WRITE( MESG,94010 ) 
-     &                'WARNING: Time zone ', ZONE, 'in hourly-specific ' //
-     &                'file at line', IREC, CRLF() // BLANK10 //  
-     &                'does not match output time zone', TZONE
-                CALL M3MESG( MESG )
-                NWARN( 1 ) = NWARN( 1 ) + 1
+C.............  Local time shift flag (county-specific)
+            IF( .NOT. LFLAG ) THEN
 
-            END IF
-C.............  Check if date is in daylight time, if local zone has
-C               already been converted, and if this FIPS code is
-C               exempt from daylight time or not.
-            IF( ISDSTIME( JDATE ) .AND. USEDAYLT( I ) ) THEN
-                ZONE = ZONE - 1
+C.................  Set time zone number
+                ZONE = GETTZONE( CFIP )
+ 
+C.................  If daily emissions are not in the output time zone 
+                IF( WARNOUT .AND. .NOT. DAYFLAG .AND. ZONE .NE. TZONE .AND .
+     &              NWARN( 1 ) .LE. MXWARN ) THEN
+                    WRITE( MESG,94010 ) 
+     &                  'WARNING: Time zone ', ZONE, 'in hourly-specific ' //
+     &                  'file at line', IREC, CRLF() // BLANK10 //  
+     &                  'does not match output time zone', TZONE
+                    CALL M3MESG( MESG )
+                    NWARN( 1 ) = NWARN( 1 ) + 1
+                END IF
+
+C.................  Check if date is in daylight time, if local zone has
+C                   already been converted, and if this FIPS code is
+C                   exempt from daylight time or not.
+                IF( ISDSTIME( JDATE ) .AND. USEDAYLT( I ) ) THEN
+                    ZONE = ZONE - 1
+                END IF
+               
+                DZONE = ZONE - TZONE
+
+C.............  Reset time shift to 0 to correctly compute local time zone
+            ELSE
+
+                DZONE = 0
+                
             END IF
 
 C.............  Convert date and time to output time zone.
-            CALL NEXTIME( JDATE, JTIME, ( ZONE - TZONE ) * 10000 )
+            CALL NEXTIME( JDATE, JTIME, DZONE * 10000 )
 
 C.............  Determine time step pointer based on reference time
             PTR = SECSDIFF( RDATE, RTIME, JDATE, JTIME ) / TDIVIDE + 1
@@ -530,6 +547,7 @@ C.................  Check to see if data name is in list of special names
 C.................  Store status of special data and flag code with
 C                   special integer so can ID these records later.
                 IF( CIDX .GT. 0 ) THEN
+
                     SPSTAT( CIDX ) = CIDX 
                     COD = CODFLAG3 + CIDX
 
@@ -671,8 +689,7 @@ C               look it up and get indidies
                 J = FINDC( CFIP, NINVIFIP, INVCFIP )
                 IF( J .LE. 0 ) THEN
                     WRITE( MESG,93000 ) 'INTERNAL ERROR: Could not '//
-     &                     'find FIPS code' // CFIP // 'in internal list.'
-                    CALL M3MSG2( MESG )
+     &                     'find FIPS ' // CFIP // ' in internal list.'
                     CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
                 END IF
 

@@ -50,7 +50,7 @@ F90 = $(FC)
 # IFLAGS = -I${IOINC} -I${INCDIR} -M${IOBIN}                #  Sun   Fortran
 # IFLAGS = -I${IOINC} -I${INCDIR} -module ${OBJDIR} -module ${IOBIN}    #  PGI Fortran:  order *important*
 
- EFLAG = -extend-source 132                            #  Intel Fortran
+ EFLAG = -extend-source 132 -zero                       #  Intel Fortran
 # EFLAG = -ffixed-line-length-132  -fno-backslash       #  GNU   Fortran
 # EFLAG = -Mextend -Mbackslash                          #  PGI Fortran
 # EFLAG = -e                                            #  Sun   Fortran

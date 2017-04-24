@@ -44,13 +44,17 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
         USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, ISPTA, CMACTA, CISICA,
-     &                     TXCNT, NXTYPES
+     &                     TXCNT, NXTYPES, XDUPCHK
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: MXCHRS, NIPPA, SCCLEV1, SCCLEV2,
      &                     SCCLEV3, LSCCEND, SC_ENDP, SC_BEGP, 
      &                     JSCC, RSCCBEG, PLTIDX, EANAM, NIACT,
      &                     NCHARS
+
+C.........  This module contains the speciation profiles
+        USE MODSPRO, ONLY: CMBDEX
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -1056,7 +1060,7 @@ C           grouped cross-reference tables
         CALL ALOCCHRT( N( 1 ) )
 
 C.........  Populate the grouped tables of cross-reference source-characteristics 
-        CALL FILLCHRT( NXREF, XTYPE, XTCNT( 1 ) )
+        CALL FILLCHRT( NXREF, XTYPE, XTCNT )
 
 C.........  Depending on the operation type, first allocate memory for the tables
 C           and initialize profile codes where needed.
@@ -1134,6 +1138,8 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 
 C.............  This internal subprogram writes a warning message for 
 C               duplicate entries in the cross-reference file.
+C               Disabled if MODXREF/XDUPCHK is .FALSE.
+
             SUBROUTINE REPORT_DUP_XREF
 
 C.............  Local variables
@@ -1144,6 +1150,8 @@ C.............  Local variables
 
 C......................................................................
 
+            IF ( .NOT.XDUPCHK ) RETURN
+            
             CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
             MESG = 'WARNING: Duplicate entry in ' // OPTYPE( 1:LOPT ) //

@@ -47,6 +47,7 @@ C........   MODTMPRL contains the temporal profile tables
 
         USE MODINFO,  ONLY: CATEGORY
         USE MODSOURC, ONLY: CSOURC, CSCC, TPFLAG
+        USE MODDAYHR, ONLY: INDXH, NHRSRC, INDXD, NDYSRC
         USE MODTMPRL, ONLY: METPROF,  MTHPROF,  WEKPROF,  DOMPROF, HRLPROF,
      &                                MTHIDP,   WEKIDP,   DOMIDP,  HRLIDP,
      &                      METCOUNT, MTHCOUNT, WEKCOUNT, DOMCOUNT,
@@ -72,6 +73,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER, EXTERNAL :: INDEX1
+        INTEGER, EXTERNAL :: FIND1
 
 C...........   PARAMETERs and their descriptions:
 
@@ -86,7 +88,7 @@ C...........   PARAMETERs and their descriptions:
 C.........  Local varables
 
         INTEGER       I, S, V, D        ! indices and counters
-        INTEGER       ICAT
+        INTEGER       ICAT, IDY, IHR
 
         INTEGER       PMTH              ! monthly   profile from previous iteration
         INTEGER       PDOM              ! daily     profile from previous iteration
@@ -130,9 +132,20 @@ C.........  Local varables
         LOGICAL       SATFLAG           ! true: Monday hourly same for all pols
         LOGICAL       SUNFLAG           ! true: Monday hourly same for all pols
 
+        CHARACTER(TMPLEN3)      INVPRF        ! tmp inv tmp profile ID
+        CHARACTER(TMPLEN3)      MTHPRF(NVAR)  ! monthly prof for inv source with day/hourly inv
+        CHARACTER(TMPLEN3)      DOMPRF(NVAR)  ! dayofmon prof for inv source with day/hourly inv
+        CHARACTER(TMPLEN3)      WEKPRF(NVAR)  ! weekly prof for inv source with day/hourly inv
+        CHARACTER(TMPLEN3)      MONPRF(NVAR)  ! monday hourly prof for inv source with day/hourly inv
+        CHARACTER(TMPLEN3)      TUEPRF(NVAR)  ! tuesday hourly prof for inv source with day/hourly inv
+        CHARACTER(TMPLEN3)      WEDPRF(NVAR)  ! wednesday hourly prof for inv source with day/hourly inv
+        CHARACTER(TMPLEN3)      THUPRF(NVAR)  ! thursday hourly prof for inv source with day/hourly inv
+        CHARACTER(TMPLEN3)      FRIPRF(NVAR)  ! friday hourly prof for inv source with day/hourly inv
+        CHARACTER(TMPLEN3)      SATPRF(NVAR)  ! saturday hourly prof for inv source with day/hourly inv
+        CHARACTER(TMPLEN3)      SUNPRF(NVAR)  ! sunday hourly prof for inv source with day/hourly inv
+        CHARACTER(TMPLEN3)      METPRF(NVAR)  ! met hourly prof for inv source with day/hourly inv
         CHARACTER(ALLLEN3+2)    SOURCE  ! "<fip><scc>..."
         CHARACTER(100)          OUTFMT  ! output format
-        CHARACTER(100)          METFMT  ! output format
         CHARACTER(512)          BUFFER  ! output variables buffer
         CHARACTER(128)          MESG
 
@@ -161,13 +174,18 @@ C.........  Write header with current variables
 C.........  Create CSV output formats
 
         OUTFMT = '(A, ",", I8, ",", 2X,    2049( A,  :, "," ) )'   !  supports up through MXVARS3=2048 vbles
-        METFMT = '(A, ",", I8, ",", 2X, A, 2048( I9, :, "," ) )'   !  ditto for met profiles
 
         DO S = 1, NSRC
 
+C.............  Build source charaterisitics
+            CALL MKSOURCE( ICAT, S, SOURCE )
+
+C.............  Search index for inv source with day/hour inventory
+            IDY = FIND1( S, NDYSRC, INDXD )
+            IHR = FIND1( S, NHRSRC, INDXH )
+
 C.............  Retrieve profile numbers for all pollutants
 C.............  Implement profile-hierarchy and count active profiles
-
             MTHFLAG = ( MTHCOUNT .GT. 0 )
             DOMFLAG = ( DOMCOUNT .GT. 0 )
             WEKFLAG = ( WEKCOUNT .GT. 0 )
@@ -235,61 +253,85 @@ C.............  Implement profile-hierarchy and count active profiles
                 IF( HRLP( 6,V ) .GT. 0 )  NSAT = NSAT + 1
                 IF( HRLP( 7,V ) .GT. 0 )  NSUN = NSUN + 1
 
+                IF( IDY > 0 .OR. IHR > 0 ) THEN
+                    IF( IDY > 0 ) WRITE( INVPRF, '(A,I8.8)' ) 'DY', S
+                    IF( IHR > 0 ) WRITE( INVPRF, '(A,I8.8)' ) 'HR', S
+                    MTHPRF( V ) = INVPRF
+                    DOMPRF( V ) = INVPRF
+                    WEKPRF( V ) = INVPRF
+                    METPRF( V ) = INVPRF
+                    MONPRF( V ) = INVPRF
+                    TUEPRF( V ) = INVPRF
+                    WEDPRF( V ) = INVPRF
+                    THUPRF( V ) = INVPRF
+                    FRIPRF( V ) = INVPRF
+                    SATPRF( V ) = INVPRF
+                    SUNPRF( V ) = INVPRF
+                ELSE
+                    MTHPRF( V ) = MTHIDP( MTHP(V) ) 
+                    DOMPRF( V ) = DOMIDP( DOMP(V) ) 
+                    WEKPRF( V ) = WEKIDP( WEKP(V) ) 
+                    METPRF( V ) = SOURCE( 2:FIPLEN3+1 ) 
+                    MONPRF( V ) = HRLIDP( HRLP(1,V) )
+                    TUEPRF( V ) = HRLIDP( HRLP(2,V) )
+                    WEDPRF( V ) = HRLIDP( HRLP(3,V) )
+                    THUPRF( V ) = HRLIDP( HRLP(4,V) )
+                    FRIPRF( V ) = HRLIDP( HRLP(5,V) )
+                    SATPRF( V ) = HRLIDP( HRLP(6,V) )
+                    SUNPRF( V ) = HRLIDP( HRLP(7,V) )
+                END IF
             END DO
 
 C.............  Write profile information by pollutant
-
-            CALL MKSOURCE( ICAT, S, SOURCE )
 
             IF( MOD( TPFLAG(S), MTPRFAC ) .NE. 0 ) THEN
                 CONTINUE
             ELSE IF( NMTH .EQ. 0 ) THEN
                 CONTINUE
             ELSE IF( MTHFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"MTH"',    1, TRIM( SOURCE ), MTHIDP( MTHP(1 ) )
+                WRITE( FDEV,OUTFMT ) '"MTH"',    1, TRIM( SOURCE ), MTHPRF( 1 )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"MTH"', NVAR, TRIM( SOURCE ), ( TRIM( MTHIDP( MTHP(V) ) ),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"MTH"', NVAR, TRIM( SOURCE ), ( TRIM( MTHPRF( V ) ),V=1,NVAR )
             END IF
 
             IF( NDOM .EQ. 0 ) THEN
                 CONTINUE
             ELSE IF( DOMFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"DOM"',    1, TRIM( SOURCE ), DOMIDP( DOMP(1) )
+                WRITE( FDEV,OUTFMT ) '"DOM"',    1, TRIM( SOURCE ), DOMPRF( 1 )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"DOM"', NVAR, TRIM( SOURCE ), ( TRIM( DOMIDP( DOMP(V) ) ),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"DOM"', NVAR, TRIM( SOURCE ), ( TRIM( DOMPRF( V ) ),V=1,NVAR )
             END IF
 
             IF( NWEK .EQ. 0  ) THEN
                 CONTINUE
             ELSE IF( WEKFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"WEK"',    1, TRIM( SOURCE ), WEKIDP( WEKP(1 ) )
+                WRITE( FDEV,OUTFMT ) '"WEK"',    1, TRIM( SOURCE ), WEKPRF( 1 )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"WEK"', NVAR, TRIM( SOURCE ), ( TRIM( WEKIDP( WEKP(V) ) ),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"WEK"', NVAR, TRIM( SOURCE ), ( TRIM( WEKPRF( V ) ),V=1,NVAR )
             END IF
 
             IF( NMET .EQ. 0 ) THEN
                 CONTINUE
             ELSE IF( METFLAG ) THEN
-C bbaek                WRITE( FDEV,METFMT ) '"MET"',    1, TRIM( SOURCE ), METP(1)
-                WRITE( FDEV,OUTFMT ) '"MET"',    1, TRIM( SOURCE ), TRIM( SOURCE( 2:FIPLEN3+1 ) )
+                WRITE( FDEV,OUTFMT ) '"MET"',    1, TRIM( SOURCE ), METPRF( 1 )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"MET"', NVAR, TRIM( SOURCE ), ( TRIM(SOURCE(2:FIPLEN3+1)), V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"MET"', NVAR, TRIM( SOURCE ), ( TRIM( METPRF( V ) ), V=1,NVAR )
             END IF
 
             IF( NMON .EQ. 0 ) THEN
                 CONTINUE
             ELSE IF( MONFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"MON"',    1, TRIM( SOURCE ), HRLIDP( HRLP(1,1) )
+                WRITE( FDEV,OUTFMT ) '"MON"',    1, TRIM( SOURCE ), MONPRF( 1 )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"MON"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(1,V) ) ),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"MON"', NVAR, TRIM( SOURCE ), ( TRIM( MONPRF( V ) ),V=1,NVAR )
             END IF
 
             IF( NTUE .EQ. 0 ) THEN
                 CONTINUE
             ELSE IF( TUEFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"TUE"',    1, TRIM( SOURCE ), HRLIDP( HRLP(2,1) )
+                WRITE( FDEV,OUTFMT ) '"TUE"',    1, TRIM( SOURCE ), TUEPRF( 1 )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"TUE"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(2,V) ) ),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"TUE"', NVAR, TRIM( SOURCE ), ( TRIM( TUEPRF( V ) ),V=1,NVAR )
             END IF
 
             IF( NWED .EQ. 0 ) THEN
@@ -297,33 +339,33 @@ C bbaek                WRITE( FDEV,METFMT ) '"MET"',    1, TRIM( SOURCE ), METP(
             ELSE IF( HRLPROF( S,1,1 ) .LT. 1 ) THEN
                 CONTINUE
             ELSE IF( WEDFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"WED"',    1, TRIM( SOURCE ), HRLIDP( HRLP(3,1) )
+                WRITE( FDEV,OUTFMT ) '"WED"',    1, TRIM( SOURCE ), WEDPRF( 1 )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"WED"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(3,V) ) ),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"WED"', NVAR, TRIM( SOURCE ), ( TRIM( WEDPRF( V ) ),V=1,NVAR )
             END IF
 
             IF( NTHU .EQ. 0 ) THEN
                 CONTINUE
             ELSE IF( THUFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"THU"',    1, TRIM( SOURCE ), HRLIDP( HRLP(4,1) )
+                WRITE( FDEV,OUTFMT ) '"THU"',    1, TRIM( SOURCE ), THUPRF( 1 )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"THU"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(4,V) ) ),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"THU"', NVAR, TRIM( SOURCE ), ( TRIM( THUPRF( V ) ),V=1,NVAR )
             END IF
 
             IF( NFRI .EQ. 0 ) THEN
                 CONTINUE
             ELSE IF( FRIFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"FRI"',    1, TRIM( SOURCE ), HRLIDP( HRLP(5,1) )
+                WRITE( FDEV,OUTFMT ) '"FRI"',    1, TRIM( SOURCE ), FRIPRF( 1 )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"FRI"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(5,V) ) ),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"FRI"', NVAR, TRIM( SOURCE ), ( TRIM( FRIPRF( V ) ),V=1,NVAR )
             END IF
 
             IF( NSAT .EQ. 0 ) THEN
                 CONTINUE
             ELSE IF( SATFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"SAT"',    1, TRIM( SOURCE ), HRLIDP( HRLP(6,1) )
+                WRITE( FDEV,OUTFMT ) '"SAT"',    1, TRIM( SOURCE ), SATPRF( 1 )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"SAT"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(6,V) ) ),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"SAT"', NVAR, TRIM( SOURCE ), ( TRIM( SATPRF( V ) ),V=1,NVAR )
             END IF
 
             IF( NSUN .EQ. 0 ) THEN
@@ -331,9 +373,9 @@ C bbaek                WRITE( FDEV,METFMT ) '"MET"',    1, TRIM( SOURCE ), METP(
             ELSE IF( HRLPROF( S,1,1 ) .LT. 1 ) THEN
                 CONTINUE
             ELSE IF( SUNFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"SUN"',    1, TRIM( SOURCE ), HRLIDP( HRLP(7,1) )
+                WRITE( FDEV,OUTFMT ) '"SUN"',    1, TRIM( SOURCE ), SUNPRF( 1 )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"SUN"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(7,V) ) ),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"SUN"', NVAR, TRIM( SOURCE ), ( TRIM( SUNPRF( V ) ),V=1,NVAR )
             END IF
 
         END DO  ! end source loop

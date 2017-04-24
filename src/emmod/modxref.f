@@ -39,6 +39,9 @@
 
         INCLUDE 'EMPRVT3.EXT'   !  private emissions string widths parameters
 
+!.........  Turn on/off xref duplicate-checking in "lib/xreftbl.f":
+        LOGICAL, SAVE :: XDUPCHK = .TRUE.
+
 !.........  Per-source arrays with temporal profile indices to tables
         INTEGER, ALLOCATABLE :: MDEX ( :,: ) ! monthly       profile subscript
         INTEGER, ALLOCATABLE :: WDEX ( :,: ) ! weeky         profile subscript

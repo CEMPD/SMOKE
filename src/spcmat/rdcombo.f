@@ -10,6 +10,10 @@ C
 C  REVISION  HISTORY:
 C     Created 12/07 by M. Houyoux
 C
+C     Version 8/2016 by C.Coats:
+C       Check whether weights sum to 1
+C       Needed status-checks
+C
 C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -39,14 +43,15 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2) CRLF
         INTEGER     ENVINT 
+        LOGICAL     ENVYN
         INTEGER     FINDC 
         INTEGER     GETFLINE
         INTEGER     STR2INT
         LOGICAL     BLKORCMT
         REAL        STR2REAL  
 
-        EXTERNAL    CRLF, ENVINT, FINDC, GETFLINE, STR2INT, STR2REAL
-     &              BLKORCMT
+        EXTERNAL    CRLF, ENVINT, ENVYN, FINDC, GETFLINE, STR2INT,
+     &              STR2REAL, BLKORCMT
  
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT    (IN) :: CDEV    ! unit number of input file
@@ -57,13 +62,11 @@ C.........  Local parameters
         INTEGER, PARAMETER :: STATETYP = 1
         INTEGER, PARAMETER :: CNTYTYP  = 2
 
-C.........  Local allocatable arrays
-        INTEGER, ALLOCATABLE :: CMBTYP( : )  ! type of last entry applied to county (state- or county-specific)
-
 C.........  Local arrays
+        INTEGER       :: CMBTYP( NINVIFIP )  ! type of last entry applied to county (state- or county-specific)
         INTEGER, SAVE :: ERRCNT( 6 )  
         INTEGER, SAVE :: WARNCNT( 2 )  
-        REAL    :: CWEIGHT( CMBMAX )          ! tmp array for profile weights
+        REAL          :: CWEIGHT( CMBMAX )          ! tmp array for profile weights
         CHARACTER(IOVLEN3) :: SEGMENT( 24 )  ! Segments of parsed lines
 
 C.........  Other local variables
@@ -80,12 +83,15 @@ C.........  Other local variables
         INTEGER         NP      !  tmp number of profiles per combo
         INTEGER         NRECS   !  number of records read in current call
 
+        LOGICAL       :: TFLAG              ! out-of-bounds
         LOGICAL       :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
         LOGICAL, SAVE :: FIRSTSTA = .TRUE.
+        LOGICAL, SAVE :: CMBCHECK
 
+        CHARACTER(FIPLEN3), SAVE ::  FIPZERO  ! zero Cy/St/Co code
+        
         CHARACTER(FIPLEN3) CFIP     !  tmp buffer for state/county FIPS code
-        CHARACTER(FIPLEN3) FIPZERO   ! zero Cy/St/Co code
         CHARACTER(STALEN3) CSTA     !  tmp buff for state FIPS code
         CHARACTER(STALEN3) PSTA     !  tmp buff for previous state FIPS code
         CHARACTER(IOVLEN3) CPOL     !  tmp buffer for pollutant code
@@ -100,26 +106,35 @@ C   begin body of subroutine RDCOMBO
 C.........  Perform one-time steps
         IF ( FIRSTIME ) THEN
 
-            MXWARN = ENVINT( WARNSET , ' ', 100, I )
-            MXERR  = ENVINT( ERRSET  , ' ', 100, I )
+            MXWARN = ENVINT( WARNSET , ' ', 100, IOS )
+            IF ( IOS .GT. 0 ) THEN
+                MESG = 'Bad environment variable "' // WARNSET // '"'
+                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+            END IF
 
-            ERRCNT  = 0  ! Array
-            WARNCNT = 0  ! Array
+            MXERR  = ENVINT( ERRSET  , ' ', 100, IOS )
+            IF ( IOS .GT. 0 ) THEN
+                MESG = 'Bad environment variable "' // ERRSET // '"'
+                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+            END IF
 
-            FIRSTIME = .FALSE.
+            CMBCHECK = ENVYN( 'COMBO_CHKFRACS',
+     &                 'FATAL for bad sum-of-weights for profile-combos?',
+     &                 .TRUE., IOS )
+            IF ( IOS .GT. 0 ) THEN
+                MESG = 'Bad environment variable "COMBO_CHKSFRACS"'
+                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+            END IF
 
-        END IF
+            MESG   = 'Period to read from GSPRO_COMBO file'
+            PERIOD = ENVINT( 'SPCMAT_PERIOD', MESG, 1, IOS )
+            IF ( IOS .GT. 0 ) THEN
+                MESG = 'Bad environment variable "SPCMAT_PERIOD"'
+                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+            END IF
+C.............  Set up zero strings for FIPS code
 
-C.........   Evaluate environment variables and store in saved variable
-        MESG = 'Period to read from GSPRO_COMBO file'
-        PERIOD = ENVINT( 'SPCMAT_PERIOD', MESG, 1, IOS )
-
-C.........  Set up zero strings for FIPS code
-        FIPZERO  = REPEAT( '0', FIPLEN3 )
-
-C.........  Allocate public arrays if not already allocated. This just needs to be done
-C           once, since allocating for all FIPS codes (and not dependent on file size)
-        IF ( .NOT. ALLOCATED( CMBNP ) ) THEN
+            FIPZERO  = REPEAT( '0', FIPLEN3 )
 
             ALLOCATE( CMBNP( NINVIFIP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CMBNP', PROGNAME )
@@ -129,16 +144,13 @@ C           once, since allocating for all FIPS codes (and not dependent on file
 
             ALLOCATE( CMBWGHT( NINVIFIP, CMBMAX ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CMBWGHT', PROGNAME )
+            
+            FIRSTIME = .FALSE.
 
-        END IF
-
-C.........  Allocate local array if not already allocated
-        IF ( .NOT. ALLOCATED( CMBTYP ) ) THEN
-            ALLOCATE( CMBTYP( NINVIFIP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CMBTYP', PROGNAME )
         END IF
 
 C.........  Initialize public and local arrays to 0
+
         CMBNP   = 0   ! array
         CMBSPCD = ' ' ! array
         CMBWGHT = 0.  ! array
@@ -151,8 +163,10 @@ C.........  Get the number of lines in the input file
         NLINES = GETFLINE( CDEV, 'GSPRO Combos file' )
 
 C.........  Loop through file and read until the end.
-        IREC = 0
+        IREC  = 0
         NRECS = 0
+        TFLAG = .FALSE.
+
         DO I = 1, NLINES
 
             READ ( CDEV, 93000, END=999, IOSTAT=IOS ) LINE
@@ -444,12 +458,13 @@ C.............  Note: want this always to be reported, regardless of MAXERROR
 
         END IF
 
-C.........  Deallocate local memory
-        IF( ALLOCATED( CMBTYP ) ) DEALLOCATE( CMBTYP )
-
 C.........  If error found, abort program
         IF( EFLAG ) THEN
             MESG = 'Problem reading or applying profile combos data '//
+     &             'from GSPRO_COMBO'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        ELSE IF ( TFLAG .AND. CMBCHECK ) THEN
+            MESG = 'Non-normalized profile combos in data '//
      &             'from GSPRO_COMBO'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF 
@@ -499,22 +514,31 @@ C----------------------------------------------------------------------
                 SUM = SUM + CWEIGHT( N )
             END DO
 
-            IF( SUM > 1+TOLERANCE .OR. SUM < 1-TOLERANCE ) THEN
+            IF( SUM > 1.0+TOLERANCE .OR. SUM < 1.0-TOLERANCE ) THEN
 
-                SUMINV = 1. / SUM
+C.................  Non-normalization is an error:
+                IF ( CMBCHECK ) THEN
+                    WRITE( MESG,94010 ) 'WARNING: GSPRO_COMBO '//
+     &                 'Non-normalized fractions at line',IREC
+                    CALL M3MESG( MESG )
+                    TFLAG = .TRUE.
+                    RETURN
+                END IF
 
 C.................  Renormalize fractions
+C.................  Send warning message that entry is being renormalized
+                SUMINV = 1.0 / SUM
                 DO N = 1, NP
                     CWEIGHT( N ) = CWEIGHT( N ) * SUMINV
                 END DO
 
-C.................  Send warning message that entry is being renormalized
                 IF( SUM > 1+TOLERANCE .AND. WARNCNT(1) <= MXWARN ) THEN
                     WRITE( MESG,94010 ) 'WARNING: GSPRO_COMBO '//
      &                 'fractions summed > 1.001 at line',IREC,
      &                 'and were renormalized'
                     CALL M3MESG( MESG )
                     WARNCNT(1) = WARNCNT(1) + 1
+                    TFLAG = .TRUE.
 
                 ELSE IF ( SUM < 1-TOLERANCE .AND. 
      &                    WARNCNT(2) <= MXWARN    ) THEN
@@ -523,6 +547,7 @@ C.................  Send warning message that entry is being renormalized
      &                 'and were renormalized'
                     CALL M3MESG( MESG )
                     WARNCNT(2) = WARNCNT(2) + 1
+                    TFLAG = .TRUE.
                 END IF
 
             END IF

@@ -1,5 +1,5 @@
 
-        SUBROUTINE ASGNSPRO( MASSOUT, MOLEOUT, REPORT, NSRCIN, SDEV, 
+        SUBROUTINE ASGNSPRO( MASSOUT, MOLEOUT, REPORT, NSRCIN, SDEV,
      &                       ENAM, LVALCHK, MASSMATX, MOLEMATX )
 
 C***********************************************************************
@@ -30,20 +30,20 @@ C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C***************************************************************************
 
-C...........   MODULES for public variables   
+C...........   MODULES for public variables
 C...........   This module contains the source arrays
         USE MODSOURC, ONLY: CSOURC, CSCC, IRCLAS, IVTYPE, CISIC, CMACT
 
@@ -51,12 +51,12 @@ C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF, ONLY: TXCNT, CHRT02, CHRT03, CHRT04, 
+        USE MODXREF, ONLY: TXCNT, CHRT02, CHRT03, CHRT04,
      &          CHRT05, CHRT06, CHRT07, CHRT08, CHRT09, CHRT10,
      &          CHRT11, CHRT12, CHRT13, CHRT14, CHRT15, CHRT16,
      &          CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31,
      &          CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37,
-     &          CSPT01, CSPT02, CSPT03, CSPT04, 
+     &          CSPT01, CSPT02, CSPT03, CSPT04,
      &          CSPT05, CSPT06, CSPT07, CSPT08, CSPT09, CSPT10,
      &          CSPT11, CSPT12, CSPT13, CSPT14, CSPT15, CSPT16,
      &          CSPT26, CSPT27, CSPT28, CSPT29, CSPT30, CSPT31,
@@ -67,11 +67,11 @@ C...........   This module contains the speciation profile tables
      &                     NCNV1, NCNV2, NCNV3, NCNV4, NSPROF, SPROFN,
      &                     CNVFC00, CNVFC01, CNVFC02, CNVFC03, CNVFC04,
      &                     IDXSPRO, IDXSSPEC, NSPECIES, CNVFLAG,
-     &                     MASSFACT, MOLEFACT, CMBNP, CMBSPCD, CMBWGHT, 
-     &                     CMBMAX
+     &                     MASSFACT, MOLEFACT, CMBCNT, CMBNP, CMBSPCD,
+     &                     CMBWGHT, CMBMAX, CMBDEX
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NCHARS, JSCC, NIPPA, EANAM, 
+        USE MODINFO, ONLY: CATEGORY, NCHARS, JSCC, NIPPA, EANAM,
      &                     LSCCEND
 
         IMPLICIT NONE
@@ -86,7 +86,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FIND1
         INTEGER         FINDC
         INTEGER         INDEX1
-        INTEGER         ENVINT 
+        INTEGER         ENVINT
         INTEGER         PROMPTFFILE
         LOGICAL         SETSCCTYPE
 
@@ -104,17 +104,15 @@ C.........  SUBROUTINE ARGUMENTS
         REAL        , INTENT(IN OUT) :: MASSMATX( NSRCIN,* )! mass spec matx
         REAL        , INTENT(IN OUT) :: MOLEMATX( NSRCIN,* )! mole spec matx
 
-C.........  Local allocatable arrays
-        REAL, ALLOCATABLE, SAVE :: EMISTMP( : )  ! tmp emis for 1 pollutant by source
-
-C.........  Other local arrays
+C.........  Local arrays
+        REAL                 :: EMISTMP( NSRCIN )  ! tmp emis for 1 pollutant by source
         CHARACTER( SPNLEN3 ) :: CCODE  ( CMBMAX )
         REAL                 :: CWEIGHT( CMBMAX )
         INTEGER, SAVE        :: ERRCNT( 8 )
         INTEGER, SAVE        :: WARNCNT( 2 )
 
 C.........  Other local variables
-        INTEGER         K, L, L2, LV, NP, S, V    !  counters and indices
+        INTEGER         K, L, L2, NP, S, V    !  counters and indices
 
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
         INTEGER       :: F0B = 0      ! extra find index for mobile
@@ -123,15 +121,12 @@ C.........  Other local variables
         INTEGER          IOS          ! i/o status
         INTEGER          NCHKCHR      ! position of last non-SCC src char
         INTEGER          NCOUT        ! no. output source chars for mesgs
-        INTEGER          NPCOMBO      ! tmp no. of profiles in combination profile
         INTEGER, SAVE :: MXWARN       ! maximum number of warnings of each type to write
         INTEGER, SAVE :: MXERR        ! maximum number of errors of each type to write
 
-        REAL             CNVFAC       ! tmp pol-to-pol conversion factor
-
         LOGICAL       :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL       :: LRDCOMBO           ! true: for first COMBO for a pollutant/emis type
-        LOGICAL, SAVE :: CNVERROR = .TRUE.  ! true: when default (=1.0) conv fac is applied 
+        LOGICAL, SAVE :: CNVERROR = .TRUE.  ! true: when default (=1.0) conv fac is applied
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subrtn called
         LOGICAL, SAVE :: MACTFLAG = .FALSE. ! true: MACT codes available in inventory
         LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report when defaults used
@@ -139,8 +134,6 @@ C.........  Other local variables
         LOGICAL, SAVE :: SICFLAG  = .FALSE. ! true: SIC available in inventory
         LOGICAL          SCCFLAG            ! true: SCC type is different from previous
 
-        CHARACTER(10), SAVE :: RWTFMT  ! fmt to write roadway type to string
-        CHARACTER(10), SAVE :: VIDFMT  ! format to write veh ID to string
         CHARACTER(300)       BUFFER  ! source fields buffer
         CHARACTER(300)       MESG    ! message buffer
         CHARACTER(FIPLEN3)   CFIP    ! tmp (character) FIPS code
@@ -151,8 +144,7 @@ C.........  Other local variables
         CHARACTER(SCCLEN3)   TSCCL   ! tmp left digits of TSCC
         CHARACTER(SCCLEN3)   TSCCINIT! tmp initial 10-digit SCC
         CHARACTER(SPNLEN3)   SPCODE  ! tmp speciation profile code
-        CHARACTER(SCCLEN3)   CHKRWT  ! tmp roadway type only SCC
-        CHARACTER(SCCLEN3)   CHKVID  ! tmp vehicle-type only SCC
+        CHARACTER(SCCLEN3)   CHKRWT  ! tmp roadway type only SCC -- BUG:  UNINITIALIZED -- CJC
         CHARACTER(SS5LEN3):: CSRC5=' '! tmp source chars through char5
         CHARACTER(SS4LEN3):: CSRC4=' '! tmp source chars through char4
         CHARACTER(SS3LEN3):: CSRC3=' '! tmp source chars through char3
@@ -182,12 +174,8 @@ C.........  Other local variables
         CHARACTER(MFPLEN3):: CHK36=' '! tmp FIPS code // MACT
         CHARACTER(MFSLEN3):: CHK37=' '! tmp FIPS code // SCC // MACT
         CHARACTER(MACLEN3)   CMCT    ! tmp MACT code
-        CHARACTER(RWTLEN3)   CRWT    ! tmp char roadway type
-        CHARACTER(RWTLEN3)   RWTZERO ! zero roadway type
         CHARACTER(SICLEN3)   CSIC    ! tmp SIC code
         CHARACTER(SICLEN3)   CSICL   ! tmp left SIC code
-        CHARACTER(VIDLEN3)   CVID    ! tmp vehicle type
-        CHARACTER(VIDLEN3)   VIDZERO ! zero vehicle type
 
         CHARACTER(16) :: PROGNAME = 'ASGNSPRO' ! program name
 
@@ -198,34 +186,48 @@ C.........  For first time routine is called in all cases,
         IF( FIRSTIME ) THEN
 
 C.............  Get maximum number of warnings/errors
-            MXERR  = ENVINT( ERRSET , ' ', 100, IOS ) 
-            MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
+
+            MXWARN = ENVINT( WARNSET , ' ', 100, IOS )
+            IF ( IOS .GT. 0 ) THEN
+                MESG = 'Bad environment variable "' // WARNSET // '"'
+                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+            END IF
+
+            MXERR  = ENVINT( ERRSET  , ' ', 100, IOS )
+            IF ( IOS .GT. 0 ) THEN
+                MESG = 'Bad environment variable "' // ERRSET // '"'
+                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+            END IF
             ERRCNT  = 0   ! array
             WARNCNT = 0   ! array
 
 C.............  Retrieve environment variables
             MESG = 'Switch for reporting default speciation profiles'
             REPDEFLT = ENVYN ( 'REPORT_DEFAULTS', MESG, .TRUE., IOS )
+            IF ( IOS .GT. 0 ) THEN
+                MESG = 'Bad environment variable "REPORT_DEFAULTS"'
+                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+            END IF
 
             MESG = 'Treat applying default conversion factor (=1.0) as an error'
             CNVERROR = ENVYN ( 'DEFAULT_CONV_FAC_ERROR', MESG, .FALSE., IOS )
+            IF ( IOS .GT. 0 ) THEN
+                MESG = 'Bad environment variable "DEFAULT_CONV_FAC_ERROR"'
+                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+            END IF
 
 C.............  Retrieve skipping speciation profile flags for zero emissions
             MESG = 'Setting for assigning profile for zero emissions'
             LNOZERO = ENVYN ( 'NO_SPC_ZERO_EMIS', MESG, .FALSE., IOS )
-
-C.............  Set up format for writing roadway type and vehicle ID to strings
-            WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
-            WRITE( VIDFMT, '("(I",I2.2,".",I2.2,")")' ) VIDLEN3, VIDLEN3
+            IF ( IOS .GT. 0 ) THEN
+                MESG = 'Bad environment variable "NO_SPC_ZERO_EMIS"'
+                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+            END IF
 
 C.............  Figure out if SIC and/or MACT codes are available
             IF ( ASSOCIATED ( CISIC ) ) SICFLAG  = .TRUE.
             IF ( ASSOCIATED ( CMACT ) ) MACTFLAG = .TRUE.
 
-C.............  Allocate local memory for reading emissions
-            ALLOCATE( EMISTMP( NSRCIN ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EMISTMP', PROGNAME )
-            
             FIRSTIME = .FALSE.
 
         ENDIF
@@ -234,13 +236,9 @@ C.........  Initialize that combo file would need to be read
 C           for this pollutant at first instance of COMBO in GSREF
         LRDCOMBO = .TRUE.
 
-C.........  Initialize roadway type zero and vehicle type zero
-        RWTZERO = REPEAT( '0', RWTLEN3 )
-        VIDZERO = REPEAT( '0', VIDLEN3 )
-
 C.........  Set number of output fields for FMTCSRC to use
         SELECT CASE ( CATEGORY )
-        CASE ( 'AREA' ) 
+        CASE ( 'AREA' )
             NCOUT = 1
         CASE ( 'MOBILE' )
             NCOUT = NCHARS
@@ -271,8 +269,7 @@ C.........  Initialize index check
         IF( JSCC .GT. 0 ) NCHKCHR = NCHARS - 1
 
 C.........  Find index in complete list of pollutants and set length of name
-        V  = INDEX1( ENAM, NIPPA, EANAM ) 
-        LV = LEN_TRIM( EANAM( V ) )
+        V  = INDEX1( ENAM, NIPPA, EANAM )
 
         DO S = 1, NSRCIN
 
@@ -285,19 +282,19 @@ C.............  If emissions are zero for this source, then skip it
 
             CSRC  = CSOURC( S )
             CFIP  = CSRC( 1:FIPLEN3 )
-            CSTA  = CFIP( 1:STALEN3 )                 
+            CSTA  = CFIP( 1:STALEN3 )
             TSCC  = CSCC( S )
             SCCORIG = TSCC
-            
-C.............  Set type of SCC                
+
+C.............  Set type of SCC
             SCCFLAG = SETSCCTYPE ( TSCC )
             TSCCL = TSCC( 1:LSCCEND )
-            
+
             CHK09 = CFIP // TSCC
-            CHK08 = CFIP // TSCCL 
+            CHK08 = CFIP // TSCCL
             CHK06 = CSTA // TSCC
-            CHK05 = CSTA // TSCCL 
-            
+            CHK05 = CSTA // TSCCL
+
             IF( SICFLAG ) THEN
                 CSIC = CISIC( S )
                 CSICL = CSIC( 1:SICEXPLEN3+2 )
@@ -306,7 +303,7 @@ C.............  Set type of SCC
                 CHK30 = CFIP // CSICL
                 CHK31 = CFIP // CSIC
             END IF
-            
+
             IF( MACTFLAG ) THEN
                 CMCT  = CMACT( S )
                 CHK33 = TSCC // CMCT
@@ -315,10 +312,10 @@ C.............  Set type of SCC
                 CHK36 = CFIP // CMCT
                 CHK37 = CFIP // TSCC // CMCT
             END IF
-            
+
             TSCCINIT = TSCC
 
-C.............  Create selection 
+C.............  Create selection
             SELECT CASE ( CATEGORY )
 
             CASE ( 'AREA' )   ! Already set above
@@ -335,22 +332,22 @@ C.............  Create selection
                 CHK11   = CSRC( 1:PTENDL3( 2 ) ) // TSCC
                 CHK10   = CSRC( 1:PTENDL3( 2 ) )
 
-                CSRC5   = CSRC( 1:PTENDL3( 7 ) ) 
-                CSRC4   = CSRC( 1:PTENDL3( 6 ) ) 
-                CSRC3   = CSRC( 1:PTENDL3( 5 ) ) 
-                CSRC2   = CSRC( 1:PTENDL3( 4 ) ) 
-                CSRC1   = CSRC( 1:PTENDL3( 3 ) ) 
-                    
+                CSRC5   = CSRC( 1:PTENDL3( 7 ) )
+                CSRC4   = CSRC( 1:PTENDL3( 6 ) )
+                CSRC3   = CSRC( 1:PTENDL3( 5 ) )
+                CSRC2   = CSRC( 1:PTENDL3( 4 ) )
+                CSRC1   = CSRC( 1:PTENDL3( 3 ) )
+
             CASE DEFAULT
 
             END SELECT
 
 C.........................................................................
-C.............  Now find and apply speciation profiles data 
+C.............  Now find and apply speciation profiles data
 C.........................................................................
 
 C.............  In the tables used in the following heirarchy, all cross-
-C               reference entries are by definition, pollutant- specific.  
+C               reference entries are by definition, pollutant- specific.
 C               The cross-reference tables (e.g,, CHRT02 come from MODXREF)
 
 C.............  Try for pollutant-specific CHAR5 non-blank// SCC match; then
@@ -380,11 +377,11 @@ C                       pollutant-specific PLANT non-blank       match
             END SELECT
 
             IF( F6 .LE. 0 ) F6 = FINDC( CSRC5, TXCNT( 16 ), CHRT16 )
-            IF( F5 .LE. 0 ) F5 = FINDC( CSRC4, TXCNT( 15 ), CHRT15 ) 
-            IF( F4 .LE. 0 ) F4 = FINDC( CSRC3, TXCNT( 14 ), CHRT14 ) 
-            IF( F3 .LE. 0 ) F3 = FINDC( CSRC2, TXCNT( 13 ), CHRT13 ) 
-            IF( F2 .LE. 0 ) F2 = FINDC( CSRC1, TXCNT( 12 ), CHRT12 ) 
-            F1 = FINDC( CHK11, TXCNT( 11 ), CHRT11 ) 
+            IF( F5 .LE. 0 ) F5 = FINDC( CSRC4, TXCNT( 15 ), CHRT15 )
+            IF( F4 .LE. 0 ) F4 = FINDC( CSRC3, TXCNT( 14 ), CHRT14 )
+            IF( F3 .LE. 0 ) F3 = FINDC( CSRC2, TXCNT( 13 ), CHRT13 )
+            IF( F2 .LE. 0 ) F2 = FINDC( CSRC1, TXCNT( 12 ), CHRT12 )
+            F1 = FINDC( CHK11, TXCNT( 11 ), CHRT11 )
             F0 = FINDC( CHK10, TXCNT( 10 ), CHRT10 )
 
             IF( F6 .GT. 0 .AND. CSPT16(F6,V) .NE. EMCMISS3 ) THEN
@@ -426,7 +423,7 @@ C                       pollutant-specific PLANT non-blank       match
 
 C.............  If MACT available in inventory...
             IF ( MACTFLAG ) THEN
-                
+
 C.............  Try for pollutant-specific FIPS code, SCC match, & MACT code; then
 C                       pollutant-specific FIPS code & MACT code; then
 C                       pollutant-specific Cy/st code, SCC match, & MACT code; then
@@ -439,43 +436,43 @@ C                       pollutant-specific MACT code
                 F2 = FINDC( CHK34, TXCNT( 34 ), CHRT34 )
                 F1 = FINDC( CHK33, TXCNT( 33 ), CHRT33 )
                 F0 = FINDC( CMCT , TXCNT( 32 ), CHRT32 )
-                
+
                 IF( F5 .GT. 0 .AND. CSPT37( F5,V ) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT37( F5,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 ELSEIF(F4 .GT. 0 .AND. CSPT36(F4,V) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT36( F4,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 ELSEIF(F3 .GT. 0 .AND. CSPT35(F3,V) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT35( F3,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 ELSEIF(F2 .GT. 0 .AND. CSPT34(F2,V) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT34( F2,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 ELSEIF(F1 .GT. 0 .AND. CSPT33(F1,V) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT33( F1,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 ELSEIF(F0 .GT. 0 .AND. CSPT32(F0,V) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT32( F0,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 END IF
             END IF
 
 C.............  If SIC available in inventory...
             IF ( SICFLAG ) THEN
-            
+
 C.............  Try for pollutant-specific FIPS code & SIC match; then
 C                       pollutant-specific FIPS code & left SIC match; then
 C                       pollutant-specific Cy/st code & SIC match; then
@@ -489,37 +486,37 @@ C                       pollutant-specific left SIC match
                 F2 = FINDC( CHK28, TXCNT( 28 ), CHRT28 )
                 F1 = FINDC( CSIC , TXCNT( 27 ), CHRT27 )
                 F0 = FINDC( CSICL, TXCNT( 26 ), CHRT26 )
-                
+
                 IF( F5 .GT. 0 .AND. CSPT31( F5,V ) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT31( F5,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 ELSEIF(F4 .GT. 0 .AND. CSPT30(F4,V) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT30( F4,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 ELSEIF(F3 .GT. 0 .AND. CSPT29(F3,V) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT29( F3,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 ELSEIF(F2 .GT. 0 .AND. CSPT28(F2,V) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT28( F2,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 ELSEIF(F1 .GT. 0 .AND. CSPT27(F1,V) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT27( F1,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 ELSEIF(F0 .GT. 0 .AND. CSPT26(F0,V) .NE. EMCMISS3 ) THEN
                     SPCODE = CSPT26( F0,V )
                     CALL SETSOURCE_SMATS
                     CYCLE                       !  to end of sources-loop
-    
+
                 END IF
             END IF
 
@@ -530,12 +527,12 @@ C                       pollutant-specific Cy/st code & left SCC match; then
 C                       pollutant-specific SCC match; then
 C                       pollutant-specific left SCC match
 
-            F5 = FINDC( CHK09, TXCNT( 9 ), CHRT09 ) 
-            F4 = FINDC( CHK08, TXCNT( 8 ), CHRT08 ) 
-            F3 = FINDC( CHK06, TXCNT( 6 ), CHRT06 ) 
-            F2 = FINDC( CHK05, TXCNT( 5 ), CHRT05 ) 
-            F1 = FINDC( TSCC , TXCNT( 3 ), CHRT03 ) 
-            F0 = FINDC( TSCCL, TXCNT( 2 ), CHRT02 ) 
+            F5 = FINDC( CHK09, TXCNT( 9 ), CHRT09 )
+            F4 = FINDC( CHK08, TXCNT( 8 ), CHRT08 )
+            F3 = FINDC( CHK06, TXCNT( 6 ), CHRT06 )
+            F2 = FINDC( CHK05, TXCNT( 5 ), CHRT05 )
+            F1 = FINDC( TSCC , TXCNT( 3 ), CHRT03 )
+            F0 = FINDC( TSCCL, TXCNT( 2 ), CHRT02 )
 
 C............. Check for mobile-specific matches that use a TSCC with
 C              road class of zero and vehicle type. The assignment of
@@ -545,27 +542,27 @@ C              for example) but the match uses the full TSCC (or CHRT09, for
 C              example).
 
             IF( F5 .GT. 0 .AND. CSPT09(F5,V) .NE. EMCMISS3 ) THEN
-                SPCODE = CSPT09( F5,V ) 
+                SPCODE = CSPT09( F5,V )
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F4 .GT. 0 .AND. CSPT08(F4,V) .NE. EMCMISS3 ) THEN
-                SPCODE = CSPT08( F4,V ) 
+                SPCODE = CSPT08( F4,V )
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F4B .GT. 0 .AND. CSPT09(F4B,V) .NE. EMCMISS3 ) THEN
-                SPCODE = CSPT09( F4B,V ) 
+                SPCODE = CSPT09( F4B,V )
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F3 .GT. 0 .AND. CSPT06(F3,V) .NE. EMCMISS3 ) THEN
-                SPCODE = CSPT06( F3,V ) 
+                SPCODE = CSPT06( F3,V )
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F2 .GT. 0 .AND. CSPT05(F2,V) .NE. EMCMISS3 ) THEN
-                SPCODE = CSPT05( F2,V ) 
+                SPCODE = CSPT05( F2,V )
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
@@ -575,36 +572,36 @@ C              example).
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F1 .GT. 0 .AND. CSPT03(F1,V) .NE. EMCMISS3 ) THEN
-                SPCODE = CSPT03( F1,V ) 
+                SPCODE = CSPT03( F1,V )
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F0 .GT. 0 .AND. CSPT02(F0,V) .NE. EMCMISS3 ) THEN
-                SPCODE = CSPT02( F0,V ) 
+                SPCODE = CSPT02( F0,V )
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F0B .GT. 0 .AND. CSPT03(F0B,V) .NE. EMCMISS3 ) THEN
-                SPCODE = CSPT03( F0B,V ) 
+                SPCODE = CSPT03( F0B,V )
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
             END IF
 
 C.............  Try for any FIPS code match
-            F0 = FINDC( CFIP, TXCNT( 7 ), CHRT07 ) 
+            F0 = FINDC( CFIP, TXCNT( 7 ), CHRT07 )
 
             IF( F0 .GT. 0 ) THEN
-                SPCODE = CSPT07( F0,V ) 
+                SPCODE = CSPT07( F0,V )
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
             END IF
 
 C.............  Try for any country/state code match (not, pol-specific)
-            F0 = FINDC( CSTA, TXCNT( 4 ), CHRT04 ) 
+            F0 = FINDC( CSTA, TXCNT( 4 ), CHRT04 )
 
             IF( F0 .GT. 0 ) THEN
-                SPCODE = CSPT04( F0,V ) 
+                SPCODE = CSPT04( F0,V )
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
             END IF
@@ -612,7 +609,7 @@ C.............  Try for any country/state code match (not, pol-specific)
 C.............  For default speciation profile, make sure that it has been
 C               defined for the current pollutant, and that we want to report
 C               the use of defaults.
-            IF( CSPT01( V ) .NE. EMCMISS3 .AND. 
+            IF( CSPT01( V ) .NE. EMCMISS3 .AND.
      &          REPDEFLT .AND. REPORT           ) THEN
                 SPCODE = CSPT01( V )
 
@@ -621,7 +618,7 @@ C               the use of defaults.
                 MESG = 'NOTE: Using default speciation profile "' //
      &                 SPCODE // '" for:'//
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
-     &                 CRLF() // BLANK10 // 
+     &                 CRLF() // BLANK10 //
      &                 'SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
                 CALL M3MESG( MESG )
 
@@ -646,7 +643,7 @@ C               the use of defaults.
         IF( EFLAG ) THEN
             MESG = 'Problem assigning speciation profiles to sources'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF 
+        END IF
 
         RETURN
 
@@ -671,7 +668,7 @@ C               speciation profile is unavailable for a given pollutant
                 MESG = 'ERROR: No speciation cross-reference ' //
      &                 'available (and no default) for:' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
-     &                 CRLF() // BLANK10 // 
+     &                 CRLF() // BLANK10 //
      &                 'SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
 
                 CALL M3MESG( MESG )
@@ -682,7 +679,7 @@ C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 C.............  This internal subprogram searches for the speciation profile
 C               code in the abriged list (from MODSPRO) and if found, applies
-C               the speciation factors for all species in that profile to 
+C               the speciation factors for all species in that profile to
 C               the speciation matrices.
 C.............  Most variables are defined through host association.
             SUBROUTINE SETSOURCE_SMATS
@@ -692,12 +689,15 @@ C.............  Local variables
 
             INTEGER   ITBL        ! position in full table of current profile
             INTEGER   NTBL        ! number of species of current profile
+            INTEGER   NPCOMBO     ! tmp no. of profiles in combination profile
+            REAL      CNVFAC      ! tmp pol-to-pol conversion factor
+
+            LOGICAL   VALID, USECOMBO, USEFRACS
 
             INTEGER, SAVE :: CDEV = 0       ! unit number for GSPRO_COMBO
+            LOGICAL, SAVE :: FIRSTCOMBO = .TRUE.  ! true: until first COMBO entry found in GSREF
 
-            LOGICAL   VALID 
-
-            LOGICAL :: FIRSTCOMBO = .TRUE.  ! true: until first COMBO entry found in GSREF
+            CHARACTER(24) :: PROGNAME = 'ASGNSPRO/SETSOURCE_SMATS'
 
 C----------------------------------------------------------------------
 
@@ -705,19 +705,45 @@ C.............  If speciation profile code assigned is a combination profile...
 C.............  This internal subroutine checks to see if the assignment has
 C               been made to a COMBO profile and takes action accordingly.
 C               Its main jobs are to read in the GSREF_COMBO file, find the
-C               combination profile in the dataset, and to setup the number 
+C               combination profile in the dataset, and to setup the number
 C               of profiles in a combination profile.
+C.............  NOTE:SREFDEX( SPCODE ) =
+C                   0 -- not an SREF* profile
+C                   -9999:  out-of-range/invalid SREF* profile
+C                   1-SREFCNT:  SREF* subscript
+            F = CMBDEX( SPCODE )
 
-            IF ( SPCODE .EQ. '     COMBO' ) THEN
+            IF ( F .LT. 0 ) THEN
+
+                MESG = 'INTERNAL ERROR:  invalid CMB-fraction profile '
+     &                 // SPCODE
+                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+
+            ELSE IF ( F .GT. 0 ) THEN
+
+                NPCOMBO = CMBNP( F )
+                DO I = 1, NPCOMBO
+                    CCODE  ( I ) = ADJUSTR( CMBSPCD( F,I ) )
+                    CWEIGHT( I ) = CMBWGHT( F,I )
+                END DO
+                USECOMBO = .FALSE.
+                USEFRACS = .TRUE.
+
+            ELSE IF ( ADJUSTL( SPCODE ) .EQ. 'COMBO' ) THEN
+                    USECOMBO = .TRUE.
+                    USEFRACS = .FALSE.
 
 C................. For the first combo profile encountered, open the GSPRO_COMBO
 C                  file. Arrays are passed back via the MODSPRO module
                 IF ( FIRSTCOMBO ) THEN
 
-                    CDEV = PROMPTFFILE( 
+                    CDEV = PROMPTFFILE(
      &                'Enter logical name for COMBINATION PROFILE file',
      &           .     TRUE., .TRUE., 'GSPRO_COMBO', PROGNAME )
-
+                    IF ( CDEV .LT. 0 ) THEN
+                        MESG = 'ERROR:  could not open "GSPRO_COMBO"'
+                        CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+                    END IF
                     FIRSTCOMBO = .FALSE.
 
                 END IF
@@ -744,8 +770,8 @@ C                   arrays are supposed to be built from inventory list of FIPs 
                     ERRCNT(2) = ERRCNT(2) + 1
                     EFLAG = .TRUE.
 
-C.................  Otherwise, store information from combination data, if found                
-                ELSE 
+C.................  Otherwise, store information from combination data, if found
+                ELSE
 
                     NPCOMBO = CMBNP( F )
 
@@ -763,7 +789,7 @@ C                          to be skipped
                     ELSE
                         MESG = 'ERROR: No FIPS-specific entry '//
      &                         'in GSPRO_COMBO for:'//
-     &                         CRLF() // BLANK10 // 
+     &                         CRLF() // BLANK10 //
      &                         'FIP: '// TRIM(CFIP) // ' and'//
      &                         'pollutant "'// TRIM( ENAM ) //'"'
                         IF( ERRCNT(3) < MXERR ) CALL M3MESG( MESG )
@@ -780,7 +806,9 @@ C               use the single profile specified
 
                 NPCOMBO      = 1
                 CCODE  ( 1 ) = SPCODE
-                CWEIGHT( 1 ) = 1.
+                CWEIGHT( 1 ) = 1.0
+                USECOMBO     = .FALSE.
+                USEFRACS     = .FALSE.
 
             END IF
 
@@ -792,50 +820,64 @@ C                  and CCODE(1) to SPCODE.
                 VALID = .TRUE.
                 K = MAX( INDEX1( CCODE( NP ), NSPROF, SPROFN ),0 )
 
-C.................  If profile is not found in set of profiles, try to apply
-C                   the default for this pollutant (as long as it's not a combo)
-                IF( K .LE. 0 .AND. NPCOMBO .EQ. 1 ) THEN
-
+C.................  If specificv profile is not found in set of profiles,
+C                   try to apply the default for this pollutant.
+C                   If COMBO or fractional, give a different error and 
+C                   don't look for the default)
+                IF( K .LE. 0 ) THEN
+                
                     CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
 
-                    MESG = 'WARNING: Speciation profile "'// CCODE(NP)//
-     &                 '" is not in profiles, but it was assigned' //
-     &                 CRLF() // BLANK10 // 'to source:' //
-     &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
-     &                 ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
+                    IF ( USECOMBO ) THEN
 
-                    IF( WARNCNT(1) <= MXWARN ) CALL M3MESG( MESG )
-                    WARNCNT(1) = WARNCNT(1) + 1
-
-                    K = MAX( FINDC( CSPT01( V ), NSPROF, SPROFN ), 0 )
-
-                    IF( CSPT01( V ) .NE. EMCMISS3 .AND. K .GT. 0 ) THEN
-                        MESG = BLANK5 // 'Using default profile ' // 
-     &                     CSPT01( V )
-                        CALL M3MESG( MESG )
-
-                    ELSE 
+                        MESG = 'ERROR: Speciation profile "'// CCODE(NP)//
+     &                     '" is not in profiles, but it was assigned' //
+     &                     CRLF() // BLANK10 // 'as COMBO to source:' //
+     &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) //
+     &                     ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
+                        IF( ERRCNT(5) <= MXERR ) CALL M3MESG( MESG )
+                        ERRCNT(5) = ERRCNT(5) + 1
                         EFLAG = .TRUE.
-                        VALID = .FALSE.
-                        IF( ERRCNT(4) < MXERR ) CALL REPORT_MISSING_DEFAULT
-                        ERRCNT(4) = ERRCNT(4) + 1
+                        CYCLE
+                    
+                    ELSE IF ( USEFRACS ) THEN
+
+                        MESG = 'ERROR: Speciation profile "'// CCODE(NP)//
+     &                     '" is not in profiles, but it was assigned' //
+     &                     CRLF() // BLANK10 // 
+     &                     'as as fractional-profile to source:' //
+     &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) //
+     &                     ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
+                        IF( ERRCNT(5) <= MXERR ) CALL M3MESG( MESG )
+                        ERRCNT(5) = ERRCNT(5) + 1
+                        EFLAG = .TRUE.
+                        CYCLE
+                    
+                    ELSE
+
+                        MESG = 'WARNING: Speciation profile "'// CCODE(NP)//
+     &                     '" is not in profiles, but it was assigned' //
+     &                     CRLF() // BLANK10 // 'to source:' //
+     &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) //
+     &                     ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
+                        IF( WARNCNT(1) <= MXWARN ) CALL M3MESG( MESG )
+                        WARNCNT(1) = WARNCNT(1) + 1
+
+                        K = MAX( FINDC( CSPT01( V ), NSPROF, SPROFN ), 0 )
+
+                        IF( CSPT01( V ) .NE. EMCMISS3 .AND. K .GT. 0 ) THEN
+                            MESG = BLANK5 // 'Using default profile ' //
+     &                         CSPT01( V )
+                            CALL M3MESG( MESG )
+
+                        ELSE
+                            EFLAG = .TRUE.
+                            VALID = .FALSE.
+                            IF( ERRCNT(4) < MXERR ) CALL REPORT_MISSING_DEFAULT
+                            ERRCNT(4) = ERRCNT(4) + 1
+                        END IF
+
                     END IF
-
-C.................  Profile is not found for a combination profile, give a 
-C                   different error (and don't look for the default)
-                ELSE IF ( K .LE. 0 ) THEN
-
-                    CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
-
-                    MESG = 'ERROR: Speciation profile "'// CCODE(NP)//
-     &                 '" is not in profiles, but it was assigned' //
-     &                 CRLF() // BLANK10 // 'as COMBO to source:' //
-     &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
-     &                 ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
-                    IF( ERRCNT(5) <= MXERR ) CALL M3MESG( MESG )
-                    ERRCNT(5) = ERRCNT(5) + 1
-                    EFLAG = .TRUE.
-                    CYCLE
 
                 END IF
 
@@ -843,12 +885,12 @@ C.................  Check if pollutant-to-pollutant conversion factor is availab
 C                   by speciation profile, by checking if their count > 0
                 IF( NCNV4 .GT. 0 .AND. VALID ) THEN
 
-                    F1 = FINDC( ADJUSTL( CCODE(NP) ), NCNV4, CNVRT04 ) 
+                    F1 = FINDC( ADJUSTL( CCODE(NP) ), NCNV4, CNVRT04 )
 
                     IF( F1 .GT. 0 )THEN
                         CNVFAC = CNVFC04( F1,V )
 
-C.....................  CNVFC00( V ) will equal 1.0 if it has not been set, so 
+C.....................  CNVFC00( V ) will equal 1.0 if it has not been set, so
 C                       there is no need for error checking
                     ELSE
                         CNVFAC = CNVFC00( V )
@@ -874,10 +916,14 @@ C                   if they have been allocated
 
 C.....................  If have a combination profile, then this is not a valid
 C                       way to set the pollutant-to-pollutant factors
-                    IF( NPCOMBO > 1 ) THEN
+                    IF( USECOMBO ) THEN
                         MESG = 'ERROR: Can not assign pollutant-to-'//
      &                         'pollutant factors using FIPS/SCC '//
      &                         'using combination profiles.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    ELSE IF ( USEFRACS ) THEN
+                        MESG = 'ERROR: Can not assign pollutant-to-'//
+     &                   'pollutant factors using  fractional profiles.'
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
 
@@ -887,11 +933,11 @@ C                           pollutant-specific SCC match
 C                           pollutant-specific roadway type match
 C                           pollutant-specific vehicle type match
 
-                    F5 = FINDC( CFIP // SCCORIG , NCNV3, CNVRT03 ) 
-                    F4 = FINDC( CSTA // SCCORIG , NCNV2, CNVRT02 ) 
-                    F3 = FINDC( TSCC  , NCNV1, CNVRT01 ) 
-                    F2 = FINDC( CHKRWT, NCNV1, CNVRT01 ) 
-                    F1 = FINDC( SCCORIG( 1:LSCCEND ), NCNV1, CNVRT01 ) 
+                    F5 = FINDC( CFIP // SCCORIG , NCNV3, CNVRT03 )
+                    F4 = FINDC( CSTA // SCCORIG , NCNV2, CNVRT02 )
+                    F3 = FINDC( TSCC  , NCNV1, CNVRT01 )
+                    F2 = FINDC( CHKRWT, NCNV1, CNVRT01 )
+                    F1 = FINDC( SCCORIG( 1:LSCCEND ), NCNV1, CNVRT01 )
 
                     IF( F5 .GT. 0  ) THEN
                         CNVFAC = CNVFC03( F5,V )
@@ -953,11 +999,11 @@ C.....................  Get indices to full speciation table
                         END IF
 
                         IF( MOLEOUT ) THEN
-                            MOLEMATX( S,J )= MOLEMATX( S,J ) + 
+                            MOLEMATX( S,J )= MOLEMATX( S,J ) +
      &                            CWEIGHT( NP ) * CNVFAC * MOLEFACT( I )
                         END IF
 
-                    END DO 
+                    END DO
 
                 END IF
 

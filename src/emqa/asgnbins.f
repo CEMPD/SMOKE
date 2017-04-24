@@ -55,7 +55,9 @@ C............  MODINFO contains the information about the source category
         USE MODSOURC, ONLY: CSOURC, CIFIP, CSCC, IRCLAS, SRGID, CMON,
      &                      CWEK, CDOM, CMND, CTUE, CWED, CTHU, CFRI,
      &                      CSAT, CSUN, CMET, SPPROF, CISIC, CMACT,
-     &                      CNAICS, CSRCTYP, CORIS, CINTGR
+     &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP,
+     &                      XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE,
+     &                      FUGHGT, FUGWID, FUGLEN, FUGANG
 
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
@@ -74,7 +76,8 @@ C............  MODINFO contains the information about the source category
      &                      BINPOPDIV, OUTBIN, OUTCELL,OUTSRC,
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
      &                      BINNAICS, BINNAIIDX, BINSRCTYP, BINORIS,
-     &                      BINORSIDX, BINSTKGRP, BININTGR, BINGEO1IDX
+     &                      BINORSIDX, BINSTKGRP, BININTGR, BINGEO1IDX,
+     &                      BINERPTYP
 
         USE MODGRID, ONLY: NCOLS
 
@@ -111,6 +114,7 @@ C...........   Local parameters:
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
+     &                                     + ERPLEN3 + 26 + 65 + 64
         INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) = (/ 1, 3, 6,  8, 9 /)
         INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) = (/ 2, 4, 7, 10, 9 /)
 
@@ -152,6 +156,7 @@ C...........   Local variables
         CHARACTER(BUFLEN)  LBUF         ! previous sorting info buffer
         CHARACTER(SCCLEN3) SCC          ! tmp SCC
         CHARACTER(SICLEN3) SIC          ! tmp SIC
+        CHARACTER(ERPLEN3) ERPTYP       ! tmp ERPTYP
         CHARACTER(INTLEN3) INTGR        ! tmp INTEGRATE
         CHARACTER(MACLEN3) MACT         ! tmp MACT
         CHARACTER(NAILEN3) NAICS        ! tmp NAICS
@@ -212,14 +217,14 @@ C.........  Consistency checking:  inventory vs report
 
         IF( RPT_%BYNAICS .AND. .NOT. ASSOCIATED( CNAICS ) ) THEN
             MESG = 'ERROR: BY NAICS is requested, but ' //
-     &                'NAICS is not present in ASCII inventory file'
+     &             'NAICS is not present in ASCII inventory file'
                 CALL M3MSG2( MESG )
                 EFLAG = .TRUE.
         END IF
 
         IF( RPT_%BYSRCTYP .AND. .NOT. ASSOCIATED( CSRCTYP ) ) THEN
             MESG = 'ERROR: BY SRCTYP is requested, but ' //
-     &      'SRCTYP code is not present in ASCII  inventory file'
+     &             'SRCTYP code is not present in ASCII  inventory file'
                 CALL M3MSG2( MESG )
                 EFLAG = .TRUE.
         END IF
@@ -228,6 +233,13 @@ C.........  Consistency checking:  inventory vs report
             MESG = 'ERROR: BY INTEGRATE is requested, but ' //
      &             'Integrate flag is not present in ASCII '//
      &             'inventory file'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+        END IF
+
+        IF( RPT_%BYERPTYP .AND. .NOT. ALLOCATED( CERPTYP ) ) THEN
+            MESG = 'ERROR: BY ERPTYP is requested, but ' //
+     &             'ERPTYP code is not present in ASCII  inventory file'
                 CALL M3MSG2( MESG )
                 EFLAG = .TRUE.
         END IF
@@ -570,6 +582,30 @@ C.................  code, so for now save space for the SRCID.
                 II = IJ + 1
             END IF          !!  if report-by-integrate
 
+
+            IF ( RPT_%BYERPTYP ) THEN
+                IJ = II + ERPLEN3 - 1
+                SORTBUF( I )( II:IJ ) =  CERPTYP( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !!  if report-by-emissions-release-point-type
+
+
+            IF ( RPT_%BYLATLON ) THEN
+                IJ = II + 26 - 1
+                WRITE( SORTBUF( I )( II:IJ ), '( F13.8, F13.8 )' ) XLOCA( OUTSRC( I ) ), YLOCA( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !!  if report-by-latlon
+
+
+            IF ( RPT_%BYSTKPARM ) THEN
+                IJ = II + 64 - 1
+                WRITE( SORTBUF( I )( II:IJ ), '( F8.2, F8.2, F8.2, F8.2, F8.2, F8.2, F8.2, F8.2 )' )
+     &              STKHT( OUTSRC( I ) ), STKDM( OUTSRC( I ) ), STKTK( OUTSRC( I ) ),
+     &              STKVE( OUTSRC( I ) ), FUGHGT( OUTSRC( I ) ), FUGWID( OUTSRC( I ) ),
+     &              FUGLEN( OUTSRC( I ) ), FUGANG( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !!  if report-by-stack-params
+
             SORTBUF( I )( II: ) = ' '
 
         END DO                  !!  end second parallel loop constructing SORTBUF
@@ -642,7 +678,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINNAIIDX ) ) DEALLOCATE( BINNAIIDX )
         IF( ALLOCATED( BINORIS   ) ) DEALLOCATE( BINORIS )
         IF( ALLOCATED( BINORSIDX ) ) DEALLOCATE( BINORSIDX )
-        IF( ALLOCATED( BINSRCTYP ) ) DEALLOCATE( BINSRCTYP)
+        IF( ALLOCATED( BINSRCTYP ) ) DEALLOCATE( BINSRCTYP )
         IF( ALLOCATED( BINSRGID1 ) ) DEALLOCATE( BINSRGID1 )
         IF( ALLOCATED( BINSRGID2 ) ) DEALLOCATE( BINSRGID2 )
         IF( ALLOCATED( BINSNMIDX ) ) DEALLOCATE( BINSNMIDX )
@@ -665,6 +701,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINELEV   ) ) DEALLOCATE( BINELEV )
         IF( ALLOCATED( BINSTKGRP ) ) DEALLOCATE( BINSTKGRP )
         IF( ALLOCATED( BINPOPDIV ) ) DEALLOCATE( BINPOPDIV )
+        IF( ALLOCATED( BINERPTYP ) ) DEALLOCATE( BINERPTYP )
 
 C.........  Allocate memory for bins
 
@@ -834,6 +871,11 @@ C.........  Allocate memory for bins
             CALL CHECKMEM( IOS, 'BINSTKGRP', PROGNAME )
         ENDIF
 
+        IF( RPT_%BYERPTYP ) THEN
+            ALLOCATE( BINERPTYP( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINERPTYP', PROGNAME )
+        ENDIF
+
         ALLOCATE( BINPOPDIV( NOUTBINS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BINPOPDIV', PROGNAME )
 
@@ -881,6 +923,7 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( RPT_%BYSUN )     BINSUNID( B ) =    CSUN( S )
             IF( RPT_%BYMET )     BINMETID( B ) =    CMET( S )
             IF( RPT_%BYSPC )     BINSPCID( B ) =  SPPROF( S,IV )
+            IF( RPT_%BYERPTYP ) BINERPTYP( B ) = CERPTYP( S )
 
             IF( LREGION ) THEN
                 IF( RPT_%BYCNTY ) THEN

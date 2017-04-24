@@ -2,12 +2,12 @@
         SUBROUTINE RDSREF( FDEV )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line
 C
 C  DESCRIPTION:
 C     Reads the speciation cross-reference file for any source category.  It
 C     allocates memory (locally) for reading the unsorted x-refs. It sorts the
-C     x-refs for processing. It allocates memory for the appropriate x-ref 
+C     x-refs for processing. It allocates memory for the appropriate x-ref
 C     tables and populates the tables (passed via modules).
 C
 C  PRECONDITIONS REQUIRED:
@@ -16,8 +16,10 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C     Created 1/99 by M. Houyoux
+C       Created 1/99 by M. Houyoux
 C
+C       Revised 8/2016 by Carlie Coats, UNC IE, to treat XREF fractional
+C       speciation profiles
 C****************************************************************************/
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -26,22 +28,24 @@ C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, CMACTA, CISICA, CSPRNA, ISPTA
+        USE MODXREF, ONLY:
+     &      INDXTA, CSRCTA, CSCCTA, CMACTA, CISICA, CSPRNA, ISPTA,
+     &      XDUPCHK
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPPA, EANAM, LSCCEND
@@ -60,17 +64,20 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
         INTEGER         INDEX1
         INTEGER         STR2INT
+        REAL            STR2REAL
 
         EXTERNAL  BLKORCMT, CRLF, ENVYN, FIND1, FINDC, GETFLINE, INDEX1,
-     &            STR2INT
+     &            STR2INT, STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.
- 
-C...........   Local parameters
-        INTEGER, PARAMETER :: MXCOL    = 12
 
-        CHARACTER(6), PARAMETER :: LOCCATS( 3 ) = 
+C...........   Local parameters
+        INTEGER,            PARAMETER :: MXCOL   = 13     !!  add col "M" for pt-src sref-fracs
+        CHARACTER(FIPLEN3), PARAMETER :: FIPZERO = REPEAT('0', FIPLEN3 ) !  buffer for zero Cy/St/Co code
+        CHARACTER(SCCLEN3), PARAMETER :: SCCZERO = REPEAT('0', SCCLEN3 ) !  buffer for zero SCC
+        CHARACTER(SICLEN3), PARAMETER :: SICZERO = REPEAT('0', SICLEN3 ) !  buffer for zero SIC
+        CHARACTER(6),       PARAMETER :: LOCCATS( 3 ) =
      &                         ( / 'AREA  ', 'MOBILE', 'POINT ' / )
 
 C...........   Sorted pollutant/emission type names
@@ -86,27 +93,25 @@ C...........   Array for parsing list-formatted inputs
 C...........   Other local variables
         INTEGER         I, J, J1, J2, K, L, N    !  counters and indices
 
-        INTEGER         IDIU    !  temporary diurnal profile code     
         INTEGER         IDUM    !  dummy integer
-        INTEGER         IMON    !  temporary monthly profile code     
         INTEGER         IOS     !  i/o status
-        INTEGER         IWEK    !  temporary weekly profile code
         INTEGER         IREC    !  record counter
-        INTEGER      :: JS = 0  !  position of SCC in source chars in x-ref file
+        INTEGER         JS      !  position of SCC in source chars in x-ref file
         INTEGER         JSPC    !  tmp index to master pollutant/etype list
         INTEGER         LPCK    !  length of point definition packet
-        INTEGER      :: NCP = 0 !  input point source header parm
+        INTEGER         NCP     !  input point source header parm
         INTEGER         NLINES  !  number of lines
         INTEGER         NXREF   !  number of valid x-ref entries
-        INTEGER         RDT     !  temporary road class code
-        INTEGER         VTYPE   !  temporary vehicle type number
+        INTEGER         NCOMBO, NFRACS      !  numbers of "COMBO" and fractional-profile entries
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
         LOGICAL      :: PFLAG = .FALSE.   !  true: tmp pol-spec rec skipped
         LOGICAL      :: SKIPPOL = .FALSE. !  true: pol-spec rec skipped in x-ref
-        LOGICAL      :: SKIPREC = .FALSE. !  true: record skipped in x-ref file
+        LOGICAL         SKIPREC           !  true: record skipped in x-ref file
+        LOGICAL         DUPCHECK          !  true: duplicate-check in XREFTBL
+        
+        REAL            FRAC
 
-        CHARACTER          SCC1     !  1st character of SCC
         CHARACTER(5)       CPOS     !  temporary pol code or position
 
         CHARACTER(300)     LINE     !  line buffer
@@ -116,15 +121,11 @@ C...........   Other local variables
         CHARACTER(SICLEN3) CSIC     !  temporary SIC
         CHARACTER(ALLLEN3) CSRCALL  !  buffer for source char, incl pol
         CHARACTER(FIPLEN3) CFIP     !  buffer for CFIPS code
-        CHARACTER(RWTLEN3) CRWT     !  buffer for roadway type code
-        CHARACTER(VIDLEN3) CVID     !  buffer for vehicle type ID (no name)
-        CHARACTER(FIPLEN3) FIPZERO  !  buffer for zero Cy/St/Co code
-        CHARACTER(LNKLEN3) LNKZERO  !  buffer for zero Link ID
         CHARACTER(SCCLEN3) TSCC     !  temporary SCC
-        CHARACTER(SCCLEN3) SCCZERO  !  buffer for zero SCC
         CHARACTER(PLTLEN3) PLT      !  tmp plant ID
-        CHARACTER(SICLEN3) SICZERO  !  buffer for zero SIC
         CHARACTER(SPNLEN3) SPCODE   !  tmp speciation profile code
+
+        REAL, ALLOCATABLE :: SFRACA( : )
 
         CHARACTER(16) :: PROGNAME = 'RDSREF' ! program name
 
@@ -136,18 +137,12 @@ C.........  Ensure that the CATEGORY is valid
 
         IF( I .LE. 0 ) THEN
             L = LEN_TRIM( CATEGORY )
-            MESG = 'INTERNAL ERROR: category "' // CATEGORY( 1:L ) // 
+            MESG = 'INTERNAL ERROR: category "' // CATEGORY( 1:L ) //
      &             '" is not valid in routine ' // PROGNAME
-            CALL M3MSG2( MESG ) 
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 ) 
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
         END IF
-
-C.........  Set up zero strings for FIPS code, SCC code, and SIC code
-        FIPZERO = REPEAT( '0', FIPLEN3 )
-        SCCZERO = REPEAT( '0', SCCLEN3 )
-        LNKZERO = REPEAT( '0', LNKLEN3 )
-        SICZERO = REPEAT( '0', SICLEN3 )
 
 C.........  Sort the actual list of pollutant/emis type names and store it
         DO I = 1, NIPPA
@@ -168,35 +163,34 @@ C.........  Write status message
 C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'Speciation cross reference file' )
 
-C.........  Allocate memory for unsorted data used in all source categories 
-        ALLOCATE( CSPRNA( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CSPRNA', PROGNAME )
-        ALLOCATE( ISPTA( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ISPTA', PROGNAME )
-        ALLOCATE( CSCCTA( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CSCCTA', PROGNAME )
-        ALLOCATE( CSRCTA( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CSRCTA', PROGNAME )
-        ALLOCATE( CMACTA( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CMACTA', PROGNAME )
-        ALLOCATE( CISICA( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CISICA', PROGNAME )
-        ALLOCATE( INDXTA( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INDXTA', PROGNAME )
+C.........  Allocate memory for unsorted data used in all source categories
+
+        ALLOCATE( CSPRNA( NLINES ),
+     &             ISPTA( NLINES ),
+     &            CSCCTA( NLINES ),
+     &            CSRCTA( NLINES ),
+     &            CMACTA( NLINES ),
+     &            CISICA( NLINES ),
+     &            INDXTA( NLINES ),
+     &            SFRACA( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPRNA:SPRFACA', PROGNAME )
+        SFRACA(:) = -9999.0
 
 C.........  Set up constants for loop.
 C.........  Length of point definition packet, plus one
-        LPCK = LEN_TRIM( PDEFPCKT ) + 1 
+        LPCK = LEN_TRIM( PDEFPCKT ) + 1
 
 C.........  Put file read pointer at top of file
         REWIND( FDEV )
 
 C.........  Initialize character strings
-        CHARS   = ' ' ! array
-        SEGMENT = ' '  ! array
+        CHARS   = ' '   ! array
+        SEGMENT = ' '   ! array
 
-C.........  Read lines and store unsorted data for the source category of 
+C.........  Read lines and store unsorted data for the source category of
 C           interest
+        NCOMBO = 0
+        NFRACS = 0
         IREC   = 0
         N      = 0
         NCP    = 6        ! ORL and IDA default (4+2)
@@ -208,8 +202,8 @@ C           interest
 
             IF ( IOS .NE. 0 ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 
-     &              'I/O error', IOS, 
+                WRITE( MESG,94010 )
+     &              'I/O error', IOS,
      &              'reading speciation x-ref file at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE
@@ -245,20 +239,20 @@ C.............  If not a header line, then it's a regular line.  The records
 C               that don't apply to this source category or to the current
 C               inventory will be filtered out by FLTRXREF
             ELSE
-            
+
 C.................  Compare point source definition from header to inventory
                 IF( CATEGORY .EQ. 'POINT' ) CALL CHKPTDEF( NCP, JS )
 
                 CALL PARSLINE( LINE, MXCOL, SEGMENT )
 
                 TSCC   = SEGMENT( 1 )
-                SPCODE = SEGMENT( 2 )                    
+                SPCODE = SEGMENT( 2 )
                 CPOA   = SEGMENT( 3 )
                 CFIP   = SEGMENT( 4 )
                 CMCT   = SEGMENT( 5 )
                 CSIC   = SEGMENT( 6 )
                 PLT    = SEGMENT( 7 )
-                CHARS( 1:5 ) = SEGMENT( 8:MXCOL )
+                CHARS( 1:5 ) = SEGMENT( 8:12 )
 
 C.................  Adjust these for proper sorting and matching with profiles
 C                   file.
@@ -266,23 +260,23 @@ C                   file.
                 CPOA   = ADJUSTL( CPOA   )
 
 C.................  Skip all point entries for nonpoint sectors
-                IF ( CATEGORY /= 'POINT' .AND. 
+                IF ( CATEGORY /= 'POINT' .AND.
      &               PLT /= ' '                ) CYCLE
 
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, and compare
 C                   pollutant/emission type name with master list.
-                CALL FLTRXREF( CFIP, CSIC, TSCC, CPOA, CMCT, 
+                CALL FLTRXREF( CFIP, CSIC, TSCC, CPOA, CMCT,
      &                         IDUM, IDUM, JSPC, PFLAG, SKIPREC )
-     
+
                 SKIPPOL = ( SKIPPOL .OR. PFLAG )
 
 C.................  Filter the case where the pollutant code is not present
                 IF( CPOA .EQ. ' ' ) THEN
                     EFLAG = .TRUE.
-                    WRITE( MESG, 94010 ) 
+                    WRITE( MESG, 94010 )
      &                     'ERROR: Skipping cross-reference entry ' //
-     &                     'at line', IREC, 
+     &                     'at line', IREC,
      &                     'because of missing pollutant.'
                     CALL M3MESG( MESG )
                     CYCLE
@@ -292,17 +286,17 @@ C.................  Filter the case where the pollutant code is not present
                 IF( SKIPREC ) CYCLE  ! Skip this record
 
 C.................  Write pollutant position to character string
-                WRITE( CPOS, '(I5.5)' ) JSPC  
+                WRITE( CPOS, '(I5.5)' ) JSPC
 
 C.................  Check for bad cross-reference code
                 IF( SPCODE .EQ. ' ' ) THEN
-                    WRITE( MESG, 94010 ) 
+                    WRITE( MESG, 94010 )
      &                'WARNING: Skipping blank profile code in cross-'//
      &                'reference file at line ', IREC
                     CALL M3MESG( MESG )
                     CYCLE
 
-                ENDIF
+                END IF
 
 C.................  If SIC is defined, make sure SCC is not and fill SCC
 C                   with SIC value and special identifier
@@ -325,7 +319,7 @@ C.................  Store case-specific fields from cross reference
                 SELECT CASE( CATEGORY )
 
                 CASE( 'AREA' )
-                
+
                     CALL BLDCSRC( CFIP, TSCC, CHRBLNK3,
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                            CHRBLNK3, POLBLNK3, CSRCALL   )
@@ -341,7 +335,7 @@ C     However, this change breaks link-specific profile assignments, which
 C     are not likely to be used anyway.  I suggest that we just remove
 C     link-specific assignments from the documentation for Spcmat.
                     CALL BLDCSRC( CFIP, TSCC, CHRBLNK3, CHRBLNK3,
-     &                            CHRBLNK3, CHRBLNK3, CHRBLNK3, 
+     &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                            POLBLNK3, CSRCALL )
 
                     CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // CMCT // CSIC // CPOS
@@ -353,7 +347,7 @@ C.....................  Store sorting criteria as right-justified in fields
      &                            CHARS(2), CHARS(3), CHARS(4),
      &                            CHARS(5), POLBLNK3, CSRCALL   )
 
-                    CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // TSCC // 
+                    CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // TSCC //
      &                            CMCT // CSIC // CPOS
 
                 END SELECT
@@ -365,6 +359,14 @@ C.................  Store case-indpendent fields from cross-reference
                 CMACTA( N ) = CMCT
                 CISICA( N ) = CSIC
                 CSPRNA( N ) = SPCODE
+
+                FRAC        = STR2REAL( SEGMENT( 13 ) )
+                IF ( FRAC .GE. 0.0 ) THEN
+                    NFRACS      = NFRACS + 1
+                    SFRACA( N ) = FRAC
+                END IF
+                
+                IF ( ADJUSTL( SPCODE ) .EQ. 'COMBO' ) NCOMBO = NCOMBO + 1
 
             END IF  !  This line matches source category of interest
 
@@ -381,6 +383,15 @@ C           not in master list
      &             'been skipped.'
             CALL M3WARN( PROGNAME, 0, 0, MESG )
         END IF
+        
+        WRITE( MESG, '( A, I10 )' ) 'Number of inital xrefs:', NXREF
+        CALL M3MSG2( MESG )
+        
+        WRITE( MESG, '( A, I10 )' ) 'Number of COMBO xrefs:', NCOMBO
+        CALL M3MSG2( MESG )
+        
+        WRITE( MESG, '( A, I10 )' ) 'Number of FRACS xrefs:', NFRACS
+        CALL M3MSG2( MESG )
 
         IF( NXREF .EQ. 0 ) THEN
             EFLAG = .TRUE.
@@ -394,6 +405,11 @@ C           not in master list
      &             CRLF() // BLANK10 // 'but actually needed', NXREF
             CALL M3MSG2( MESG )
 
+        ELSE IF( NCOMBO.GT. 0 .AND. NFRACS .GT. 0 ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: Both "COMBO" and fractional-profile entries in XREF!'
+            CALL M3MSG2( MESG )          
+
         END IF
 
 C.......  Check for errors reading XREF file, and abort
@@ -405,17 +421,25 @@ C.......  Check for errors reading XREF file, and abort
         MESG = 'Processing speciation cross-reference file...'
         CALL M3MSG2( MESG )
 
-C.........  Sort speciation cross-reference entries. Since CPOS was used in 
+C.........  Sort speciation cross-reference entries. Since CPOS was used in
 C           building CSRCTA, and CPOS will equal "0" when the x-ref entry is
 C           not pollutant/emistype-specific, the these entries will
 C           always appear first.  This is necessary for the table-generating
 C           subroutines.
         CALL SORTIC( NXREF, INDXTA, CSRCTA )
+        
+        IF ( NFRACS .GT. 0 ) THEN
+            XDUPCHK = .FALSE.       !!  don't need dup-checks in XREFTBL()
+            CALL XFRACTBL( NLINES, NXREF, INDXTA, CSRCTA, CSPRNA, SFRACA )
+            WRITE( MESG, '( A, I10 )' ) 'Number of final xrefs:', NXREF
+            CALL M3MSG2( MESG )
+        END IF
 
         CALL XREFTBL( 'SPECIATION', NXREF )
 
 C.........  Deallocate other temporary unsorted arrays
-        DEALLOCATE( CSCCTA, ISPTA, CMACTA, CISICA, CSRCTA, CSPRNA, INDXTA )
+        DEALLOCATE( CSCCTA, ISPTA, CMACTA, CISICA, CSRCTA, CSPRNA,
+     &              INDXTA, SFRACA )
 
 C.........  Rewind file
         REWIND( FDEV )
@@ -439,3 +463,4 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
         END SUBROUTINE RDSREF
+

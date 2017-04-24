@@ -117,11 +117,13 @@
             LOGICAL       :: BYCYNAM       ! true: by county name
             LOGICAL       :: BYDATE        ! true: by date
             LOGICAL       :: BYELEV        ! true: by elev status
+            LOGICAL       :: BYERPTYP      ! true: by emissions release point type
             LOGICAL       :: ELVSTKGRP     ! true: stack gourp ID by elev status
             LOGICAL       :: BYGEO1        ! true: by geocode 1
             LOGICAL       :: BYGEO1NAM     ! true: by geocode 1 name
             LOGICAL       :: BYHOUR        ! true: by hour
             LOGICAL       :: BYLAYER       ! true: by layer
+            LOGICAL       :: BYLATLON      ! true: by lat-lon coordinates
             LOGICAL       :: BYMON         ! true: by monthly temporal code
             LOGICAL       :: BYWEK         ! true: by weekly temporal code
             LOGICAL       :: BYDOM         ! true: by day of month temporal code
@@ -144,6 +146,7 @@
             LOGICAL       :: BYSPC         ! true: by speciation codes 
             LOGICAL       :: BYSRC         ! true: by source 
             LOGICAL       :: BYSTACK       ! true: by stack
+            LOGICAL       :: BYSTKPARM     ! true: by stack and fugutive params
             LOGICAL       :: BYSTAT        ! true: by state code (geocode 3)
             LOGICAL       :: BYSTNAM       ! true: by state name
             LOGICAL       :: BYSRG         ! true: by surrogate codes
@@ -152,6 +155,8 @@
             LOGICAL       :: CHKPROJ       ! true: check projctns vs. rpt
             LOGICAL       :: CHKCNTL       ! true: check controls vs. rpt
             LOGICAL       :: LATLON        ! true: output stack coordinates
+            LOGICAL       :: GRDCOR        ! true: output grid coordinates 
+            LOGICAL       :: GRDPNT        ! true: output grid corner coordinates
             LOGICAL       :: LAYFRAC       ! true: use PLAY file
             LOGICAL       :: NORMCELL      ! true: normalize by cell area
             LOGICAL       :: NORMPOP       ! true: normalize by county pop
@@ -163,6 +168,7 @@
             LOGICAL       :: ORISNAM       ! true: output ORIS name  
             LOGICAL       :: SRCNAM        ! true: output facility nm
             LOGICAL       :: STKPARM       ! true: output stack parms
+            LOGICAL       :: FUGPARM       ! true: output fugitive parms
             LOGICAL       :: USEASCELEV    ! true: use ascii elevation file
             LOGICAL       :: USECRMAT      ! true: use reactivity controls
             LOGICAL       :: USECUMAT      ! true: use multiplicative controls
@@ -286,9 +292,12 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: CYWIDTH   =0 ! width of county name column
         INTEGER      , PUBLIC :: DATEWIDTH =0 ! width of date column
         INTEGER      , PUBLIC :: ELEVWIDTH =0 ! width of elevated srcs flag col
+        INTEGER      , PUBLIC :: ERTYPWIDTH=0 ! width of emissions release point type col
         INTEGER      , PUBLIC :: GEO1WIDTH =0 ! width of geo level 1 name column
         INTEGER      , PUBLIC :: HOURWIDTH =0 ! width of hour column
         INTEGER      , PUBLIC :: LTLNWIDTH =0 ! width of lat/lon columns
+        INTEGER      , PUBLIC :: LAMBWIDTH =0 ! width of lambert coord columns
+        INTEGER      , PUBLIC :: LLGRDWIDTH=0 ! width of lat/lon grid coords columns
         INTEGER      , PUBLIC :: LABELWIDTH=0 ! width of user-defined label
         INTEGER      , PUBLIC :: LAYRWIDTH =0 ! width of layer number label
         INTEGER      , PUBLIC :: PDSCWIDTH =0 ! width of plant description col
@@ -312,6 +321,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: SRG2WIDTH =0 ! width of fallback surg column
         INTEGER      , PUBLIC :: STWIDTH   =0 ! width of state name column
         INTEGER      , PUBLIC :: STKPWIDTH =0 ! width of stack parameters columns
+        INTEGER      , PUBLIC :: FUGPWIDTH =0 ! width of fugitive parameters columns
         INTEGER      , PUBLIC :: UNITWIDTH =0 ! width of unit column
         INTEGER      , PUBLIC :: VARWIDTH  =0 ! width of variable column
         INTEGER      , PUBLIC :: MONWIDTH  =0 ! width of monthly profile label
@@ -330,6 +340,8 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         CHARACTER(50),  PUBLIC :: DATEFMT     ! format string for date column
         CHARACTER(50),  PUBLIC :: HOURFMT     ! format string for hour column
         CHARACTER(50),  PUBLIC :: LTLNFMT     ! format string for lat/lons
+        CHARACTER(70),  PUBLIC :: LAMBFMT     ! format string for lambert coord 
+        CHARACTER(120), PUBLIC :: LLGRDFMT    ! format string for lat/lon grid coords
         CHARACTER(50),  PUBLIC :: LAYRFMT     ! format string for layer column
         CHARACTER(50),  PUBLIC :: REGNFMT     ! format string for region column
         CHARACTER(50),  PUBLIC :: STKGFMT     ! format string for stack group IDs 
@@ -337,6 +349,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         CHARACTER(50),  PUBLIC :: SRG1FMT     ! format string for primary surg
         CHARACTER(50),  PUBLIC :: SRG2FMT     ! format string for fallback surg
         CHARACTER(100), PUBLIC :: STKPFMT     ! format string for stack params
+        CHARACTER(100), PUBLIC :: FUGPFMT     ! format string for fugitive params
         CHARACTER(200), PUBLIC :: CHARFMT     ! format string for source chars
         CHARACTER(300), PUBLIC :: FIL_ONAME   ! output file, physical or logical
 

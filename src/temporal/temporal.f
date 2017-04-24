@@ -47,7 +47,7 @@ C.........  This module contains the inventory arrays
 
 C.........  This module contains the temporal profile tables
         USE MODTMPRL, ONLY: NMON, NWEK, NHRL, STDATE, STTIME, RUNLEN,
-     &                      ITDATE, METPROFLAG, METPROTYPE, IPOL2D
+     &                      ITDATE, METPROFLAG, METPROTYPE, IPOL2D, LTFLAG
 
 C.........  This module contains emission factor tables and related
         USE MODEMFAC, ONLY: EMTPOL, NEPOL, TEMPEF, USETIME
@@ -229,6 +229,10 @@ C.........  Obtain settings from the environment...
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
 
+C.........  Output hourly emission in Local Time.
+        MESG = 'Outputs hourly emissions in local time  (No time shift)'
+        LTFLAG = ENVYN( 'OUTPUT_LOCAL_TIME', MESG, .FALSE., IOS )
+
 C.........  Get environment variable that overrides temporal profiles and
 C               uses only uniform profiles.
         NFLAG = ENVYN( 'UNIFORM_TPROF_YN', MESG, .FALSE., IOS )
@@ -308,7 +312,6 @@ C.........  Adjust TZMIN and TZMAX for possibility of daylight savings
         TZMAX = TZMAX + 1
 
 C.........  Read special files...
-
 C.........  Read region codes file
         IF( USEEXPGEO() ) THEN
             CALL RDGEOCODES( NINVIFIP, INVCFIP )
@@ -318,6 +321,15 @@ C.........  Read region codes file
 
 C.........  Populate filter for sources that use daylight time
         CALL SETDAYLT
+
+C.........  Output hourly emissions in local time
+        IF( LTFLAG ) THEN
+            FLTRDAYL = 0         ! reset daily light saving value to zero
+            TZONE  = 0           ! reset output time zone to zero
+            TZONES = 0           ! reset county-specific time zone to zero
+            TZMIN  = 0
+            TZMAX  = 0
+        END IF
 
 C.........  Read holidays file
         CALL RDHDAYS( HDEV, EARLST, LATEST )

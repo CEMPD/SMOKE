@@ -285,6 +285,18 @@ C.........  Stack parameters
                 IVARNAMS( NINVARR ) = 'STKVE'
             END IF
 
+C.........  Fugutive parameters
+            IF( ANY_TRUE( NREPORT, ALLRPT%FUGPARM ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'FUGHGT'
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'FUGWID'
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'FUGLEN'
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'FUGANG'
+            END IF
+
 C.........  Point-source lat-lon
             IF( ANY_TRUE( NREPORT, ALLRPT%LATLON ) ) THEN
                 NINVARR = NINVARR + 1
@@ -297,6 +309,12 @@ C.........  Plant name
             IF( ANY_TRUE( NREPORT, ALLRPT%SRCNAM ) ) THEN
                 NINVARR = NINVARR + 1
                 IVARNAMS( NINVARR ) = 'CPDESC'
+            END IF
+
+C.........  Emissions release point type
+            IF( ANY_TRUE( NREPORT, ALLRPT%BYERPTYP ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'CERPTYP'
             END IF
 
 C.........  Allocate memory for and read in required inventory characteristics

@@ -395,6 +395,30 @@ C.........  Define source characteristic variables that are not strings
             VDESCSET( J ) = 'Stack exhaust velocity'
             J = J + 1
 
+            VNAMESET( J ) = 'FUG_HEIGHT'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'm'
+            VDESCSET( J ) = 'Fugitive emissions height'
+            J = J + 1
+
+            VNAMESET( J ) = 'FUG_WIDTH'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'm'
+            VDESCSET( J ) = 'Fugitive emissions width (Y DIM)'
+            J = J + 1
+
+            VNAMESET( J ) = 'FUG_LENGTH'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'm'
+            VDESCSET( J ) = 'Fugitive emissions length (X DIM)'
+            J = J + 1
+
+            VNAMESET( J ) = 'FUG_ANGLE'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'm'
+            VDESCSET( J ) = 'Fugitive emissions angle'
+            J = J + 1
+
         END SELECT
 
 C.........  Build output file physical name

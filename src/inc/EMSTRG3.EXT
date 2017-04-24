@@ -42,6 +42,7 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: TMPLEN3 = 15 ! temporal profile code 
         INTEGER, PARAMETER :: VIDLEN3 =  4 ! vehicle type ID
         INTEGER, PARAMETER :: VTPLEN3 =  6 ! vehicle type
+        INTEGER, PARAMETER :: SHPLEN3 =  8 ! Shape ID
         INTEGER, PARAMETER :: EXTLEN3 =500 ! additional extended orl var
 
 C.........  Width of other global character strings 

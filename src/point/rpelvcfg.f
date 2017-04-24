@@ -79,10 +79,10 @@ C...........   Other local variables
         INTEGER         I, V   ! indices and counters
 
         INTEGER         IOS                  ! i/o status
-        INTEGER      :: NALLPOL = 0          ! number of pols used as criteria
+        INTEGER,SAVE :: NALLPOL = 0          ! number of pols used as criteria
         INTEGER         NLINES               ! number of lines
 
-        LOGICAL      :: EFLAG = .FALSE.      ! true: error found
+        LOGICAL,SAVE :: EFLAG = .FALSE.      ! true: error found
 
         CHARACTER(300)  MESG                 ! message buffer
 

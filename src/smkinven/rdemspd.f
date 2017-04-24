@@ -149,6 +149,7 @@ C...........   Other local variables
         INTEGER          WD               ! tmp field width
         INTEGER          YEAR             ! 4-digit year
         INTEGER       :: YR4 = 0          ! unused header year
+        INTEGER          DZONE            ! time shift (ZONE-TZONE)
         INTEGER          ZONE             ! source time zones
 
         REAL             CONVFAC          ! tmp conversion factor from Inventory Table
@@ -158,7 +159,8 @@ C...........   Other local variables
         LOGICAL       :: EFLAG = .FALSE.  ! TRUE iff ERROR
         LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
-        LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
+        LOGICAL, SAVE :: LFLAG  = .FALSE. ! true: output daily/hourly inv in local time
+        LOGICAL, SAVE :: SFLAG  = .FALSE. ! true: use daily total from hourly
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
         LOGICAL, SAVE :: NFLAG  = .FALSE. ! true: Special pollutant name field used on that line
         LOGICAL, SAVE :: WIDE_FORMAT = .FALSE. ! true: hourly data values given with 12 columns instead of 7
@@ -192,6 +194,10 @@ C.............  NOTE - the hourly file will have been assigned as a daily
 C               file when it was opened.
             MESG = 'Use daily totals only from hourly data file'
             SFLAG = ENVYN( 'HOURLY_TO_DAILY', MESG, .FALSE., IOS )
+
+C.............  No time zone shift for AERMOD support
+            MESG = 'Outputs local time daily and/or hourly inventories (No time shift)'
+            LFLAG = ENVYN( 'OUTPUT_LOCAL_TIME', MESG, .FALSE., IOS )
 
 C.............  Get maximum number of warnings
             MXWARN = ENVINT( WARNSET , ' ', 100, I )
@@ -405,23 +411,28 @@ C.............  If time zone name is not found, thenoutput error
             END IF
 
 C.............  Set time zone number
-            ZONE = TZONNUM( I )
+            IF( .NOT. LFLAG ) THEN
  
-C.............  If daily emissions are not in the output time zone, print 
-C               warning
-            IF( WARNOUT .AND. DAYFLAG .AND. ZONE .NE. TZONE .AND.
-     &          NWARN( 1 ) .LE. MXWARN ) THEN
-                WRITE( MESG,94010 ) 
-     &                'WARNING: Time zone ', ZONE, 'in day-specific ' //
-     &                'file at line', IREC, CRLF() // BLANK10 //  
-     &                'does not match output time zone', TZONE
-                CALL M3MESG( MESG )
-                NWARN( 1 ) = NWARN( 1 ) + 1
+C.................  If daily emissions are not in the output time zone, print 
+C                   warning
+                IF( WARNOUT .AND. DAYFLAG .AND. ZONE .NE. TZONE .AND.
+     &              NWARN( 1 ) .LE. MXWARN ) THEN
+                    WRITE( MESG,94010 ) 
+     &                    'WARNING: Time zone ', ZONE, 'in day-specific ' //
+     &                    'file at line', IREC, CRLF() // BLANK10 //  
+     &                    'does not match output time zone', TZONE
+                    CALL M3MESG( MESG )
+                    NWARN( 1 ) = NWARN( 1 ) + 1
+                END IF
+
+C.............  Reset time shift to 0 to correctly compute local time zone
+            ELSE
+                DZONE = 0
 
             END IF
-
+            
 C.............  Convert date and time to output time zone.
-            CALL NEXTIME( JDATE, JTIME, ( ZONE - TZONE ) * 10000 )
+            CALL NEXTIME( JDATE, JTIME, DZONE * 10000 )
 
 C.............  Determine time step pointer based on reference time
             PTR = SECSDIFF( RDATE, RTIME, JDATE, JTIME ) / TDIVIDE + 1

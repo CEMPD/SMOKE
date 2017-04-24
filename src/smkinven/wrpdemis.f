@@ -110,7 +110,7 @@ C...........   LOCAL PARAMETERS
         CHARACTER( 3 ),ALLOCATABLE :: NHAPMOD( : )
 
 C...........   Other local variables
-        INTEGER          I, J, K, LK, LN, M, N, S, V, V2, NC, NV, IV, CV
+        INTEGER          I, J, K, LK, LN, M, N, S, V, V2, NC, NV, IV
         INTEGER          II, JJ, VV, F, NP, L, LL, L2, LS
 
         INTEGER          IOS                  ! i/o status
@@ -252,23 +252,23 @@ C.........  Store sorted records for this hour
 
 C...........  Add multiple inventory pollutant(s) with same CAS name
 C             Find code corresponding to current pollutant before you
-          NPPCAS = UCASNKEP( N )
-
           IF( CFLAG ) THEN
               NPPCAS = 1
-              CV     = V
               NCOMP = 0
               NHAPFLAG = .FALSE.
+          ELSE
+              NPPCAS = UCASNKEP( N )
           END IF
 
           DO NP = 0, NPPCAS - 1
 
-            NC = UCASIDX( N ) + NP
-            POLNAM = ITNAMA( SCASIDX( NC ) )
-            V = INDEX1( POLNAM, NIPPA, EANAM )
+            IF( .NOT. CFLAG ) THEN
+                NC = UCASIDX( N ) + NP
+                POLNAM = ITNAMA( SCASIDX( NC ) )
+                V = INDEX1( POLNAM, NIPPA, EANAM )
+            END IF
 
             IF( NP > 0 ) LN = 0
-            IF( CFLAG  ) V = CV                  ! restore original poll idx
             IF( V < 1  ) CYCLE                   ! skip if it is not listed in ann inv poll
 
 C.............  Intialize as not a special data variable (e.g., not flow rate)

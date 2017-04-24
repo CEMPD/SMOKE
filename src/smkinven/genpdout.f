@@ -193,6 +193,7 @@ C           determined.
         ALLOCATE( EASTAT( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EASTAT', PROGNAME )
         EASTAT = 0  ! array
+        SPSTAT = 0  ! array
 
 C.........  Allocate memory for reading data
         ALLOCATE( MXPDPT( NSTEPS ), STAT=IOS )

@@ -48,7 +48,13 @@ C***********************************************************************
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CPDESC, CSOURC, STKHT, STKDM, STKTK, STKVE,
-     &                      XLOCA, YLOCA
+     &                      XLOCA, YLOCA, FUGHGT, FUGWID, FUGLEN, FUGANG
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID, ONLY:  NCOLS, NROWS, XORIG, YORIG, XOFF, YOFF,
+     &                      GDTYP, XCELL, YCELL, XCENT, YCENT,
+     &                      P_ALP, P_BET, P_GAM, OFFLAG, GRDNM,
+     &                      XOFF_A, YOFF_A, XDIFF, YDIFF, NGRID
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: SCCDESC, SCCDLEV, SICDESC, MACTDESC, 
@@ -72,7 +78,9 @@ C.........  This module contains Smkreport-specific settings
      &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
-     &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH
+     &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
+     &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
+     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -86,7 +94,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX
+     &                      BINGEO1IDX, BINERPTYP
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC,
@@ -94,17 +102,15 @@ C.........  This module contains the arrays for state and county summaries
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: MXCHRS, NCHARS, BYEAR
-        
+
+C.........  MODULES for I/O API INTERFACEs, geo-transform codes:
+        USE M3UTILIO 
+        USE MODGCTP
+
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-
-C...........  EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)  CRLF
-        INTEGER       WKDAY
-        
-        EXTERNAL   CRLF, WKDAY
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(IN   ) :: FDEV
@@ -142,6 +148,12 @@ C...........   Other local variables
         INTEGER     STIDX                     ! starting index of loop
         INTEGER     EDIDX                     ! ending index of loop
 
+        REAL*8      LAMBX, LAMBY, UTM_X, UTM_Y, UTM_Z ! grid lambert/utm coord for point sources
+        REAL*8      DLAT, DLON, DXORIG, DYORIG    ! grid lambert/utm coord for cell center 
+        REAL*8      X0(1,1), Y0(1,1)              ! grid lambert/utm coord for cell center 
+        
+        REAL*8      SWLAT, SWLON, NWLAT, NWLON, NELAT, NELON, SELAT, SELON ! lat-lon coords of grid cell
+
         INTEGER, SAVE :: PRCNT = 0
 
         LOGICAL, SAVE :: FIRSTIME  = .TRUE.   ! true: first time routine called
@@ -152,7 +164,7 @@ C...........   Other local variables
         CHARACTER(17)       OUTCARB           !  output date string for CARB QADEF report
         CHARACTER(12)       OUTDATE           !  output date string
         CHARACTER(100)   :: BADRGNM = 'Name unknown'
-        CHARACTER(100)      BUFFER            !  string building buffer
+        CHARACTER(200)      BUFFER            !  string building buffer
         CHARACTER(300)      MESG              !  message buffer
         CHARACTER(STRLEN)   STRING            !  output string
         CHARACTER(SCCLEN3)  TSCC              ! tmp SCC string
@@ -713,6 +725,17 @@ C.............  Include stack parameters
                     LE = MIN( MXLE, STRLEN )
                 END IF
 
+C.............  Include fugitive parameters
+                IF( RPT_%FUGPARM ) THEN
+                    S = BINSMKID( I )
+                    BUFFER = ' '
+                    WRITE( BUFFER, FUGPFMT ) FUGHGT( S ), FUGWID( S ),
+     &                                       FUGLEN( S ), FUGANG( S )
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + FUGPWIDTH
+                    LE = MIN( MXLE, STRLEN )
+                END IF
+
 C.............  Include lat/lons for point sources
                 IF( RPT_%LATLON ) THEN
                     S = BINSMKID( I )
@@ -721,6 +744,80 @@ C.............  Include lat/lons for point sources
                     STRING = STRING( 1:LE ) // BUFFER
                     MXLE = MXLE + LTLNWIDTH
                     LE = MIN( MXLE, STRLEN )
+                END IF
+
+C.............  Include grid lambert/utm coordinates for point source
+                IF( RPT_%GRDCOR ) THEN
+
+                    S = BINSMKID( I )
+                    LAMBX = 0.0D0
+                    LAMBY = 0.0D0
+                    UTM_X = 0.0D0
+                    UTM_Y = 0.0D0
+                    UTM_Z = 0.0D0
+                    DLON  = XLOCA( S )
+                    DLAT  = YLOCA( S )
+
+C.....................  Compute lamber x&Y and utm x&y coordinates for point source
+                    CALL XY2XY( GDTYP  , P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                          LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          DLON, DLAT, LAMBX, LAMBY )
+
+C.....................  Compute the LL for grid cell center UTM zone
+                    DXORIG = XORIG + XCELL * ( BINX( I ) - 1 )
+                    DYORIG = YORIG + YCELL * ( BINY( I ) - 1 )
+                    CALL GRID2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                            GDTYP, P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                            1, 1, DXORIG, DYORIG, XCELL, YCELL,
+     &                            X0, Y0 )
+                    UTM_Z = DBLE( FLOOR( ( ( X0(1,1) + 180.0 ) / 6.0 ) + 1.0 ) )
+
+                    CALL XY2XY( UTMGRD3, UTM_Z, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          DLON, DLAT, UTM_X, UTM_Y )
+
+                    BUFFER = ' '
+                    WRITE( BUFFER, LAMBFMT ) LAMBX, LAMBY, UTM_X, UTM_Y, UTM_Z 
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + LAMBWIDTH
+                    LE = MIN( MXLE, STRLEN )
+
+                END IF
+
+C.............  Include grid cell corner coordinates
+                IF( RPT_%GRDPNT ) THEN
+                
+                    DXORIG = XORIG + XCELL * ( BINX( I ) - 1 )  ! SW corner
+                    DYORIG = YORIG + YCELL * ( BINY( I ) - 1 )
+                    
+                    CALL XY2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          GDTYP  , P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                          DXORIG, DYORIG, SWLON, SWLAT )
+                    
+                    DYORIG = DYORIG + YCELL  ! NW corner
+                    
+                    CALL XY2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          GDTYP  , P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                          DXORIG, DYORIG, NWLON, NWLAT )
+                    
+                    DXORIG = DXORIG + XCELL  ! NE corner
+                    
+                    CALL XY2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          GDTYP  , P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                          DXORIG, DYORIG, NELON, NELAT )
+                    
+                    DYORIG = DYORIG - YCELL  ! SE corner
+                    
+                    CALL XY2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
+     &                          GDTYP  , P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                          DXORIG, DYORIG, SELON, SELAT )
+                    
+                    BUFFER = ' '
+                    WRITE( BUFFER, LLGRDFMT ) SWLAT, SWLON, NWLAT, NWLON, NELAT, NELON, SELAT, SELON
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + LLGRDWIDTH
+                    LE = MIN( MXLE, STRLEN )
+                
                 END IF
 
 C.............  Include elevated sources flag
@@ -743,6 +840,17 @@ C.............  Include stack group IDs when elevated sources flag = Y
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
 
+                END IF
+
+C.............  Include emissions release point type
+                IF( RPT_%BYERPTYP ) THEN
+                    L = ERTYPWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE+15 ) //
+     &                       BINERPTYP( I )( 1:L1-15 ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
                 END IF
 
 C.............  Include plant description (for point sources)

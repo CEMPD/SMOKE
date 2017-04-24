@@ -171,7 +171,8 @@ C.............  Make sure 1-cell link is inside domain
         END IF             !  O-D or within-a-cell case
 
 C...........   Calculate once and only once for remaining cases
-
+        IF( XLNK == 0.0 ) XLNK = 1.0
+        IF( YLNK == 0.0 ) YLNK = 1.0
         DXLNK = 1.0 / ABS( XLNK )  !  safe "/" -- 0-D case already done.
         DYLNK = 1.0 / ABS( YLNK )  !  safe "/" -- 0-D case already done.
 
