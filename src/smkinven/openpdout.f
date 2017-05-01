@@ -70,8 +70,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(IN OUT) :: RDEV   ! report unit number
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER ::
-     &  CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name SMOKEv4.5_Apr2017$' ! CVS release tag
 
 C...........   Other local variables
 

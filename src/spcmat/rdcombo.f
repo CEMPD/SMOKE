@@ -76,10 +76,10 @@ C.........  Other local variables
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  record counter
         INTEGER         NLINES  !  number of lines
+        INTEGER, SAVE ::PERIOD  !  period to use to match to GSPRO_COMBO file
         INTEGER         PER     !  tmp period from input file
-        INTEGER       :: PERIOD = 0  !  period to use to match to GSPRO_COMBO file
-        INTEGER, SAVE :: MXERR                ! max no. errors
-        INTEGER, SAVE :: MXWARN               ! max no. warnings
+        INTEGER, SAVE ::MXERR                ! max no. errors
+        INTEGER, SAVE ::MXWARN               ! max no. warnings
         INTEGER         NP      !  tmp number of profiles per combo
         INTEGER         NRECS   !  number of records read in current call
 
@@ -189,6 +189,8 @@ C.............  Split out columns from line
 
 C.............  Get period, pollutant, and number of profiles from line
             CPOL = SEGMENT( 1 )
+            CFIP = SEGMENT( 2 )
+            CALL PADZERO( CFIP )
             PER  = STR2INT( SEGMENT( 3 ) )
             NP   = STR2INT( SEGMENT( 4 ) )
 
@@ -208,10 +210,6 @@ C.............  Error message if a number of profile is greater than 10
      &                 'than a max. 10 at line', IREC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
-
-C.............  Get FIPs code and pad with leading zeros, if needed
-            CFIP = SEGMENT( 2 )
-            CALL PADZERO( CFIP )
 
 C.............  If entry assigns profile to all FIPs codes, then implement it
             IF ( CFIP == FIPZERO ) THEN

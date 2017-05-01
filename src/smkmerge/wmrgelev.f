@@ -167,7 +167,7 @@ C.........  Other local variables
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error occurred
         LOGICAL       :: FIRSTIME = .TRUE.   ! true: first time routine called
 
-        CHARACTER(16), SAVE :: OUTFMT       ! output format for elevated ASCII
+        CHARACTER(16),SAVE :: OUTFMT       ! output format for elevated ASCII
         CHARACTER(100)     EFMT         ! output emissions foamat
         CHARACTER(200)     BUFFER       ! source chars buffer
         CHARACTER(300)     MESG         ! message buffer
