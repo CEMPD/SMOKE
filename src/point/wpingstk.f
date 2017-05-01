@@ -65,7 +65,7 @@ C..........    Subroutine arguments and their descriptions
 
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv4.5_Apr2017 $' ! CVS release tag
+     &  CVSW = '$Name$' ! CVS release tag
 
 C...........   Local variables allocatable arrays
 C...........   These are for sorting groups and outputting in sorted order
