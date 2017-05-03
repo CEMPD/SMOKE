@@ -575,16 +575,6 @@ C           divide pollutants into even groups and try again.
         NGSZ = NIPPA            ! No. of pollutant & emis types in each group
         NGRP = 1                ! Number of groups
 
-C.........  Make sure total array size is not larger than maximum
-        DO
-            IF( NSRC*NGSZ*24 >= 1024*1024*1024 ) THEN
-                NGRP = NGRP + 1
-                NGSZ = ( NIPPA + NGRP - 1 ) / NGRP
-            ELSE
-                EXIT
-            END IF
-        END DO
-
         DO
 
             ALLOCATE( TMAT ( NSRC, NGSZ, 24 ),

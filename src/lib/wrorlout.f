@@ -401,7 +401,7 @@ C.................  Truncate character string variables
 C.................  Store others in temporary variables
                 COID   = STR2INT( CIFIP( S ) ) / 100000
                 FIP    = STR2INT( CIFIP( S ) ) - COID * 100000
-                SIC    = CISIC( S )                
+                SIC    = CISIC( S )(SICLEN3-3:SICLEN3)
                 YEAR   = INVYR( S )
                 CORS   = CORIS( S )
                 CBLR   = CBLRID( S )
@@ -519,7 +519,7 @@ C...........   Formatted file I/O formats............ 93xxx
      &          ',', A, A )   ! onroad
 
 93600   FORMAT( I5.5, 8( ',"',A, '"'), 4( ',', F10.2), ',', F10.4,
-     &          ',', I4, 2( ',"',A, '"'),',', A1, 
+     &          ',', A4, 2( ',"',A, '"'),',', A1, 
      &          2( ',', F10.5), ',', I3, ',"', A, '"', 2( ',', E13.6 ),
      &          2( ',', F6.2 ), ',', I2, ',', I2, 3(',"',A,'"'), A )  ! point
 

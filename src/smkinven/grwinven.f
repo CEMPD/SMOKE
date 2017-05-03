@@ -35,7 +35,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: INVYR
+        USE MODSOURC, ONLY: INVYR, FUGHGT, FUGWID, FUGLEN, FUGANG
 
 C...........   This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, CATDESC, BYEAR, 
@@ -588,6 +588,20 @@ C    n: been implemented
             IVARNAMS( 20 ) = 'CERPTYP'
             IVARNAMS( 21 ) = 'CNEIUID'
             IVARNAMS( 22 ) = 'CEXTORL'
+
+            ALLOCATE( FUGHGT( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'FUGHGT', PROGNAME )
+            ALLOCATE( FUGWID( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'FUGWID', PROGNAME )
+            ALLOCATE( FUGLEN( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'FUGLEN', PROGNAME )
+            ALLOCATE( FUGANG( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'FUGANG', PROGNAME )
+
+            FUGHGT   = 0.        ! array
+            FUGWID   = 0.        ! array
+            FUGLEN   = 0.        ! array
+            FUGANG   = 0.        ! array
 
         END SELECT
 
