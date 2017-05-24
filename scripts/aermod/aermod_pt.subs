@@ -13,7 +13,11 @@ sub write_line_location_header() {
 sub write_temporal_header() {
   my ($fh) = @_;
   
-  print $fh "facility_id,facility_name,src_id,qflag,Scalar1,Scalar2,Scalar3,Scalar4,Scalar5,Scalar6,Scalar7,Scalar8,Scalar9,Scalar10,Scalar11,Scalar12\n";
+  print $fh "facility_id,facility_name,src_id,qflag";
+  for (my $i = 1; $i <= 864; $i++) {
+    print $fh ",Scalar$i";
+  }
+  print $fh "\n";
 }
 
 sub write_crosswalk_header() {
