@@ -224,7 +224,7 @@ C.............  Get line
 C.........  Read 2-D emissions file
         CNAME = PROMPTMFILE( 
      &          'Enter name for netCDF 2-d emissions file',
-     &          FSREAD3, 'INPUT', PROGNAME )
+     &          FSREAD3, 'INFILE', PROGNAME )
           
         IF ( .NOT. DESC3( CNAME ) ) THEN
               MESG = 'Could not get description of file "' //
@@ -397,7 +397,7 @@ C.................  Define top layer for output file
                     VGTOP3D = VGTOP
                     VGLVS3D = VGLVLS
                     MESG = 'Enter logical name for output file'
-                    ONAME = PROMPTMFILE( MESG, FSUNKN3, 'OUTPUT', 
+                    ONAME = PROMPTMFILE( MESG, FSUNKN3, 'OUTFILE', 
      &                                   PROGNAME )
                     FIRSTIME = .FALSE.
 
