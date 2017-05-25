@@ -1165,8 +1165,6 @@ C.............  Write this time step to report
       
         END DO       ! loop through timesteps
 
-        WRITE( RDEV,93000 ) TRIM( RPTLINE )
-
 C........  Write summary of sector specific factor adjustment output
 C          Columns: Date, Sector, Species, value before, value after, ratio of before/after
 C          Later we can add the total amount of the adjusted species summed accross all of the input files
