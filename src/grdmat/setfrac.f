@@ -96,7 +96,7 @@ C   begin body of subroutine SETFRAC
 
 C.........  Create abridged name for warning messages
         IF( CSRC /= ' ' ) THEN
-            CSRC2 = CSRC( 1:VIDPOS3-1 )
+            CSRC2 = CSRC( 1:LNKPOS3-1 )
         ELSE
             CSRC2 = ' '
         END IF

@@ -43,7 +43,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC, ONLY: CIFIP, CSOURC, CSCC, CLINK, IRCLAS, IVTYPE
+        USE MODSOURC, ONLY: CIFIP, CSOURC, CSCC, CLINK
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: CHRT02, CHRT03, CHRT04, CHRT05, 

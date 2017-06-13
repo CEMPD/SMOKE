@@ -124,7 +124,6 @@ C...........   Other local variables
         INTEGER         INVFMT       !  inventory format code
         INTEGER         IREC         !  no. of records read
         INTEGER         ISTREC       !  no. of records stored
-        INTEGER         IVT          !  vehicle type code
         INTEGER         LDEV         !  device no. for log file
         INTEGER         NSCC         !  tmp no of reference SCCs
         INTEGER         MXWARN       !  maximum number of warnings
@@ -135,8 +134,6 @@ C...........   Other local variables
         INTEGER      :: NWARN1= 0    !  current number of warnings 1
         INTEGER      :: NWRLINE = 0  !  no. of lines in file writting to log
         INTEGER*4       PID          !  UNIX process ID at runtime
-        INTEGER         ROAD         !  road class number
-        INTEGER         RWT          !  roadway type
         INTEGER      :: TOTSRCS = 0  !  total number of sources
         INTEGER      :: TOTRECS = 0  !  total number of records
         
@@ -146,11 +143,6 @@ C...........   Other local variables
 
         CHARACTER(FIPLEN3) CFIP    ! fips code
         CHARACTER(LNKLEN3) CLNK    ! link ID
-        CHARACTER(VIDLEN3) CIVT    ! vehicle type ID
-        CHARACTER(RWTLEN3) CROAD   ! road class no.
-        CHARACTER(RWTLEN3) CRWT    ! roadway type
-        CHARACTER(VTPLEN3) VTYPE   ! tmp vehicle type        
-        CHARACTER(RWTLEN3+VTPLEN3) CRVC    ! tmp roadway // vehicle type
         
         CHARACTER(PLTLEN3) FCID    ! facility/plant ID
         CHARACTER(CHRLEN3) PTID    ! point ID
@@ -169,8 +161,6 @@ C...........   Other local variables
         CHARACTER(300)     INFILE  ! input file line buffer
         CHARACTER(500)     LINE    ! input file line buffer
         CHARACTER(300)     MESG    ! message buffer
-        CHARACTER(20)      VIDFMT  ! vehicle type ID format
-        CHARACTER(20)      RWTFMT  ! roadway type number format
         CHARACTER(1024)    TMPFILNAM  ! File name of tmp file
 
         CHARACTER(512)     PATHNM           ! path name for tmp file
@@ -230,12 +220,6 @@ C.........  Initialize ORL (fire) flag to false
         ORLFLG = .FALSE.
         FIREFLAG = .FALSE.
 
-C.........  Create formats for mobile data
-        IF( CATEGORY == 'MOBILE' ) THEN
-            WRITE( VIDFMT, '("(I",I2.2,")")' ) VIDLEN3
-            WRITE( RWTFMT, '("(I",I2.2,")")' ) RWTLEN3
-        END IF
-        
 C.........  Determine file format of inventory file
         INVFMT = GETFORMT( FDEV, -1 )
 
@@ -641,9 +625,6 @@ C.....................  Make sure SCC is at least 8 characters long
 C.........................  Set vehicle type and road class
                     CALL PADZERO( TSCC )
 
-                    IVT = STR2INT( TSCC( 13:14 ) )
-                    RWT = STR2INT( TSCC( 15:16 ) )
-
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
                     IF( CURFMT == ORLFMT .OR. CURFMT == MEDSFMT .OR.
@@ -690,10 +671,8 @@ C.................  Build concatenated source information
      &                            CHRBLNK3, TCSOURC )
                 CASE( 'MOBILE' )
                     CALL FLTRNEG( CLNK )
-                    WRITE( CRWT,RWTFMT ) RWT
-                    WRITE( CIVT,VIDFMT ) IVT
 
-                    CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, TSCC, 
+                    CALL BLDCSRC( CFIP, CLNK, TSCC, CHRBLNK3, CHRBLNK3,
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3, 
      &                            TCSOURC )
 

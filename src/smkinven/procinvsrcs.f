@@ -38,8 +38,7 @@ C***************************************************************************
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: SRCIDA, CSOURCA, CSOURC, CIFIP,
-     &                      CSCC, XLOCA, YLOCA, CELLID, IRCLAS,
-     &                      IVTYPE, CLINK, CVTYPE
+     &                      CSCC, XLOCA, YLOCA, CELLID, CLINK
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NSRC
@@ -84,14 +83,8 @@ C.........  Allocate memory for sorted inventory arrays
             ALLOCATE( CELLID( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CELLID', PROGNAME )
         CASE( 'MOBILE' )
-            ALLOCATE( IRCLAS( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'IRCLAS', PROGNAME )
-            ALLOCATE( IVTYPE( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'IVTYPE', PROGNAME )
             ALLOCATE( CLINK( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CLINK', PROGNAME )
-            ALLOCATE( CVTYPE( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CVTYPE', PROGNAME )
         CASE( 'POINT' )
         END SELECT
 
@@ -124,14 +117,9 @@ C.........  Keep case statement outside the loops to speed processing
                 TSRC = CSOURCA( I )
                 
                 CIFIP( S ) = TSRC( 1:FIPLEN3 )
-                IRCLAS( S ) = 
-     &              STR2INT( TSRC( RWTPOS3:RWTPOS3+RWTLEN3-1 ) )
-                IVTYPE( S ) = 
-     &              STR2INT( TSRC( VIDPOS3:VIDPOS3+VIDLEN3-1 ) )
-                CSCC( S ) = TSRC( MSCPOS3:MSCPOS3+SCCLEN3-1 )
                 CLINK( S ) = TSRC( LNKPOS3:LNKPOS3+LNKLEN3-1 )
+                CSCC( S ) = TSRC( MSCPOS3:MSCPOS3+SCCLEN3-1 )
                 CSOURC( S ) = TSRC
-                CVTYPE( S ) = 'MOVES'
                 
             END DO
 

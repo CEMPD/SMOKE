@@ -94,7 +94,6 @@ C...........   Other local variables
         INTEGER         NLINES  !  number of lines
         INTEGER         NXREF   !  number of valid x-ref entries
         INTEGER         THISTYP !  index in LOCCATS for CATEGORY
-        INTEGER         VTYPE   !  temporary vehicle type number
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
         LOGICAL      :: LDUM  = .FALSE.   !  dummy
@@ -105,12 +104,10 @@ C...........   Other local variables
         CHARACTER(300)     MESG     !  message buffer
         CHARACTER(ALLLEN3) CSRCALL  !  buffer for source char, incl pol
         CHARACTER(FIPLEN3) CFIP     !  buffer for CFIPS code
-        CHARACTER(RWTLEN3) CRWT     !  buffer for roadway type
         CHARACTER(SICLEN3) CDUM     !  dummy buffer for SIC code
         CHARACTER(MACLEN3) CDUM2    !  dummy buffer for MACT code
         CHARACTER(SCCLEN3) CHKZERO  !  buffer to check for zero SCC
         CHARACTER(SCCLEN3) TSCC     !  temporary SCC or roadway type
-        CHARACTER(VIDLEN3) CVID     !  buffer for vehicle type ID
 
         CHARACTER(16) :: PROGNAME = 'RDGREF' ! program name
 
@@ -231,7 +228,7 @@ C.............  Store sorting criteria as right-justified in fields
      &                        CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                        POLBLNK3, CSRCALL   )
             ELSE
-                CALL BLDCSRC( CFIP, RWTBLNK3, CHRBLNK3, CHRBLNK3,
+                CALL BLDCSRC( CFIP, CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                        CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                        POLBLNK3, CSRCALL   )
             END IF

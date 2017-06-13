@@ -40,10 +40,9 @@ C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC, ONLY: CSOURC, TZONES, TPFLAG, INVYR,
      &                      XLOCA, YLOCA, XLOC1, YLOC1, XLOC2, YLOC2,
-     &                      CELLID, IRCLAS, IVTYPE,
-     &                      STKHT, STKDM, STKTK, STKVE,
+     &                      CELLID, STKHT, STKDM, STKTK, STKVE,
      &                      CMACT, CNAICS, CSRCTYP, CSHAPE, CERPTYP,
-     &                      CVTYPE, CSCC, CORIS, CBLRID, CPDESC,
+     &                      CSCC, CORIS, CBLRID, CPDESC,
      &                      CNEIUID, CINTGR, CEXTORL, CISIC,
      &                      FUGHGT, FUGWID, FUGLEN, FUGANG
 
@@ -86,14 +85,11 @@ C.........  Source-specific header arrays
      &                                        'Cell                ',
      &                                        'Source type code    ' / )
 
-        CHARACTER(20) :: MBHEADRS( MXMBCHR3+5 ) =
+        CHARACTER(20) :: MBHEADRS( MXMBCHR3+4 ) =
      &                                    ( / 'SMOKE Source ID     ',
      &                                        'Cntry/St/Co FIPS    ',
-     &                                        'Roadway Type code   ',
      &                                        'Link ID             ',
-     &                                        'Vehicle Type code   ',
      &                                        'SCC                 ',
-     &                                        'Vehicle Type Name   ',
      &                                        'Source type code    ',
      &                                        'Integrate flag      ',
      &                                        'Additional extended ' / )
@@ -207,16 +203,6 @@ C.........  Write the I/O API file, one variable at a time
 
         CASE( 'MOBILE' )
 
-            IF ( .NOT. WRITESET( ENAME, 'IRCLAS', ALLFILES,
-     &                           0, 0, IRCLAS ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITESET( ENAME, 'IVTYPE', ALLFILES,
-     &                           0, 0, IVTYPE ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
             IF ( .NOT. WRITESET( ENAME, 'XLOC1', ALLFILES,
      &                           0, 0, XLOC1 ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -301,7 +287,7 @@ C.........  Set the number of potential ASCII columns in SDEV output file
             IF ( NONPOINT ) NASCII = NASCII + 2
             IF ( FF10FLAG ) NASCII = NASCII + 1
         CASE( 'MOBILE' )
-            NASCII = MXMBCHR3 + 4
+            NASCII = MXMBCHR3 + 3
         CASE( 'POINT' )
             NASCII = MXPTCHR3 + 12
         END SELECT
@@ -422,10 +408,6 @@ C.........  Get the maximum column width for each of the columns in ASCII file
 
             CASE( 'MOBILE' )
 
-                J = LEN_TRIM( CVTYPE( S ) )                   ! could be blank
-                IF( CVTYPE( S ) .NE. ' ' .AND.
-     &              J > COLWID( M1 ) ) COLWID( M1 ) = J
-
                 J = LEN_TRIM( CSRCTYP( S ) )
                 IF( CSRCTYP( S ) /= ' ' .AND.
      &              J > COLWID( M2 ) ) COLWID( M2 ) = J
@@ -497,8 +479,8 @@ C.........  Get the maximum column width for each of the columns in ASCII file
         L2 = LEN_TRIM( MESG )
         COLWID0 = L2 - L1 + 1
 
-C.........  It is possible that a source characteristic (such as segment or
-C           VTYPE) may never be used, while SCC or link is defined and also
+C.........  It is possible that a source characteristic (such as segment
+C           may never be used, while SCC or link is defined and also
 C           considered a source characteristic.  So, make sure that if there
 C           are no gaps in the list of source characteristics, even though
 C           this means outputting blank fields.
@@ -633,20 +615,15 @@ C.............  Store remaining source attributes in separate fields (CHARS)
             CASE( 'MOBILE' )
                 IF( LF( M1 ) ) THEN
                     NC = NC + 1
-                    CHARS( NC ) = CVTYPE( S )
+                    CHARS( NC ) = CSRCTYP( S )
                 END IF
 
                 IF( LF( M2 ) ) THEN
                     NC = NC + 1
-                    CHARS( NC ) = CSRCTYP( S )
-                END IF
-
-                IF( LF( M3 ) ) THEN
-                    NC = NC + 1
                     CHARS( NC ) = CINTGR( S )
                 END IF
 
-                IF( LF( M4 ) ) THEN
+                IF( LF( M3 ) ) THEN
                     NC = NC + 1
                     CHARS( NC ) = CEXTORL( S )
                 END IF

@@ -45,7 +45,6 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER   INDEX1

@@ -150,7 +150,6 @@
             LOGICAL       :: BYSTAT        ! true: by state code (geocode 3)
             LOGICAL       :: BYSTNAM       ! true: by state name
             LOGICAL       :: BYSRG         ! true: by surrogate codes
-            LOGICAL       :: BYRCL         ! true: by road class (mb)
             LOGICAL       :: CARB          ! true: output CARB summary QA report
             LOGICAL       :: CHKPROJ       ! true: check projctns vs. rpt
             LOGICAL       :: CHKCNTL       ! true: check controls vs. rpt

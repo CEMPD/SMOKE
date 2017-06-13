@@ -37,11 +37,11 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC, ONLY: CIFIP, IRCLAS, IVTYPE, CELLID, TZONES,
+        USE MODSOURC, ONLY: CIFIP, CELLID, TZONES,
      &                      TPFLAG, INVYR, IDIU, IWEK, XLOCA, YLOCA, 
      &                      XLOC1, YLOC1, XLOC2, YLOC2, SPEED, STKHT,
      &                      STKDM, STKTK, STKVE, CSCC, CORIS, CBLRID,
-     &                      CLINK, CPDESC, CSOURC, CVTYPE, CMACT,
+     &                      CLINK, CPDESC, CSOURC, CMACT,
      &                      CNAICS, CSRCTYP, CERPTYP, CNEIUID, CEXTORL,
      &                      CINTGR, CISIC, FUGHGT, FUGWID, FUGLEN, FUGANG
 
@@ -113,7 +113,6 @@ C...........   Other local variables
         LOGICAL       :: SICIN   = .FALSE.  ! True: SIC code in input file
         LOGICAL       :: STPIN   = .FALSE.  ! True: source type code in input file
         LOGICAL       :: STPFLAG = .FALSE.  ! True: source type code requested
-        LOGICAL       :: VTPFLAG = .FALSE.  ! True: vehicle type requested
 
         CHARACTER(20)      HEADER( 20 ) ! header fields
         CHARACTER(256)     FILFMT ! ASCII file format after header
@@ -126,11 +125,8 @@ C...........   Other local variables
         CHARACTER(EXTLEN3) :: CEXT = ' '   ! Extended ORL vars
         CHARACTER(ORSLEN3) :: CORS = ' '   ! temporary DOE plant ID
         CHARACTER(DSCLEN3) :: CPDS = ' '   ! temporary plant description
-        CHARACTER(RWTLEN3) :: CRWT = ' '   ! temporary roadway type
         CHARACTER(SCCLEN3) :: CS   = ' '   ! temporary scc
         CHARACTER(SICLEN3) :: CSIC = ' '   ! temporary SIC
-        CHARACTER(VIDLEN3) :: CVID = ' '   ! temporary vehicle type code
-        CHARACTER(VTPLEN3) :: CVTP = ' '   ! tmp vehicle type
         CHARACTER(MACLEN3) :: CMT  = ' '   ! tmp MACT code
         CHARACTER(NAILEN3) :: CNAI = ' '   ! tmp NAICS code
         CHARACTER(STPLEN3) :: CSTP = ' '   ! tmp source type code
@@ -164,24 +160,6 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
             MESG = PART1 // INVAR( 1:LEN_TRIM( INVAR ) ) // PART3
 
             SELECT CASE( INVAR )
-
-            CASE( 'IRCLAS' )
-              ALLOCATE( IRCLAS( NSRC ), STAT=IOS )
-              CALL CHECKMEM( IOS, 'IRCLAS', PROGNAME )
-
-              IF(.NOT. READSET(INFILE,'IRCLAS',ALLAYS3,1,0,0,IRCLAS)) 
-     &            THEN
-                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-              ENDIF
-
-            CASE( 'IVTYPE' )
-              ALLOCATE( IVTYPE( NSRC ), STAT=IOS )
-              CALL CHECKMEM( IOS, 'IVTYPE', PROGNAME )
-
-              IF(.NOT. READSET(INFILE,'IVTYPE',ALLAYS3,1,0,0,IVTYPE)) 
-     &            THEN
-                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-              ENDIF
 
             CASE( 'CELLID' )
               ALLOCATE( CELLID( NSRC ), STAT=IOS )
@@ -444,11 +422,6 @@ C.............  Allocate memory for the data that are needed from the ASCII file
                     ALLOCATE( CSOURC( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
 
-                CASE( 'CVTYPE' )
-                    VTPFLAG = .TRUE. 
-                    ALLOCATE( CVTYPE( NSRC ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'CVTYPE', PROGNAME )
-                    
                 CASE( 'CMACT' )
                     MACFLAG = .TRUE.
                     ALLOCATE( CMACT( NSRC ), STAT=IOS )
@@ -685,11 +658,8 @@ C.....................  Read source information from record of inventory file
                     READ( FDEV, FMTSEG, ADVANCE='NO', END=999 ) ID
                     
                     CALL READ_NEXT_VAL( CFIP )
-                    CALL READ_NEXT_VAL( CRWT )
                     CALL READ_NEXT_VAL( CLNK )
-                    CALL READ_NEXT_VAL( CVID )
                     CALL READ_NEXT_VAL( CS )
-                    CALL READ_NEXT_VAL( CVTP )
                     IF( STPIN ) CALL READ_NEXT_VAL( CSTP )
                     IF( ITGIN ) CALL READ_NEXT_VAL( CINT )
                     IF( EXTIN ) CALL READ_NEXT_VAL( CEXT )
@@ -701,8 +671,6 @@ C.....................  Advance to next line
 
                     IF( SCCFLAG ) CSCC  ( S ) = CS
 
-                    IF( VTPFLAG ) CVTYPE( S ) = CVTP
-
                     IF( LNKFLAG ) CLINK ( S ) = CLNK
 
                     IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
@@ -713,8 +681,8 @@ C.....................  Advance to next line
      &                                             ADJUSTL( CEXT )
 
                     IF( CSRFLAG ) 
-     &                  CALL BLDCSRC( CFIP, CRWT, CLNK, CVID,
-     &                                CS, CHRBLNK3, CHRBLNK3,
+     &                  CALL BLDCSRC( CFIP, CLNK, CS, CHRBLNK3,
+     &                                CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                                POLBLNK3, CSOURC( S ) )
 
                     CALL CHECK_CORRUPTED

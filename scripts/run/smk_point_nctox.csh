@@ -135,7 +135,6 @@ setenv SMK_EMLAYS           12  # number of emissions layers
 setenv SMK_AVEDAY_YN        N   # Y uses average-day emissions instead of annual emissions
 setenv SMK_MAXERROR         100 # maximum number of error messages in log file
 setenv SMK_MAXWARNING       100 # maximum number of warning messages in log file
-setenv SMK_PING_METHOD      1   # 1 processes and outputs PinG sources
 setenv VELOC_RECALC         N   # Y recalculates stack velocity using flow and diameter
 
 ## Script settings

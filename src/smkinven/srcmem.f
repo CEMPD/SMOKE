@@ -40,13 +40,13 @@ C***************************************************************************
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: INDEXA, TPFLGA, INVYRA, CSCCA,
-     &                      IPOSCOD, CSOURCA, POLVLA, IRCLASA, IVTYPEA,
-     &                      CVTYPEA, CLINKA, XLOC1A, YLOC1A, XLOC2A,
+     &                      IPOSCOD, CSOURCA, POLVLA,
+     &                      CLINKA, XLOC1A, YLOC1A, XLOC2A,
      &                      YLOC2A, IDIUA, IWEKA, XLOCAA, YLOCAA,
      &                      STKHTA, STKDMA, STKTKA, STKVEA, CORISA,
      &                      CBLRIDA, CPDESCA, CIFIP, TPFLAG, INVYR,
      &                      TZONES, NPCNT, CSCC, CSOURC, POLVAL, XLOCA,
-     &                      YLOCA, CELLID, IRCLAS, IVTYPE, CVTYPE,
+     &                      YLOCA, CELLID,
      &                      XLOC1, YLOC1, XLOC2, YLOC2, CISIC, IDIU,
      &                      STKHT, STKDM, STKTK, STKVE, CORIS, CBLRID,
      &                      CPDESC, SRCIDA, CLINK, IWEK
@@ -143,21 +143,6 @@ C.............  Allocate specifically based on source category
             CASE( 'AREA' )
             CASE( 'MOBILE' )
  
-                IF( UFLAG .AND. .NOT. ALLOCATED( IRCLASA ) ) THEN
-                    ALLOCATE( IRCLASA( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'IRCLASA', PROGNAME )
-                END IF
- 
-                IF( UFLAG .AND. .NOT. ALLOCATED( IVTYPEA ) ) THEN
-                    ALLOCATE( IVTYPEA( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'IVTYPEA', PROGNAME )
-                END IF
- 
-                IF( UFLAG .AND. .NOT. ALLOCATED( CVTYPEA ) ) THEN
-                    ALLOCATE( CVTYPEA( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'CVTYPEA', PROGNAME )
-                END IF
- 
                 IF( UFLAG .AND. .NOT. ALLOCATED( CLINKA ) ) THEN
                     ALLOCATE( CLINKA( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CLINKA', PROGNAME )
@@ -183,11 +168,6 @@ C.............  Allocate specifically based on source category
                     CALL CHECKMEM( IOS, 'YLOC2A', PROGNAME )
                 END IF
  
-                IF( .NOT. PFLAG .AND. 
-     &              .NOT. AFLAG .AND. ALLOCATED( CVTYPEA ) ) 
-     &              DEALLOCATE( IRCLASA, IVTYPEA, CVTYPEA, CLINKA, 
-     &                          XLOC1A, YLOC1A, XLOC2A, YLOC2A )
-
             CASE( 'POINT' )
  
                 IF( UFLAG .AND. .NOT. ALLOCATED( IDIUA ) ) THEN
@@ -342,21 +322,6 @@ C               may be needed for reading day- and hour-specific data
 
             CASE( 'MOBILE' )
  
-                IF( UFLAG .AND. .NOT. ALLOCATED( IRCLAS ) ) THEN
-                    ALLOCATE( IRCLAS( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'IRCLAS', PROGNAME )
-                END IF
- 
-                IF( UFLAG .AND. .NOT. ALLOCATED( IVTYPE ) ) THEN
-                    ALLOCATE( IVTYPE( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'IVTYPE', PROGNAME )
-                END IF
- 
-                IF( UFLAG .AND. .NOT. ALLOCATED( CVTYPE ) ) THEN
-                    ALLOCATE( CVTYPE( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'CVTYPE', PROGNAME )
-                END IF
- 
                 IF( UFLAG .AND. .NOT. ALLOCATED( CLINK ) ) THEN
                     ALLOCATE( CLINK( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CLINK', PROGNAME )
@@ -382,11 +347,6 @@ C               may be needed for reading day- and hour-specific data
                     CALL CHECKMEM( IOS, 'YLOC2', PROGNAME )
                 END IF
  
-                IF( .NOT. PFLAG .AND. 
-     &              .NOT. AFLAG .AND. ALLOCATED( CVTYPE ) ) 
-     &              DEALLOCATE( IRCLAS, IVTYPE, CVTYPE, CLINK, 
-     &                          XLOC1, YLOC1, XLOC2, YLOC2 )
-
             CASE( 'POINT' )
  
                 IF( UFLAG .AND. .NOT. ASSOCIATED( CISIC ) ) THEN

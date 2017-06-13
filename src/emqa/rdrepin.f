@@ -217,12 +217,6 @@ C.........  Region code
                 IVARNAMS( NINVARR ) = 'CIFIP'
             END IF
 
-C.........  Road class code
-            IF( ANY_TRUE( NREPORT, ALLRPT%BYRCL ) ) THEN
-                NINVARR = NINVARR + 1
-                IVARNAMS( NINVARR ) = 'IRCLAS'
-            END IF
-
 C.........  SIC code
             IF( ANY_TRUE( NREPORT, ALLRPT%BYSIC ) ) THEN
                 NINVARR = NINVARR + 1
@@ -545,7 +539,7 @@ C...............  Build source string
                 CASE ( 'MOBILE' )
                     TSCC = SEGMENT( 2 )( 1:SCCLEN3 )
                     CLNK = SEGMENT( 3 )( 1:LNKLEN3 )
-                    CALL BLDCSRC( CFIP, TSCC, CLNK, CHRBLNK3,
+                    CALL BLDCSRC( CFIP, CLNK, TSCC, CHRBLNK3,
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                            POLBLNK3, CSRC )
 

@@ -89,7 +89,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINMONID, BINWEKID, BINDOMID, BINMNDID,
      &                      BINTUEID, BINWEDID, BINTHUID, BINFRIID,
      &                      BINSATID, BINSUNID, BINMETID,
-     &                      BINSRGID1, BINSRGID2, BINSPCID, BINRCL,
+     &                      BINSRGID1, BINSRGID2, BINSPCID,
      &                      BINELEV, BINSNMIDX, BINBAD, BINSIC, 
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
@@ -667,18 +667,6 @@ C.............  Include plant ID
                     STRING = STRING( 1:LE ) //
      &                       BINPLANT( I )( 1:L1 ) // DELIM
                     MXLE = MXLE + L + LX
-                    LE = MIN( MXLE, STRLEN )
-                    LX = 0
-                END IF
-
-C.............  Include road class code
-                IF( RPT_%BYRCL ) THEN
-
-C.................  Write characteristics
-                    BUFFER = ' '
-                    WRITE( BUFFER, CHARFMT ) BINRCL( I )
-                    STRING = STRING( 1:LE ) // BUFFER
-                    MXLE = MXLE + CHARWIDTH + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
                 END IF

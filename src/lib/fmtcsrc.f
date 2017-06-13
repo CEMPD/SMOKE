@@ -64,7 +64,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local paramaters
         INTEGER, PARAMETER :: MXPTLBL = 8
         INTEGER, PARAMETER :: MXARLBL = 3
-        INTEGER, PARAMETER :: MXMBLBL = 6
+        INTEGER, PARAMETER :: MXMBLBL = 4
 
 C.........  Output labels (note: these could be dynamic if in MODINFO)
         CHARACTER(6) :: PTLABEL( MXPTLBL ) =  !  message buffer
@@ -75,8 +75,7 @@ C.........  Output labels (note: these could be dynamic if in MODINFO)
      &                ( / 'Region', 'SCC   ', 'Data  ' / )
  
         CHARACTER(9) :: MBLABEL( MXMBLBL ) =  !  message buffer
-     &                ( / 'Region   ', 'Road Type', 'Link     ', 
-     &                    'Vtype    ', 'SCC      ', 'Data     ' / )
+     &                ( / 'Region   ', 'Link     ', 'SCC      ', 'Data     ' / )
 
         CHARACTER(9), SAVE :: LABEL( MXPTLBL )
  

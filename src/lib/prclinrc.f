@@ -474,7 +474,6 @@ C.........................  Reset report settings to defaults
                         RPT_%BYSUN     = .FALSE.
                         RPT_%BYMET     = .FALSE.
                         RPT_%BYPLANT   = .FALSE.
-                        RPT_%BYRCL     = .FALSE.
                         RPT_%BYSIC     = .FALSE.
                         RPT_%BYSCC     = .FALSE.
                         RPT_%BYINTGR   = .FALSE.
@@ -1008,18 +1007,6 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                     RPT_%BYPLANT = .TRUE.
                     IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                         RPT_%SRCNAM = .TRUE.
-                    END IF
-
-                CASE( 'ROADCLASS' )
-                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
-                        IF( CATEGORY .EQ. 'MOBILE' ) THEN
-                            RPT_%BYRCL = .TRUE.
-
-                        ELSE IF( FIRSTLOOP ) THEN
-
-                            CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
-
-                        END IF
                     END IF
 
                 CASE( 'SIC' )

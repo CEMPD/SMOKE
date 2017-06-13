@@ -321,18 +321,6 @@ C.........  Define source characteristic variables that are not strings
             
         CASE( 'MOBILE' )
 
-            VNAMESET( J ) = 'IRCLAS'
-            VTYPESET( J ) = M3INT
-            VUNITSET( J ) = 'n/a'
-            VDESCSET( J ) = 'Roadway type'
-            J = J + 1
-
-            VNAMESET( J ) = 'IVTYPE'
-            VTYPESET( J ) = M3INT
-            VUNITSET( J ) = 'n/a'
-            VDESCSET( J ) = 'Vehicle type code'
-            J = J + 1
-
             VNAMESET( J ) = 'XLOC1'
             VTYPESET( J ) = M3REAL
             VUNITSET( J ) = 'degrees'

@@ -78,7 +78,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINSRGID1, BINSRGID2, BINMONID, BINWEKID,
      &                      BINDOMID, BINMNDID, BINTUEID, BINWEDID,
      &                      BINTHUID, BINFRIID, BINSATID, BINSUNID,
-     &                      BINMETID, BINRCL, BINDATA, BINSNMIDX,
+     &                      BINMETID, BINDATA, BINSNMIDX,
      &                      BINCYIDX, BINSTIDX, BINCOIDX, BINSPCID,
      &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
@@ -392,10 +392,8 @@ C.........  NOTE that (1) will not be used and none will be for area sources
             CHRHDRS( 2 ) = HEADERS( IHDRSCC )
 
         CASE( 'MOBILE' )
-            CHRHDRS( 2 ) = 'Road '
-            CHRHDRS( 3 ) = 'Link'
-            CHRHDRS( 4 ) = 'Veh Type'
-            CHRHDRS( 5 ) = 'SCC'
+            CHRHDRS( 2 ) = 'Link'
+            CHRHDRS( 3 ) = 'SCC'
 
         CASE( 'POINT' )
             CHRHDRS( 2 ) = 'Plant ID'
@@ -1160,21 +1158,6 @@ C.............  Set speciation profiles column width
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
             SPCWIDTH = J + LV
-
-        END IF
-
-C.........  Road class.  By roadclass can only be true if by source is not
-C           being used.
-        IF( RPT_%BYRCL ) THEN
-            J  = LEN_TRIM( CHRHDRS( 2 ) )
-            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINRCL )
-            W1  = MAX( W1, J )
-
-            CALL ADD_TO_HEADER( W1, CHRHDRS( 2 ), LH, HDRBUF )
-            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
-
-            WRITE( CHARFMT, 94645 ) W1, RPT_%DELIM 
-            CHARWIDTH = W1 + LV
 
         END IF
 

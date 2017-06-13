@@ -40,7 +40,7 @@ C***************************************************************************
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: VMT, XLOCA, YLOCA, CIFIP, CSOURC, CLINK,
-     &                      IRCLAS, XLOC1, YLOC1, XLOC2, YLOC2   
+     &                      XLOC1, YLOC1, XLOC2, YLOC2   
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID, GRDNM, COORD, NCOLS, NROWS, XOFF, YOFF
@@ -178,7 +178,6 @@ C...........   Other local variables
         INTEGER         NNOSRG    !  no. of cy/st/co codes with no surrogates
         INTEGER         ROW       ! tmp row
         INTEGER         TROW      ! tmp row
-        INTEGER         RWT       !  tmp roadway type
         INTEGER         NTL       ! max no. of line buffers
         INTEGER         TGTSRG    ! target surrogates code
         INTEGER         SSC       ! surrogates code
@@ -340,7 +339,7 @@ C.........  Set flag to indicate that XLOCA/YLOCA are available
         J       = 0
         LFIP    = ' '
         LLNK    = ' '
-        LNKEND  = VIDPOS3 - 1
+        LNKEND  = MSCPOS3 - 1
         NNOSRG  = 0
         NLKOGRD = 0
         ADJ     = 1.    !  temporary
@@ -488,7 +487,6 @@ C.......       sixth case:   fallback default
             DO S = 1, NSRC
 
                 CFIP = CIFIP ( S )
-                RWT  = IRCLAS( S )
                 CLNK = CLINK ( S )
                 CSRC = CSOURC( S )
                 SSC  = ASRGID( S )
@@ -527,9 +525,6 @@ C....................  Otherwise, mark source as being outside domain
                     CYCLE           ! To head of loop over sources
             
                 END IF   ! End if assigned point location or not
-            
-C.................  Find FIP/RoadWayType adjustment for FIP and RWT
-c                ADJ = ADJMV( NADJ1, FIP, RWT, ADJFIP, ADJRWT, ADJFAC1 )
             
 C.................  Process for link source...
                 IF ( CLNK .NE. ' ' ) THEN
@@ -633,49 +628,6 @@ C                           is okay
                     CYCLE   ! to next source
             
                 END IF      ! end of link-specific processing
-            
-C................. Start of non-link processing (will only get here if the
-C                  source is a non-link source)...
-            
-C................. Look for source in the grid-by-link table
-c                S = FIND2( FIP, RWT, NUMLNK, LNKFIP, LNKRWT )  !  use LNKDEF factor
-c                IF ( S .GT. 0 ) THEN
-                    
-c                    DO K = 1, LNKCNT( S )
-c                        C = LNKCEL( J,S )
-c                        J = NX( C ) + 1
-            
-C.........................  Find cell-based adjustment for cell C
-c                        ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, 
-c     &                                ADJFAC2 )
-            
-C.........................  Warn when both types of adjustments are applied
-c                        IF( ADJ .NE. 1. .AND. ADJC .NE. 1. ) THEN
-            
-c                            CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-c                            WRITE( MESG,94010 ) 'WARNING: Both FIP/'//
-c     &                             'RoadWayType and cell-specific adjustments'
-c     &                             // ' applied for ' // CRLF() // BLANK10//
-c     &                             BUFFER( 1:L2 ) // ' Cell:', C
-c                            CALL M3MSG2( MESG )
-            
-c                        END IF
-            
-C.........................  Check that the maximum number of sources per cell is ok
-c                        IF ( J .LE. MXSCEL ) THEN
-c                            IS ( J,C ) = S
-c                            CS ( J,C ) = LNKFAC( K,S )
-c                            CSJ( J,C ) = ADJ * ADJC * LNKFAC( K,S )
-c                        END IF
-            
-C.........................  Store the count of sources for current cell
-c                        NX( C )   = J
-            
-c                    END DO   ! end of loop on cells for this source
-            
-c                    CYCLE    ! to next source
-            
-c                END IF       ! end of grid-by-link processing
             
 C.................  Process for non-link, non-grid-by-link sources...
             

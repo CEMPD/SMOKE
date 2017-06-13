@@ -556,17 +556,14 @@ C    n: been implemented
             IVARNAMS( 11 ) = 'CSRCTYP'
 
         CASE ( 'MOBILE' )
-            NINVARR = 14
-            IVARNAMS( 5  ) = 'IRCLAS'
-            IVARNAMS( 6  ) = 'IVTYPE'
-            IVARNAMS( 7  ) = 'XLOC1'
-            IVARNAMS( 8  ) = 'YLOC1'
-            IVARNAMS( 9  ) = 'XLOC2'
-            IVARNAMS( 10 ) = 'YLOC2'
-            IVARNAMS( 11 ) = 'CSCC'
-            IVARNAMS( 12 ) = 'CLINK'
-            IVARNAMS( 13 ) = 'CVTYPE'
-            IVARNAMS( 14 ) = 'CSOURC'
+            NINVARR = 11
+            IVARNAMS( 5  ) = 'XLOC1'
+            IVARNAMS( 6  ) = 'YLOC1'
+            IVARNAMS( 7  ) = 'XLOC2'
+            IVARNAMS( 8  ) = 'YLOC2'
+            IVARNAMS( 9  ) = 'CSCC'
+            IVARNAMS( 10 ) = 'CLINK'
+            IVARNAMS( 11 ) = 'CSOURC'
 
         CASE ( 'POINT' )
             NINVARR = 22

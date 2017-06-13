@@ -52,7 +52,7 @@ C............  MODELEV contains arrays for plume-in-grid and major sources
 C............  MODSTCY contains the arrays for state and county summaries
 C............  MODINFO contains the information about the source category
 
-        USE MODSOURC, ONLY: CSOURC, CIFIP, CSCC, IRCLAS, SRGID, CMON,
+        USE MODSOURC, ONLY: CSOURC, CIFIP, CSCC, SRGID, CMON,
      &                      CWEK, CDOM, CMND, CTUE, CWED, CTHU, CFRI,
      &                      CSAT, CSUN, CMET, SPPROF, CISIC, CMACT,
      &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP,
@@ -527,14 +527,6 @@ C.................  code, so for now save space for the SRCID.
                 II = IJ + 1
             END IF          !!  if report-by-oris
 
-
-            IF( RPT_%BYRCL ) THEN
-                IJ = II + 7
-                WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) IRCLAS( OUTSRC( I ) )
-                II = IJ + 1
-            END IF          !!  if report-by-roadclass
-
-
             IF ( RPT_%BYELEV ) THEN
                 IF( LPING( OUTSRC( I ) ) ) THEN         !!  PinG
                     ESTAT = 'P'
@@ -849,10 +841,6 @@ C.........  Allocate memory for bins
         IF( RPT_%BYPLANT ) THEN
             ALLOCATE( BINPLANT ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINPLANT', PROGNAME )
-        ENDIF
-        IF( RPT_%BYRCL   ) THEN
-            ALLOCATE( BINRCL   ( NOUTBINS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'BINRCL', PROGNAME )
         ENDIF
         IF( RPT_%BYCELL  ) THEN
             ALLOCATE( BINX     ( NOUTBINS ), STAT=IOS )

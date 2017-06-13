@@ -277,16 +277,14 @@ C.................  Make sure we're not using a variable grid
             END IF
 
         CASE ( 'MOBILE' )
-            NINVARR = 10
-            IVARNAMS( 2 ) = 'IRCLAS'
-            IVARNAMS( 3 ) = 'IVTYPE'
-            IVARNAMS( 4 ) = 'CSOURC'
-            IVARNAMS( 5 ) = 'CSCC'
-            IVARNAMS( 6 ) = 'CLINK'
-            IVARNAMS( 7 ) = 'XLOC1'
-            IVARNAMS( 8 ) = 'YLOC1'
-            IVARNAMS( 9 ) = 'XLOC2'
-            IVARNAMS( 10 ) = 'YLOC2'
+            NINVARR = 8 
+            IVARNAMS( 2 ) = 'CSOURC'
+            IVARNAMS( 3 ) = 'CSCC'
+            IVARNAMS( 4 ) = 'CLINK'
+            IVARNAMS( 5 ) = 'XLOC1'
+            IVARNAMS( 6 ) = 'YLOC1'
+            IVARNAMS( 7 ) = 'XLOC2'
+            IVARNAMS( 8 ) = 'YLOC2'
 
         CASE ( 'POINT' )
             NINVARR = 3

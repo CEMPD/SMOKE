@@ -60,9 +60,8 @@ LIBSRC = \
  chkexpscc.f    chkexpsic.f     chkgrid.f           \
  chkint.f       chkisiz.f       chkmetem.f          \
  chkptdef.f     chkreal.f       chksrcno.f          \
- convrtll.f     convrtxy.f      cvtrdtype.f         \
- cvtvehtype.f   dscm3grd.f      dscm3lay.f          \
- dscsprof.f     efsetup.f       evalcrit.f          \
+ convrtll.f     convrtxy.f      dscm3grd.f          \
+ dscm3lay.f     dscsprof.f      evalcrit.f          \
  fillatbl.f     fillchrt.f      fillctbl.f          \
  filletbl.f     fillgtbl.f      fillmtbl.f          \
  fillptbl.f     fillstbl.f      fillttbl.f          \
@@ -375,7 +374,6 @@ chkgrid.o     : $(MODGRID)
 chkptdef.o    : $(MODINFO)
 dscsprof.o    : $(MODINFO)
 dscsprof.o    : $(MODSPRO)
-efsetup.o     : $(MODEMFAC)
 fillatbl.o    : $(MODXREF)
 fillchrt.o    : $(MODXREF)
 fillchrt.o    : $(MODINFO)

@@ -119,7 +119,6 @@ C.........  Allocate and initialize report arrays
         ALLRPT%BYHOUR     = .FALSE.
         ALLRPT%BYLAYER    = .FALSE.
         ALLRPT%BYPLANT    = .FALSE.
-        ALLRPT%BYRCL      = .FALSE.
         ALLRPT%BYSCC      = .FALSE.
         ALLRPT%BYSIC      = .FALSE.
         ALLRPT%BYINTGR    = .FALSE.

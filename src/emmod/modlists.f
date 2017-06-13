@@ -49,7 +49,6 @@
         INTEGER, PUBLIC :: NINVSCC   ! no. unique SCCs in inventory
         INTEGER, PUBLIC :: NINVSCL   ! no. unique left SCCs in inventory
         INTEGER, PUBLIC :: NINVIFIP  ! no. unique country/state/county codes
-        INTEGER, PUBLIC :: NINVVTYP  ! no. unique vehicle types in inventory
         INTEGER, PUBLIC :: NINVMACT  ! no. unique MACTs in inventory
         INTEGER, PUBLIC :: NINVNAICS ! no. unique NAICS in inventory
         INTEGER, PUBLIC :: NINVORIS  ! no. unique ORIS 
@@ -86,9 +85,6 @@
 
 !.........  Country/state/county codes dimensioned by NINVIFIP
         CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: INVCFIP( : )
-
-!.........  Vehicle types dimensioned by NINVVTYP
-        CHARACTER(VTPLEN3), ALLOCATABLE, PUBLIC :: INVVTYP( : )
 
 !.........  MACT codes dimensioned by NINVMACT
         CHARACTER(MACLEN3), ALLOCATABLE, PUBLIC :: INVMACT( : ) ! MACT codes

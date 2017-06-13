@@ -234,96 +234,13 @@ C           temporary file exists - indicating that the packet is being used
             ODEV( 4 ) = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
         END IF
 
-C.........  Allocate index to reporting groups
-c        ALLOCATE( GRPINDX( NSRC ), STAT=IOS )
-c        CALL CHECKMEM( IOS, 'GRPINDX', PROGNAME )
-c        ALLOCATE( GRPSTIDX( NSRC ), STAT=IOS )
-c        CALL CHECKMEM( IOS, 'GRPSTIDX', PROGNAME )
-c        ALLOCATE( GRPCHAR( NSRC ), STAT=IOS )
-c        CALL CHECKMEM( IOS, 'GRPCHAR', PROGNAME )
-c        GRPINDX  = 0  ! array
-
-C.........  Get set up for group reporting...
-c        IF( CATEGORY .EQ. 'POINT' ) THEN
-
-C.............  Count the number of groups in the inventory
-c           PPLT = ' '
-c            NGRP = 0
-c            DO S = 1, NSRC
-c                CPLT = CSOURC( S )( 1:FPLLEN3 )
-c                IF( CPLT .NE. PPLT ) THEN
-c                    NGRP = NGRP + 1
-c                    PPLT = CPLT
-c                END IF
-c                GRPINDX ( S ) = NGRP
-c                GRPSTIDX( S ) = S     ! Needed for loops, but not used to sort
-c            END DO
-
-c        ELSE 
-
-            IF( CATEGORY .EQ. 'AREA' ) THEN
-                SCCBEG = ARBEGL3( 2 )
-                SCCEND = ARENDL3( 2 )
-            ELSE            ! MOBILE
-                SCCBEG = MBBEGL3( 5 )
-                SCCEND = MBENDL3( 5 )
-            END IF
-
-C.............  Build and sort source array for SCC-state grouping
-c            DO S = 1, NSRC
-c                CSTA = CSOURC( S )( 1     :STALEN3 )
-c                TSCC = CSOURC( S )( SCCBEG:SCCEND  )
-
-c                GRPSTIDX( S ) = S  
-c                GRPCHAR ( S ) = CSTA // TSCC
-c            END DO
-
-c            CALL SORTIC( NSRC, GRPSTIDX, GRPCHAR )
-
-C.............  Count the number of state/SCCs in the domain
-c            PSTA = ' '
-c            PSCC = ' '
-c            SCCBEG = STALEN3 + 1
-c            SCCEND = STALEN3 + SCCLEN3
-c            DO S = 1, NSRC
-c                J = GRPSTIDX( S )
-c                CSTA = GRPCHAR( J )( 1     :STALEN3 )
-c                TSCC = GRPCHAR( J )( SCCBEG:SCCEND  )
-c                IF( CSTA .NE. PSTA .OR. TSCC .NE. PSCC ) THEN
-c                    NGRP = NGRP + 1
-c                    PSTA = CSTA
-c                    PSCC = TSCC
-c                END IF
-c                GRPINDX( J ) = NGRP
-c            END DO
-
-c        END IF
-
-C...........  Allocate memory for the number of groups for storing emissions
-c          ALLOCATE( GRPFLAG( NGRP ), STAT=IOS )
-c          CALL CHECKMEM( IOS, 'GRPFLAG', PROGNAME )
-c          ALLOCATE( GRPINEM( NGRP, NVCMULT ), STAT=IOS )
-c          CALL CHECKMEM( IOS, 'GRPINEM', PROGNAME )
-c          ALLOCATE( GRPOUTEM( NGRP, NVCMULT ), STAT=IOS )
-c          CALL CHECKMEM( IOS, 'GRPOUTEM', PROGNAME )
-
-C...........  Initialize
-c          GRPINEM  = 0. ! array
-c          GRPOUTEM = 0. ! array
-c          GRPFLAG  = .FALSE.  ! array
-
-C...........  Allocate local memory
-c          ALLOCATE( BACKOUT( NSRC ), STAT=IOS )
-c          CALL CHECKMEM( IOS, 'BACKOUT', PROGNAME )
-c          ALLOCATE( DATVAL( NSRC,NPPOL ), STAT=IOS )
-c          CALL CHECKMEM( IOS, 'DATVAL', PROGNAME )
-c          ALLOCATE( FACTOR( NSRC ), STAT=IOS )
-c          CALL CHECKMEM( IOS, 'FACTOR', PROGNAME )
-
-C...........  For each pollutant that receives controls, obtain variable
-C             names for control efficiency, rule effectiveness, and, in the
-C             case of AREA sources, rule penetration. These variable names
-C             will be used in reading the inventory file.
+        IF( CATEGORY .EQ. 'AREA' ) THEN
+            SCCBEG = ARBEGL3( 2 )
+            SCCEND = ARENDL3( 2 )
+        ELSE            ! MOBILE
+            SCCBEG = MBBEGL3( 3 )
+            SCCEND = MBENDL3( 3 )
+        END IF
 
         CALL BLDENAMS( CATEGORY, NVCMULT, 6, PNAMMULT, OUTNAMES,
      &                 OUTUNITS, OUTTYPES, OUTDESCS )
@@ -665,8 +582,6 @@ C                     has been applied
      &                         TRIM(CSOURC(S)(MBBEGL3(1):MBENDL3(1))), 
      &                         TRIM(CSOURC(S)(MBBEGL3(2):MBENDL3(2))), 
      &                         TRIM(CSOURC(S)(MBBEGL3(3):MBENDL3(3))), 
-     &                         TRIM(CSOURC(S)(MBBEGL3(4):MBENDL3(4))), 
-     &                         TRIM(CSOURC(S)(MBBEGL3(5):MBENDL3(5))), 
      &                         TRIM(PNAM), 100.*(1.-OLDFAC),
      &                         100.*CEFF(S)*REFF(S)*RPEN(S), REPCTYPE, 
      &                         TRIM( CTLCOMT( CTLINDX ) )

@@ -55,7 +55,7 @@ C.........   MODSOURC contains the source ararys
 C.........   MODTMPRL contains the temporal profile tables
 C.........   MODINFO contains the information about the source category
 
-        USE MODSOURC, ONLY: CSOURC, CSCC, TPFLAG, IRCLAS, IVTYPE
+        USE MODSOURC, ONLY: CSOURC, CSCC, TPFLAG
 
         USE MODTMPRL, ONLY: NMON, NWEK, NHRL, NDOM, METPROF,
      &                      MTHPROF, WEKPROF, DOMPROF, HRLPROF,

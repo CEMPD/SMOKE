@@ -98,8 +98,4 @@
         INTEGER       , ALLOCATABLE, PUBLIC :: EFIDX ( :,: )  ! location of ef in file for each source
         LOGICAL       , ALLOCATABLE, PUBLIC :: USETIME( :,: ) ! true: time period is used
 
-!.........  Variables for mapping MOBILE6-to-SMOKE vehicle types
-        INTEGER, PUBLIC :: NVTYPE                        ! number of SMOKE vehicle types
-        INTEGER, ALLOCATABLE, PUBLIC :: M6VEHMAP( : )    ! SMOKE vehicle type for each MOBILE6 type
-        INTEGER, ALLOCATABLE, PUBLIC :: SMKVEH2EF( :,: ) ! SMOKE vehicle / emission process mapping
         END MODULE MODEMFAC

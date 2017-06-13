@@ -247,11 +247,8 @@ C.........  Set inventory variables to read for specific source categories
             IVARNAMS( 5 ) = 'CIFIP'
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
-            NINVARR = 6
-            IVARNAMS( 3 ) = 'IRCLAS'
-            IVARNAMS( 4 ) = 'IVTYPE'
-            IVARNAMS( 5 ) = 'CVTYPE'
-            IVARNAMS( 6 ) = 'CIFIP'
+            NINVARR = 3
+            IVARNAMS( 3 ) = 'CIFIP'
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
             NINVARR = 5

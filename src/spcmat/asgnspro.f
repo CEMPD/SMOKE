@@ -45,7 +45,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module contains the source arrays
-        USE MODSOURC, ONLY: CSOURC, CSCC, IRCLAS, IVTYPE, CISIC, CMACT
+        USE MODSOURC, ONLY: CSOURC, CSCC, CISIC, CMACT
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP

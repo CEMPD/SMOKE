@@ -44,8 +44,6 @@
         LOGICAL, SAVE :: INTGRFLAG = .FALSE.
 
 !.........  Sorted list of point sources for SMOKE inventory file
-        INTEGER, ALLOCATABLE, PUBLIC:: IRCLAS( : )  !  road class number
-        INTEGER, ALLOCATABLE, PUBLIC:: IVTYPE( : )  !  vehicle type code
         INTEGER, ALLOCATABLE, PUBLIC:: CELLID( : )  !  Cell ID
         INTEGER, POINTER,     PUBLIC:: IPOSCOD( : ) !  positn of pol in INVPCOD
         INTEGER, ALLOCATABLE, PUBLIC:: TZONES( : )  !  time zones
@@ -84,7 +82,6 @@
         CHARACTER(LNKLEN3), ALLOCATABLE, PUBLIC:: CLINK  ( : ) ! link
         CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC ( : ) ! plant desc
         CHARACTER(ALLLEN3), POINTER,     PUBLIC:: CSOURC ( : ) ! concat src
-        CHARACTER(VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE ( : ) ! vehicle type
         CHARACTER(INTLEN3), POINTER,     PUBLIC:: CINTGR ( : ) ! integrate status 
         CHARACTER(ERPLEN3), ALLOCATABLE, PUBLIC:: CERPTYP( : ) ! emission release point type
         CHARACTER(MACLEN3), POINTER,     PUBLIC:: CMACT  ( : ) ! MACT code
@@ -108,8 +105,6 @@
 
 !.........  Unsorted list of point sources for SMOKE inventory file
         INTEGER, POINTER,     PUBLIC:: INDEXA( : ) !  subscript table for SORTIC
-        INTEGER, ALLOCATABLE, PUBLIC:: IRCLASA( : )!  road class number
-        INTEGER, ALLOCATABLE, PUBLIC:: IVTYPEA( : )!  vehicle type code
         INTEGER, POINTER,     PUBLIC:: IPOSCODA(:) !  positn of pol in INVPCOD
         INTEGER, POINTER,     PUBLIC:: ICASCODA(:) !  positn of CAS num. in UNIQCAS
         INTEGER, POINTER,     PUBLIC:: TPFLGA( : ) !  temporal resolution code
@@ -144,7 +139,6 @@
         CHARACTER(LNKLEN3), ALLOCATABLE, PUBLIC:: CLINKA ( : ) ! link
         CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESCA( : ) ! plant desc
         CHARACTER(ALLCAS3), POINTER,     PUBLIC:: CSOURCA( : ) ! concat src
-        CHARACTER(VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPEA( : ) ! vehicle type
 
 !.........  MEDS-gridded inventory related arrays
         INTEGER,              PUBLIC:: NMEDGRD
