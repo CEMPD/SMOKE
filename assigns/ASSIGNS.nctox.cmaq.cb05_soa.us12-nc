@@ -61,6 +61,7 @@
    setenv YEAR         2005      # Base year for year-specific files
 
 ## Reset days if overrides are available
+   setenv IOAPIDIR $SMK_HOME/subsys/ioapi/${BIN}
    if ( $?G_STDATE_ADVANCE ) then
        set date = $G_STDATE
        @ date = $date + $G_STDATE_ADVANCE
