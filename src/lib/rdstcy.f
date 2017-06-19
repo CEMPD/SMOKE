@@ -471,7 +471,7 @@ C.........  Check if input states all have information in state codes file
 C.................  Loop through input states and report missing
                 DO N = 1, NDIMST
                     STA = INSTATE( N ) * 1000
-                    J = FINDC( STA, K, STATCOD )
+                    J = INDEX1( STA, K, STATCOD )
                     IF( J .LE. 0 ) THEN
                         EFLAG = .TRUE.
                         WRITE( MESG,'(A,1X,I3.3,A)' )
@@ -601,10 +601,10 @@ C           by the calling program.
 
             DO J = 1, NDIM
                 CFIP = INCNTYS( J )
-                I = FINDC( CFIP, K, CNTYCOD )
+                I = INDEX1( CFIP, K, CNTYCOD )
 
                 IF( I .LE. 0 ) THEN
-                    WRITE( MESG,94010 ) BLANK10 // 'Code:', FIP
+                    WRITE( MESG,93000 ) BLANK10 // 'Code:' // CFIP
                     CALL M3MSG2( MESG )
                 END IF
 
@@ -634,7 +634,7 @@ C.........  Store state and country populations
                 CSTA( STALEN3+1:FIPLEN3 ) = REPEAT( '0', FIPLEN3-STALEN3+1 )
 
 C.................  Add to country population
-                F = FINDC( CCOU, NCOUNTRY, CTRYCOD )
+                F = INDEX1( CCOU, NCOUNTRY, CTRYCOD )
                 IF ( F .GT. 0 ) THEN
                     CTRYPOPL( F ) = CTRYPOPL( F ) + CNTYPOPL( J )
                 ELSE
@@ -646,7 +646,7 @@ C.................  Add to country population
                 END IF
 
 C.................  Add to state population
-                F = FINDC( CSTA, NSTATE, STATCOD )
+                F = INDEX1( CSTA, NSTATE, STATCOD )
                 IF ( F .GT. 0 ) THEN
                     STATPOPL( F ) = STATPOPL( F ) + CNTYPOPL( J )
                 ELSE
