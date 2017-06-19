@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Date::Simple ();
+use Geo::Coordinates::UTM qw(latlon_to_utm);
 
 require 'aermod.subs';
 require 'aermod_pt.subs';
@@ -135,9 +136,12 @@ while (my $line = <$in_fh>) {
   push @output, $data[$headers{'Lambert-Y'}];
   push @output, $data[$headers{'Longitude'}];
   push @output, $data[$headers{'Latitude'}];
-  push @output, $data[$headers{'UTM_X'}];
-  push @output, $data[$headers{'UTM_Y'}];
-  push @output, $data[$headers{'UTM Zone'}];
+  my ($zone, $utm_x, $utm_y) = latlon_to_utm(23, $data[$headers{'Latitude'}], $data[$headers{'Longitude'}]);
+  my $outzone = $zone;
+  $outzone =~ s/\D//g; # strip latitude band designation from UTM zone
+  push @output, sprintf('%.2f', $utm_x);
+  push @output, sprintf('%.2f', $utm_y);
+  push @output, $outzone;
   push @output, $data[$headers{'X cell'}];
   push @output, $data[$headers{'Y cell'}];
   print $loc_fh join(',', @output) . "\n";

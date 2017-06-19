@@ -186,9 +186,12 @@ for my $state (sort keys %records) {
       push @output, $data[$headers{'Lambert-Y'}];
       push @output, $data[$headers{'Longitude'}];
       push @output, $data[$headers{'Latitude'}];
-      push @output, $data[$headers{'UTM_X'}];
-      push @output, $data[$headers{'UTM_Y'}];
-      push @output, $data[$headers{'UTM Zone'}];
+      my ($zone, $utm_x, $utm_y) = latlon_to_utm(23, $data[$headers{'Latitude'}], $data[$headers{'Longitude'}]);
+      my $outzone = $zone;
+      $outzone =~ s/\D//g; # strip latitude band designation from UTM zone
+      push @output, sprintf('%.2f', $utm_x);
+      push @output, sprintf('%.2f', $utm_y);
+      push @output, $outzone;
       push @output, $data[$headers{'X cell'}];
       push @output, $data[$headers{'Y cell'}];
       print $area_loc_fh join(',', @output) . "\n";
