@@ -38,6 +38,15 @@ while (my $line = <$hour_fh>) {
   
   my @data = split(/,/, $line);
   my $id = shift @data;
+  my $data_year = shift @data;
+  die "PHOUR_OUT year ($data_year) doesn't match YEAR setting ($year)" unless $data_year eq $year;
+  
+  # adjust factors so they average to 1 and sum to the number of factors
+  my $average = sum(@data) / scalar @data;
+  unless ($average == 0) {
+    @data = map { $_ / $average } @data;
+  }
+  
   $id =~ s/^\s+//;
   $id =~ s/\s+$//;
   $hourly{$id} = \@data;
@@ -201,7 +210,6 @@ while (my $line = <$in_fh>) {
     $prof =~ s/^HR0*//;
     die "Missing hourly data for source: $prof" unless exists $hourly{$prof};
     $factor_ref = $hourly{$prof};
-    shift @$factor_ref;  # discard year
 
   } else {
     my $monthly_prof = $data[$headers{'Monthly Prf'}];
