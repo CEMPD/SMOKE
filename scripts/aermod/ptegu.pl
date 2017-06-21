@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Date::Simple ();
+use Date::Simple qw(leap_year);
 use Geo::Coordinates::UTM qw(latlon_to_utm);
 
 require 'aermod.subs';
@@ -12,9 +12,15 @@ require 'aermod_pt.subs';
 my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 
 # check environment variables
-foreach my $envvar (qw(REPORT REP_XWALK PHOUR_OUT 
+foreach my $envvar (qw(REPORT REP_XWALK PHOUR_OUT YEAR 
                        PTPRO_MONTHLY PTPRO_DAILY PTPRO_HOURLY_WINTER PTPRO_HOURLY_SUMMER OUTPUT_DIR)) {
   die "Environment variable '$envvar' must be set" unless $ENV{$envvar};
+}
+
+# adjust for leap years
+my $year = $ENV{'YEAR'};
+if (leap_year($year)) {
+  $days_in_month[2] = 29;
 }
 
 # open report file
@@ -32,6 +38,15 @@ while (my $line = <$hour_fh>) {
   
   my @data = split(/,/, $line);
   my $id = shift @data;
+  my $data_year = shift @data;
+  die "PHOUR_OUT year ($data_year) doesn't match YEAR setting ($year)" unless $data_year eq $year;
+  
+  # adjust factors so they average to 1 and sum to the number of factors
+  my $average = sum(@data) / scalar @data;
+  unless ($average == 0) {
+    @data = map { $_ / $average } @data;
+  }
+  
   $id =~ s/^\s+//;
   $id =~ s/\s+$//;
   $hourly{$id} = \@data;
@@ -191,12 +206,10 @@ while (my $line = <$in_fh>) {
   
   my $factor_ref;
   my $prof = $data[$headers{'Monthly Prf'}];
-  my $year = 2014;
   if ($prof =~ /^HR/) {
     $prof =~ s/^HR0*//;
     die "Missing hourly data for source: $prof" unless exists $hourly{$prof};
     $factor_ref = $hourly{$prof};
-    $year = shift @$factor_ref;
 
   } else {
     my $monthly_prof = $data[$headers{'Monthly Prf'}];

@@ -162,6 +162,7 @@ C...........   Other local variables
         INTEGER          IDX1, IDX2    ! temperature indexes for current cell
         INTEGER          IOS           ! tmp I/O status
         INTEGER          PDATE         ! Julian date (YYYYDDD) for RPP mode
+	INTEGER          DDATE,DTIME   ! local date and time
         INTEGER          JDATE         ! Julian date (YYYYDDD)
         INTEGER          JTIME         ! time (HHMMSS)
         INTEGER          RDATE         ! last reporting Julian date (YYYYDDD)
@@ -438,14 +439,6 @@ C.............  Loop through output time steps
                 END IF
                 TMPEMGRD = 0.  ! array
 
-C.................  Determine weekday index (Monday is 1)
-                DAY = WKDAY( JDATE )
-                IF( DAY .GT. 5 ) THEN
-                    DAYIDX = 1
-                ELSE
-                    DAYIDX = 2
-                END IF
-
 C.................  Determine month
                 CALL DAYMON( JDATE, MONTH, DAYMONTH )
 
@@ -576,6 +569,17 @@ C.....................  Determine hour index based on source's local time
                         HOURIDX = HOURIDX + 24
                     END IF
                     HOURIDX = HOURIDX + 1  ! array index is 1 to 24
+
+C.....................  Determine weekday index (Monday is 1)
+                    DDATE = JDATE
+                    DTIME = JTIME
+                    CALL NEXTIME( DDATE, DTIME, -DAYBEGT( SRC ) ) 
+                    DAY = WKDAY( DDATE )
+                    IF( DAY .GT. 5 ) THEN
+                        DAYIDX = 1   ! weekend (6-7)
+                    ELSE
+                        DAYIDX = 2   ! weekday (1-5)
+                    END IF
 
 C.....................  Determine SCC index for source
                     SCCIDX = MISCC( SRC )

@@ -32,14 +32,14 @@ program convert_phour
 
   allocate(indxh(nrows3d))
   allocate(tmpannfac(nrows3d))
-  allocate(annfac(nrows3d, 365*24))
+  allocate(annfac(nrows3d, 366*24))
   
   if (.not. read3(phour, 'INDXH', allays3, jdate, jtime, indxh)) then
     call m3exit(progname, 0, 0, 'Could not read INDXH from PHOUR', -1)
   end if
 
   tstep = 1
-  do while (jdate / 1000 == year .and. tstep <= 365*24)
+  do while (jdate / 1000 == year)
     if (.not. read3(phour, 'STKFL', allays3, jdate, jtime, tmpannfac)) then
       call m3exit(progname, jdate, jtime, 'Could not read STKFL from PHOUR', -1)
     end if
@@ -53,7 +53,7 @@ program convert_phour
   end do
   
   do srcidx = 1, nrows3d
-    write(phourout, '(I5, ",", I4, 8760(",", F9.6))') indxh(srcidx), year, annfac(srcidx, :)
+    write(phourout, '(I5, ",", I4, 8784(",", E14.7))') indxh(srcidx), year, annfac(srcidx, 1:tstep-1)
   end do
   
   call m3exit(progname, 0, 0, ' ', 0)
