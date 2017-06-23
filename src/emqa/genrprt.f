@@ -388,8 +388,9 @@ C.............................  Gridding factor has normalization by cell area
 !$OMP&                            SHARED( NOUTBINS, NBINS, ISRCB, GFACB,
 !$OMP&                                    POLVAL, SMAT, LFRAC1L, PRMAT,
 !$OMP&                                    ACUMATX, BINPOPDIV, BINDATA,
+!$OMP&                                    CSOURC, MXCHRS, LOC_BEGP, LOC_ENDP, LF,
 !$OMP&                                    J, K, KP, KM, IS, IE, IP, SE, SP, SS ),
-!$OMP&                           PRIVATE( N, BSUM, M, S, F )
+!$OMP&                           PRIVATE( N, BSUM, M, S, F, NC, CHARS )
 
                                 DO N = 1, NOUTBINS
 
@@ -433,8 +434,9 @@ C.............................  Sum non-gridded output records into tmp bins
 !$OMP&                            SHARED( NOUTBINS, NBINS, ISRCB,
 !$OMP&                                    POLVAL, SMAT, LFRAC1L, PRMAT,
 !$OMP&                                    ACUMATX, BINPOPDIV, BINDATA,
+!$OMP&                                    CSOURC, MXCHRS, LOC_BEGP, LOC_ENDP, LF,
 !$OMP&                                    J, K, KP, KM, IS, IE, IP, SE, SP, SS ),
-!$OMP&                           PRIVATE( N, BSUM, M, S )
+!$OMP&                           PRIVATE( N, BSUM, M, S, NC, CHARS )
 
                                 DO N = 1, NOUTBINS
 
@@ -497,8 +499,9 @@ C..........................  Gridding factor has normalization by cell area
 !$OMP&                       DEFAULT( NONE ),
 !$OMP&                        SHARED( NOUTBINS, NBINS, ISRCB, GFACB,
 !$OMP&                                POLVAL, LFRAC1L, PRMAT, ACUMATX,
+!$OMP&                                CSOURC, MXCHRS, LOC_BEGP, LOC_ENDP, LF,
 !$OMP&                                BINDATA, BINPOPDIV, J, KP, KM, ID, IE ),
-!$OMP&                       PRIVATE( N, BSUM, M, S, F )
+!$OMP&                       PRIVATE( N, BSUM, M, S, F, NC, CHARS )
 
                             DO N = 1, NOUTBINS
                                 BSUM = 0.0D0
@@ -534,8 +537,10 @@ C.........................  Sum non-gridded output records into temporary bins
 !$OMP&                       DEFAULT( NONE ),
 !$OMP&                        SHARED( NOUTBINS, NBINS, ISRCB,
 !$OMP&                                POLVAL, LFRAC1L, PRMAT, ACUMATX,
+!$OMP&                                CSOURC, MXCHRS, LOC_BEGP, LOC_ENDP, LF,
 !$OMP&                                BINDATA, BINPOPDIV, J, KP, KM, ID, IE ),
-!$OMP&                       PRIVATE( N, BSUM, M, S )
+!$OMP&                       PRIVATE( N, BSUM, M, S, NC, CHARS )
+
 
                             DO N = 1, NOUTBINS
                                 BSUM = 0.0D0
