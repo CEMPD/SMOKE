@@ -42,7 +42,7 @@ C.........  This module contains the inventory arrays
      &                      XLOCA, YLOCA, XLOC1, YLOC1, XLOC2, YLOC2,
      &                      CELLID, STKHT, STKDM, STKTK, STKVE,
      &                      CMACT, CNAICS, CSRCTYP, CSHAPE, CERPTYP,
-     &                      CSCC, CORIS, CBLRID, CPDESC,
+     &                      CSCC, CORIS, CBLRID, CPDESC, CDPTID, CARRID,
      &                      CNEIUID, CINTGR, CEXTORL, CISIC,
      &                      FUGHGT, FUGWID, FUGLEN, FUGANG
 
@@ -85,11 +85,13 @@ C.........  Source-specific header arrays
      &                                        'Cell                ',
      &                                        'Source type code    ' / )
 
-        CHARACTER(20) :: MBHEADRS( MXMBCHR3+4 ) =
+        CHARACTER(20) :: MBHEADRS( MXMBCHR3+6 ) =
      &                                    ( / 'SMOKE Source ID     ',
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'Link ID             ',
      &                                        'SCC                 ',
+     &                                        'Start loc code      ',
+     &                                        'Finish loc code     ',
      &                                        'Source type code    ',
      &                                        'Integrate flag      ',
      &                                        'Additional extended ' / )
@@ -223,6 +225,26 @@ C.........  Write the I/O API file, one variable at a time
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
+            IF ( .NOT. WRITESET( ENAME, 'STKHT', ALLFILES,
+     &                           0, 0, STKHT ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITESET( ENAME, 'STKDM', ALLFILES,
+     &                           0, 0, STKDM ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITESET( ENAME, 'STKTK', ALLFILES,
+     &                           0, 0, STKTK ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITESET( ENAME, 'STKVE', ALLFILES,
+     &                           0, 0, STKVE ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
         CASE( 'POINT' )
 
             IF ( .NOT. WRITESET( ENAME, 'XLOCA', ALLFILES,
@@ -287,7 +309,7 @@ C.........  Set the number of potential ASCII columns in SDEV output file
             IF ( NONPOINT ) NASCII = NASCII + 2
             IF ( FF10FLAG ) NASCII = NASCII + 1
         CASE( 'MOBILE' )
-            NASCII = MXMBCHR3 + 3
+            NASCII = MXMBCHR3 + 5
         CASE( 'POINT' )
             NASCII = MXPTCHR3 + 12
         END SELECT
@@ -408,17 +430,25 @@ C.........  Get the maximum column width for each of the columns in ASCII file
 
             CASE( 'MOBILE' )
 
+                J = LEN_TRIM( CDPTID( S ) )
+                IF( CDPTID( S ) /= ' ' .AND.
+     &              J > COLWID( M1 ) ) COLWID( M1 ) = J
+
+                J = LEN_TRIM( CARRID( S ) )
+                IF( CARRID( S ) /= ' ' .AND.
+     &              J > COLWID( M2 ) ) COLWID( M2 ) = J
+
                 J = LEN_TRIM( CSRCTYP( S ) )
                 IF( CSRCTYP( S ) /= ' ' .AND.
-     &              J > COLWID( M2 ) ) COLWID( M2 ) = J
+     &              J > COLWID( M3 ) ) COLWID( M3 ) = J
 
                 J = LEN_TRIM( CINTGR( S ) )                 ! could be blank
                 IF( CINTGR( S ) .NE. ' ' .AND.
-     &              J > COLWID( M3 ) ) COLWID( M3 ) = J
+     &              J > COLWID( M4 ) ) COLWID( M4 ) = J
 
                 J = LEN_TRIM( CEXTORL( S ) )                 ! could be blank
                 IF( CEXTORL( S ) .NE. ' ' .AND.
-     &              J > COLWID( M4 ) ) COLWID( M4 ) = J
+     &              J > COLWID( M5 ) ) COLWID( M5 ) = J
 
             CASE( 'POINT' )
 
@@ -615,15 +645,25 @@ C.............  Store remaining source attributes in separate fields (CHARS)
             CASE( 'MOBILE' )
                 IF( LF( M1 ) ) THEN
                     NC = NC + 1
-                    CHARS( NC ) = CSRCTYP( S )
+                    CHARS( NC ) = CDPTID( S )
                 END IF
 
                 IF( LF( M2 ) ) THEN
                     NC = NC + 1
-                    CHARS( NC ) = CINTGR( S )
+                    CHARS( NC ) = CARRID( S )
                 END IF
 
                 IF( LF( M3 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CSRCTYP( S )
+                END IF
+
+                IF( LF( M4 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CINTGR( S )
+                END IF
+
+                IF( LF( M5 ) ) THEN
                     NC = NC + 1
                     CHARS( NC ) = CEXTORL( S )
                 END IF

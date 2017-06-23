@@ -167,6 +167,26 @@ C.............  Allocate specifically based on source category
                     ALLOCATE( YLOC2A( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'YLOC2A', PROGNAME )
                 END IF
+
+                IF( UFLAG .AND. .NOT. ALLOCATED( STKHTA ) ) THEN
+                    ALLOCATE( STKHTA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'STKHTA', PROGNAME )
+                END IF
+
+                IF( UFLAG .AND. .NOT. ALLOCATED( STKDMA ) ) THEN
+                    ALLOCATE( STKDMA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'STKDMA', PROGNAME )
+                END IF
+
+                IF( UFLAG .AND. .NOT. ALLOCATED( STKTKA) ) THEN
+                    ALLOCATE( STKTKA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'STKTKA', PROGNAME )
+                END IF
+
+                IF( UFLAG .AND. .NOT. ALLOCATED( STKVEA ) ) THEN
+                    ALLOCATE( STKVEA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'STKVEA', PROGNAME )
+                END IF
  
             CASE( 'POINT' )
  
@@ -345,6 +365,26 @@ C               may be needed for reading day- and hour-specific data
                 IF( UFLAG .AND. .NOT. ALLOCATED( YLOC2 ) ) THEN
                     ALLOCATE( YLOC2( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'YLOC2', PROGNAME )
+                END IF
+
+                IF( UFLAG .AND. .NOT. ALLOCATED( STKHT ) ) THEN
+                    ALLOCATE( STKHT( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'STKHT', PROGNAME )
+                END IF
+
+                IF( UFLAG .AND. .NOT. ALLOCATED( STKDM ) ) THEN
+                    ALLOCATE( STKDM( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'STKDM', PROGNAME )
+                END IF
+
+                IF( UFLAG .AND. .NOT. ALLOCATED( STKTK ) ) THEN
+                    ALLOCATE( STKTK( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'STKTK', PROGNAME )
+                END IF
+
+                IF( UFLAG .AND. .NOT. ALLOCATED( STKVE ) ) THEN
+                    ALLOCATE( STKVE( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'STKVE', PROGNAME )
                 END IF
  
             CASE( 'POINT' )

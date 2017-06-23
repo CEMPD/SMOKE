@@ -345,6 +345,30 @@ C.........  Define source characteristic variables that are not strings
             VDESCSET( J ) = 'Latitude at end of link'
             J = J + 1
 
+            VNAMESET( J ) = 'STKHT'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'm'
+            VDESCSET( J ) = 'Stack height'
+            J = J + 1
+
+            VNAMESET( J ) = 'STKDM'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'm'
+            VDESCSET( J ) = 'Stack diameter'
+            J = J + 1
+
+            VNAMESET( J ) = 'STKTK'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'deg K'
+            VDESCSET( J ) = 'Stack exhaust temperature'
+            J = J + 1
+
+            VNAMESET( J ) = 'STKVE'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'm/s'
+            VDESCSET( J ) = 'Stack exhaust velocity'
+            J = J + 1
+
         CASE( 'POINT' )
 
             VNAMESET( J ) = 'XLOCA'

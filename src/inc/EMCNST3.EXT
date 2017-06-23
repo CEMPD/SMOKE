@@ -82,8 +82,9 @@ C.........  Input file format constants
         INTEGER, PARAMETER  :: FF10FMT    = 11 ! FF10 format
         INTEGER, PARAMETER  :: MEDSFMT    = 12 ! MEDS format
         INTEGER, PARAMETER  :: NCDFMT     = 13 ! Gridded NetCDF format
+        INTEGER, PARAMETER  :: LNKFMT     = 14 ! Link inventory format
 
-        CHARACTER(12), PARAMETER :: FMTNAMES( 0:13 ) = 
+        CHARACTER(12), PARAMETER :: FMTNAMES( 0:14 ) = 
      &                        ( / 'list        ', 
      &                            'EMS-95      ', 
      &                            'EPS         ', 
@@ -97,7 +98,8 @@ C.........  Input file format constants
      &                            'ORL FIREEMIS',
      &                            'FF10        ',
      &                            'MEDS        ',
-     &                            'GRID        ' / )
+     &                            'GRID        ',
+     &                            'FF10_LINK   ' / )
 
 C.........  Indicator for inventory header fields
         CHARACTER, PARAMETER :: CINVHDR = '#'
@@ -207,7 +209,7 @@ C.........  Variable dimensioning components, independent
         PARAMETER   ( CPRTLEN3 = 3
      &              , NARPPOL3 = 6
      &              , NARVAR3  = 4 
-     &              , NMBVAR3  = 7
+     &              , NMBVAR3  =11 
      &              , NMBPPOL3 = 2   
      &              , NPTPPOL3 = 7
      &              , NPTVAR3  =13

@@ -91,6 +91,7 @@ LIBSRC = \
  rdsetmask.f    rdsicdsc.f      rdsmat.f            \
  rdspdprof.f    rdspdref.f      rdsprof.f           \
  rdsrcgrps.f    rdsref.f        rdsrg.f             \
+ rdsrcff10lnk.f rddataff10lnk.f                     \
  rdsrgdesc.f    rdsrghdr.f      rdstcy.f            \
  rdtref.f       rdtzone.f       rdumat.f            \
  rdxclude.f     readwr3.f       rmcommnt.f          \

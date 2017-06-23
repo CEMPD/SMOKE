@@ -80,6 +80,8 @@
         CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC:: CORIS  ( : ) ! DOE plant ID
         CHARACTER(BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRID ( : ) ! boiler ID
         CHARACTER(LNKLEN3), ALLOCATABLE, PUBLIC:: CLINK  ( : ) ! link
+        CHARACTER(LNKLEN3), ALLOCATABLE, PUBLIC:: CDPTID ( : ) ! link depart id
+        CHARACTER(LNKLEN3), ALLOCATABLE, PUBLIC:: CARRID ( : ) ! link arrival id
         CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC ( : ) ! plant desc
         CHARACTER(ALLLEN3), POINTER,     PUBLIC:: CSOURC ( : ) ! concat src
         CHARACTER(INTLEN3), POINTER,     PUBLIC:: CINTGR ( : ) ! integrate status 

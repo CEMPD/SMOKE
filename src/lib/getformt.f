@@ -114,7 +114,12 @@ C.................  Check if format is provided as a header entry
 
                 L = INDEX( LINE, 'FF10' )
                 IF( L .GT. 0 ) THEN
-                    GETFORMT = FF10FMT
+                    L = INDEX( LINE, 'LINK' )
+                    IF( L .GT. 0 ) THEN
+                        GETFORMT = LNKFMT
+                    ELSE
+                        GETFORMT = FF10FMT
+                    END IF
                     EXIT ! To end read loop
                 END IF
 
@@ -151,7 +156,7 @@ C.................  Check if format is provided as a header entry
                     EXIT   ! To end read loop
 
                 END IF
-               
+
 C.............  Otherwise, this is not a blank line, but also not a 
 C               header line, so we're into the main body of the inventory
             ELSE

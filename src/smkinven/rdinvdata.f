@@ -55,7 +55,7 @@ C...........   This module is the inventory arrays
      &                      YLOC2, STKHT, STKDM, STKTK, STKVE,
      &                      CORIS, CBLRID, CPDESC, CERPTYP,     ! sorted character characteristics
      &                      CMACT, CNAICS, CSRCTYP, CNEIUID, CEXTORL,
-     &                      CINTGR, CISIC, CSHAPE,
+     &                      CINTGR, CISIC, CSHAPE, CDPTID, CARRID,
      &                      FUGHGT, FUGWID, FUGLEN, FUGANG
 
 C.........  This module contains the information about the source category
@@ -186,32 +186,32 @@ C...........   Other local variables
         LOGICAL      :: WFLAG   = .FALSE. ! true: all lat-lons to western hemi
         LOGICAL      :: FIRSTIME = .TRUE. ! true: first time through
 
+        CHARACTER(2)       :: ZONE = ' '  ! UTM zone
+        CHARACTER(FIPLEN3) :: CFIP = ' '  ! fips code
+        CHARACTER(BLRLEN3) :: BLID = ' '  ! boiler ID
+        CHARACTER(ORSLEN3) :: CORS = ' '  ! DOE plant ID
+        CHARACTER(ERPLEN3) :: ERPTYP= ' ' ! emissions release point type
+        CHARACTER(EXTLEN3) :: EXTORL= ' ' ! Extended ORL vars
+        CHARACTER(MACLEN3) :: MACT = ' '  ! MACT code
+        CHARACTER(NEILEN3) :: NEID = ' '  ! NEI unique ID
+        CHARACTER(NAILEN3) :: NAICS = ' ' ! NAICS code
+        CHARACTER(SICLEN3) :: SIC = ' '   ! SIC
+        CHARACTER(SHPLEN3) :: SHAPE = ' ' ! SHAPE_ID
+        CHARACTER(STPLEN3) :: SRCTYP= ' ' ! source type code
+        CHARACTER(SCCLEN3) :: TSCC = ' '  ! tmp SCC
+        CHARACTER(LNKLEN3) :: DPID = ' '  ! tmp link departure location ID
+        CHARACTER(LNKLEN3) :: ARID = ' '  ! tmp link arrival location ID
+
+        CHARACTER(40)       DESC      ! plant description
         CHARACTER(25)       X1        ! x-dir link coord 1
         CHARACTER(25)       Y1        ! y-dir link coord 1
         CHARACTER(25)       X2        ! x-dir link coord 2
         CHARACTER(25)       Y2        ! y-dir link coord 2
-        CHARACTER(2)     :: ZONE = ' ' ! UTM zone
-        CHARACTER(FIPLEN3)  CFIP      ! fips code
-        CHARACTER(RWTLEN3)  CROAD     ! road class no.
-        CHARACTER(LNKLEN3)  CLNK      ! link ID
-
-        CHARACTER(NEILEN3) :: NEID = ' ' ! NEI unique ID
-        CHARACTER(ORSLEN3) :: CORS = ' ' ! DOE plant ID
-        CHARACTER(BLRLEN3) :: BLID = ' ' ! boiler ID
-        CHARACTER(EXTLEN3) :: EXTORL = ' ' ! Extended ORL vars
-        CHARACTER(40)       DESC      ! plant description
-        CHARACTER(ERPLEN3) :: ERPTYP = ' ' ! emissions release point type
         CHARACTER(4)        HT        ! stack height
         CHARACTER(6)        DM        ! stack diameter
         CHARACTER(4)        TK        ! exit temperature
         CHARACTER(10)       FL        ! flow rate
         CHARACTER(9)        VL        ! exit velocity
-        CHARACTER(SICLEN3)  SIC       ! SIC
-        CHARACTER(SHPLEN3)  SHAPE     ! SHAPE_ID
-        CHARACTER(MACLEN3)  MACT      ! MACT code
-        CHARACTER(NAILEN3) :: NAICS = ' '  ! NAICS code
-        CHARACTER(STPLEN3) :: SRCTYP = ' ' ! source type code
-        CHARACTER(SCCLEN3)  TSCC      ! tmp SCC
         CHARACTER           CTYPE     ! coordinate type
         CHARACTER(9)        LAT       ! stack latitude
         CHARACTER(9)        LON       ! stack longitude
@@ -266,9 +266,6 @@ C.........  Set weekly profile interpretation flag...
         WKSET = WTPRFAC
         MESG = 'NOTE: Setting inventory to use full-week '//
      &         'normalizer for weekly profiles'
-
-
-C.........  Write message
         CALL M3MSG2( MESG )
 
 C.........  Get annual data setting from environment
@@ -336,6 +333,10 @@ C.........  Allocate memory for storing inventory data
         END IF
 
         IF( CATEGORY == 'MOBILE' ) THEN
+            ALLOCATE( CDPTID( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CDPTID', PROGNAME )
+            ALLOCATE( CARRID( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CARRID', PROGNAME )
             ALLOCATE( XLOC1( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'XLOC1', PROGNAME )
             ALLOCATE( YLOC1( NSRC ), STAT=IOS )
@@ -344,7 +345,21 @@ C.........  Allocate memory for storing inventory data
             CALL CHECKMEM( IOS, 'XLOC2', PROGNAME )
             ALLOCATE( YLOC2( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'YLOC2', PROGNAME )
+            ALLOCATE( STKHT ( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STKHT', PROGNAME )
+            ALLOCATE( STKDM ( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STKDM', PROGNAME )
+            ALLOCATE( STKTK ( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STKTK', PROGNAME )
+            ALLOCATE( STKVE ( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STKVE', PROGNAME )
 
+            CDPTID = ' '
+            CARRID = ' '
+            STKHT    = 0.    ! array
+            STKDM    = 0.    ! array
+            STKTK    = 0.    ! array
+            STKVE    = 0.    ! array
             XLOC1 = BADVAL3  ! array
             YLOC1 = BADVAL3  ! array
             XLOC2 = BADVAL3  ! array
@@ -610,7 +625,6 @@ C...........  Process line depending on file format and source category
                     CALL RDDATAFF10MB( LINE, READDATA, READPOL, INVYEAR,
      &                        SRCTYP, TSCC, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
                     NPOLPERLN = 1
-                    LNKFLAG = .FALSE.
 
                 CASE( 'POINT' )
                     CALL RDDATAFF10PT( LINE, READDATA, READPOL,
@@ -624,6 +638,12 @@ C...........  Process line depending on file format and source category
                     NPOLPERLN = 1
                     IF( READPOL( 1 ) == 'ACRESBURNED' ) FIREFF10 = .TRUE.  ! fire in FF10 format
                 END SELECT
+
+            CASE( LNKFMT )
+                CALL RDDATAFF10LNK( LINE, READDATA, READPOL, INVYEAR,
+     &                              DPID, ARID, HT, DM, TK, FL, VL,
+     &                              HDRFLAG, EFLAG )
+                NPOLPERLN = 1
 
             CASE( MEDSFMT )
                 SELECT CASE( CATEGORY )
@@ -645,7 +665,6 @@ C...........  Process line depending on file format and source category
                     CALL RDDATAORLMB( LINE, READDATA, READPOL, INVYEAR,
      &                                SRCTYP, EXTORL, HDRFLAG, EFLAG )
                     NPOLPERLN = 1
-                    LNKFLAG = .FALSE.
 
                 CASE( 'POINT' )
                     CALL RDDATAORLPT( LINE, READDATA, READPOL,
@@ -767,8 +786,9 @@ C.............  Check that mobile link info is correct
             END IF
 
 C.............  Check that point source information is correct
-            IF( CATEGORY == 'POINT' .AND.
-     &          CURFMT /= ORLFIREFMT ) THEN
+            IF( ( CATEGORY == 'POINT' .AND. CURFMT /= ORLFIREFMT ) .OR. CURFMT == LNKFMT ) THEN
+
+C.................  Check stack parameters are values or not
                 IF( .NOT. CHKREAL( HT ) .OR.
      &              .NOT. CHKREAL( DM ) .OR.
      &              .NOT. CHKREAL( TK ) .OR.
@@ -834,7 +854,8 @@ C                   great than zero. reset it to a missing value '-9.0' if not.
 
                 END IF
 
-                IF( .NOT. CHKREAL( LAT ) .OR.
+                IF( CURFMT /= LNKFMT ) THEN   ! Skip if link format processing
+                  IF( .NOT. CHKREAL( LAT ) .OR.
      &              .NOT. CHKREAL( LON )      ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: Latitude and/or ' //
@@ -842,19 +863,19 @@ C                   great than zero. reset it to a missing value '-9.0' if not.
      &                     'formatting' // CRLF() // BLANK10 //
      &                     'at line', IREC
                     CALL M3MSG2( MESG )
-                ELSE IF( LAT == ' ' .OR. LON == ' ' ) THEN
+                  ELSE IF( LAT == ' ' .OR. LON == ' ' ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: Latitude and/or ' //
      &                     'longitude are missing at line', IREC
                     CALL M3MSG2( MESG )
+                  END IF
                 END IF
             END IF
 
+C.............  Check ORL specific values
             IF( ( CATEGORY == 'POINT' .AND. CURFMT /= ORLFIREFMT ) .OR. CURFMT == ORLNPFMT ) THEN
 
-C.................  Check ORL specific values
                 IF( CURFMT == ORLFMT ) THEN
-
                     IF( CTYPE /= 'U' .AND. CTYPE /= 'L' ) THEN
                         EFLAG = .TRUE.
                         WRITE( MESG,94010 ) 'ERROR: Invalid ' //
@@ -871,7 +892,6 @@ C.................  Check ORL specific values
      &                         'or invalid UTM zone at line', IREC
                         CALL M3MESG( MESG )
                     END IF
-
                 END IF
 
             END IF
@@ -879,8 +899,7 @@ C.................  Check ORL specific values
 C.................  Check ORL FIRE specific values
             IF( CATEGORY == 'POINT' .AND. CURFMT == ORLFIREFMT ) THEN
 
-                IF( .NOT. CHKREAL( LAT ) .OR.
-     &              .NOT. CHKREAL( LON )      ) THEN
+                IF( .NOT. CHKREAL( LAT ) .OR. .NOT. CHKREAL( LON ) ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: Latitude and/or ' //
      &                     'longitude are not numbers or have bad ' //
@@ -909,7 +928,8 @@ C.................  Check ORL FIRE specific values
 
 C.............  Get current CAS number position and check that it is valid
             IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
-     &          CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT ) THEN
+     &          CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT .OR.
+     &          CURFMT == LNKFMT ) THEN
                 POLNAM = READPOL( 1 )
                 UCASPOS = FINDC( POLNAM, NUNIQCAS, UNIQCAS )
                 IF( UCASPOS < 1 ) THEN
@@ -1021,7 +1041,8 @@ C.................  If format is not ORL or ORL Fires, find code corresponding
 C                   to current pollutant
                 ACTFLAG = .FALSE.
                 IF( CURFMT /= ORLFMT .AND. CURFMT /= ORLNPFMT .AND.
-     &              CURFMT /= ORLFIREFMT .AND. CURFMT /= FF10FMT ) THEN
+     &              CURFMT /= ORLFIREFMT .AND. CURFMT /= FF10FMT .AND.
+     &              CURFMT /= LNKFMT ) THEN
                     POLCOD = INDEX1( POLNAM, MXIDAT, INVDNAM )
 
                     IF( POLCOD == 0 ) THEN
@@ -1206,10 +1227,11 @@ C                   zero or negative
                      EDAY = EANN * YEAR2DAY
                 END IF
 
-C.................  If current format is ORL, check if current CAS number
+C.................  Check if current CAS number
 C                   is split
                 IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
-     &              CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT ) THEN
+     &              CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT .OR.
+     &              CURFMT == LNKFMT ) THEN
                     NPOLPERCAS = UCASNPOL( UCASPOS )
 
 C.....................  Store emissions by CAS number for reporting
@@ -1226,9 +1248,10 @@ C.....................  Store emissions by CAS number for reporting
 
                 DO J = 0, NPOLPERCAS - 1
 
-C.....................  If ORL format, set current pollutant
+C.....................  Set current pollutant
                     IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
-     &                  CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT ) THEN
+     &                  CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT .OR.
+     &                  CURFMT == LNKFMT ) THEN
 
                         SCASPOS = UCASIDX( UCASPOS ) + J
 
@@ -1365,6 +1388,48 @@ C.....................  Convert UTM values to lat-lon
                         WRITE( LAT,'(F9.5)' ) YLOC
                     END IF
                 END IF
+            END IF
+
+C.............  Store link source stack parameters
+            IF( CURFMT == LNKFMT ) THEN
+
+                CDPTID  ( CURSRC ) = ADJUSTL( DPID )
+                CARRID  ( CURSRC ) = ADJUSTL( ARID )
+                STKHT   ( CURSRC ) = STR2REAL( HT )
+                STKDM   ( CURSRC ) = STR2REAL( DM )
+                STKTK   ( CURSRC ) = STR2REAL( TK )
+                STKVE   ( CURSRC ) = STR2REAL( VL )
+
+C.................  Convert units on values
+                IF( STKHT( CURSRC ) < 0. ) STKHT( CURSRC ) = 0.
+                STKHT( CURSRC ) = STKHT( CURSRC ) * FT2M   ! ft to m
+
+                IF( STKDM( CURSRC ) < 0. ) STKDM( CURSRC ) = 0.
+                STKDM( CURSRC ) = STKDM( CURSRC ) * FT2M   ! ft to m
+
+                IF( STKTK( CURSRC ) <= 0. ) THEN
+                    STKTK( CURSRC ) = 0.
+                ELSE
+                    STKTK( CURSRC ) = ( STKTK( CURSRC ) - 32.0 ) *   ! F to K
+     &                                FTOC + CTOK
+                END IF
+
+C.................  Recompute velocity if that option has been set
+                IF( CFLAG .OR. STKVE( CURSRC ) == 0. ) THEN
+                    RBUF = 0.25 * PI *
+     &                     STKDM( CURSRC ) * STKDM( CURSRC )
+
+                    REALFL = STR2REAL( FL )
+                    IF( REALFL < 0. ) REALFL = 0.
+                    REALFL = REALFL * FT2M3                 ! ft^3/s to m^3/s
+
+                    IF( RBUF > 0 ) THEN
+                        STKVE( CURSRC ) = REALFL / RBUF
+                    END IF
+                ELSE
+                    STKVE( CURSRC ) = STKVE( CURSRC ) * FT2M  ! ft/s to m/s
+                END IF
+ 
             END IF
 
             IF( CATEGORY == 'POINT' ) THEN
