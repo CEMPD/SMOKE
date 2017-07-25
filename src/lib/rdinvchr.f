@@ -41,7 +41,7 @@ C...........   This module is the source inventory arrays
      &                      TPFLAG, INVYR, IDIU, IWEK, XLOCA, YLOCA, 
      &                      XLOC1, YLOC1, XLOC2, YLOC2, SPEED, STKHT,
      &                      STKDM, STKTK, STKVE, CSCC, CORIS, CBLRID,
-     &                      CLINK, CPDESC, CSOURC, CMACT,
+     &                      CLINK, CDPTID, CARRID, CPDESC, CSOURC, CMACT,
      &                      CNAICS, CSRCTYP, CERPTYP, CNEIUID, CEXTORL,
      &                      CINTGR, CISIC, FUGHGT, FUGWID, FUGLEN, FUGANG
 
@@ -86,6 +86,8 @@ C...........   Other local variables
         INTEGER          NCOL       ! number of columns in FDEV
         INTEGER          NC         ! number of plant characteristics
 
+        LOGICAL       :: ARRIN   = .FALSE.  ! True: link arrival id in input file
+        LOGICAL       :: DPTIN   = .FALSE.  ! True: link departure id in input file
         LOGICAL       :: BLRIN   = .FALSE.  ! True: boiler is in input file
         LOGICAL       :: CSRFLAG = .FALSE.  ! True: source chars requested
         LOGICAL       :: EFLAG   = .FALSE.  ! True: error
@@ -94,6 +96,8 @@ C...........   Other local variables
         LOGICAL       :: ERPFLAG = .FALSE.  ! True: emission release point type requested
         LOGICAL       :: FIPFLAG = .FALSE.  ! True: geographic code requested
         LOGICAL       :: LNKFLAG = .FALSE.  ! True: link ID requested
+        LOGICAL       :: DPTFLAG = .FALSE.  ! True: link depature ID requested
+        LOGICAL       :: ARRFLAG = .FALSE.  ! True: link arrival ID requested
         LOGICAL       :: EXTIN   = .FALSE.  ! True: additional extended orl vars in input file
         LOGICAL       :: EXTFLAG = .FALSE.  ! True: additional extended orl vars requested
         LOGICAL       :: ITGIN   = .FALSE.  ! True: INTG(integrate) code in input file
@@ -121,6 +125,8 @@ C...........   Other local variables
         CHARACTER(BLRLEN3) :: CBLR = ' '   ! temporary boiler name
         CHARACTER(FIPLEN3) :: CFIP = ' '   ! temporary character FIPs code
         CHARACTER(LNKLEN3) :: CLNK = ' '   ! temporary link ID
+        CHARACTER(LNKLEN3) :: CDPT = ' '   ! temporary link ID
+        CHARACTER(LNKLEN3) :: CARR = ' '   ! temporary link ID
         CHARACTER(NEILEN3) :: CNEI = ' '   ! NEI unique ID
         CHARACTER(EXTLEN3) :: CEXT = ' '   ! Extended ORL vars
         CHARACTER(ORSLEN3) :: CORS = ' '   ! temporary DOE plant ID
@@ -412,6 +418,16 @@ C.............  Allocate memory for the data that are needed from the ASCII file
                     ALLOCATE( CLINK( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CLINK', PROGNAME )
 
+                CASE( 'CDPTID' )
+                    DPTFLAG = .TRUE.
+                    ALLOCATE( CDPTID( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CDPTID', PROGNAME )
+
+                CASE( 'CARRID' )
+                    ARRFLAG = .TRUE.
+                    ALLOCATE( CARRID( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CARRID', PROGNAME )
+
                 CASE( 'CPDESC' )
                     PDSFLAG = .TRUE. 
                     ALLOCATE( CPDESC( NSRC ), STAT=IOS )
@@ -482,6 +498,13 @@ C.............  Read past header
 
 CC............  Read in and store common ASCII source characteristics 
 C               over all source categories
+
+C..............  Determine if link departure/arrival IDs are present
+            J = INDEX1( 'Start loc code', NCOL, HEADER )
+            DPTIN = ( J > 0 )
+
+            J = INDEX1( 'Finish loc code', NCOL, HEADER )
+            ARRIN = ( J > 0 )
 
 C..............  Determine if source type code is present
             J = INDEX1( 'Source type code', NCOL, HEADER )
@@ -660,6 +683,8 @@ C.....................  Read source information from record of inventory file
                     CALL READ_NEXT_VAL( CFIP )
                     CALL READ_NEXT_VAL( CLNK )
                     CALL READ_NEXT_VAL( CS )
+                    IF( STPIN ) CALL READ_NEXT_VAL( CDPT )
+                    IF( STPIN ) CALL READ_NEXT_VAL( CARR )
                     IF( STPIN ) CALL READ_NEXT_VAL( CSTP )
                     IF( ITGIN ) CALL READ_NEXT_VAL( CINT )
                     IF( EXTIN ) CALL READ_NEXT_VAL( CEXT )
@@ -672,6 +697,10 @@ C.....................  Advance to next line
                     IF( SCCFLAG ) CSCC  ( S ) = CS
 
                     IF( LNKFLAG ) CLINK ( S ) = CLNK
+
+                    IF( DPTFLAG .AND. DPTIN ) CDPTID ( S ) = CDPT
+
+                    IF( ARRFLAG .AND. ARRIN ) CARRID ( S ) = CARR
 
                     IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
 
