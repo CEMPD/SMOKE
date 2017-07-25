@@ -73,7 +73,7 @@ C...........   INCLUDES
 C.........  EXTERNAL FUNCTIONS
         CHARACTER(2) CRLF
         INTEGER      ENVINT
-        LOGICAL      ENVYN, CHKINT
+        LOGICAL      ENVYN, CHKREAL
         INTEGER      FIND1
         INTEGER      FINDC
         INTEGER      INDEX1
@@ -88,7 +88,7 @@ C.........  EXTERNAL FUNCTIONS
         LOGICAL      USEEXPGEO
 
         EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1, JULIAN, 
-     &               SECSDIFF, STR2INT, STR2REAL, YEAR4, YR2DAY, CHKINT,
+     &               SECSDIFF, STR2INT, STR2REAL, YEAR4, YR2DAY, CHKREAL,
      &               GETTZONE, ISDSTIME, USEEXPGEO
 
 C.........  SUBROUTINE ARGUMENTS
@@ -359,7 +359,7 @@ C.............  If the file is hourly but the only the daily is to be read, then
 C               behave as if it is a daily file.
 
 C.............  Skip column header line
-            IF( .NOT. CHKINT( SEGMENT( 2 ) ) ) CYCLE 
+            IF( SEGMENT( 14 ) == '' .OR. .NOT. CHKREAL( SEGMENT( 14 ) ) ) CYCLE 
 
 C.............  Set Julian day from MMDDYY8 SAS format
             IF( DAYFLAG ) THEN

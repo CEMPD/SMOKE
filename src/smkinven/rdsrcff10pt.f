@@ -53,7 +53,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        LOGICAL, EXTERNAL :: CHKINT, USEEXPGEO
+        LOGICAL, EXTERNAL :: CHKREAL, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT (IN) :: LINE      ! input line
@@ -138,6 +138,12 @@ C.............  Determine whether processing daily/hourly inventories or not
 
 C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
+
+C......... Return if the first line is a header line
+        IF( SEGMENT( 14 ) == '' .OR. .NOT. CHKREAL( SEGMENT( 14 ) ) ) THEN
+            HDRFLAG = .TRUE.
+            RETURN
+        END IF
 
 C.........  Use the file format definition to parse the line into
 C           the various data fields

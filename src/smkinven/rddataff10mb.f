@@ -54,9 +54,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FINDC
         INTEGER         STR2INT
         REAL            YR2DAY, STR2REAL
-        LOGICAL         CHKINT
+        LOGICAL         CHKREAL
 
-        EXTERNAL    CRLF, FINDC, STR2INT, STR2REAL, CHKINT, YR2DAY,
+        EXTERNAL    CRLF, FINDC, STR2INT, STR2REAL, CHKREAL, YR2DAY,
      &              INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
@@ -132,7 +132,7 @@ C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
 
 C......... Return if the first line is a header line
-        IF( .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
+        IF( SEGMENT( 10 ) == '' .OR. .NOT. CHKREAL( SEGMENT( 10 ) ) ) THEN
             HDRFLAG = .TRUE.
             RETURN
         END IF 

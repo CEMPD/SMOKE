@@ -52,7 +52,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        LOGICAL, EXTERNAL :: CHKINT, USEEXPGEO
+        LOGICAL, EXTERNAL :: CHKREAL, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT (IN) :: LINE      ! input line
@@ -143,7 +143,7 @@ C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
 
 C......... Return if the first line is a header line
-        IF( .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
+        IF( SEGMENT( 9 ) == '' .OR. .NOT. CHKREAL( SEGMENT( 9 ) ) ) THEN
             HDRFLAG = .TRUE.
             RETURN
         END IF

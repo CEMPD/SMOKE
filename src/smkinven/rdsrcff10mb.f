@@ -50,10 +50,10 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         FINDC, INDEX1
-        LOGICAL         CHKINT
+        LOGICAL         CHKREAL
         LOGICAL         USEEXPGEO
         
-        EXTERNAL   CRLF, FINDC, INDEX1, CHKINT, USEEXPGEO
+        EXTERNAL   CRLF, FINDC, INDEX1, CHKREAL, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT (IN) :: LINE      ! input line
@@ -117,7 +117,7 @@ C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
 
 C......... Return if the first line is a header line
-        IF( .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
+        IF( SEGMENT( 10 ) == '' .OR. .NOT. CHKREAL( SEGMENT( 10 ) ) ) THEN
             HDRFLAG = .TRUE.
             RETURN
         END IF

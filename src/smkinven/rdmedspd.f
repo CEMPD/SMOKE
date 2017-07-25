@@ -68,7 +68,7 @@ C...........   INCLUDES
 C.........  EXTERNAL FUNCTIONS
         CHARACTER(2) CRLF
         INTEGER      ENVINT
-        LOGICAL      ENVYN, CHKINT
+        LOGICAL      ENVYN
         INTEGER      FIND1
         INTEGER      FINDC
         INTEGER      INDEX1
@@ -82,7 +82,7 @@ C.........  EXTERNAL FUNCTIONS
         LOGICAL      ISDSTIME
 
         EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1, JULIAN, 
-     &               SECSDIFF, STR2INT, STR2REAL, YEAR4, YR2DAY, CHKINT,
+     &               SECSDIFF, STR2INT, STR2REAL, YEAR4, YR2DAY,
      &               GETTZONE, ISDSTIME
 
 C.........  SUBROUTINE ARGUMENTS
