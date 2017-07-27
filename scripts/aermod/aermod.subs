@@ -17,10 +17,10 @@ sub read_profiles {
     
     my @factors = @data[1..$num_factors];
     
-    # adjust factors so they average to 1 and sum to the number of factors
-    my $average = sum(@factors) / scalar @factors;
-    unless ($average == 0) {
-      @factors = map { $_ / $average } @factors;
+    # adjust factors so they sum to 1
+    my $sum = sum(@factors);
+    unless ($sum == 0) {
+      @factors = map { $_ / $sum } @factors;
     }
 
     my $prof_id = $data[0];
@@ -50,10 +50,10 @@ sub read_dom_profiles {
     my $num_days = $days_ref->[$month_id];
     my @factors = @data[2..$num_days + 1];
     
-    # adjust factors so they average to 1 and sum to the number of factors
-    my $average = sum(@factors) / scalar @factors;
-    unless ($average == 0) {
-      @factors = map { $_ / $average } @factors;
+    # adjust factors so they sum to 1
+    my $sum = sum(@factors);
+    unless ($sum == 0) {
+      @factors = map { $_ / $sum } @factors;
     }
     
     my $prof_id = $data[0];

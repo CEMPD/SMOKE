@@ -327,7 +327,7 @@ for my $region (sort keys %county_emissions) {
         push @output, $month;
         push @output, $day_of_month;
         push @output, $hour;
-        push @output, sprintf('%.4f', 8760 * $hourly_emissions / $total_emissions);
+        push @output, sprintf('%.8f', 8760 * $hourly_emissions / $total_emissions);
         print $tmp_fh join(',', @output) . "\n";
         
         $index++;

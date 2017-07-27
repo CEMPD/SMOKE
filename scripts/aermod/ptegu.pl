@@ -41,10 +41,10 @@ while (my $line = <$hour_fh>) {
   my $data_year = shift @data;
   die "PHOUR_OUT year ($data_year) doesn't match YEAR setting ($year)" unless $data_year eq $year;
   
-  # adjust factors so they average to 1 and sum to the number of factors
-  my $average = sum(@data) / scalar @data;
-  unless ($average == 0) {
-    @data = map { $_ / $average } @data;
+  # adjust factors so they sum to 1
+  my $sum = sum(@data);
+  unless ($sum == 0) {
+    @data = map { $_ / $sum } @data;
   }
   
   $id =~ s/^\s+//;

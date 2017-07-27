@@ -300,7 +300,7 @@ for my $source_id (sort keys %gridded_emissions) {
   push @output, $cell;
   push @output, "${grid_prefix}${resolution_id}";
   push @output, 'MONTH';
-  push @output, map { sprintf('%.4f', $_) } @{ $month_of_year_factors{$cell_assignment}{'all'} };
+  push @output, map { sprintf('%.8f', $_) } @{ $month_of_year_factors{$cell_assignment}{'all'} };
   print $tmp_fh join(',', @output) . "\n";
 }
 
