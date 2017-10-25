@@ -130,6 +130,15 @@ sub get_factors {
       my $i = 0;
       @days = map { [$_, $i++] } qw/Mon Tue Wed Thu Fri Sat Sun/;
     }
+    
+    # calculate weighted average number of days per month
+    my @days_in_month = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+    my $month = 0;
+    my $avg_days = 0;
+    foreach my $month_factor (@monthly_factors) {
+      $avg_days += $month_factor * $days_in_month[$month];
+      $month++;
+    }
 
     foreach my $day_ref (@days) {
       my ($day, $index) = @$day_ref;
@@ -139,7 +148,7 @@ sub get_factors {
       my @daily_factors = @{$daily_ref->{$prof}};
 
       foreach my $month_factor (@monthly_factors) {
-        push @factors, map { $_ * $weekly_factors[$index] * $month_factor } @daily_factors;
+        push @factors, map { $_ * $weekly_factors[$index] * $month_factor / $avg_days } @daily_factors;
       }
     }
   }
