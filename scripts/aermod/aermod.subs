@@ -148,7 +148,7 @@ sub get_factors {
       my @daily_factors = @{$daily_ref->{$prof}};
 
       foreach my $month_factor (@monthly_factors) {
-        push @factors, map { $_ * $weekly_factors[$index] * $month_factor / $avg_days } @daily_factors;
+        push @factors, map { $_ * $weekly_factors[$index] * 7 * $month_factor / $avg_days } @daily_factors;
       }
     }
   }
