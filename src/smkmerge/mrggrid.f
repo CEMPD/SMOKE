@@ -112,6 +112,8 @@ C...........   Input file descriptors
         CHARACTER(16), ALLOCATABLE :: VUNITA( :,: ) ! variable units
         CHARACTER(80), ALLOCATABLE :: VDESCA( :,: ) ! var descrip
         REAL,          ALLOCATABLE :: ADJ_FACTOR( : ) ! adjustment factors
+        REAL,          ALLOCATABLE :: TA( : )         ! ambient temperatures
+        REAL,          ALLOCATABLE :: WS( : )         ! wind speed
         CHARACTER(32), ALLOCATABLE :: ADJ_LFN( : )    ! Species name
         CHARACTER(16), ALLOCATABLE :: ADJ_SPC( : )    ! logicalFileName
         CHARACTER(49), ALLOCATABLE :: ADJ_LFNSPC( : ) ! concatenated {logicalFileName}_{Species}
@@ -148,7 +150,7 @@ C...........   Logical names and unit numbers
         CHARACTER(16) PNAME           ! Point source input file name 
 
 C...........   Other local variables 
-        INTEGER       C, DD, F, I, J, K, L, L1, L2, N, NL, V, T ! pointers and counters
+        INTEGER       C, DD, F, I, J, K, L, L1, L2, N, NL, V, S, T ! pointers and counters
 
         INTEGER       ADJ                        ! tmp adjustment factor main index
         INTEGER       ADJ1                       ! tmp adjustment factor index 1
@@ -190,7 +192,7 @@ C...........   Other local variables
         INTEGER       VLB                        ! VGLVS3D lower bound 
 
         REAL       :: FACS = 1.0                 ! adjustment factor 
-        REAL          RATIO                      ! ratio 
+        REAL          RATIO, TEMPVAL,TMPVAL      ! ratio and temp val
 
         CHARACTER(16)  FDESC                     ! tmp file description
         CHARACTER(16)  MRGFDESC                  ! name for file description EV
@@ -200,6 +202,7 @@ C...........   Other local variables
         CHARACTER(32)  LNAM                      ! tmp previous file name
         CHARACTER(16)  VNM                       ! tmp variable name
         CHARACTER(16)  TVNM                      ! tmp2 variable name
+        CHARACTER(16)  TVARNAME, WSPDNAME        ! temp variable name
         CHARACTER(49)  LFNSPC                    ! tmp spec and file name
         CHARACTER(66)  LFNSPCTAG                 ! tmp speC, file, and tag name
         CHARACTER(256) LINE                      ! input buffer
@@ -218,7 +221,8 @@ C...........   Other local variables
         LOGICAL    :: FIRST3D = .TRUE.    ! true: first 3-d file not yet input
         LOGICAL    :: LFLAG   = .FALSE.   ! true  if 3-d file input
         LOGICAL    :: TFLAG   = .FALSE.   ! true: grid didn't match
-        LOGICAL       MRGDIFF             ! true: merge files from different days
+        LOGICAL    :: MRGDIFF = .FALSE.   ! true: merge files from different days
+        LOGICAL    :: METFLAG = .FALSE.   ! true: merge files from different days
 
         CHARACTER(16) :: PROGNAME = 'MRGGRID' ! program name
 C***********************************************************************
@@ -235,6 +239,21 @@ C.........  Read names of input files and open files
 
         IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
      &                      'FILELIST', PROGNAME   )
+
+C.........  Get the name of the temperature variable.
+        MESG = 'Apply meteorologicla adjustments while merging'
+        METFLAG = ENVYN( 'MRG_MET_ADJ_YN', MESG, .FALSE., IOS )
+        IF( METFLAG ) THEN
+            MESG = 'Specifies ambient temperature variable name for ' //
+     &             'meteorological adjustment'
+            CALL ENVSTR( 'TEMP_VAR', MESG, 'TEMP2',TVARNAME, IOS )
+            CALL UPCASE( TVARNAME )
+
+            MESG = 'Specifies wind speed variable name for ' //
+     &             'meteorological adjustmen for NH3 emissions'
+            CALL ENVSTR( 'WSPD_VAR', MESG, 'WSPD10',WSPDNAME, IOS )
+            CALL UPCASE( WSPDNAME )
+        END IF
 
 C.........  Get environment variables
         MESG = 'Merge files from different days into single file'
@@ -916,6 +935,12 @@ C.........  Allocate memory for the number of grid cells and layers
         CALL CHECKMEM( IOS, 'E2D', PROGNAME )
         ALLOCATE( EOUT( NGRID, NLAYS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EOUT', PROGNAME )
+        ALLOCATE( TA( NGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TA', PROGNAME )
+        ALLOCATE( WS( NGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'WS', PROGNAME )
+        TA = 0.0
+        WS = 0.0
 
 C.........  Prompt for and open output file
         ONAME = PROMPTMFILE( 
@@ -990,6 +1015,14 @@ C.........  Loop through hours
         JDATE = SDATE
         JTIME = STIME
         FACS  = 1.0
+
+        IF( METFLAG ) THEN
+            IF( .NOT. OPEN3( 'METFILE', FSREAD3, PROGNAME ) ) THEN
+                MESG = 'Could not open meteorology file '
+                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+            END IF
+        END IF
+
         DO T = 1, NSTEPS
 
 C.............  Loop through species
@@ -1017,10 +1050,9 @@ C.....................  Set read date
                     END IF
 
 C.....................  Set tmp variables
+                    NL     = NLAYSA( F )   ! no of layers
                     NAM    = FNAME ( F )   ! input file name
                     IO_NAM = IONAME( F )   ! retrieve 16 char ioapi input file name
-
-                    NL  = NLAYSA( F )       ! number of layers
 
 C.....................  Search adjustment factor for the current file
                     LFNSPC = TRIM( NAM ) // '~' // TRIM( VNM )
@@ -1058,10 +1090,10 @@ C.....................  If file has species, read (do this for all files)...
                         ICNTFIL = ALLFILES
                         IF( NFILES( F ) .EQ. 1 ) ICNTFIL = 1   ! send ALLFILES if more than one file, send 1 otherwise
 
-C.........................  If 2-d input file, read, and add
-                        IF( NL .EQ. 1 ) THEN
+C.........................  Read, and add
+                        DO K = 1, NL
                             IF( .NOT. 
-     &                           READSET( IO_NAM, TVNM, 1, ICNTFIL,
+     &                          READSET( IO_NAM, TVNM, K, ICNTFIL,
      &                                    RDATE, JTIME, E2D     )) THEN
 
                                 MESG = 'Could not read "' // VNM //
@@ -1087,47 +1119,53 @@ C.............................  Overall summary by species
      &                                          SUM( E2D(1:NGRID)*FACS )
                             END IF
 
-                            EOUT( 1:NGRID,1 ) = EOUT( 1:NGRID,1 ) + 
+C.............................  Apply the met adjustment for mobile, NH3 and RWC sources
+                            IF( METFLAG ) THEN
+
+C.............................  Read current meteorology file
+                                IF( .NOT. READ3( 'METFILE', TVARNAME, 1,
+     &                              RDATE, JTIME, TA ) ) THEN
+                                    MESG = 'Could not read ' // TRIM( TVARNAME ) //
+     &                                  ' from METFILE '
+                                    CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
+                                END IF
+                                
+                                IF( IO_NAM == 'AGNH3' ) THEN
+                                  IF( .NOT. READ3( 'METFILE', WSPDNAME, 1,
+     &                                RDATE, JTIME, WS ) ) THEN
+                                      MESG = 'Could not read WSPD10 wind speed variable' //
+     &                                    ' from METFILE'
+                                      CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
+                                  END IF
+                                END IF
+
+                                DO S = 1, NGRID
+                        tmpval = E2D(S)
+                        dd = 36 +54*NCOLS
+                                    RATIO = 1.0
+                                    IF( IO_NAM == 'RWC' ) THEN
+                                        TEMPVAL = 1.8 * TA( S ) - 459.67  ! K --> F
+                                        RATIO = ( 42.12 - 0.79 * TEMPVAL ) / 2.62
+                                        IF( TEMPVAL > 50.0 ) E2D( S ) = 0.0
+
+                                    ELSE IF( IO_NAM == 'AGNH3' ) THEN
+                                        TEMPVAL = TA( S ) - 273.15
+                                        RATIO = ( 2.36**(TEMPVAL/10.) * WS(S) ) / 14.54811445 
+                                
+                                    END IF
+
+                                    E2D( S ) = RATIO * E2D( S )
+                if(dd==S .and. VNM=='NH3' .and. T<25) write(*,'(a,2i8,3f10.5i)')IO_NAM,RDATE,JTIME,ratio,tmpval,e2d(s)
+
+                                END DO
+
+                            END IF
+
+                            EOUT( 1:NGRID,K ) = EOUT( 1:NGRID,K ) + 
      &                                          E2D( 1:NGRID) * FACS
 
-C.........................  If 3-d input file, allocate memory, read, and add
-                        ELSE
+                        END DO
 
-                            DO K = 1, NL
-                                IF( .NOT. 
-     &                               READSET( IO_NAM,TVNM,K,ICNTFIL,
-     &                                        RDATE, JTIME, E2D  )) THEN
-
-                                    MESG = 'Could not read "' // VNM //
-     &                                     '" from file "' //
-     &                                   NAM( 1:LEN_TRIM( NAM ) )// '".'
-                                    CALL M3EXIT( PROGNAME, RDATE, JTIME,
-     &                                           MESG, 2 )
-                                END IF
-
-C.................................  Logical file specific summary
-                                IF( ADJ > 0 ) THEN
-
-                                  BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ )+ 
-     &                                              SUM( E2D(1:NGRID) )
-
-                                  AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ )+ 
-     &                                            SUM(E2D(1:NGRID)*FACS)
-
-C.................................  Overall summary by species
-                                  BEFORE_SPC( V )  = BEFORE_SPC( V ) + 
-     &                                           SUM( E2D(1:NGRID) )
-
-                                  AFTER_SPC ( V ) = AFTER_SPC ( V ) + 
-     &                                           SUM(E2D(1:NGRID)*FACS)
-
-                                END IF
-
-                                EOUT( 1:NGRID,K )= EOUT( 1:NGRID,K ) + 
-     &                                             E2D( 1:NGRID )*FACS
-                            END DO
-
-                        END IF  ! if 2-d or 3-d
                     END IF      ! if pollutant is in this file
 
 C.....................  Build report line if needed
