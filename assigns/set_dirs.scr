@@ -75,4 +75,5 @@ endif
    setenv TM_SRC   $SMKROOT/src/temporal       # source code for temporal  
    setenv UT_SRC   $SMKROOT/src/emutil         # source code for utility prgms
    setenv MV_SRC   $SMKROOT/src/movesmrg       # source code for MOVES merge prgm
+   setenv LK_SRC   $SMKROOT/src/lnkmerge       # source code for link inv merge prgm
    setenv LOGS     $STATIC/logs                # log files

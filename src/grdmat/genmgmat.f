@@ -312,7 +312,7 @@ C.............  Count and store the number of county and links
 C.............  storing st/cy/ct index within a domain
             F = FINDC( CFIP, NSRGFIPS, SRGFIPS )
 
-            IF ( F .LE. 0 ) THEN
+            IF ( F .LE. 0 .AND. CLNK == ' ' ) THEN
 
                 IF( CFIP .NE. LFIP ) THEN
                     NNOSRG = NNOSRG + 1

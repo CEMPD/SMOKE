@@ -6,9 +6,15 @@
 #
 ################################################################################
 
-if ( $RUN_SMKMERGE == 'Y' || $RUN_MOVESMRG == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
+if ( $RUN_SMKMERGE == 'Y' || $RUN_MOVESMRG == 'Y' || $RUN_LNKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
 
    if ( $MRG_GRDOUT_YN == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
+
+      if ( $SMK_SOURCE == 'M' ) then
+         setenv MOUT     $M_OUT/mgts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+         setenv MGTS_L   $M_OUT/mgts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+         setenv MGTS_S   $M_OUT/mgts_s.$SRCABBR.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+      endif 
 
       if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
 
@@ -40,6 +46,8 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_MOVESMRG == 'Y' || $RUN_SMK2EMIS == 'Y' || $RU
 
 #  Additonal settings for Mrggid to merge across multiple sectors
         if( $RUN_MRGGRID == Y ) then
+            setenv AGNH3    $SMKDAT/run_$ESCEN/output/$SPC/b3gts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
+            setenv RWC      $SMKDAT/run_$ESCEN/output/$SPC/agts_l.area.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
             setenv AGTS_L   $SMKDAT/run_$ESCEN/output/$SPC/agts_l.area.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
             setenv NGTS_L   $SMKDAT/run_$ESCEN/output/$SPC/agts_l.nonroad.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
             setenv BGTS_L   $SMKDAT/run_$ESCEN/output/$SPC/b3gts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf

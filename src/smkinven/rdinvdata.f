@@ -164,10 +164,8 @@ C...........   Other local variables
         REAL            POLANN      !  annual emissions for current pollutant
         REAL            RBUF        !  tmp real value
         REAL            REALFL      !  tmp exit flow rate
-        REAL            XLOCA1      !  x-dir link coord 1
-        REAL            YLOCA1      !  y-dir link coord 1
-        REAL            XLOCA2      !  x-dir link coord 2
-        REAL            YLOCA2      !  y-dir link coord 2
+        REAL            XLOCA1      !  x-dir link coord
+        REAL            YLOCA1      !  y-dir link coord
         REAL            XLOC        !  tmp x coord
         REAL            YLOC        !  tmp y coord
         REAL            FUGSCR
@@ -215,6 +213,10 @@ C...........   Other local variables
         CHARACTER           CTYPE     ! coordinate type
         CHARACTER(9)        LAT       ! stack latitude
         CHARACTER(9)        LON       ! stack longitude
+        CHARACTER(15)       DPLAT     ! link departure latitude 
+        CHARACTER(15)       DPLON     ! link departure longitude 
+        CHARACTER(15)       ARLAT     ! link arrival latitude 
+        CHARACTER(15)       ARLON     ! link arrival longitude 
         CHARACTER(16)       FUGHT     ! fugitive emissions release height
         CHARACTER(16)       FUGWD     !  " width  (Y dim)
         CHARACTER(16)       FUGLN     !  " length (X dim)
@@ -641,8 +643,8 @@ C...........  Process line depending on file format and source category
 
             CASE( LNKFMT )
                 CALL RDDATAFF10LNK( LINE, READDATA, READPOL, INVYEAR,
-     &                              DPID, ARID, HT, DM, TK, FL, VL,
-     &                              HDRFLAG, EFLAG )
+     &                              DPID, DPLAT, DPLON, ARID, ARLAT, ARLON,
+     &                              HT, DM, TK, FL, VL, HDRFLAG, EFLAG )
                 NPOLPERLN = 1
 
             CASE( MEDSFMT )
@@ -924,6 +926,19 @@ C.................  Check ORL FIRE specific values
                     MACT = 'UNKNWN'
                 END IF
 
+            END IF
+
+C.................  Check Link locations values
+            IF( CATEGORY == 'MOBILE' .AND. CURFMT == LNKFMT ) THEN
+                IF( .NOT. CHKREAL( DPLAT ) .OR. .NOT. CHKREAL( DPLON ) .OR.
+     &              .NOT. CHKREAL( ARLAT ) .OR. .NOT. CHKREAL( ARLON ) ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Latitude and/or ' //
+     &                     'longitude are not numbers or have bad ' //
+     &                     'formatting' // CRLF() // BLANK10 //
+     &                     'at line', IREC
+                    CALL M3MSG2( MESG )
+                END IF
             END IF
 
 C.............  Get current CAS number position and check that it is valid
@@ -1395,6 +1410,10 @@ C.............  Store link source stack parameters
 
                 CDPTID  ( CURSRC ) = ADJUSTL( DPID )
                 CARRID  ( CURSRC ) = ADJUSTL( ARID )
+                XLOC1   ( CURSRC ) = STR2REAL( DPLON )
+                YLOC1   ( CURSRC ) = STR2REAL( DPLAT )
+                XLOC2   ( CURSRC ) = STR2REAL( ARLON )
+                YLOC2   ( CURSRC ) = STR2REAL( ARLAT )
                 STKHT   ( CURSRC ) = STR2REAL( HT )
                 STKDM   ( CURSRC ) = STR2REAL( DM )
                 STKTK   ( CURSRC ) = STR2REAL( TK )

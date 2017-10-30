@@ -392,6 +392,7 @@ C.............  Set output logical file name
      &             CRLF()// BLANK10// TRIM( LINE )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
+         print*,CVAR,NCOLS,NROWS,'checking col/row'
 
             IF( .NOT. READNCVAR( 'TMPFILE', CVAR, NCOLS, NROWS, EMIS ) ) THEN
                 EFLAG = .TRUE.

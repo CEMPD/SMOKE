@@ -542,7 +542,7 @@ C               look it up and get indidies
                 IF( J .LE. 0 ) THEN
                     WRITE( MESG,93000 ) 'INTERNAL ERROR: Could not '//
      &                     'find FIPS ' // CFIP // ' in internal list.'
-                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
                 SS = STARTSRC( J )

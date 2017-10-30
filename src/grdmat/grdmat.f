@@ -318,11 +318,11 @@ C.............  Check for link-based sources when using a variable grid
             END IF
 
 C.............  If all sources are link-based, don't need surrogates (needs to be tested)
-c            IF( MINVAL( XLOC1 ) .GT. AMISS3 ) THEN
-c                SRGFLAG = .FALSE.
-c            ELSE
-               SRGFLAG = .TRUE.
-c            END IF
+            IF( MINVAL( XLOC1 ) .GT. AMISS3 ) THEN
+                SRGFLAG = .FALSE.
+            ELSE
+                SRGFLAG = .TRUE.
+            END IF
 
         CASE( 'POINT' )
 
@@ -642,11 +642,11 @@ C.............  Convert mobile source coordinates from lat-lon to output grid
      &                     XCENT, YCENT, XLOC1, YLOC1 )
             CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
      &                     XCENT, YCENT, XLOC2, YLOC2 )
-       
 C.............  Determine sizes for allocating mobile gridding matrix 
             CALL SIZGMAT( CATEGORY, NSRC, VFLAG, DEFSRGID, FSGFLAG,
      &                    MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU)
        
+          print*,GRDNM,NSRC,NMATX,MXCCL,'chekc'
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
             CALL CHECKMEM( IOS, 'GMAT', PROGNAME )

@@ -225,7 +225,7 @@ endif
 
 ## For Smkmerge output I/O API files
 #
-if ( $RUN_SMKMERGE == 'Y' || $RUN_MOVESMRG == 'Y' && $RUN_PART4 == 'Y' ) then
+if ( $RUN_SMKMERGE == 'Y' || $RUN_MOVESMRG == 'Y' && $RUN_PART4 == 'Y' || $RUN_LNKMERGE == 'Y' && $RUN_PART4 == 'Y'  ) then
 
    if ( $MRG_GRDOUT_YN == 'Y' ) then
 

@@ -53,7 +53,9 @@ C.........  Program settings
 C.........  Meteorology information
         CHARACTER(IOVLEN3), PUBLIC :: TVARNAME  ! name of temperature variable to read
         CHARACTER(IOVLEN3), PUBLIC :: DATANAME  ! name of activity data name from Temporal
-        CHARACTER(16), PUBLIC :: METNAME        ! logical name for meteorology file
+        CHARACTER(16), PUBLIC :: METNAME        ! logical name for METCRO meteorology file
+        CHARACTER(16), PUBLIC :: MGRNAME        ! logical name for GRDCRO meteorology file
+
 
 C.........  Average min and max temperatures
         REAL, ALLOCATABLE, PUBLIC :: AVGMIN( :,:,: )  ! minimum monthly temperature for each county

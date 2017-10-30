@@ -392,7 +392,7 @@ C.............  Loop over sources per each assigned surrogate
                 SSC  = ASRGID( S )
                 IF( CATEGORY .EQ. 'AREA' ) CELLSRC = CELLID( S )
                 IF( CATEGORY .EQ. 'MOBILE' ) CLNK = CLINK( S )
-
+                
                 IF( SSC .NE. TGTSRG ) CYCLE
             
 C.................  Determine if x/y location is available
@@ -519,21 +519,6 @@ C.........  Abort if error
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.........  Determine maximum number of sources per cell
-C.........  And determine the total number of source-cell intersections
-        MXSCEL = NX( 1 )
-        NMATX  = NX( 1 )          
-        DO C = 2, NGRID
-            
-            J = NX( C )
-            IF( J .GT. MXSCEL ) THEN
-                MXSCEL = J
-            END IF
-
-            NMATX = NMATX + J
-
-        END DO        ! End loop on cells
-
 C..........................................................
 C.........  Estimating ungridding matrices sizes ..........
 C..........................................................
@@ -607,6 +592,25 @@ C.............  Make sure that there was enough storage
                     CYCLE
                 END IF
 
+C.................  Loop through the cells for this source and increment the number
+C                   of sources per cell.
+                CCNT = 0
+                DO N = 1, NCEL
+
+                    IF( AFAC( N ) .GT. 0.0 ) THEN
+                        C = ACEL( N )
+                        NX( C ) = NX( C ) + 1
+                        CCNT = CCNT + 1
+                    END IF
+
+                END DO    ! End loop on cells for this source
+
+C.................  Update the maximum number of cells per source
+                IF( CCNT .GT. MXCSRC ) MXCSRC = CCNT
+
+C.................  Update the maximum number of cells per county or link
+                IF( NCEL .GT. MXCCL ) MXCCL = NCEL
+
             END IF
 C      
 C.............  Count all county/cell intersections for all sources.  This
@@ -618,6 +622,21 @@ C               is needed for ungridding matrix.
             END DO    ! End loop on cells for this source
 
         END DO        ! End loop on sources
+
+C.........  Determine maximum number of sources per cell
+C.........  And determine the total number of source-cell intersections
+        MXSCEL = NX( 1 )
+        NMATX  = NX( 1 )
+        DO C = 2, NGRID
+
+            J = NX( C )
+            IF( J .GT. MXSCEL ) THEN
+                MXSCEL = J
+            END IF
+
+            NMATX = NMATX + J
+
+        END DO        ! End loop on cells
 
         RETURN
 

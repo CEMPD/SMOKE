@@ -29,7 +29,7 @@ include Makeinclude
 
 VPATH = ${OBJDIR}:${BASEDIR}/emmod:${BASEDIR}/lib:${BASEDIR}/biog:${BASEDIR}/filesetapi:\
 ${BASEDIR}/cntlmat:${BASEDIR}/cntlmat:${BASEDIR}/emqa:${BASEDIR}/emutil:${BASEDIR}/grdmat:\
-${BASEDIR}/movesmrg:${BASEDIR}/point:${BASEDIR}/smkinven:${BASEDIR}/smkmerge:\
+${BASEDIR}/lnkmerge:${BASEDIR}/movesmrg:${BASEDIR}/point:${BASEDIR}/smkinven:${BASEDIR}/smkmerge:\
 ${BASEDIR}/spcmat:${BASEDIR}/temporal
 
 #  emmod:
@@ -183,6 +183,15 @@ GRDSRC = \
  
 GRDOBJ =  $(GRDSRC:.f=.o)
 
+# lnkmerge:
+
+LNKSRC = \
+ lbldmrgidx.f     lgetmrgev.f       linitstcy.f   \
+ lmrgonams.f      lmrgunits.f       lmrgvnams.f   \
+ lnkmerge.f       lopenmrgin.f      lopenmrgout.f
+
+LNKOBJ =  $(LNKSRC:.f=.o)
+
 #  movesmrg:
 
 MOVSRC = \
@@ -268,7 +277,8 @@ TMPSRC = \
 TMPOBJ =  $(TMPSRC:.f=.o)
 
 OBJ  =  $(MODOBJ) $(FILOBJ) $(LIBOBJ) $(BIOOBJ) $(CTLOBJ) $(RPTOBJ) $(UTIOBJ) \
-        $(GRDOBJ) $(MOVOBJ) $(PNTOBJ) $(INVOBJ) $(MRGOBJ) $(SPCOBJ) $(TMPOBJ)
+        $(GRDOBJ) $(MOVOBJ) $(PNTOBJ) $(INVOBJ) $(MRGOBJ) $(SPCOBJ) $(TMPOBJ) \
+        $(LNKOBJ)
 
 MLIB  = libemmod.a
 
@@ -284,7 +294,7 @@ UTIL  = aggwndw     beld3to2    bluesky2inv cemscan     extractida  \
 EXE   = normbeis3   tmpbeis3    cntlmat     smkreport   grdmat      \
         movesmrg    met4moves   laypoint    elevpoint   smkinven    \
         grwinven    smkmerge    mrggrid     mrgelev     spcmat      \
-        temporal                                                    \
+        temporal    lnkmerge                                        \
         ${UTIL}
 
 
@@ -310,6 +320,8 @@ cntl:   cntlmat
 report: smkreport
 
 grd  :  grdmat
+
+lnk  :  lnkmerge
 
 moves:  movesmrg    met4moves
 
@@ -487,6 +499,7 @@ rdrepin.o     : $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODCNTRL) $(MODELEV)
 rdrepin.o     : $(MODLISTS) $(MODGRID)  $(MODINFO)  $(MODFILESET)
 rdrprts.o     : $(MODREPRT) $(MODINFO)
 repmrggrd.o   : $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODGRID)
+
 repunits.o    : $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO)
 scanrepc.o    : $(MODREPRT) $(MODINFO)
 selectsrc.o   : $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODELEV)  $(MODINFO)
@@ -512,6 +525,16 @@ opengmat.o    : $(MODINFO)
 rdsrg4grd.o   : $(MODSURG)  $(MODGRID)
 setfrac.o     : $(MODSURG)  $(MODXREF)
 sizgmat.o     : $(MODSURG)  $(MODGRID) 
+
+lbldmrgidx.o  : $(MODMERGE)
+lgetmrgev.o   : $(MODMERGE) $(MODINFO) $(MODMVSMRG)
+linitstcy.o   : $(MODMERGE) $(MODSTCY) $(MODSOURC) $(MODMVSMRG) $(MODLISTS)
+lmrgonams.o   : $(MODMERGE)
+lmrgunits.o   : $(MODMERGE) $(MODMVSMRG)
+lmrgvnams.o   : $(MODMERGE) $(MODLISTS) $(MODMVSMRG)
+lnkmerge.o    : $(MODMERGE) $(MODMVSMRG) $(MODLISTS) $(MODSTCY) $(MODGRID) $(MODSOURC)
+lopenmrgin.o  : $(MODMERGE) $(MODINFO)  $(MODSOURC)  $(MODEMFAC) $(MODGRID) $(MODMVSMRG) $(MODFILESET)
+lopenmrgout.o : $(MODMERGE) $(MODGRID) $(MODFILESET)
 
 mbldmrgidx.o  : $(MODMERGE) $(MODMVSMRG)
 bldprocidx.o  : $(MODMERGE) $(MODMVSMRG)
@@ -679,6 +702,9 @@ smkreport: $(RPTOBJ)
 
 grdmat: $(GRDOBJ) 
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+lnkmerge: $(LNKOBJ)
+	cd ${OBJDIR}; $(FC) $(FFLAGS) $^ ${LIBS} -o $@
 
 movesmrg: movesmrg.o mbldmrgidx.o bldprocidx.o bldsrccell.o \
  mgetmrgev.o minitstcy.o mmrgonams.o mmrgunits.o  mmrgvnams.o   \

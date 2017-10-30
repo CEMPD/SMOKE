@@ -610,6 +610,86 @@ if ( $?RUN_SMKMERGE ) then
 endif
 
 #
+### Merging for Link inventory
+#
+set debugexestat = 0
+set exestat = 0
+setenv TMPLOG   $OUTLOG/lnkmerge.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+if ( $?RUN_LNKMERGE ) then
+   if ( $RUN_LNKMERGE == 'Y' && $RUN_PART4 == Y ) then
+
+      # Set mole/mass-based speciation matrices.
+      set unit = tons
+      if( $?MRG_GRDOUT_UNIT ) then 
+         set unit = `echo $MRG_GRDOUT_UNIT | cut -c1-4`
+      endif
+      if ( $unit == mole ) then   # mole
+         if ( $?ASMAT_L ) then
+            setenv ASMAT $ASMAT_L
+         endif
+         if ( $?BGTS_L ) then
+            setenv BGTS $BGTS_L
+         endif
+         if ( $?MSMAT_L ) then
+            setenv MSMAT $MSMAT_L
+         endif
+         if ( $?PSMAT_L ) then
+            setenv PSMAT $PSMAT_L
+         endif
+
+      else                       # mass
+         if ( $?ASMAT_S ) then
+            setenv ASMAT $ASMAT_S
+         endif
+         if ( $?BGTS_S ) then
+            setenv BGTS $BGTS_S
+         endif
+         if ( $?MSMAT_S ) then
+            setenv MSMAT $MSMAT_S
+         endif
+         if ( $?PSMAT_S ) then
+            setenv PSMAT $PSMAT_S
+         endif
+      endif
+
+      if ( -e $TMPLOG ) then
+         source $SCRIPTS/run/movelog.csh
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         if ( $debugmode == Y ) then
+            if ( -e $SMK_BIN/lnkmerge ) then
+               $debug_exe $SMK_BIN/lnkmerge
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/lnkmerge ) then
+               time $SMK_BIN/lnkmerge
+            else
+               set exestat = 1 
+            endif
+         endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: lnkmerge program does not exist in:'
+	 echo '              '$SMK_BIN
+         set exitstat = 1
+      endif
+
+   endif
+endif
+
+#
 ### Merging for MOVES output
 #
 set debugexestat = 0

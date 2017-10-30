@@ -116,7 +116,7 @@ C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
 
 C......... Return if the first line is a header line
-        IF( SEGMENT( 14 ) == '' .OR. .NOT. CHKREAL( SEGMENT( 14 ) ) ) THEN
+        IF( SEGMENT( 18 ) == '' .OR. .NOT. CHKREAL( SEGMENT( 18 ) ) ) THEN
             HDRFLAG = .TRUE.
             RETURN
         END IF
@@ -130,9 +130,9 @@ C           the various data fields
             CFIP( 10:12 ) = ADJUSTR( SEGMENT( 3 )( 1:3 ) )
         ELSE
             WRITE( CFIP( FIPEXPLEN3+1:FIPEXPLEN3+1 ), '(I1)' ) ICC  ! country code of FIPS
-            CFIP( FIPEXPLEN3+2:FIPEXPLEN3+6 ) = ADJUSTR( SEGMENT( 2 )( 1:5 ) )  ! state/county code
+            CFIP( FIPEXPLEN3+2:FIPLEN3 ) = ADJUSTR( SEGMENT( 2 )( 1:5 ) )  ! state/county code
         END IF
-
+ 
 C.........  Replace blanks with zeros
         DO I = 1,FIPLEN3
             IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
@@ -141,7 +141,7 @@ C.........  Replace blanks with zeros
 C.........  Processing activity data
         CLNK = ADJUSTL( SEGMENT( 4 ) )    ! link ID
         TSCC = ADJUSTL( SEGMENT( 5 ) )    ! scc code
-        TCAS = ADJUSTL( SEGMENT( 13 ) )    ! poll CAS number
+        TCAS = ADJUSTL( SEGMENT( 17 ) )    ! poll CAS number
 
 C.........  Determine no of poll for this line based on CAS number
         I = FINDC( TCAS, NUNIQCAS, UNIQCAS )

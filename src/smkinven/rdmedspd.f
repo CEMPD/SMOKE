@@ -403,7 +403,7 @@ C               look it up and get indidies
                     MESG = 'INTERNAL ERROR: Could not find FIPS code ' // 
      &                     CFIP // ' in internal list.'
                     CALL M3MSG2( MESG )
-                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
                 SS = STARTSRC( J )

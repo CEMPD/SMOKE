@@ -142,6 +142,16 @@ else
 
 endif
 
+if( $?RUN_LNKMERGE ) then
+   if ( $RUN_LNKMERGE == 'y' ) then
+      setenv RUN_LNKMERGE Y
+   endif
+
+else
+   setenv RUN_LNKMERGE N
+
+endif
+
 if( $?RUN_MOVESMRG ) then
    if ( $RUN_MOVESMRG == 'y' ) then
       setenv RUN_MOVESMRG Y

@@ -72,6 +72,7 @@
         LOGICAL, PUBLIC :: PFLAG_BD = .FALSE.
 
 !.........  Flags for controlling on-off features
+        LOGICAL, PUBLIC :: APFLAG  ! use airport height for MSL to AGL calc
         LOGICAL, PUBLIC :: TFLAG   ! use temporalized (hourly) emissions
         LOGICAL, PUBLIC :: SFLAG   ! use speciation
         LOGICAL, PUBLIC :: LFLAG   ! use layer fractions
@@ -371,6 +372,14 @@
         REAL   , ALLOCATABLE, PUBLIC :: AEISRC( :,: ) ! area: nasrc, mxpolpgp
         REAL   , ALLOCATABLE, PUBLIC :: MEISRC( :,: ) ! mobile: nmsrc, mxpolpgp
         REAL   , ALLOCATABLE, PUBLIC :: PEISRC( :,: ) ! point: npsrc, mxpolpgp
+
+!.........  Airport height arrays
+        INTEGER                        , PUBLIC :: NAPRT          ! no of airports
+        REAL                           , PUBLIC :: CUTOFF         ! aircraft cutoff altitude (ft)
+        REAL                           , PUBLIC :: LTOALT         ! aircraft LTO altitude (ft)
+        REAL              , ALLOCATABLE, PUBLIC :: APRT_ELEV( : ) ! airport elevation height (ft)
+        CHARACTER(LNKLEN3), ALLOCATABLE, PUBLIC :: APRT_CODE( : ) ! airport codes
+        
 
 !.........  Biogenic gridded emissions
         REAL   , ALLOCATABLE, PUBLIC :: BEMGRD( : )   ! dim: ngrid

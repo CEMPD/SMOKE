@@ -397,7 +397,7 @@ endif
 # Cumstomized Smkmerge output file names when merging all souce sectors
 # If using Smkmerge to merge all sectors
    
-   if ( $SMKMERGE_CUSTOM_OUTPUT == Y && $RUN_SMKMERGE == Y || $MOVESMRG_CUSTOM_OUTPUT == Y && $RUN_MOVESMRG == Y   ) then
+   if ( $SMKMERGE_CUSTOM_OUTPUT == Y && $RUN_SMKMERGE == Y || $MOVESMRG_CUSTOM_OUTPUT == Y && $RUN_MOVESMRG == Y || $SMKMERGE_CUSTOM_OUTPUT == Y && $RUN_LNKMERGE == Y ) then
 
          setenv EOUT  $OUTPUT/egts_l.$SRCABBR.$ESDATE.$NDAYS.$SPC.$GRID.$ESCEN.ncf 
          setenv AOUT  $A_OUT/agts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf 

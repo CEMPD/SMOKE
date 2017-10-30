@@ -1,7 +1,7 @@
 
         SUBROUTINE RDDATAFF10LNK( LINE, READDATA, READPOL, IYEAR,
-     &                            DPID, ARID, HT, DM, TK, FL, VL, 
-     &                            HDRFLAG, EFLAG )
+     &                            DPID, DPLAT, DPLON, ARID, ARLAT, ARLON,
+     &                            HT, DM, TK, FL, VL, HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -60,7 +60,11 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! array of pollutant names
         INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
         CHARACTER(LNKLEN3), INTENT (OUT) :: DPID                  ! link depart loc id  
+        CHARACTER(LNKLEN3), INTENT (OUT) :: DPLAT                 ! link depart latitude 
+        CHARACTER(LNKLEN3), INTENT (OUT) :: DPLON                 ! link depart longitude 
         CHARACTER(LNKLEN3), INTENT (OUT) :: ARID                  ! link arrival loc id  
+        CHARACTER(LNKLEN3), INTENT (OUT) :: ARLAT                 ! link arrival latitude 
+        CHARACTER(LNKLEN3), INTENT (OUT) :: ARLON                 ! link arrival longitude 
         CHARACTER(4),       INTENT (OUT) :: HT                    ! stack height
         CHARACTER(6),       INTENT (OUT) :: DM                    ! stack diameter
         CHARACTER(4),       INTENT (OUT) :: TK                    ! exit temperature
@@ -128,7 +132,7 @@ C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
 
 C......... Return if the first line is a header line
-        IF( SEGMENT( 14 ) == '' .OR. .NOT. CHKREAL( SEGMENT( 14 ) ) ) THEN
+        IF( SEGMENT( 18 ) == '' .OR. .NOT. CHKREAL( SEGMENT( 18 ) ) ) THEN
             HDRFLAG = .TRUE.
             RETURN
         END IF 
@@ -142,9 +146,13 @@ C           the various data fields
         TK   = SEGMENT( 10 )             ! exit temperature
         FL   = SEGMENT( 11 )             ! flow rate
         VL   = SEGMENT( 12 )             ! exit velocity
+        DPLAT= SEGMENT( 13 )             ! link departure latitude        
+        DPLON= SEGMENT( 14 )             ! link departure longitude
+        ARLAT= SEGMENT( 15 )             ! link arrival latitude        
+        ARLON= SEGMENT( 16 )             ! link arrival longitude
         
-        READPOL ( 1     ) = SEGMENT( 13 )
-        READDATA( 1,NEM ) = SEGMENT( 14 )  ! annual emissions
+        READPOL ( 1     ) = SEGMENT( 17 )
+        READDATA( 1,NEM ) = SEGMENT( 18 )  ! annual emissions
         READDATA( 1,NDY ) = ''             ! average-day emissions
 
 C.........  Make sure routine knows it's been called already
