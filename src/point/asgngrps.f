@@ -77,8 +77,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL    CRLF, EVALCRIT, FLTERR, ENVINT
 
 C...........   LOCAL PARAMETERS and their descriptions:
-        INTEGER, PARAMETER :: MXLOCGRP = 2000  ! Max number groups per facility
-        INTEGER, PARAMETER :: MXSPGRP  = 2000  ! Max number sources per group
+        INTEGER, PARAMETER :: MXLOCGRP = 1000  ! Max number groups per facility
+        INTEGER, PARAMETER :: MXSPGRP  = 1000  ! Max number sources per group
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: TGRPCNT( : ) ! tmp no. sources in group
