@@ -216,7 +216,7 @@ foreach my $fh (@in_fh) {
     
       @output = @common;
       push @output, $qflag;
-      push @output, map { sprintf('%.4f', $_) } @factors;
+      push @output, map { sprintf('%.8f', $_) } @factors;
       $file = "$output_dir/temporal/${run_group}_temporal.csv";
       unless (exists $handles{$file}) {
         my $fh = open_output($file);

@@ -164,7 +164,7 @@ while (my $line = <$in_fh>) {
   
   @output = @common;
   push @output, $qflag;
-  push @output, map { sprintf('%.4f', $_) } @factors;
+  push @output, map { sprintf('%.8f', $_) } @factors;
   print $tmp_fh join(',', @output) . "\n";
   
   # prepare crosswalk output

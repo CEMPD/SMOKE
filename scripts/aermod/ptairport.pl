@@ -228,13 +228,13 @@ for my $state (sort keys %records) {
         my @output = @common;
         push @output, $src_id . $runway_ct;
         push @output, $qflag;
-        push @output, map { sprintf('%.4f', $_) } @factors;
+        push @output, map { sprintf('%.8f', $_) } @factors;
         print $line_tmp_fh join(',', @output) . "\n";
       }
     } else {
       my @output = @common;
       push @output, $qflag;
-      push @output, map { sprintf('%.4f', $_) } @factors;
+      push @output, map { sprintf('%.8f', $_) } @factors;
       print $area_tmp_fh join(',', @output) . "\n";
     }
   
