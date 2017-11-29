@@ -1402,28 +1402,6 @@ C.....................  Convert units on values
                     FUGLEN( CURSRC ) = MAX( 0.0, FT2M * STR2REAL( FUGLN ) )
                     FUGANG( CURSRC ) = MAX( 0.0, FT2M * STR2REAL( FUGAN ) )
 
-C.....................  Setting default values
-C                       If width and length are missing, reset them to 10.0 meter
-C                       If width and length < 1.0, reset them to 1.0 meter
-                    L1 = LEN_TRIM( FUGWD )
-                    L2 = LEN_TRIM( FUGLN )
-                    L3 = LEN_TRIM( FUGHT )
-
-                    IF( L1 < 1 ) THEN
-                        FUGWID( CURSRC ) = 10.0   ! reset to 10.0 meter
-                    ELSE
-                        IF( FUGWID( CURSRC ) < 1.0 ) FUGWID( CURSRC ) = 1.0 ! reset to 1.0 meter
-                    END IF
-
-                    IF( L2 < 1 ) THEN
-                        FUGLEN( CURSRC ) = 10.0   ! reset to 10.0 meter
-                    ELSE
-                        IF( FUGLEN( CURSRC ) < 1.0 ) FUGLEN( CURSRC ) = 1.0 ! reset to 1.0 meter
-                    END IF
-
-C.....................  Reset release point height to 3.05 meter when all are missing
-                    IF( L1 < 1 .AND. L2 < 1 .AND. L3 < 1 ) FUGHGT( CURSRC ) = 3.05
-
                 ELSE IF ( CURFMT == ORLFMT  ) THEN
                     FUGSCR = FT2M * SQRT( MAX( 0.0, STR2REAL( FUGAR ) ) )
                     FUGHGT( CURSRC ) = MAX( 0.0, FT2M * STR2REAL( FUGHT ) )
