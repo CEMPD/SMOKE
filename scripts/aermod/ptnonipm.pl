@@ -187,8 +187,8 @@ while (my $line = <$in_fh>) {
     push @output, $plant_id;
     push @output, '"' . $data[$headers{'Plt Name'}] . '"';
     push @output, @{$src_data}[4]; # unit ID
-    push @output, @{$src_data}[5]; # process ID
-    push @output, @{$src_data}[6]; # release point
+    push @output, @{$src_data}[6]; # process ID
+    push @output, @{$src_data}[5]; # release point
     push @output, $src_id;
     print $src_fh join(',', @output) . "\n";
   }
