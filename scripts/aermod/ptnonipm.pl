@@ -99,7 +99,7 @@ while (my $line = <$in_fh>) {
   }
   $facilities{$plant_id}++;
 
-  my $src_id = 'SN' . $facilities{$plant_id};
+  my $src_id = 'SN' . sprintf('%03d', $facilities{$plant_id});
   
   my @common;
   push @common, $plant_id;

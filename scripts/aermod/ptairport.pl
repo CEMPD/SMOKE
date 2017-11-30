@@ -140,7 +140,7 @@ for my $state (sort keys %records) {
     if ($is_runway) {
       $src_id = 'AP';
     } else {
-      $src_id = 'AP1';
+      $src_id = 'AP01';
     }
   
     # calculate runway areas
@@ -169,7 +169,7 @@ for my $state (sort keys %records) {
       foreach my $runway (@{$runways{$plant_id}}) {
         my @output = $state;
         push @output, @common;
-        push @output, $src_id . $runway_ct;
+        push @output, $src_id . sprintf('%02d', $runway_ct);
         push @output, $runway->{'utm_start_x'};
         push @output, $runway->{'utm_start_y'};
         push @output, $runway->{'utm_end_x'};
@@ -204,7 +204,7 @@ for my $state (sort keys %records) {
       my $runway_ct = 1;
       foreach my $runway (@{$runways{$plant_id}}) {
         my @output = @common;
-        push @output, $src_id . $runway_ct;
+        push @output, $src_id . sprintf('%02d', $runway_ct);
         push @output, 'LINE';
         push @output, $runway->{'area'};
         push @output, 1 / $num_runways;
@@ -227,7 +227,7 @@ for my $state (sort keys %records) {
       my $runway_ct = 1;
       foreach my $runway (@{$runways{$plant_id}}) {
         my @output = @common;
-        push @output, $src_id . $runway_ct;
+        push @output, $src_id . sprintf('%02d', $runway_ct);
         push @output, $qflag;
         push @output, map { sprintf('%.8f', $_) } @factors;
         print $line_tmp_fh join(',', @output) . "\n";
