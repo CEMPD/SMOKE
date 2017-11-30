@@ -227,30 +227,16 @@ foreach my $fh (@in_fh) {
       print $tmp_fh join(',', @output) . "\n";
     }
   
-    # store emissions by season
-    my $season = 'winter';  # dec, jan, feb
-    if ($month >= 3 && $month <= 5) {  # mar, apr, may
-      $season = 'spring';
-    } elsif ($month >= 6 && $month <= 8) {  # jun, jul, aug
-      $season = 'summer';
-    } elsif ($month >= 9 && $month <= 11) {  # sep, oct, nov
-      $season = 'fall';
-    }
-    
+    # store emissions by month
     my $region = $data[$headers{'Region'}];
     $region = substr($region, -6);
     foreach my $poll (@pollutants) {
       my $emis_id = join(":::", $source_id, $source_group, $region, $poll);
       unless (exists $emissions{$emis_id}) {
-        $emissions{$emis_id} = {
-          'winter' => 0,
-          'spring' => 0,
-          'summer' => 0,
-          'fall' => 0
-        };
+        $emissions{$emis_id} = [0,0,0,0,0,0,0,0,0,0,0,0];
       }
-      $emissions{$emis_id}{$season} = 
-        $emissions{$emis_id}{$season} + $data[$headers{$poll}] / 12;
+      $emissions{$emis_id}[$month-1] = 
+        $emissions{$emis_id}[$month-1] + $data[$headers{$poll}] / 12;
     }
   }
 }
@@ -267,20 +253,17 @@ foreach my $emis_id (keys %emissions) {
   push @output, $source_group;
   push @output, $poll;
   
-  my $total = $emissions{$emis_id}{'winter'} +
-              $emissions{$emis_id}{'spring'} +
-              $emissions{$emis_id}{'summer'} +
-              $emissions{$emis_id}{'fall'};
+  my $total = 0;
+  foreach my $val (@{$emissions{$emis_id}}) {
+    $total += $val;
+  }
   next if $total == 0.0;
   push @output, $total;
-  push @output, $emissions{$emis_id}{'winter'};
-  push @output, $emissions{$emis_id}{'spring'};
-  push @output, $emissions{$emis_id}{'summer'};
-  push @output, $emissions{$emis_id}{'fall'};
+  push @output, @{$emissions{$emis_id}};
   my $file = "$output_dir/emis/${grid_prefix}${run_group}_emis.csv";
   unless (exists $handles{$file}) {
     my $fh = open_output($file);
-    print $fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value,winter,spring,summer,fall\n";
+    print $fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value,january,february,march,april,may,june,july,august,september,october,november,december\n";
     $handles{$file} = $fh;
   }
   my $x_fh = $handles{$file};
