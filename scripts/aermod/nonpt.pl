@@ -217,7 +217,7 @@ while (my $line = <$in_fh>) {
 
   # store emissions
   my $region = $data[$headers{'Region'}];
-  $region = substr($region, -6);
+  $region = substr($region, -5);
   foreach my $poll (@pollutants) {
     my $emis_id = join(":::", $source_id, $source_group, $region, $poll);
     unless (exists $emissions{$emis_id}) {
