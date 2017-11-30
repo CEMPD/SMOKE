@@ -264,7 +264,7 @@ while (my $line = <$in_fh>) {
     push @output, $date->year;
     push @output, $date->month;
     push @output, $date->day;
-    push @output, $hour;
+    push @output, $hour+1;
     push @output, $factor;
     push @output, $data[$headers{'Stk Tmp'}];
     push @output, $data[$headers{'Stk Vel'}];
