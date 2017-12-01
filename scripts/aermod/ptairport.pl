@@ -231,6 +231,7 @@ for my $state (sort keys %records) {
         push @output, $qflag;
         push @output, map { sprintf('%.8f', $_) } @factors;
         print $line_tmp_fh join(',', @output) . "\n";
+        $runway_ct++;
       }
     } else {
       my @output = @common;
