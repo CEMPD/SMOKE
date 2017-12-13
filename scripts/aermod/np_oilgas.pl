@@ -208,7 +208,7 @@ while (my $line = <$in_fh>) {
 
   # store emissions
   my $region = $data[$headers{'Region'}];
-  $region = substr($region, -6);
+  $region = substr($region, -5);
   
   unless (exists $county_emissions{$region}{'all'}) {
     $county_emissions{$region}{'all'} = 0;

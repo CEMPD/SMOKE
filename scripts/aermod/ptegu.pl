@@ -136,7 +136,7 @@ while (my $line = <$in_fh>) {
   }
   $facilities{$plant_id}++;
 
-  my $src_id = 'SE' . $facilities{$plant_id};
+  my $src_id = 'SE' . sprintf('%03d', $facilities{$plant_id});
   
   my @common;
   push @common, $plant_id;
@@ -264,7 +264,7 @@ while (my $line = <$in_fh>) {
     push @output, $date->year;
     push @output, $date->month;
     push @output, $date->day;
-    push @output, $hour;
+    push @output, $hour+1;
     push @output, $factor;
     push @output, $data[$headers{'Stk Tmp'}];
     push @output, $data[$headers{'Stk Vel'}];
@@ -295,8 +295,8 @@ while (my $line = <$in_fh>) {
     push @output, $plant_id;
     push @output, '"' . $data[$headers{'Plt Name'}] . '"';
     push @output, @{$src_data}[4]; # unit ID
-    push @output, @{$src_data}[5]; # process ID
-    push @output, @{$src_data}[6]; # release point
+    push @output, @{$src_data}[6]; # process ID
+    push @output, @{$src_data}[5]; # release point
     push @output, $src_id;
     print $src_fh join(',', @output) . "\n";
   }

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Text::CSV ();
-use Geo::Coordinates::UTM qw(latlon_to_utm);
+use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 
 require 'aermod.subs';
 require 'aermod_pt.subs';
@@ -140,13 +140,14 @@ for my $state (sort keys %records) {
     if ($is_runway) {
       $src_id = 'AP';
     } else {
-      $src_id = 'AP1';
+      $src_id = 'AP01';
     }
   
     # calculate runway areas
+    my $zone = int($data[$headers{'UTM Zone'}]);
     foreach my $runway (@{$runways{$plant_id}}) {
-      my ($zone1, $start_x, $start_y) = latlon_to_utm(23, $runway->{'start_y'}, $runway->{'start_x'});
-      my ($zone2, $end_x, $end_y) = latlon_to_utm(23, $runway->{'end_y'}, $runway->{'end_x'});
+      my ($zone1, $start_x, $start_y) = latlon_to_utm_force_zone(23, $zone, $runway->{'start_y'}, $runway->{'start_x'});
+      my ($zone2, $end_x, $end_y) = latlon_to_utm_force_zone(23, $zone, $runway->{'end_y'}, $runway->{'end_x'});
     
       my $length = sqrt(($end_x - $start_x)**2 + ($end_y - $start_y)**2);
       $runway->{'area'} = $length * $runway->{'width'};
@@ -168,7 +169,7 @@ for my $state (sort keys %records) {
       foreach my $runway (@{$runways{$plant_id}}) {
         my @output = $state;
         push @output, @common;
-        push @output, $src_id . $runway_ct;
+        push @output, $src_id . sprintf('%02d', $runway_ct);
         push @output, $runway->{'utm_start_x'};
         push @output, $runway->{'utm_start_y'};
         push @output, $runway->{'utm_end_x'};
@@ -203,7 +204,7 @@ for my $state (sort keys %records) {
       my $runway_ct = 1;
       foreach my $runway (@{$runways{$plant_id}}) {
         my @output = @common;
-        push @output, $src_id . $runway_ct;
+        push @output, $src_id . sprintf('%02d', $runway_ct);
         push @output, 'LINE';
         push @output, $runway->{'area'};
         push @output, 1 / $num_runways;
@@ -226,10 +227,11 @@ for my $state (sort keys %records) {
       my $runway_ct = 1;
       foreach my $runway (@{$runways{$plant_id}}) {
         my @output = @common;
-        push @output, $src_id . $runway_ct;
+        push @output, $src_id . sprintf('%02d', $runway_ct);
         push @output, $qflag;
         push @output, map { sprintf('%.8f', $_) } @factors;
         print $line_tmp_fh join(',', @output) . "\n";
+        $runway_ct++;
       }
     } else {
       my @output = @common;
