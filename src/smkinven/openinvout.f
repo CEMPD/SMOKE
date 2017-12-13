@@ -301,13 +301,13 @@ C.........  Define source characteristic variables that are not strings
         
             IF( A2PFLAG ) THEN
                 VNAMESET( J ) = 'XLOCA'
-                VTYPESET( J ) = M3REAL
+                VTYPESET( J ) = M3DBLE
                 VUNITSET( J ) = 'degrees'
                 VDESCSET( J ) = 'longitude'
                 J = J + 1
                 
                 VNAMESET( J ) = 'YLOCA'
-                VTYPESET( J ) = M3REAL
+                VTYPESET( J ) = M3DBLE
                 VUNITSET( J ) = 'degrees'
                 VDESCSET( J ) = 'latitude'
                 J = J + 1
@@ -360,13 +360,13 @@ C.........  Define source characteristic variables that are not strings
         CASE( 'POINT' )
 
             VNAMESET( J ) = 'XLOCA'
-            VTYPESET( J ) = M3REAL
+            VTYPESET( J ) = M3DBLE
             VUNITSET( J ) = 'degrees'
             VDESCSET( J ) = 'longitude'
             J = J + 1
 
             VNAMESET( J ) = 'YLOCA'
-            VTYPESET( J ) = M3REAL
+            VTYPESET( J ) = M3DBLE
             VUNITSET( J ) = 'degrees'
             VDESCSET( J ) = 'latitude'
             J = J + 1

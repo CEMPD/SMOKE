@@ -58,8 +58,8 @@
         INTEGER, ALLOCATABLE, PUBLIC:: IWEK  ( : )  !  Wk prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: IMON  ( : )  !  Mn prof code per source
 
-        REAL   , ALLOCATABLE, PUBLIC:: XLOCA ( : )  !  lon X-location 
-        REAL   , ALLOCATABLE, PUBLIC:: YLOCA ( : )  !  lat Y-location 
+        REAL*8 , ALLOCATABLE, PUBLIC:: XLOCA ( : )  !  lon X-location 
+        REAL*8 , ALLOCATABLE, PUBLIC:: YLOCA ( : )  !  lat Y-location 
         REAL   , ALLOCATABLE, PUBLIC:: XLOC1 ( : )  !  lon X-location link start 
         REAL   , ALLOCATABLE, PUBLIC:: YLOC1 ( : )  !  lat Y-location link start
         REAL   , ALLOCATABLE, PUBLIC:: XLOC2 ( : )  !  lon X-location link end 
@@ -119,8 +119,8 @@
         INTEGER, POINTER,     PUBLIC:: INRECA( : ) !  Input record per src x pol
         INTEGER, POINTER,     PUBLIC:: SRCIDA( : ) !  Source ID
 
-        REAL   , POINTER,     PUBLIC:: XLOCAA( : ) !  UTM X-location (m)
-        REAL   , POINTER,     PUBLIC:: YLOCAA( : ) !  UTM Y-location (m)
+        REAL*8 , POINTER,     PUBLIC:: XLOCAA( : ) !  UTM X-location (m)
+        REAL*8 , POINTER,     PUBLIC:: YLOCAA( : ) !  UTM Y-location (m)
         REAL   , ALLOCATABLE, PUBLIC:: XLOC1A( : ) !  lon X-location link start 
         REAL   , ALLOCATABLE, PUBLIC:: YLOC1A( : ) !  lat Y-location link start
         REAL   , ALLOCATABLE, PUBLIC:: XLOC2A( : ) !  lon X-location link end 

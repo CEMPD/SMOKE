@@ -65,14 +65,14 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID
         CHARACTER(BLRLEN3), INTENT (OUT) :: BLID                  ! boiler ID
         CHARACTER(40),      INTENT (OUT) :: DESC                  ! plant description
-        CHARACTER(4),       INTENT (OUT) :: HT                    ! stack height
-        CHARACTER(6),       INTENT (OUT) :: DM                    ! stack diameter
-        CHARACTER(4),       INTENT (OUT) :: TK                    ! exit temperature
-        CHARACTER(10),      INTENT (OUT) :: FL                    ! flow rate
+        CHARACTER(16),      INTENT (OUT) :: HT                    ! stack height
+        CHARACTER(16),      INTENT (OUT) :: DM                    ! stack diameter
+        CHARACTER(16),      INTENT (OUT) :: TK                    ! exit temperature
+        CHARACTER(16),      INTENT (OUT) :: FL                    ! flow rate
         CHARACTER(9),       INTENT (OUT) :: VL                    ! exit velocity
         CHARACTER(SICLEN3), INTENT (OUT) :: SIC                   ! SIC
-        CHARACTER(9),       INTENT (OUT) :: LAT                   ! stack latitude
-        CHARACTER(9),       INTENT (OUT) :: LON                   ! stack longitude
+        CHARACTER(16),      INTENT (OUT) :: LAT                   ! stack latitude
+        CHARACTER(16),      INTENT (OUT) :: LON                   ! stack longitude
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
 
 C...........   Local parameters, indpendent

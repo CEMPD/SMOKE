@@ -94,11 +94,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
         INTEGER         STR2INT
         REAL            STR2REAL
+        REAL*8          STR2DBLE
         REAL            YR2DAY
         INTEGER         FIND1FIRST
 
         EXTERNAL        CHKINT, CHKREAL, CRLF, ENVINT, ENVYN, FINDC,
-     &                  GETINVYR, INDEX1, STR2INT, STR2REAL,
+     &                  GETINVYR, INDEX1, STR2INT, STR2REAL, STR3DBLE,
      &                  YR2DAY, GETFLINE, BLKORCMT, FIND1FIRST
 
 C...........   SUBROUTINE ARGUMENTS
@@ -201,11 +202,11 @@ C...........   Other local variables
         CHARACTER(EXTLEN3) :: EXTORL = ' ' ! Extended ORL vars
         CHARACTER(40)       DESC      ! plant description
         CHARACTER(ERPLEN3) :: ERPTYP = ' ' ! emissions release point type
-        CHARACTER(4)        HT        ! stack height
-        CHARACTER(6)        DM        ! stack diameter
-        CHARACTER(4)        TK        ! exit temperature
-        CHARACTER(10)       FL        ! flow rate
-        CHARACTER(9)        VL        ! exit velocity
+        CHARACTER(16)       HT        ! stack height
+        CHARACTER(16)       DM        ! stack diameter
+        CHARACTER(16)       TK        ! exit temperature
+        CHARACTER(16)       FL        ! flow rate
+        CHARACTER(16)       VL        ! exit velocity
         CHARACTER(SICLEN3)  SIC       ! SIC
         CHARACTER(SHPLEN3)  SHAPE     ! SHAPE_ID
         CHARACTER(MACLEN3)  MACT      ! MACT code
@@ -213,8 +214,8 @@ C...........   Other local variables
         CHARACTER(STPLEN3) :: SRCTYP = ' ' ! source type code
         CHARACTER(SCCLEN3)  TSCC      ! tmp SCC
         CHARACTER           CTYPE     ! coordinate type
-        CHARACTER(9)        LAT       ! stack latitude
-        CHARACTER(9)        LON       ! stack longitude
+        CHARACTER(16)       LAT       ! stack latitude
+        CHARACTER(16)       LON       ! stack longitude
         CHARACTER(16)       FUGHT     ! fugitive emissions release height
         CHARACTER(16)       FUGWD     !  " width  (Y dim)
         CHARACTER(16)       FUGLN     !  " length (X dim)
@@ -1373,8 +1374,8 @@ C.....................  Convert UTM values to lat-lon
                     STKDM   ( CURSRC ) = STR2REAL( DM )
                     STKTK   ( CURSRC ) = STR2REAL( TK )
                     STKVE   ( CURSRC ) = STR2REAL( VL )
-                    XLOCA   ( CURSRC ) = STR2REAL( LON )
-                    YLOCA   ( CURSRC ) = STR2REAL( LAT )
+                    XLOCA   ( CURSRC ) = STR2DBLE( LON )
+                    YLOCA   ( CURSRC ) = STR2DBLE( LAT )
                     CPDESC  ( CURSRC ) = DESC
                     CNEIUID ( CURSRC ) = ADJUSTR( NEID )
                     CORIS   ( CURSRC ) = ADJUSTR( CORS )
@@ -1450,8 +1451,8 @@ C.................  Correct hemisphere for stack longitude
                 CERPTYP( CURSRC ) = ERPTYP
                 CMACT  ( CURSRC ) = MACT
                 CNAICS ( CURSRC ) = NAICS
-                XLOCA  ( CURSRC ) = STR2REAL( LON )
-                YLOCA  ( CURSRC ) = STR2REAL( LAT )
+                XLOCA  ( CURSRC ) = STR2DBLE( LON )
+                YLOCA  ( CURSRC ) = STR2DBLE( LAT )
                 STKHT  ( CURSRC ) = BADVAL3
                 STKDM  ( CURSRC ) = BADVAL3
                 STKTK  ( CURSRC ) = BADVAL3

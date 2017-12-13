@@ -64,17 +64,17 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(40),      INTENT (OUT) :: DESC                  ! plant description
         CHARACTER(ERPLEN3), INTENT (OUT) :: ERPTYP                ! emissions release point type
         CHARACTER(STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
-        CHARACTER(4),       INTENT (OUT) :: HT                    ! stack height
-        CHARACTER(6),       INTENT (OUT) :: DM                    ! stack diameter
-        CHARACTER(4),       INTENT (OUT) :: TK                    ! exit temperature
-        CHARACTER(10),      INTENT (OUT) :: FL                    ! flow rate
-        CHARACTER(9),       INTENT (OUT) :: VL                    ! exit velocity
+        CHARACTER(16),      INTENT (OUT) :: HT                    ! stack height
+        CHARACTER(16),      INTENT (OUT) :: DM                    ! stack diameter
+	CHARACTER(16),      INTENT (OUT) :: TK                    ! exit temperature
+        CHARACTER(16),      INTENT (OUT) :: FL                    ! flow rate
+        CHARACTER(16),      INTENT (OUT) :: VL                    ! exit velocity
         CHARACTER(SICLEN3), INTENT (OUT) :: SIC                   ! SIC
         CHARACTER(MACLEN3), INTENT (OUT) :: MACT                  ! MACT code
         CHARACTER(NAILEN3), INTENT (OUT) :: NAICS                 ! NAICS code
         CHARACTER,          INTENT (OUT) :: CTYPE                 ! coordinate type
-        CHARACTER(9),       INTENT (OUT) :: LAT                   ! stack latitude
-        CHARACTER(9),       INTENT (OUT) :: LON                   ! stack longitude
+        CHARACTER(16),      INTENT (OUT) :: LAT                   ! stack latitude
+        CHARACTER(16),      INTENT (OUT) :: LON                   ! stack longitude
         CHARACTER(2),       INTENT (OUT) :: UTMZ                  ! UTM zone
         CHARACTER(NEILEN3), INTENT (OUT) :: NEID                  ! NEI unique ID
         CHARACTER(ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID

@@ -1249,25 +1249,25 @@ C.........  Stack parameters.  +3 for decimal and 2 significant figures
         IF( RPT_%STKPARM ) THEN
 
             J = LEN_TRIM( HEADERS( IHDRHT ) )
-            PWIDTH( 1 ) = MAX( PWIDTH( 1 ) + 3, J )
+            PWIDTH( 1 ) = 10
             CALL ADD_TO_HEADER( PWIDTH( 1 ), HEADERS( IHDRHT ), 
      &                          LH, HDRBUF )
             CALL ADD_TO_HEADER( PWIDTH( 1 ), ATTRUNIT( 6 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRDM ) )
-            PWIDTH( 2 ) = MAX( PWIDTH( 2 ) + 3, J )
+            PWIDTH( 2 ) = 10
             CALL ADD_TO_HEADER( PWIDTH( 2 ), HEADERS( IHDRDM ), 
      &                          LH, HDRBUF )
             CALL ADD_TO_HEADER( PWIDTH( 2 ), ATTRUNIT( 7 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRTK ) )
-            PWIDTH( 3 ) = MAX( PWIDTH( 3 ) + 3, J )
+            PWIDTH( 3 ) = 10
             CALL ADD_TO_HEADER( PWIDTH( 3 ), HEADERS( IHDRTK ), 
      &                          LH, HDRBUF )
             CALL ADD_TO_HEADER( PWIDTH( 3 ), ATTRUNIT( 8 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRVE ) )
-            PWIDTH( 4 ) = MAX( PWIDTH( 4 ) + 3, J )
+            PWIDTH( 4 ) = 10
             CALL ADD_TO_HEADER( PWIDTH( 4 ), HEADERS( IHDRVE ), 
      &                          LH, HDRBUF )
             CALL ADD_TO_HEADER( PWIDTH( 4 ), ATTRUNIT( 9 ), LU, UNTBUF )
@@ -1285,25 +1285,25 @@ C.........  Fugitive parameters.  +3 for decimal and 2 significant figures
         IF( RPT_%FUGPARM ) THEN
 
             J = LEN_TRIM( HEADERS( IHDRFUGHT ) )
-            PWIDTH( 5 ) = MAX( PWIDTH( 5 ) + 3, J )
+            PWIDTH( 5 ) = 10 
             CALL ADD_TO_HEADER( PWIDTH( 5 ), HEADERS( IHDRFUGHT ),
      &                          LH, HDRBUF )
             CALL ADD_TO_HEADER( PWIDTH( 5 ), ATTRUNIT( 6 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRFUGWD ) )
-            PWIDTH( 6 ) = MAX( PWIDTH( 6 ) + 3, J )
+            PWIDTH( 6 ) = 10 
             CALL ADD_TO_HEADER( PWIDTH( 6 ), HEADERS( IHDRFUGWD ),
      &                          LH, HDRBUF )
             CALL ADD_TO_HEADER( PWIDTH( 6 ), ATTRUNIT( 7 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRFUGLN ) )
-            PWIDTH( 7 ) = MAX( PWIDTH( 7 ) + 3, J )
+            PWIDTH( 7 ) = 10
             CALL ADD_TO_HEADER( PWIDTH( 7 ), HEADERS( IHDRFUGLN ),
      &                          LH, HDRBUF )
             CALL ADD_TO_HEADER( PWIDTH( 7 ), ATTRUNIT( 8 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRFUGAN ) )
-            PWIDTH( 8 ) = MAX( PWIDTH( 8 ) + 3, J )
+            PWIDTH( 8 ) = 10
             CALL ADD_TO_HEADER( PWIDTH( 8 ), HEADERS( IHDRFUGAN ),
      &                          LH, HDRBUF )
             CALL ADD_TO_HEADER( PWIDTH( 8 ), ATTRUNIT( 9 ), LU, UNTBUF )
@@ -2088,8 +2088,8 @@ C...........   Internal buffering formats............ 94xxx
 
 94635   FORMAT( '(1X,', 'I',I2.2, ',"',A,'", I',I2.2, ',"',A,'")' )
 
-94640   FORMAT( '(', 3('1X,F', I2.2, '.2,"', A, '",'), 
-     &          '1X,F', I2.2, '.2,"', A, '")' )
+94640   FORMAT( '(', 3('1X,F', I2.2, '.5,"', A, '",'), 
+     &          '1X,F', I2.2, '.5,"', A, '")' )
 
 94642   FORMAT( '(1X,F',I2.2,'.8,"', A,'",1X,F',I2.2,'.8,"',A,'")' )  ! lat/lons
 

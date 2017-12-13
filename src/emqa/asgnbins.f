@@ -598,8 +598,8 @@ C.................  code, so for now save space for the SRCID.
 
 
             IF ( RPT_%BYSTKPARM ) THEN
-                IJ = II + 64 - 1
-                WRITE( SORTBUF( I )( II:IJ ), '( F8.2, F8.2, F8.2, F8.2, F8.2, F8.2, F8.2, F8.2 )' )
+                IJ = II + 80 - 1
+                WRITE( SORTBUF( I )( II:IJ ), '( F10.5, F10.5, F10.5, F10.5, F10.5, F10.5, F10.5, F10.5 )' )
      &              STKHT( OUTSRC( I ) ), STKDM( OUTSRC( I ) ), STKTK( OUTSRC( I ) ),
      &              STKVE( OUTSRC( I ) ), FUGHGT( OUTSRC( I ) ), FUGWID( OUTSRC( I ) ),
      &              FUGLEN( OUTSRC( I ) ), FUGANG( OUTSRC( I ) )
