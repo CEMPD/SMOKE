@@ -189,7 +189,7 @@ C...........   Other local variables
         REAL            FRAC        ! tmp surrogate fraction
         REAL            XBEG, YBEG  ! tmp X and Y link start coordinates
         REAL            XEND, YEND  ! tmp X and Y link end   coordinates
-        real            sum
+        REAL            SUM, XX, YY
 
         LOGICAL      :: EFLAG = .FALSE.    ! true: error detected
         LOGICAL      :: IFLAG = .FALSE.    ! true: internal error detected
@@ -503,8 +503,9 @@ C.................  Special case for source has an x/y location
                 IF( XYSET ) THEN
             
 C.....................  If source is in the domain, get cell number and store
-                    IF( INGRID( XLOCA( S ), YLOCA( S ), 
-     &                          NCOLS, NROWS, COL, ROW  ) ) THEN
+                    XX = XLOCA( S )
+                    YY = YLOCA( S )
+                    IF( INGRID( XX, YY, NCOLS, NROWS, COL, ROW  ) ) THEN
             
                         C = ( ROW-1 ) * NCOLS + COL
                         NX( C ) = NX( C ) + 1

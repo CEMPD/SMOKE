@@ -153,6 +153,7 @@ C...........   Other local variables
         INTEGER         ISDEF     !  default surrogate ID code index
 
         REAL            CAVG   ! average number sources per cell
+        REAL            XX, YY
 
         LOGICAL      :: A2PFLAG = .FALSE.  ! true: inv has ar-to-pt locations
         LOGICAL      :: AFLAG   = .FALSE.  ! true: use grid adjustments file
@@ -666,8 +667,9 @@ C.............  Convert point source coordinates from lat-lon to output grid
        
 C.............  Set the number of source-cell intersections
             DO S = 1, NSRC
-                IF( INGRID( XLOCA( S ), YLOCA( S ), 
-     &                      NCOLS, NROWS, COL, ROW  ) ) THEN
+                XX = XLOCA( S )
+                YY = YLOCA( S )
+                IF( INGRID( XX, YY, NCOLS, NROWS, COL, ROW  ) ) THEN
                     NMATX = NMATX + 1
                 END IF
             END DO

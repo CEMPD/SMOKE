@@ -56,8 +56,8 @@ C.........  SUBROUTINE ARGUMENTS
         REAL(8),            INTENT (IN) :: P_GAM         !  parameters
         REAL(8),            INTENT (IN) :: XCENT         !  lon for coord-system X=0
         REAL(8),            INTENT (IN) :: YCENT         !  lat for coord-system Y=0
-        REAL,               INTENT(IN OUT) :: XVALS( NSRC ) !  x location (input grid coord)
-        REAL,               INTENT(IN OUT) :: YVALS( NSRC ) !  y location (input grid coord)
+        REAL(8),            INTENT(IN OUT) :: XVALS( NSRC ) !  x location (input grid coord)
+        REAL(8),            INTENT(IN OUT) :: YVALS( NSRC ) !  y location (input grid coord)
 
 C...........   Other local variables
         INTEGER     UZONE               ! UTM zone

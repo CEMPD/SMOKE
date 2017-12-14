@@ -141,6 +141,7 @@ C...........   Other local variables
         INTEGER      :: NLINES = 0! number of lines in input file
 
         REAL            FRAC    ! tmp surrogate fraction
+        REAL            XX, YY
 
         LOGICAL      :: EFLAG = .FALSE.    !  true: error detected
         LOGICAL      :: LFLAG = .FALSE.    !  true: location data available
@@ -371,9 +372,10 @@ C.................  Special case for source has an x/y location
                 IF( XYSET ) THEN
             
 C.....................  If source is in the domain, get cell number and store
-                    IF( INGRID( XLOCA( S ), YLOCA( S ), 
-     &                          NCOLS, NROWS, COL, ROW  ) ) THEN
-            
+                    XX = XLOCA( S )
+                    YY = YLOCA( S )
+                    IF( INGRID( XX, YY, NCOLS, NROWS, COL, ROW  ) ) THEN
+
                         C = ( ROW-1 ) * NCOLS + COL
                         J = NX( C )
             

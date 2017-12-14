@@ -53,8 +53,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: NRECS          ! no. records w/ coordinates
         INTEGER, INTENT (IN) :: NGRID          ! no. grid cells
-        REAL   , INTENT (IN) :: XLOCA( NRECS ) ! X-coordinate in projection
-        REAL   , INTENT (IN) :: YLOCA( NRECS ) ! Y-ccordinate in projection
+        REAL(8), INTENT (IN) :: XLOCA( NRECS ) ! X-coordinate in projection
+        REAL(8), INTENT (IN) :: YLOCA( NRECS ) ! Y-ccordinate in projection
         INTEGER, INTENT(OUT) :: NEXCLD         ! no. sources excluded
         INTEGER, INTENT(OUT) :: NX   ( NGRID ) ! no. of sources per cell
         INTEGER, INTENT(OUT) :: INDX ( NRECS ) ! sorting index

@@ -125,6 +125,7 @@ C...........   Other arrays
         CHARACTER(60), ALLOCATABLE :: TMPLINE( : )   ! tmp line buffer
 
         REAL            ALEN        ! link length
+        REAL            XX, YY
 
         LOGICAL      :: EFLAG = .FALSE. ! true: error flag
         LOGICAL      :: LFLAG = .FALSE. ! true: location data available
@@ -409,8 +410,9 @@ C.................  Check if source has been converted to point src
                 ELSE IF( XYSET ) THEN
             
 C....................  If source is in the domain....
-                    IF( INGRID( XLOCA( S ), YLOCA( S ), 
-     &                          NCOLS, NROWS, COL, ROW  ) ) THEN
+                    XX = XLOCA( S )
+                    YY = YLOCA( S )
+                    IF( INGRID( XX, YY, NCOLS, NROWS, COL, ROW  ) ) THEN
             
 C........................  Set as 1 cell and get the cell number
                         NCEL = 1
@@ -560,9 +562,10 @@ C.........  Check if source has been converted to point src
             ELSE IF( XYSET ) THEN
        
 C..............  If source is in the domain....
-                IF( INGRID( XLOCA( S ), YLOCA( S ), 
-     &                      NCOLS, NROWS, COL, ROW  ) ) THEN
-       
+                XX = XLOCA( S )
+                YY = YLOCA( S )
+                IF( INGRID( XX, YY, NCOLS, NROWS, COL, ROW  ) ) THEN
+
 C....................  Set as 1 cell and get the cell number
                     NCEL = 1
                     ACEL( 1 ) = ( ROW-1 ) * NCOLS + COL

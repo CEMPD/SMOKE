@@ -62,8 +62,8 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FNAME ! matrix output inventory logical name
         INTEGER     , INTENT (IN) :: NPSRC          ! Actual source count
         INTEGER     , INTENT (IN) :: NGRID          ! Actual grid cell count
-        REAL        , INTENT (IN) :: XLOCA( NPSRC ) ! X-coordinate in proper coordinate system
-        REAL        , INTENT (IN) :: YLOCA( NPSRC ) ! Y-coordinate in proper coordinate system
+        REAL(8)     , INTENT (IN) :: XLOCA( NPSRC ) ! X-coordinate in proper coordinate system
+        REAL(8)     , INTENT (IN) :: YLOCA( NPSRC ) ! Y-coordinate in proper coordinate system
         LOGICAL     , INTENT (IN) :: VFLAG          ! true: using variable grid
         INTEGER     , INTENT(OUT) :: NX( NGRID )    ! Number of sources per cell
         INTEGER     , INTENT(OUT) :: IX( NPSRC )    ! Source number, w/ order based on NX
