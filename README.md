@@ -6,6 +6,13 @@ SMOKE is primarily an emissions processing system designed to create gridded, sp
 
 The sparse matrix approach used throughout SMOKE permits rapid and flexible processing of emissions data. Rapid processing is possible because SMOKE uses a series of matrix calculations rather than a less-efficient sequential approach used by previous systems. Flexible processing comes from splitting the processing steps of inventory growth, controls, chemical speciation, temporal allocation, and spatial allocation into independent steps whenever possible. The results from these steps are merged together in the final stage of processing using vector-matrix multiplication. This means that individual steps (such as adding a new control strategy, or processing for a different grid) can be performed and merged without having to redo all of the other processing steps.
 
-SMOKE is written in Fortran 90 and is designed to run on a variety of UNIX platforms. We currently provide executables for Linux and the source code is available for download and can easily be compiled for your particular system. We do not support running SMOKE on Windows, due to the inherent limitations of that system. The current version of SMOKE is version 2.5, although versions 1.5 - 2.4 are still available for download.
-
 The original SMOKE concept was envisioned in the early 1990's at MCNC by Dr. Carlie Coats, now of Baron Advanced Meteorology Services. Marc Houyoux managed the development of SMOKE until his departure to the U.S. EPA Office of Air Quality Planning and Standards in 2002. With active-development continuing at the CEMPD, lead SMOKE development was passed from Catherine Seppanen to Dr. B.H. Baek in 2005. While some SMOKE development is occurring outside of CEMPD, the primary line of development is managed by Dr. Baek under funding from the U.S. EPA.
+
+# SMOKE-ready Input Data Files
+
+SMOKE input data consist of emissions inventories, temporal and chemical speciation profiles, spatial surrogates, gridded meteorology and land use data, and other ancillary files for specifying the timing, location, and chemical nature of emissions. SMOKE is distributed with example data for getting started with the model. The example files distributed with SMOKE are for demonstration purposes only, they are not meant for real-world modeling applications.
+
+The primary source for non-meteorology SMOKE input data is the U.S. EPA Clearinghouse for Inventories and Emissions Factors (CHIEF). The U.S. EPA Office of Air Quality Planning and Standards (OAQPS) Emissions Inventory and Analysis Group (EIAG) provides SMOKE inputs for different rule-making modeling platforms. These platforms include not only the NEI for both criteria air pollutants (CAPs) and hazardous air pollutants (HAPs), but also all of the SMOKE ancillary data files created by EPA for use in SMOKE. EPA uses CHIEF to provide these data.
+
+Meteorology data must be generated for specific SMOKE applications using either MM5, WRF, or a similar model. The output data from meteorology models must be formatted for SMOKE using a program like MCIP.
+
