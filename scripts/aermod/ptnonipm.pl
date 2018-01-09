@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Geo::Coordinates::UTM qw(latlon_to_utm);
+use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 
 require 'aermod.subs';
 require 'aermod_pt.subs';
@@ -66,7 +66,8 @@ while (my $line = <$inx_fh>) {
 
 my %headers;
 my @pollutants;
-my %facilities;
+my %facility_data; # for each plant_id, a hash with count, utm zone, max emissions, x cell, and y cell
+my @locations;
 
 print "Processing AERMOD sources...\n";
 my $line_num = 0;
@@ -83,23 +84,35 @@ while (my $line = <$in_fh>) {
   
   $line_num++;
   
-  # check if all emissions are zero
-  my $all_zero = 1;
+  # sum emissions and check if all emissions are zero
+  my $record_emissions = 0;
   foreach my $poll (@pollutants) {
-    next if $data[$headers{$poll}] == 0.0;
-    $all_zero = 0;
-    last;
+    $record_emissions += $data[$headers{$poll}];
   }
-  next if $all_zero;
+  next if $record_emissions == 0;
   
-  # add to source count for current facility
+  # initialize facility data if needed
   my $plant_id = $data[$headers{'Plant ID'}];
-  unless (exists $facilities{$plant_id}) {
-    $facilities{$plant_id} = 0;
+  unless (exists $facility_data{$plant_id}) {
+    $facility_data{$plant_id}{'count'} = 0;
+    $facility_data{$plant_id}{'max_emissions'} = $record_emissions;
+    $facility_data{$plant_id}{'x cell'} = $data[$headers{'X cell'}];
+    $facility_data{$plant_id}{'y cell'} = $data[$headers{'Y cell'}];
+    my ($zone, $utm_x, $utm_y) = latlon_to_utm(23, $data[$headers{'Latitude'}], $data[$headers{'Longitude'}]);
+    $facility_data{$plant_id}{'utm zone'} = $zone;
   }
-  $facilities{$plant_id}++;
 
-  my $src_id = 'SN' . sprintf('%03d', $facilities{$plant_id});
+  # add to source count for current facility
+  $facility_data{$plant_id}{'count'}++;
+  
+  # update grid cell if current record has more emissions
+  if ($record_emissions > $facility_data{$plant_id}{'max_emissions'}) {
+    $facility_data{$plant_id}{'max_emissions'} = $record_emissions;
+    $facility_data{$plant_id}{'x cell'} = $data[$headers{'X cell'}];
+    $facility_data{$plant_id}{'y cell'} = $data[$headers{'Y cell'}];
+  }
+
+  my $src_id = 'SN' . sprintf('%03d', $facility_data{$plant_id}{'count'});
   
   my @common;
   push @common, $plant_id;
@@ -114,15 +127,14 @@ while (my $line = <$in_fh>) {
   push @output, $data[$headers{'Lambert-Y'}];
   push @output, $data[$headers{'Longitude'}];
   push @output, $data[$headers{'Latitude'}];
-  my ($zone, $utm_x, $utm_y) = latlon_to_utm(23, $data[$headers{'Latitude'}], $data[$headers{'Longitude'}]);
+  my ($zone, $utm_x, $utm_y) = latlon_to_utm_force_zone(23, $facility_data{$plant_id}{'utm zone'}, $data[$headers{'Latitude'}], $data[$headers{'Longitude'}]);
   my $outzone = $zone;
   $outzone =~ s/\D//g; # strip latitude band designation from UTM zone
   push @output, sprintf('%.2f', $utm_x);
   push @output, sprintf('%.2f', $utm_y);
   push @output, $outzone;
-  push @output, $data[$headers{'X cell'}];
-  push @output, $data[$headers{'Y cell'}];
-  print $loc_fh join(',', @output) . "\n";
+  # grid cell row and column will be added just before output
+  push @locations, [ @output ];
   
   # prepare parameters output
   my $erp_type = $data[$headers{'Emis Release Type'}];
@@ -192,6 +204,14 @@ while (my $line = <$in_fh>) {
     push @output, $src_id;
     print $src_fh join(',', @output) . "\n";
   }
+}
+
+# output location records
+foreach my $out_ref (@locations) {
+  my $plant_id = $out_ref->[1];
+  push @$out_ref, $facility_data{$plant_id}{'x cell'};
+  push @$out_ref, $facility_data{$plant_id}{'y cell'};
+  print $loc_fh join(',', @$out_ref) . "\n";
 }
 
 close $in_fh;
