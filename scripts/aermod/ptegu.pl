@@ -174,7 +174,7 @@ while (my $line = <$in_fh>) {
     # calculate szinit
     my $fug_ht = $data[$headers{'Fug Ht'}];
     if ($fug_ht > 10) {
-      push @output, sprintf('%.2f', $fug_ht / 4.3);
+      push @output, sprintf('%.5f', $fug_ht / 4.3);
     } else {
       push @output, 0.00;
     }
