@@ -1383,18 +1383,66 @@ C.....................  Convert UTM values to lat-lon
                     CEXTORL ( CURSRC ) = ADJUSTL( EXTORL )
 
 C.....................  Convert units on values
-                    IF( STKHT( CURSRC ) < 0. ) STKHT( CURSRC ) = 0.
+                    IF( STKHT( CURSRC ) < 0. ) THEN
+                        STKHT( CURSRC ) = 0.
+                        WRITE( MESG,94010 ) 'WARNING: Negative stack ' //
+     &                      'height :: Reset to zero at line', IREC
+                        CALL M3MESG( MESG )
+                    END IF
                     STKHT( CURSRC ) = STKHT( CURSRC ) * FT2M   ! ft to m
 
-                    IF( STKDM( CURSRC ) < 0. ) STKDM( CURSRC ) = 0.
+                    IF( STKDM( CURSRC ) < 0. ) THEN
+                        STKDM( CURSRC ) = 0.
+                        WRITE( MESG,94010 ) 'WARNING: Negative stack ' //
+     &                      'diameter :: Reset to zero at line', IREC
+                        CALL M3MESG( MESG )
+                    END IF
                     STKDM( CURSRC ) = STKDM( CURSRC ) * FT2M   ! ft to m
 
-                    IF( STKTK( CURSRC ) <= 0. ) THEN
+                    IF( STKVE( CURSRC ) < 0. ) THEN
+                        STKVE( CURSRC ) = 0.
+                        WRITE( MESG,94010 ) 'WARNING: Negative stack ' //
+     &                      'exit velocity :: Reset to zero at line', IREC
+                        CALL M3MESG( MESG )
+                    END IF
+                    STKVE( CURSRC ) = STKVE( CURSRC ) * FT2M  ! ft/s to m/s
+
+                    IF( STKTK( CURSRC ) < 0. ) THEN
                         STKTK( CURSRC ) = 0.
+                        WRITE( MESG,94010 ) 'WARNING: Negative stack ' //
+     &                      'exit temperature :: Reset to zero at line', IREC
+                        CALL M3MESG( MESG )
                     ELSE
                         STKTK( CURSRC ) = ( STKTK( CURSRC ) - 32.0 ) *   ! F to K
      &                                    FTOC + CTOK
                     END IF
+
+                END IF
+
+C.................  Recompute velocity if that option has been set
+                IF( CFLAG ) THEN
+                    RBUF = 0.25 * PI *
+     &                     STKDM( CURSRC ) * STKDM( CURSRC )
+
+                    REALFL = STR2REAL( FL )
+                    IF( REALFL < 0. ) THEN
+                        REALFL = 0.
+                        WRITE( MESG,94010 ) 'WARNING: Negative stack flowrate ::'//
+     &                      ' Computed stack exit velocity will be zero at line', IREC
+                        CALL M3MESG( MESG )
+                    END IF
+                    REALFL = REALFL * FT2M3                 ! ft^3/s to m^3/s
+
+                    IF( RBUF > 0 ) THEN
+                        STKVE( CURSRC ) = REALFL / RBUF
+                    ELSE
+                        STKVE( CURSRC ) = 0.0
+                        WRITE( MESG,94010 ) 'WARNING: Failed to compute stack ' //
+     &                      'exit velocity due to zero diameter :: '//
+     &                      'Reset to zero at line', IREC
+                        CALL M3MESG( MESG )
+                    END IF
+
                 END IF
 
                 IF ( CURFMT == FF10FMT  ) THEN
@@ -1409,22 +1457,6 @@ C.....................  Convert units on values
                     FUGWID( CURSRC ) = FUGSCR
                     FUGLEN( CURSRC ) = FUGSCR
                     FUGANG( CURSRC ) = 0.0
-                END IF
-
-C.................  Recompute velocity if that option has been set
-                IF( CFLAG .OR. STKVE( CURSRC ) == 0. ) THEN
-                    RBUF = 0.25 * PI *
-     &                     STKDM( CURSRC ) * STKDM( CURSRC )
-
-                    REALFL = STR2REAL( FL )
-                    IF( REALFL < 0. ) REALFL = 0.
-                    REALFL = REALFL * FT2M3                 ! ft^3/s to m^3/s
-
-                    IF( RBUF > 0 ) THEN
-                        STKVE( CURSRC ) = REALFL / RBUF
-                    END IF
-                ELSE
-                    STKVE( CURSRC ) = STKVE( CURSRC ) * FT2M  ! ft/s to m/s
                 END IF
 
 C.................  Correct hemisphere for stack longitude
