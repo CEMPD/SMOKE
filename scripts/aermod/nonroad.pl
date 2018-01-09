@@ -117,13 +117,6 @@ foreach my $fh (@in_fh) {
     # override assigned temporal profiles
     $data[$headers{'Monthly Prf'}] = '262';
     $data[$headers{'Weekly  Prf'}] = '7';
-    $data[$headers{'Mon Diu Prf'}] = '26';
-    $data[$headers{'Tue Diu Prf'}] = '26';
-    $data[$headers{'Wed Diu Prf'}] = '26';
-    $data[$headers{'Thu Diu Prf'}] = '26';
-    $data[$headers{'Fri Diu Prf'}] = '26';
-    $data[$headers{'Sat Diu Prf'}] = '26';
-    $data[$headers{'Sun Diu Prf'}] = '26';
     
     # look up run group based on SCC
     my $scc = $data[$headers{'SCC'}];
