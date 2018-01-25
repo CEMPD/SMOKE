@@ -11,6 +11,8 @@ require 'aermod_np.subs';
 
 my $grid_prefix = '12_';
 
+my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+
 # check environment variables
 foreach my $envvar (qw(REPORT_JAN REPORT_FEB REPORT_MAR REPORT_APR REPORT_MAY REPORT_JUN 
                        REPORT_JUL REPORT_AUG REPORT_SEP REPORT_OCT REPORT_NOV REPORT_DEC 
@@ -229,7 +231,7 @@ foreach my $fh (@in_fh) {
         $emissions{$emis_id} = [0,0,0,0,0,0,0,0,0,0,0,0];
       }
       $emissions{$emis_id}[$month-1] = 
-        $emissions{$emis_id}[$month-1] + $data[$headers{$poll}] / 12;
+        $emissions{$emis_id}[$month-1] + $data[$headers{$poll}] * ($days_in_month[$month] / 365);
     }
   }
 }
