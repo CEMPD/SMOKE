@@ -9,7 +9,7 @@ use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 require 'aermod.subs';
 require 'aermod_np.subs';
 
-my $grid_prefix = '12_';
+my $grid_prefix = $ENV{'GRID_PREFIX'} || '12_';
 
 # check environment variables
 foreach my $envvar (qw(REPORT SOURCE_GROUPS GROUP_PARAMS 

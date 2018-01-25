@@ -9,7 +9,7 @@ use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 require 'aermod.subs';
 require 'aermod_np.subs';
 
-my $grid_prefix = '12_';
+my $grid_prefix = $ENV{'GRID_PREFIX'} || '12_';
 
 my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 
