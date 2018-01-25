@@ -12,6 +12,21 @@ require 'aermod_np.subs';
 my $grid_prefix = $ENV{'GRID_PREFIX'} || '4_';
 my $run_group_suffix = $ENV{'RUN_GROUP_SUFFIX'} || '4';
 
+# set up grid cell subsetting
+my $num_cells = 1;
+unless ($ENV{'USE_GRID_CELL_SUBSETTING_YN'} &&
+        $ENV{'USE_GRID_CELL_SUBSETTING_YN'} eq 'N') {
+  my $outer_size = $ENV{'OUTER_GRID_CELL_SIZE'} || 12;
+  my $inner_size = $ENV{'INNER_GRID_CELL_SIZE'} || 4;
+  
+  # check that outer size is a multiple of inner size
+  if ($outer_size % $inner_size != 0) {
+    die "OUTER_GRID_CELL_SIZE must be a multiple of INNER_GRID_CELL_SIZE";
+  }
+  
+  $num_cells = $outer_size / $inner_size;
+};
+
 my $oilgas_run_group;
 
 # check environment variables
@@ -122,15 +137,22 @@ while (my $line = <$in_fh>) {
   my $source_group = $scc_groups{$scc}{'source_group'};
 
   # build cell identifier
-  my $x_4k = $data[$headers{'X cell'}];
-  my $y_4k = $data[$headers{'Y cell'}];
-  my $x_12k = int(($x_4k + 2) / 3);
-  my $y_12k = int(($y_4k + 2) / 3);
-  my $cell = "G" . sprintf("%03d", $x_12k) .
-             "R" . sprintf("%03d", $y_12k);
+  my $resolution_id = '1';
+  my $cell;
+  if ($num_cells > 1) {
+    my $x_inner = $data[$headers{'X cell'}];
+    my $y_inner = $data[$headers{'Y cell'}];
+    my $x_outer = int(($x_inner + $num_cells - 1) / $num_cells);
+    my $y_outer = int(($y_inner + $num_cells - 1) / $num_cells);
+    $cell = "G" . sprintf("%03d", $x_outer) .
+            "R" . sprintf("%03d", $y_outer);
   
-  my $resolution_id = ((($x_4k - 1) % 3) + 1) +
-                      ((($y_4k - 1) % 3) * 3);
+    $resolution_id = ((($x_inner - 1) % $num_cells) + 1) +
+                     ((($y_inner - 1) % $num_cells) * $num_cells);
+  } else {
+    $cell = "G" . sprintf("%03d", $data[$headers{'X cell'}]) .
+            "R" . sprintf("%03d", $data[$headers{'Y cell'}]);
+  }
   
   my $source_id = join(":::", $cell, $resolution_id);
   unless (exists $sources{$source_id}) {
