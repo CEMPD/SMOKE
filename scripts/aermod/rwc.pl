@@ -293,7 +293,7 @@ while (my $line = <$in_fh>) {
 
 # prepare temporal profile output
 for my $region (sort keys %county_emissions) {
-  my $state = substr($region, 1, 2);
+  my $state = substr($region, 0, 2);
   my $file = "$output_dir/temporal/${rwc_run_group}_${state}_hourly.csv";
   unless (exists $handles{$file}) {
     my $fh = open_output($file);
