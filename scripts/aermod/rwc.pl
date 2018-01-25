@@ -10,6 +10,7 @@ require 'aermod.subs';
 require 'aermod_np.subs';
 
 my $grid_prefix = $ENV{'GRID_PREFIX'} || '12_';
+my $run_group_suffix = $ENV{'RUN_GROUP_SUFFIX'} || '12';
 
 my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 
@@ -135,7 +136,7 @@ while (my $line = <$in_fh>) {
     $sources{$cell} = 1;
 
     my @common;
-    push @common, $rwc_run_group;
+    push @common, $rwc_run_group . $run_group_suffix;
     push @common, $cell;
     push @common, "${grid_prefix}1";
 
@@ -152,7 +153,7 @@ while (my $line = <$in_fh>) {
     push @output, $outzone;
     push @output, $sw_lon;
     push @output, $sw_lat;
-    my $file = "$output_dir/locations/${rwc_run_group}_locations.csv";
+    my $file = "$output_dir/locations/${rwc_run_group}${run_group_suffix}_locations.csv";
     unless (exists $handles{$file}) {
       my $fh = open_output($file);
       write_location_header($fh);
@@ -195,7 +196,7 @@ while (my $line = <$in_fh>) {
     push @output, $ne_lat;
     push @output, $se_lon;
     push @output, $se_lat;
-    $file = "$output_dir/parameters/${rwc_run_group}_area_params.csv";
+    $file = "$output_dir/parameters/${rwc_run_group}${run_group_suffix}_area_params.csv";
     unless (exists $handles{$file}) {
       my $fh = open_output($file);
       write_parameter_header($fh);
@@ -294,7 +295,7 @@ while (my $line = <$in_fh>) {
 # prepare temporal profile output
 for my $region (sort keys %county_emissions) {
   my $state = substr($region, 0, 2);
-  my $file = "$output_dir/temporal/${rwc_run_group}_${state}_hourly.csv";
+  my $file = "$output_dir/temporal/${rwc_run_group}${run_group_suffix}_${state}_hourly.csv";
   unless (exists $handles{$file}) {
     my $fh = open_output($file);
     print $fh "run_group,region_cd,year,month,day,hour,factor\n";
@@ -305,7 +306,7 @@ for my $region (sort keys %county_emissions) {
   my $total_emissions = $county_emissions{$region}{'all'};
   
   my @common;
-  push @common, $rwc_run_group;
+  push @common, $rwc_run_group . $run_group_suffix;
   push @common, $region;
   push @common, '14';
   
@@ -337,10 +338,10 @@ for my $region (sort keys %county_emissions) {
 }
   
 # prepare crosswalk output and grid cell / county assignment
-my $cnty_fh = open_output("$output_dir/xwalk/${rwc_run_group}_county-to-gridcell.csv");
+my $cnty_fh = open_output("$output_dir/xwalk/${rwc_run_group}${run_group_suffix}_county-to-gridcell.csv");
 print $cnty_fh "run_group,region_cd,met_cell,src_id\n";
 
-my $x_fh = open_output("$output_dir/emis/${grid_prefix}${rwc_run_group}_emis.csv");
+my $x_fh = open_output("$output_dir/emis/${grid_prefix}${rwc_run_group}${run_group_suffix}_emis.csv");
 print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value\n";
 
 for my $cell (sort keys %gridded_emissions) {
@@ -353,7 +354,7 @@ for my $cell (sort keys %gridded_emissions) {
         next if $gridded_emissions{$cell}{$source_group}{$region}{$poll} == 0.0;
 
         my @output;
-        push @output, $rwc_run_group;
+        push @output, $rwc_run_group . $run_group_suffix;
         push @output, $region;
         push @output, $cell;
         push @output, "${grid_prefix}1";
@@ -372,7 +373,7 @@ for my $cell (sort keys %gridded_emissions) {
   }
   
   my @output;
-  push @output, $rwc_run_group;
+  push @output, $rwc_run_group . $run_group_suffix;
   push @output, $cell_assignment;
   push @output, $cell;
   push @output, "${grid_prefix}1";

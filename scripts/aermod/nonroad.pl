@@ -10,6 +10,7 @@ require 'aermod.subs';
 require 'aermod_np.subs';
 
 my $grid_prefix = $ENV{'GRID_PREFIX'} || '12_';
+my $run_group_suffix = $ENV{'RUN_GROUP_SUFFIX'} || '12';
 
 my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 
@@ -137,7 +138,7 @@ foreach my $fh (@in_fh) {
       $sources{$source_id} = 1;
 
       my @common;
-      push @common, $run_group;
+      push @common, $run_group . $run_group_suffix;
       push @common, $cell;
       push @common, "${grid_prefix}1";
 
@@ -154,7 +155,7 @@ foreach my $fh (@in_fh) {
       push @output, $outzone;
       push @output, $sw_lon;
       push @output, $sw_lat;
-      my $file = "$output_dir/locations/${run_group}_locations.csv";
+      my $file = "$output_dir/locations/${run_group}${run_group_suffix}_locations.csv";
       unless (exists $handles{$file}) {
         my $fh = open_output($file);
         write_location_header($fh);
@@ -197,7 +198,7 @@ foreach my $fh (@in_fh) {
       push @output, $ne_lat;
       push @output, $se_lon;
       push @output, $se_lat;
-      $file = "$output_dir/parameters/${run_group}_area_params.csv";
+      $file = "$output_dir/parameters/${run_group}${run_group_suffix}_area_params.csv";
       unless (exists $handles{$file}) {
         my $fh = open_output($file);
         write_parameter_header($fh);
@@ -212,7 +213,7 @@ foreach my $fh (@in_fh) {
       @output = @common;
       push @output, $qflag;
       push @output, map { sprintf('%.8f', $_) } @factors;
-      $file = "$output_dir/temporal/${run_group}_temporal.csv";
+      $file = "$output_dir/temporal/${run_group}${run_group_suffix}_temporal.csv";
       unless (exists $handles{$file}) {
         my $fh = open_output($file);
         write_temporal_header($fh);
@@ -241,7 +242,7 @@ foreach my $emis_id (keys %emissions) {
   my ($run_group, $cell, $source_group, $region, $poll) = split(/:::/, $emis_id);
 
   my @output;
-  push @output, $run_group;
+  push @output, $run_group . $run_group_suffix;
   push @output, $region;
   push @output, $cell;
   push @output, "${grid_prefix}1";
@@ -255,7 +256,7 @@ foreach my $emis_id (keys %emissions) {
   next if $total == 0.0;
   push @output, $total;
   push @output, @{$emissions{$emis_id}};
-  my $file = "$output_dir/emis/${grid_prefix}${run_group}_emis.csv";
+  my $file = "$output_dir/emis/${grid_prefix}${run_group}${run_group_suffix}_emis.csv";
   unless (exists $handles{$file}) {
     my $fh = open_output($file);
     print $fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value,january,february,march,april,may,june,july,august,september,october,november,december\n";

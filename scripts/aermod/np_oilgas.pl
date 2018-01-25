@@ -10,6 +10,7 @@ require 'aermod.subs';
 require 'aermod_np.subs';
 
 my $grid_prefix = $ENV{'GRID_PREFIX'} || '4_';
+my $run_group_suffix = $ENV{'RUN_GROUP_SUFFIX'} || '4';
 
 my $oilgas_run_group;
 
@@ -136,7 +137,7 @@ while (my $line = <$in_fh>) {
     $sources{$source_id} = 1;
 
     my @common;
-    push @common, $oilgas_run_group;
+    push @common, $oilgas_run_group . $run_group_suffix;
     push @common, $cell;
     push @common, "${grid_prefix}${resolution_id}";
 
@@ -153,7 +154,7 @@ while (my $line = <$in_fh>) {
     push @output, $outzone;
     push @output, $sw_lon;
     push @output, $sw_lat;
-    my $file = "$output_dir/locations/${oilgas_run_group}_locations.csv";
+    my $file = "$output_dir/locations/${oilgas_run_group}${run_group_suffix}_locations.csv";
     unless (exists $handles{$file}) {
       my $fh = open_output($file);
       write_location_header($fh);
@@ -196,7 +197,7 @@ while (my $line = <$in_fh>) {
     push @output, $ne_lat;
     push @output, $se_lon;
     push @output, $se_lat;
-    $file = "$output_dir/parameters/${oilgas_run_group}_area_params.csv";
+    $file = "$output_dir/parameters/${oilgas_run_group}${run_group_suffix}_area_params.csv";
     unless (exists $handles{$file}) {
       my $fh = open_output($file);
       write_parameter_header($fh);
@@ -260,10 +261,10 @@ for my $region (sort keys %county_emissions) {
 }
 
 # prepare temporal profile and crosswalk output
-my $tmp_fh = open_output("$output_dir/temporal/${oilgas_run_group}_temporal.csv");
+my $tmp_fh = open_output("$output_dir/temporal/${oilgas_run_group}${run_group_suffix}_temporal.csv");
 write_temporal_header($tmp_fh);
 
-my $x_fh = open_output("$output_dir/emis/${grid_prefix}${oilgas_run_group}_emis.csv");
+my $x_fh = open_output("$output_dir/emis/${grid_prefix}${oilgas_run_group}${run_group_suffix}_emis.csv");
 print $x_fh "run_group,region_cd,met_cell,src_id,source_group,smoke_name,ann_value\n";
 
 for my $source_id (sort keys %gridded_emissions) {
@@ -277,7 +278,7 @@ for my $source_id (sort keys %gridded_emissions) {
         next if $gridded_emissions{$source_id}{$source_group}{$region}{$poll} == 0.0;
 
         my @output;
-        push @output, $oilgas_run_group;
+        push @output, $oilgas_run_group . $run_group_suffix;
         push @output, $region;
         push @output, $cell;
         push @output, "${grid_prefix}${resolution_id}";
@@ -296,7 +297,7 @@ for my $source_id (sort keys %gridded_emissions) {
   }
   
   my @output;
-  push @output, $oilgas_run_group;
+  push @output, $oilgas_run_group . $run_group_suffix;
   push @output, $cell;
   push @output, "${grid_prefix}${resolution_id}";
   push @output, 'MONTH';
