@@ -78,6 +78,8 @@ C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
      &                     XCENT, YCENT, NCOLS, NROWS, NGRID
 
+        USE MODGRDLIB
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -98,7 +100,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         ENVYN
         LOGICAL         EVALCRIT
         INTEGER         FINDC
-        LOGICAL         INGRID 
         REAL            PLUMRIS
         INTEGER         PROMPTFFILE
         CHARACTER(16)   PROMPTMFILE
@@ -106,7 +107,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         EXTERNAL        CRLF, DSCM3GRD, ENVINT, ENVREAL, ENVYN, INDEX1,
      &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE,
-     &                  PROMPTMFILE, INGRID
+     &                  PROMPTMFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
         CHARACTER(50), PARAMETER :: 

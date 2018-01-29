@@ -54,10 +54,9 @@ C...........   EXTERNAL FUNCTIONS
         CHARACTER(2)    CRLF
         INTEGER         FIND1
         INTEGER         FINDC
-        LOGICAL         INGRID
         LOGICAL         DSCM3GRD
 
-        EXTERNAL        CRLF, FIND1, FINDC, INGRID, DSCM3GRD
+        EXTERNAL        CRLF, FIND1, FINDC, DSCM3GRD
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAME         ! gridding mtx logical name

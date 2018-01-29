@@ -36,6 +36,8 @@ C.........  MODULES for public variables
 C.........  This module contains biogenic variables
         USE MODBEIS3, ONLY: NVEG, VEGID, AVGEMIS, AVGLAI, NOEMIS, 
      &                      EMFAC, LAI, SLW, WFAC, LFBIO
+
+        USE MODGRDLIB
  
         IMPLICIT NONE
 
@@ -218,7 +220,7 @@ C.............  Read grid cell coordinates
             END IF
 
 C.............  Convert coordinates to map projection units
-            CALL CONVRTXY( NCDOT*NRDOT, GDTYP3D, GRDNM,
+            CALL CONVRTXY( NCDOT, NRDOT, GDTYP3D, GRDNM,
      &                     P_ALP3D, P_BET3D, P_GAM3D,
      &                     XCENT3D, YCENT3D, XVALS, YVALS )
 

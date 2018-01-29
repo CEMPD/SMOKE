@@ -53,6 +53,8 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, NCHARS, SC_BEGP, SC_ENDP
 
+        USE MODGRDLIB
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -71,10 +73,9 @@ C...........   ARGUMENTS and their descriptions:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2) CRLF
         LOGICAL      EVALCRIT
-        LOGICAL      FLTERR
         INTEGER      ENVINT
 
-        EXTERNAL    CRLF, EVALCRIT, FLTERR, ENVINT
+        EXTERNAL    CRLF, EVALCRIT, ENVINT
 
 C...........   LOCAL PARAMETERS and their descriptions:
         INTEGER, PARAMETER :: MXLOCGRP = 1000  ! Max number groups per facility

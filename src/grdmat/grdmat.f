@@ -57,6 +57,8 @@ C.........  This module is required by the FileSetAPI
 C...........   This module contains the gridding surrogates desciption files
         USE MODSURG, ONLY: NSRGS, SRGLIST, NTSRGDSC, SRGFNAM, NSRGFIPS,
      &                     SRGFIPS, SRGFCOD, SRGFMT, SRGNCOLS, SRGNROWS
+
+        USE MODGRDLIB
      
         IMPLICIT NONE
 
@@ -76,7 +78,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(IODLEN3) GETCFDSC
         INTEGER            INDEX1
         INTEGER            FIND1
-        LOGICAL            INGRID
         INTEGER            PROMPTFFILE
         CHARACTER(16)      VERCHAR
         INTEGER            ENVINT
@@ -85,7 +86,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL            BLKORCMT
         LOGICAL            SETENVVAR
 
-        EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INDEX1, INGRID, 
+        EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INDEX1, 
      &            PROMPTFFILE, VERCHAR, FIND1, ENVINT, GETFLINE,
      &            BLKORCMT, SETENVVAR, GETEFILE
 
@@ -153,7 +154,7 @@ C...........   Other local variables
         INTEGER         ISDEF     !  default surrogate ID code index
 
         REAL            CAVG   ! average number sources per cell
-        REAL            XX, YY
+        REAL*8          XX, YY
 
         LOGICAL      :: A2PFLAG = .FALSE.  ! true: inv has ar-to-pt locations
         LOGICAL      :: AFLAG   = .FALSE.  ! true: use grid adjustments file
@@ -666,10 +667,9 @@ C.............  Convert point source coordinates from lat-lon to output grid
      &                     XCENT, YCENT, XLOCA, YLOCA )
        
 C.............  Set the number of source-cell intersections
+C.............  Use double-precision INGRID to minimize round-off errors
             DO S = 1, NSRC
-                XX = XLOCA( S )
-                YY = YLOCA( S )
-                IF( INGRID( XX, YY, NCOLS, NROWS, COL, ROW  ) ) THEN
+                IF( INGRID( XLOCA( S ), YLOCA( S ), NCOLS, NROWS, COL, ROW  ) ) THEN
                     NMATX = NMATX + 1
                 END IF
             END DO

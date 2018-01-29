@@ -46,8 +46,8 @@ C.........  SUBROUTINE ARGUMENTS
         REAL,         INTENT (IN) :: XREFS( NC,NR ) ! grid cell center x coordinates
         REAL,         INTENT (IN) :: YREFS( NC,NR ) ! grid cell center y coordinates
         INTEGER,      INTENT (IN) :: NPTS         ! number of point-source locations
-        REAL,         INTENT (IN) :: XLOC( NPTS ) ! X point coordinates
-        REAL,         INTENT (IN) :: YLOC( NPTS ) ! Y point coordinates
+        REAL*8,       INTENT (IN) :: XLOC( NPTS ) ! X point coordinates
+        REAL*8,       INTENT (IN) :: YLOC( NPTS ) ! Y point coordinates
         INTEGER,      INTENT(OUT) :: NU( 4,NPTS ) ! surrounding grid cells for each source
         REAL,         INTENT(OUT) :: CU( 4,NPTS ) ! fraction of each grid cell
         

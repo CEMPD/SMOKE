@@ -41,6 +41,8 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+        USE MODGRDLIB       !! for dblerr() generic
+
         IMPLICIT NONE
 
 C.........  INCLUDE FILES
@@ -51,10 +53,9 @@ C.........  INCLUDE FILES
 
 C.........  EXTERNAL FUNCTIONS
         CHARACTER(2)  CRLF
-        LOGICAL       FLTERR
         CHARACTER(50) GETCFDSC
 
-        EXTERNAL      CRLF, FLTERR, GETCFDSC
+        EXTERNAL      CRLF, GETCFDSC
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAM2D ! name of grid cross-point 2d file
@@ -70,15 +71,15 @@ C.........  Grid information
         INTEGER :: NLAYS = 0      ! number of layers
         INTEGER :: NROWS = 0      ! number of rows in grid
         INTEGER :: GDTYP = -1     ! i/o api grid type code
-        REAL    :: P_ALP = 0.D0   ! projection alpha
-        REAL    :: P_BET = 0.D0   ! projection beta
-        REAL    :: P_GAM = 0.D0   ! projection gamma
-        REAL    :: XCENT = 0.D0   ! x-center of projection
-        REAL    :: YCENT = 0.D0   ! y-center of projection
-        REAL    :: XORIG = 0.D0   ! x-origin of grid
-        REAL    :: YORIG = 0.D0   ! y-origin of grid
-        REAL    :: XCELL = 0.D0   ! x-dim of cells
-        REAL    :: YCELL = 0.D0   ! y-dim of cells
+        REAL(8) :: P_ALP = 0.D0   ! projection alpha
+        REAL(8) :: P_BET = 0.D0   ! projection beta
+        REAL(8) :: P_GAM = 0.D0   ! projection gamma
+        REAL(8) :: XCENT = 0.D0   ! x-center of projection
+        REAL(8) :: YCENT = 0.D0   ! y-center of projection
+        REAL(8) :: XORIG = 0.D0   ! x-origin of grid
+        REAL(8) :: YORIG = 0.D0   ! y-origin of grid
+        REAL(8) :: XCELL = 0.D0   ! x-dim of cells
+        REAL(8) :: YCELL = 0.D0   ! y-dim of cells
         CHARACTER(IOVLEN3) :: GRDNM = ' '  ! grid name
 
 C.........  Vertical structure information
@@ -158,15 +159,15 @@ C.........  Set the reference local grid and other meteorology file settings
         ELSE
             GRDNM = GDNAM3D
             GDTYP = GDTYP3D
-            P_ALP = SNGL( P_ALP3D )
-            P_BET = SNGL( P_BET3D )
-            P_GAM = SNGL( P_GAM3D )
-            XCENT = SNGL( XCENT3D )
-            YCENT = SNGL( YCENT3D )
-            XORIG = SNGL( XORIG3D )
-            YORIG = SNGL( YORIG3D )
-            XCELL = SNGL( XCELL3D )
-            YCELL = SNGL( YCELL3D )
+            P_ALP = P_ALP3D
+            P_BET = P_BET3D
+            P_GAM = P_GAM3D
+            XCENT = XCENT3D
+            YCENT = YCENT3D
+            XORIG = XORIG3D
+            YORIG = YORIG3D
+            XCELL = XCELL3D
+            YCELL = YCELL3D
             NCOLS = NCOLS3D
             NROWS = NROWS3D
 
@@ -278,15 +279,15 @@ c                YORIG3D = YORIG3D + 0.5D0 * YCELL3D
 C.............  Check horizontal parameters from header
             IF ( NCOLS .NE. NCOLS3D .OR.
      &           NROWS .NE. NROWS3D .OR.
-     &           FLTERR( XCELL, SNGL( XCELL3D ) ) .OR.
-     &           FLTERR( YCELL, SNGL( YCELL3D ) ) .OR.
-     &           FLTERR( XORIG, SNGL( XORIG3D ) ) .OR.
-     &           FLTERR( YORIG, SNGL( YORIG3D ) ) .OR.
-     &           FLTERR( XCENT, SNGL( XCENT3D ) ) .OR.
-     &           FLTERR( YCENT, SNGL( YCENT3D ) ) .OR.
-     &           FLTERR( P_ALP, SNGL( P_ALP3D ) ) .OR.
-     &           FLTERR( P_BET, SNGL( P_BET3D ) ) .OR.
-     &           FLTERR( P_GAM, SNGL( P_GAM3D ) )      ) THEN
+     &           DBLERR( XCELL, XCELL3D ) .OR.
+     &           DBLERR( YCELL, YCELL3D ) .OR.
+     &           DBLERR( XORIG, XORIG3D ) .OR.
+     &           DBLERR( YORIG, YORIG3D ) .OR.
+     &           DBLERR( XCENT, XCENT3D ) .OR.
+     &           DBLERR( YCENT, YCENT3D ) .OR.
+     &           DBLERR( P_ALP, P_ALP3D ) .OR.
+     &           DBLERR( P_BET, P_BET3D ) .OR.
+     &           DBLERR( P_GAM, P_GAM3D )      ) THEN
 
                 EFLAG = .TRUE.
                 MESG = 'ERROR: Horizontal grid parameters in file "' // 

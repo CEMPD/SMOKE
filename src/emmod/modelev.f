@@ -49,8 +49,8 @@
         REAL   , ALLOCATABLE, PUBLIC:: ELEVFLTR( : ) ! =0. for lower, =1. elev
         LOGICAL, ALLOCATABLE, PUBLIC:: LMAJOR  ( : ) ! true: src is a major src
         LOGICAL, ALLOCATABLE, PUBLIC:: LPING   ( : ) ! true: src is a PinG src
-        REAL   , ALLOCATABLE, PUBLIC:: SRCXL   ( : ) ! x-location given projection
-        REAL   , ALLOCATABLE, PUBLIC:: SRCYL   ( : ) ! y-location given projection
+        REAL*8 , ALLOCATABLE, PUBLIC:: SRCXL   ( : ) ! x-location given projection
+        REAL*8 , ALLOCATABLE, PUBLIC:: SRCYL   ( : ) ! y-location given projection
 
 !...........   Allocatable arrays for stack groups
         INTEGER, ALLOCATABLE, PUBLIC:: GRPGID( : ) ! sorted stack group ID
@@ -64,12 +64,14 @@
         REAL   , ALLOCATABLE, PUBLIC:: GRPDM ( : ) ! group intl stack diam [m]
         REAL   , ALLOCATABLE, PUBLIC:: GRPFL ( : ) ! group exit flw rate [m^3/s]
         REAL   , ALLOCATABLE, PUBLIC:: GRPHT ( : ) ! group stack height [m]
-        REAL   , ALLOCATABLE, PUBLIC:: GRPLAT( : ) ! group latitude [degrees]
-        REAL   , ALLOCATABLE, PUBLIC:: GRPLON( : ) ! group longitude [degrees]
+        REAL*8 , ALLOCATABLE, PUBLIC:: GRPLAT( : ) ! group latitude [degrees]
+        REAL*8 , ALLOCATABLE, PUBLIC:: GRPLON( : ) ! group longitude [degrees]
         REAL   , ALLOCATABLE, PUBLIC:: GRPTK ( : ) ! group exit temperature [K]
         REAL   , ALLOCATABLE, PUBLIC:: GRPVE ( : ) ! group exit velocity [m/s]
-        REAL   , ALLOCATABLE, PUBLIC:: GRPXL ( : ) ! x-location given projection
-        REAL   , ALLOCATABLE, PUBLIC:: GRPYL ( : ) ! y-location given projection
+        REAL*8 , ALLOCATABLE, PUBLIC:: GRPXL ( : ) ! x-location given projection
+        REAL*8 , ALLOCATABLE, PUBLIC:: GRPYL ( : ) ! y-location given projection
+        REAL   , ALLOCATABLE, PUBLIC:: GRPXX ( : ) ! x-location given projection
+        REAL   , ALLOCATABLE, PUBLIC:: GRPYY ( : ) ! y-location given projection
         REAL   , ALLOCATABLE, PUBLIC:: GRPACRES( :) ! acres/day for a fire
         INTEGER, ALLOCATABLE, PUBLIC:: GRPLPING( : ) ! flag indicating a ping source group
         INTEGER, ALLOCATABLE, PUBLIC:: GRPLMAJOR( : ) ! flag indicating a major source group

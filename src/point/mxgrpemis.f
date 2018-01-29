@@ -50,6 +50,7 @@ C.........  This module contains the information about the source category
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NCOLS, NROWS
+        USE MODGRDLIB
 
 C.........This module is required by the FileSetAPI
         USE MODFILESET
@@ -72,14 +73,13 @@ C...........   ARGUMENTS and their descriptions:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2) CRLF
         INTEGER      GETFLINE
-        LOGICAL      INGRID
         CHARACTER(14) MMDDYY
         LOGICAL      SETENVVAR
         INTEGER      PROMPTFFILE
         INTEGER      SECSDIFF
         INTEGER      WKDAY
 
-        EXTERNAL    CRLF, GETFLINE, INGRID, MMDDYY, SETENVVAR, 
+        EXTERNAL    CRLF, GETFLINE, MMDDYY, SETENVVAR, 
      &              PROMPTMFILE, SECSDIFF, WKDAY
 
 C...........   Local allocatable arrays

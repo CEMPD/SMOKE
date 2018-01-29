@@ -2,7 +2,7 @@
         SUBROUTINE WRSRCGRPS( VNAME, JDATE, JTIME, INPUTFLAG, INPUTEMIS )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line
 C
 C  DESCRIPTION:
 C     This subroutine writes the emissions for each source
@@ -27,16 +27,16 @@ C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2013, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C**************************************************************************
 
@@ -47,26 +47,29 @@ C.........  This module contains the major data structure and control flags
      &                      PFLAG, PVNAME, PVSDATE, PVSTIME, ISRCGRP
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID, ONLY: NGRID, NCOLS, NROWS, 
+        USE MODGRID, ONLY: NGRID, NCOLS, NROWS,
      &                     GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
      &                     XCENT, YCENT, XORIG, YORIG, XCELL, YCELL
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV, ONLY: NGROUP, NELEVGRPS, EMELEVGRP, 
+        USE MODELEV, ONLY: NGROUP, NELEVGRPS, EMELEVGRP,
      &                     ELEVSTKGRP, ELEVSRCGRP, ELEVSTKCNT, SGFIREFLAG
-        
+
+        USE MODGRDLIB
+
         IMPLICIT NONE
 
 C.........  INCLUDES:
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'FDESC3.EXT'    !  I/O API file descriptions
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         REAL     ENVREAL
-        INTEGER  FIND1
-        
-        EXTERNAL ENVREAL, FIND1
+        INTEGER  FIND1, INDEX1
+
+        EXTERNAL ENVREAL, FIND1, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: VNAME   ! variable name to output
@@ -102,7 +105,7 @@ C...........   Other local variables
         INTEGER          ROWNUM        ! grid cell row
         INTEGER          COLNUM        ! grid cell column
         INTEGER          ELEVIDX       ! starting index for elevated sources
-        
+
         REAL             XLOCACELL     ! x-location for grid cell
         REAL             YLOCACELL     ! y-location for grid cell
 
@@ -116,7 +119,7 @@ C...........   Other local variables
 C   begin body of subroutine WRSRCGRPS
 
         IF( FIRSTTIME ) THEN
-        
+
 C.............  Output stack groups file
             ALLOCATE( ISTACK( NSGOUTPUT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ISTACK', PROGNAME )
@@ -165,7 +168,7 @@ C.............  Set dummy stack parameter arrays based on environment settings
             STKTK  = ENVREAL( 'SRCGRP_STKTK',  'Stack exit temperature', 273.0, IOS )
             STKVE  = ENVREAL( 'SRCGRP_STKVE',  'Stack exit velocity', 0.1, IOS )
             STKFLW = ENVREAL( 'SRCGRP_STKFLW', 'Stack exit flow rate', 0.1, IOS )
-            
+
             K = 0
             DO C = 1, NGRID
 
@@ -182,7 +185,7 @@ C.................  Calculate x and y-position at center of grid cell
 
 C.....................  Skip missing values
                     IF( GRPCNT( C, G ) == 0 ) CYCLE
-                    
+
                     K = K + 1
                     ISTACK( K ) = IGRPNUM( G )
                     STKCNT( K ) = GRPCNT( C, G )
@@ -193,92 +196,92 @@ C.....................  Skip missing values
                 END DO
             END DO
 
-C.............  Convert x and y grid cell locations to lat/lon            
+C.............  Convert x and y grid cell locations to lat/lon
             LAT = YLOCA
             LONG = XLOCA
-            CALL CONVRTLL( K, GDTYP, GRDNM, 
-     &                     P_ALP, P_BET, P_GAM, 
+            CALL CONVRTLL( K, GDTYP, GRDNM,
+     &                     P_ALP, P_BET, P_GAM,
      &                     XCENT, YCENT, LONG, LAT )
 
 C.............  Append data for elevated source groups
             IF( PFLAG ) THEN
                 ELEVIDX = K + 1
-                
+
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
                     ISTACK( IDX ) = IGRPNUM( ELEVSRCGRP( G ) )
                 END DO
-                
+
                 STKCNT( ELEVIDX:NSGOUTPUT ) = ELEVSTKCNT
-            
+
                 ALLOCATE( INTDATA( NGROUP ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INTDATA', PROGNAME )
-                
+
                 CALL INT_READ3( PVNAME, 'ROW', 1, PVSDATE, PVSTIME, INTDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
                     ROW( IDX ) = INTDATA( ELEVSTKGRP( G ) )
                 END DO
-                
+
                 CALL INT_READ3( PVNAME, 'COL', 1, PVSDATE, PVSTIME, INTDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
                     COL( IDX ) = INTDATA( ELEVSTKGRP( G ) )
                 END DO
-                
+
                 CALL INT_READ3( PVNAME, 'LMAJOR', 1, PVSDATE, PVSTIME, INTDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
                     LMAJOR( IDX ) = INTDATA( ELEVSTKGRP( G ) )
                 END DO
-                
+
                 CALL INT_READ3( PVNAME, 'LPING', 1, PVSDATE, PVSTIME, INTDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
                     LPING( IDX ) = INTDATA( ELEVSTKGRP( G ) )
                 END DO
-                
+
                 DEALLOCATE( INTDATA )
-                
+
                 ALLOCATE( REALDATA( NGROUP ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'REALDATA', PROGNAME )
-                
+
                 CALL REAL_READ3( PVNAME, 'XLOCA', 1, PVSDATE, PVSTIME, REALDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
                     XLOCA( IDX ) = REALDATA( ELEVSTKGRP( G ) )
                 END DO
-                
+
                 CALL REAL_READ3( PVNAME, 'YLOCA', 1, PVSDATE, PVSTIME, REALDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
                     YLOCA( IDX ) = REALDATA( ELEVSTKGRP( G ) )
                 END DO
-                
+
                 CALL REAL_READ3( PVNAME, 'STKDM', 1, PVSDATE, PVSTIME, REALDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
                     STKDM( IDX ) = REALDATA( ELEVSTKGRP( G ) )
                 END DO
-                
+
                 CALL REAL_READ3( PVNAME, 'STKHT', 1, PVSDATE, PVSTIME, REALDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
                     STKHT( IDX ) = REALDATA( ELEVSTKGRP( G ) )
                 END DO
-                
+
                 CALL REAL_READ3( PVNAME, 'STKTK', 1, PVSDATE, PVSTIME, REALDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
                     STKTK( IDX ) = REALDATA( ELEVSTKGRP( G ) )
                 END DO
-                
+
                 CALL REAL_READ3( PVNAME, 'STKVE', 1, PVSDATE, PVSTIME, REALDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
                     STKVE( IDX ) = REALDATA( ELEVSTKGRP( G ) )
                 END DO
-                
+
                 CALL REAL_READ3( PVNAME, 'STKFLW', 1, PVSDATE, PVSTIME, REALDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
@@ -287,7 +290,7 @@ C.............  Append data for elevated source groups
 
 C.................  If lat/lon is in existing stack groups file, append it
                 IF( READ3( PVNAME, 'LATITUDE', 1, PVSDATE, PVSTIME, REALDATA ) ) THEN
-    
+
                     DO G = 1, NELEVGRPS
                         IDX = ELEVIDX + G - 1
                         LAT( IDX ) = REALDATA( ELEVSTKGRP( G ) )
@@ -303,11 +306,12 @@ C.....................  Assume longitude is available if latitude was
                 ELSE
 
 C.....................  Otherwise, convert x and y grid cell locations
-                    LAT( ELEVIDX:NSGOUTPUT ) = YLOCA( ELEVIDX:NSGOUTPUT )
+                    LAT( ELEVIDX:NSGOUTPUT )  = YLOCA( ELEVIDX:NSGOUTPUT )
                     LONG( ELEVIDX:NSGOUTPUT ) = XLOCA( ELEVIDX:NSGOUTPUT )
-                    CALL CONVRTLL( NSGOUTPUT-ELEVIDX, GDTYP, GRDNM,
+                    CALL CONVRTLL( NSGOUTPUT-ELEVIDX+1, GDTYP, GRDNM,
      &                             P_ALP, P_BET, P_GAM, XCENT, YCENT,
-     &                             LONG( ELEVIDX ), LAT( ELEVIDX ) )
+     &                             LONG( ELEVIDX:NSGOUTPUT ),
+     &                             LAT(  ELEVIDX:NSGOUTPUT ) )
 
                 END IF
 
@@ -323,22 +327,22 @@ C.................  If acres burned is in existing stack groups file, add to out
                         IDX = ELEVIDX + G - 1
                         ACRES( IDX ) = REALDATA( ELEVSTKGRP( G ) )
                     END DO
-                
+
                 END IF
-                
+
                 DEALLOCATE( REALDATA )
             END IF
-        
+
             CALL INT_WRITE3( SRCGRPNAME, 'IGROUP', JDATE, JTIME, ISTACK )
             CALL INT_WRITE3( SRCGRPNAME, 'GRPCNT', JDATE, JTIME, STKCNT )
-            CALL INT_WRITE3( SRCGRPNAME, 'ROW', JDATE, JTIME, ROW )
-            CALL INT_WRITE3( SRCGRPNAME, 'COL', JDATE, JTIME, COL )
+            CALL INT_WRITE3( SRCGRPNAME, 'ROW',    JDATE, JTIME, ROW )
+            CALL INT_WRITE3( SRCGRPNAME, 'COL',    JDATE, JTIME, COL )
             CALL INT_WRITE3( SRCGRPNAME, 'LMAJOR', JDATE, JTIME, LMAJOR )
-            CALL INT_WRITE3( SRCGRPNAME, 'LPING', JDATE, JTIME, LPING )
-            
+            CALL INT_WRITE3( SRCGRPNAME, 'LPING',  JDATE, JTIME, LPING )
+
             CALL REAL_WRITE3( SRCGRPNAME, 'XLOCA', JDATE, JTIME, XLOCA )
             CALL REAL_WRITE3( SRCGRPNAME, 'YLOCA', JDATE, JTIME, YLOCA )
-            CALL REAL_WRITE3( SRCGRPNAME, 'LATITUDE', JDATE, JTIME, LAT )
+            CALL REAL_WRITE3( SRCGRPNAME, 'LATITUDE',  JDATE, JTIME, LAT )
             CALL REAL_WRITE3( SRCGRPNAME, 'LONGITUDE', JDATE, JTIME, LONG )
             CALL REAL_WRITE3( SRCGRPNAME, 'STKDM', JDATE, JTIME, STKDM )
             CALL REAL_WRITE3( SRCGRPNAME, 'STKHT', JDATE, JTIME, STKHT )
@@ -363,9 +367,9 @@ C.............  Allocate space for output emissions
 
             FIRSTTIME = .FALSE.
         END IF
-        
+
         OUTEMIS = 0.  ! array
-        
+
         K = 0
         DO C = 1, NGRID
             DO G = 1, NSRCGRP
@@ -385,10 +389,10 @@ C.................  Skip missing values
 C.........  Append emissions for elevated source groups
         IF( PFLAG ) THEN
             DO G = 1, NELEVGRPS
-    
+
                 K = K + 1
                 OUTEMIS( K ) = EMELEVGRP( G )
-    
+
             END DO
         END IF
 
@@ -400,7 +404,7 @@ C.........  Append emissions for elevated source groups
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
         END IF
-        
+
         RETURN
 
 C*****************  INTERNAL SUBPROGRAMS  ******************************
@@ -425,17 +429,21 @@ C.............  Local variables
 
 C----------------------------------------------------------------------
 
-            IF ( .NOT. READ3( FILNAM, VARNAM, LAYER,
-     &                        RDATE, RTIME, REALBUF ) ) THEN
-     
+            IF ( GET_VTYPE( FILNAM, VARNAM, RDATE, RTIME ) .NE. M3REAL ) THEN
+                    MESG = 'Type for variable "' // TRIM( VARNAM ) //
+     &                     '" in "'// TRIM( FILNAM ) // '" not M3REAL'
+                    CALL M3EXIT( PROGNAME, RDATE, RTIME, MESG, 2 )
+            ELSE IF ( .NOT. READ3( FILNAM, VARNAM, LAYER,
+     &                             RDATE, RTIME, REALBUF ) ) THEN
+
                 L1 = LEN_TRIM( VARNAM )
                 L2 = LEN_TRIM( FILNAM )
-                MESG = 'Could not read "' // VARNAM( 1:L1 ) //
+                MESG = 'Could not read "' // TRIM( VARNAM ) //
      &                 '" from file "' // FILNAM( 1:L2 ) // '"'
                 CALL M3EXIT( PROGNAME, RDATE, RTIME, MESG, 2 )
-            
+
             END IF
-            
+
             END SUBROUTINE REAL_READ3
 
 C----------------------------------------------------------------------
@@ -454,22 +462,24 @@ C.............  Subprogram arguments
             INTEGER      RTIME        ! read time
             INTEGER      INTBUF(*)    ! integer data buffer
 
-C.............  Local variables
-            INTEGER L1, L2
-
 C----------------------------------------------------------------------
 
-            IF ( .NOT. READ3( FILNAM, VARNAM, LAYER,
-     &                        RDATE, RTIME, INTBUF ) ) THEN
-     
-                L1 = LEN_TRIM( VARNAM )
-                L2 = LEN_TRIM( FILNAM )
-                MESG = 'Could not read "' // VARNAM( 1:L1 ) //
-     &                 '" from file "' // FILNAM( 1:L2 ) // '"'
+            IF ( GET_VTYPE( FILNAM, VARNAM, RDATE, RTIME ) .NE. M3INT ) THEN
+
+                    MESG = 'Type for variable "' // TRIM( VARNAM ) //
+     &                     '" in "'              // TRIM( FILNAM ) //
+     &                     '" not M3INT'
+                    CALL M3EXIT( PROGNAME, RDATE, RTIME, MESG, 2 )
+
+            ELSE IF ( .NOT. READ3( FILNAM, VARNAM, LAYER,
+     &                             RDATE, RTIME, INTBUF ) ) THEN
+
+                MESG = 'Could not read "' // TRIM( VARNAM ) //
+     &                 '" from file "'    // TRIM( FILNAM ) // '"'
                 CALL M3EXIT( PROGNAME, RDATE, RTIME, MESG, 2 )
-            
+
             END IF
-            
+
             END SUBROUTINE INT_READ3
 
 C----------------------------------------------------------------------
@@ -487,22 +497,24 @@ C.............  Subprogram arguments
             INTEGER      WTIME        ! write time
             REAL         REALBUF(*)   ! real data buffer
 
-C.............  Local variables
-            INTEGER L1, L2
-
 C----------------------------------------------------------------------
 
-            IF ( .NOT. WRITE3( FILNAM, VARNAM,
+            IF ( GET_VTYPE( FILNAM, VARNAM, WDATE, WTIME ) .NE. M3REAL ) THEN
+
+                    MESG = 'Type for variable "' // TRIM( VARNAM ) //
+     &                     '" in "'              // TRIM( FILNAM ) //
+     &                     '" not M3REAL'
+                    CALL M3EXIT( PROGNAME, WDATE, WTIME, MESG, 2 )
+
+            ELSE IF ( .NOT. WRITE3( FILNAM, VARNAM,
      &                         WDATE, WTIME, REALBUF ) ) THEN
-     
-                L1 = LEN_TRIM( VARNAM )
-                L2 = LEN_TRIM( FILNAM )
-                MESG = 'Could not write "' // VARNAM( 1:L1 ) //
-     &                 '" to file "' // FILNAM( 1:L2 ) // '"'
+
+                MESG = 'Could not write "' // TRIM( VARNAM ) //
+     &                 '" to file "'       // TRIM( FILNAM ) // '"'
                 CALL M3EXIT( PROGNAME, WDATE, WTIME, MESG, 2 )
-            
+
             END IF
-            
+
             END SUBROUTINE REAL_WRITE3
 
 C----------------------------------------------------------------------
@@ -520,22 +532,53 @@ C.............  Subprogram arguments
             INTEGER      WTIME        ! write time
             INTEGER      INTBUF(*)    ! integer data buffer
 
-C.............  Local variables
-            INTEGER L1, L2
-
 C----------------------------------------------------------------------
 
-            IF ( .NOT. WRITE3( FILNAM, VARNAM,
-     &                         WDATE, WTIME, INTBUF ) ) THEN
-     
-                L1 = LEN_TRIM( VARNAM )
-                L2 = LEN_TRIM( FILNAM )
-                MESG = 'Could not write "' // VARNAM( 1:L1 ) //
-     &                 '" to file "' // FILNAM( 1:L2 ) // '"'
+            IF ( GET_VTYPE( FILNAM, VARNAM, WDATE, WTIME ) .NE. M3INT ) THEN
+
+                    MESG = 'Type for variable "' // TRIM( VARNAM ) //
+     &                     '" in "'              // TRIM( FILNAM ) //
+     &                     '" not M3INT'
+                    CALL M3EXIT( PROGNAME, WDATE, WTIME, MESG, 2 )
+
+            ELSE IF ( .NOT. WRITE3( FILNAM, VARNAM,
+     &                              WDATE, WTIME, INTBUF ) ) THEN
+
+                MESG = 'Could not write "' // TRIM( VARNAM ) //
+     &                 '" to file "'       // TRIM( FILNAM ) // '"'
                 CALL M3EXIT( PROGNAME, WDATE, WTIME, MESG, 2 )
-            
+
             END IF
-            
+
             END SUBROUTINE INT_WRITE3
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+C.............  This internal subprogram writes integer data to an
+C               I/O API file, and aborts if not successful.
+            INTEGER FUNCTION GET_VTYPE( FILNAM, VARNAM, JDATE, JTIME )
+
+                CHARACTER(LEN=*), INTENT(IN   ) :: FILNAM, VARNAM
+                INTEGER         , INTENT(IN   ) :: JDATE, JTIME
+
+                INTEGER     K
+
+                IF ( .NOT.DESC3( FILNAM ) ) THEN
+                    MESG = 'File "' // TRIM( FILNAM ) // '" not available'
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+
+                K = INDEX1( VARNAM, NVARS3D, VNAME3D )
+                IF ( K .LE. 0 ) THEN
+                    MESG = 'Variable "'          // TRIM( VARNAM ) //
+     &                     '" not available in "'// TRIM( FILNAM ) // '"'
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+
+                GET_VTYPE = VTYPE3D( K )
+                RETURN
+
+            END FUNCTION GET_VTYPE
 
         END SUBROUTINE WRSRCGRPS

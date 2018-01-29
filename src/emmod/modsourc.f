@@ -60,10 +60,10 @@
 
         REAL*8 , ALLOCATABLE, PUBLIC:: XLOCA ( : )  !  lon X-location 
         REAL*8 , ALLOCATABLE, PUBLIC:: YLOCA ( : )  !  lat Y-location 
-        REAL   , ALLOCATABLE, PUBLIC:: XLOC1 ( : )  !  lon X-location link start 
-        REAL   , ALLOCATABLE, PUBLIC:: YLOC1 ( : )  !  lat Y-location link start
-        REAL   , ALLOCATABLE, PUBLIC:: XLOC2 ( : )  !  lon X-location link end 
-        REAL   , ALLOCATABLE, PUBLIC:: YLOC2 ( : )  !  lat Y-location link end
+        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC1 ( : )  !  lon X-location link start 
+        REAL*8 , ALLOCATABLE, PUBLIC:: YLOC1 ( : )  !  lat Y-location link start
+        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC2 ( : )  !  lon X-location link end 
+        REAL*8 , ALLOCATABLE, PUBLIC:: YLOC2 ( : )  !  lat Y-location link end
         REAL   , ALLOCATABLE, PUBLIC:: SPEED ( : )  !  speed
         REAL   , ALLOCATABLE, PUBLIC:: STKHT ( : )  !  stack height   (m)
         REAL   , ALLOCATABLE, PUBLIC:: STKDM ( : )  !  stack diameter (m)
@@ -121,10 +121,10 @@
 
         REAL*8 , POINTER,     PUBLIC:: XLOCAA( : ) !  UTM X-location (m)
         REAL*8 , POINTER,     PUBLIC:: YLOCAA( : ) !  UTM Y-location (m)
-        REAL   , ALLOCATABLE, PUBLIC:: XLOC1A( : ) !  lon X-location link start 
-        REAL   , ALLOCATABLE, PUBLIC:: YLOC1A( : ) !  lat Y-location link start
-        REAL   , ALLOCATABLE, PUBLIC:: XLOC2A( : ) !  lon X-location link end 
-        REAL   , ALLOCATABLE, PUBLIC:: YLOC2A( : ) !  lat Y-location link end
+        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC1A( : ) !  lon X-location link start 
+        REAL*8 , ALLOCATABLE, PUBLIC:: YLOC1A( : ) !  lat Y-location link start
+        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC2A( : ) !  lon X-location link end 
+        REAL*8 , ALLOCATABLE, PUBLIC:: YLOC2A( : ) !  lat Y-location link end
         REAL   , ALLOCATABLE, PUBLIC:: SPEEDA( : ) !  speed
         REAL   , ALLOCATABLE, PUBLIC:: STKHTA( : ) !  stack height   (m)
         REAL   , ALLOCATABLE, PUBLIC:: STKDMA( : ) !  stack diameter (m)

@@ -60,6 +60,8 @@ C.........  This module contains the information about the source category
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: ASRGID
 
+        USE MODGRDLIB
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -73,7 +75,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         FIND1
         INTEGER         FINDC
-        LOGICAL         INGRID
         LOGICAL         DSCM3GRD
         INTEGER         GETFLINE
         LOGICAL         BLKORCMT
@@ -81,7 +82,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         INTEGER         GETEFILE
 
-        EXTERNAL        CRLF, FIND1, FINDC, INGRID, DSCM3GRD, GETFLINE,
+        EXTERNAL        CRLF, FIND1, FINDC, DSCM3GRD, GETFLINE,
      &                  BLKORCMT, SETENVVAR, STR2INT, GETEFILE
 
 C...........   SUBROUTINE ARGUMENTS
@@ -189,7 +190,8 @@ C...........   Other local variables
         REAL            FRAC        ! tmp surrogate fraction
         REAL            XBEG, YBEG  ! tmp X and Y link start coordinates
         REAL            XEND, YEND  ! tmp X and Y link end   coordinates
-        REAL            SUM, XX, YY
+        REAL            SUM
+        REAL*8          XX, YY
 
         LOGICAL      :: EFLAG = .FALSE.    ! true: error detected
         LOGICAL      :: IFLAG = .FALSE.    ! true: internal error detected

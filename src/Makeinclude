@@ -108,3 +108,4 @@ MODTAG     = modtag.mod
 MODTMPRL   = modtmprl.mod
 MODXREF    = modxref.mod
 MODFILESET = modfileset.mod
+MODGRDLIB  = modgrdlib.mod

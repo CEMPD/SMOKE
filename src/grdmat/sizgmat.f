@@ -52,6 +52,8 @@ C...........   This module contains the gridding surrogates tables
      &                     SRGFIPS, NTSRGDSC, SRGFNAM, SRGFCOD, NTLINES,
      &                     MXCFIP, SRGNCOLS, SRGNROWS, SRGCSUM, SRGFRAC
 
+        USE MODGRDLIB
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -64,14 +66,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         ENVINT
         INTEGER         FIND1
         INTEGER         FINDC
-        LOGICAL         INGRID
         LOGICAL         BLKORCMT
         LOGICAL         SETENVVAR
         INTEGER         STR2INT
         INTEGER         GETFLINE
         INTEGER         GETEFILE
 
-        EXTERNAL        CRLF, FIND1, FINDC, INGRID, BLKORCMT, SETENVVAR,
+        EXTERNAL        CRLF, FIND1, FINDC, BLKORCMT, SETENVVAR,
      &                  STR2INT, GETFLINE, ENVINT, GETEFILE
 
 
@@ -125,7 +126,7 @@ C...........   Other arrays
         CHARACTER(60), ALLOCATABLE :: TMPLINE( : )   ! tmp line buffer
 
         REAL            ALEN        ! link length
-        REAL            XX, YY
+        REAL*8          XX, YY
 
         LOGICAL      :: EFLAG = .FALSE. ! true: error flag
         LOGICAL      :: LFLAG = .FALSE. ! true: location data available

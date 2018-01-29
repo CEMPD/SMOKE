@@ -42,7 +42,8 @@ MODSRC = \
  modmet.f     modmobil.f    modmvsmrg.f       \
  modrepbn.f   modreprt.f    modsourc.f        \
  modspro.f    modstcy.f     modsurg.f         \
- modtag.f     modtmprl.f    modxref.f
+ modtag.f     modtmprl.f    modxref.f         \
+ modgrdlib.f 
 
 MOD  = $(MODSRC:.f=.mod)
 
@@ -60,7 +61,7 @@ LIBSRC = \
  chkexpscc.f    chkexpsic.f     chkgrid.f           \
  chkint.f       chkisiz.f       chkmetem.f          \
  chkptdef.f     chkreal.f       chksrcno.f          \
- convrtll.f     convrtxy.f      cvtrdtype.f         \
+                                cvtrdtype.f         \
  cvtvehtype.f   dscm3grd.f      dscm3lay.f          \
  dscsprof.f     efsetup.f       evalcrit.f          \
  fillatbl.f     fillchrt.f      fillctbl.f          \
@@ -76,7 +77,7 @@ LIBSRC = \
  getrfdsc.f     getsinfo.f      gettzone.f          \
  grd2cnty.f     grdfips.f       hdrmiss3.f          \
  ingrid.f       initem.f        ioapi_grd_size.f    \
- lnk2grd.f      multunit.f      nextime.f           \
+                multunit.f      nextime.f           \
  normtpro.f     openphys.f      padnzero.f          \
  padzero.f      parscsrc.f      parsline.f          \
  pdsetup.f      polmesg.f       prclinrc.f          \
@@ -96,7 +97,7 @@ LIBSRC = \
  rdtref.f       rdtzone.f       rdumat.f            \
  rdxclude.f     readwr3.f       rmcommnt.f          \
  setscctype.f   setsrcdy.f      srcgrpcnt.f         \
- tagtable.f     ungridbv.f      unitfac.f           \
+ tagtable.f                     unitfac.f           \
  unitmatch.f    useexpgeo.f     verchar.f           \
  wrchrscc.f     wrdaymsg.f      wrorlout.f          \
  wrsrcgrps.f    xfractbl.f      xreftbl.f
@@ -372,6 +373,7 @@ alocttbl.o    : $(MODXREF)
 applumat.o    : $(MODGRID)
 bldenams.o    : $(MODLISTS)
 chkgrid.o     : $(MODGRID)
+chkmetem.o    : $(MODGRDLIB)
 chkptdef.o    : $(MODINFO)
 dscsprof.o    : $(MODINFO)
 dscsprof.o    : $(MODSPRO)
@@ -388,7 +390,7 @@ fillstbl.o    : $(MODXREF)
 fillttbl.o    : $(MODXREF)
 fltrxref.o    : $(MODSOURC) $(MODLISTS) $(MODINFO)
 fmtcsrc.o     : $(MODINFO)
-genptvcel.o   : $(MODGRID)
+genptvcel.o   : $(MODGRID)  $(MODGRDLIB)
 genuslst.o    : $(MODSOURC) $(MODLISTS) $(MODINFO)
 getbasyr.o    : $(MODSOURC)
 getctgry.o    : $(MODINFO)
@@ -397,7 +399,6 @@ getsinfo.o    : $(MODFILESET) $(MODINFO)
 gettzone.o    : $(MODSTCY)
 grd2cnty.o    : $(MODSTCY) $(MODSURG) $(MODGRID)
 grdfips.o     : $(MODSURG) $(MODGRID) $(MODMET)
-lnk2grd.o     : $(MODGRID)
 normtpro.o    : $(MODTMPRL)
 prclinrc.o    : $(MODREPRT) $(MODINFO)
 procspro.o    : $(MODSPRO)
@@ -437,9 +438,11 @@ srcgrpcnt.o   : $(MODMERGE) $(MODGRID) $(MODELEV)
 tagtable.o    : $(MODXREF)  $(MODSPRO) $(MODTAG) $(MODINFO)
 wrchrscc.o    : $(MODLISTS) $(MODINFO)
 wrorlout.o    : $(MODSOURC) $(MODSTCY) $(MODLISTS) $(MODINFO)
-wrsrcgrps.o   : $(MODMERGE) $(MODGRID) $(MODELEV)
+wrsrcgrps.o   : $(MODMERGE) $(MODGRID) $(MODELEV) $(MODGRDLIB)
 xfractbl.o    : $(MODSPRO)
 xreftbl.o     : $(MODXREF) $(MODINFO)
+
+modgrdlib.o   : $(MODGRID)
 
 chkfileset.o  : $(MODFILESET)
 chksetdesc.o  : $(MODFILESET)
@@ -453,8 +456,8 @@ promptset.o   : $(MODFILESET)
 readset.o     : $(MODFILESET)
 writeset.o    : $(MODFILESET)
 
-normbeis314.o : $(MODBEIS3)
-normbeis361.o : $(MODBEIS3)
+normbeis314.o : $(MODBEIS3) $(MODGRDLIB)
+normbeis361.o : $(MODBEIS3) $(MODGRDLIB)
 tmpbeis314.o  : $(MODSPRO) $(MODBEIS3)
 tmpbeis361.o  : $(MODSPRO) $(MODBEIS3)
 
@@ -504,15 +507,15 @@ smk2emis.o    : $(MODINFO)
 surgtool.o    : $(MODSURG) $(MODGRID)
 
 asgnsurg.o    : $(MODSOURC) $(MODXREF) $(MODINFO) $(MODSURG)
-genagmat.o    : $(MODSOURC) $(MODGRID) $(MODINFO) $(MODSURG) $(MODLISTS) $(MODXREF)
-genggmat.o    : $(MODSOURC) $(MODGRID) $(MODINFO)
+genagmat.o    : $(MODSOURC) $(MODGRID) $(MODINFO) $(MODSURG) $(MODLISTS) $(MODXREF) $(MODGRDLIB)
+genggmat.o    : $(MODSOURC) $(MODGRID) $(MODINFO) $(MODGRDLIB)
 genlgmat.o    : $(MODSOURC) $(MODGRID) $(MODINFO) $(MODGCTP) $(M3UTILIO)
 genmgmat.o    : $(MODSOURC) $(MODGRID) $(MODINFO) $(MODSURG) $(MODLISTS) $(MODXREF)
-grdmat.o      : $(MODSOURC) $(MODGRID) $(MODINFO) $(MODXREF) $(MODSURG)  $(MODFILESET)
+grdmat.o      : $(MODSOURC) $(MODGRID) $(MODINFO) $(MODXREF) $(MODSURG)  $(MODFILESET) $(MODGRDLIB)
 opengmat.o    : $(MODINFO)
 rdsrg4grd.o   : $(MODSURG)  $(MODGRID)
 setfrac.o     : $(MODSURG)  $(MODXREF)
-sizgmat.o     : $(MODSURG)  $(MODGRID) 
+sizgmat.o     : $(MODSURG)  $(MODGRID) $(MODGRDLIB)
 
 mbldmrgidx.o  : $(MODMERGE) $(MODMVSMRG)
 bldprocidx.o  : $(MODMERGE) $(MODMVSMRG)
@@ -541,10 +544,10 @@ mwrmrgrep.o   : $(MODMERGE)  $(MODSTCY)   $(MODLISTS) $(MODMVSMRG)
 wrmrgrep.o    : $(MODGRID)
 wrtemprof.o   : $(MODMET)  $(MODMBSET)
 
-asgngrps.o    : $(MODSOURC) $(MODELEV) $(MODINFO)
-elevpoint.o   : $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRID)
-laypoint.o    : $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRID) $(MODFILESET)
-mxgrpemis.o   : $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRID) $(MODFILESET)
+asgngrps.o    : $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRDLIB)
+elevpoint.o   : $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRID) $(MODGRDLIB)
+laypoint.o    : $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRID) $(MODGRDLIB) $(MODFILESET)
+mxgrpemis.o   : $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRID) $(MODGRDLIB) $(MODFILESET)
 openeout.o    : $(MODELEV)  $(MODINFO)
 openlayout.o  : $(MODELEV)  $(MODINFO) $(MODGRID)
 rpelvcfg.o    : $(MODREPRT) $(MODELEV) $(MODINFO)

@@ -41,7 +41,9 @@ C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM, GDTYP, NCOLS, NROWS, 
      &                     P_ALP, P_BET, P_GAM, XCENT, YCENT,
      &                     XORIG, YORIG, XCELL, YCELL
-     
+
+        USE MODGRDLIB
+ 
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -49,10 +51,7 @@ C...........   INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        LOGICAL       INGRID
-        CHARACTER(16) PROMPTMFILE
-        
-        EXTERNAL   INGRID, PROMPTMFILE
+        CHARACTER(16), EXTERNAL :: PROMPTMFILE
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: NRECS          ! no. records w/ coordinates
@@ -141,7 +140,7 @@ C.........  Read grid cell coordinates
         END IF
 
 C.........  Convert coordinates to map projection units
-        CALL CONVRTXY( NCDOT*NRDOT, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
+        CALL CONVRTXY( NCDOT, NRDOT, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
      &                 XCENT, YCENT, XVALS, YVALS )
 
 C.........  Initialize number of sources per cell
@@ -158,7 +157,7 @@ C.........  Initialize scratch gridding matrix - before sparse storage
             XX = XLOCA( I )
             YY = YLOCA( I )
 
-            IF( .NOT. INGRID( XX, YY, NCOLS, NROWS, COL, ROW ) ) THEN
+            IF( .NOT. INGRID( XLOCA(I), YLOCA(I), NCOLS, NROWS, COL, ROW ) ) THEN
                 NEXCLD = NEXCLD + 1
                 CYCLE  ! To end of loop
             END IF

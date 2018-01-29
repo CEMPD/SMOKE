@@ -334,25 +334,25 @@ C.........  Define source characteristic variables that are not strings
             J = J + 1
 
             VNAMESET( J ) = 'XLOC1'
-            VTYPESET( J ) = M3REAL
+            VTYPESET( J ) = M3DBLE
             VUNITSET( J ) = 'degrees'
             VDESCSET( J ) = 'Longitude at beginning of link'
             J = J + 1
 
             VNAMESET( J ) = 'YLOC1'
-            VTYPESET( J ) = M3REAL
+            VTYPESET( J ) = M3DBLE
             VUNITSET( J ) = 'degrees'
             VDESCSET( J ) = 'Latitude at beginning of link'
             J = J + 1
 
             VNAMESET( J ) = 'XLOC2'
-            VTYPESET( J ) = M3REAL
+            VTYPESET( J ) = M3DBLE
             VUNITSET( J ) = 'degrees'
             VDESCSET( J ) = 'Longitude at end of link'
             J = J + 1
 
             VNAMESET( J ) = 'YLOC2'
-            VTYPESET( J ) = M3REAL
+            VTYPESET( J ) = M3DBLE
             VUNITSET( J ) = 'degrees'
             VDESCSET( J ) = 'Latitude at end of link'
             J = J + 1
