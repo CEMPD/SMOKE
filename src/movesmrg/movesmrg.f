@@ -541,21 +541,33 @@ C.................  In RPD and RPV modes, read temperatures for current hour
                     END IF
 
                 ELSE   ! RPP MODE
-                    WRITE( TDATE, '(I7)' ) JDATE
-                    PDATE = STR2INT( YEAR // TDATE( 5:7 ) )
                     IF( .NOT. READ3( METNAME, 'MAXTEMP', 1, 
-     &                               PDATE, 0, MAXTEMP ) ) THEN
-                        MESG = 'Could not read MAXTEMP'//
-     &                         ' from ' // TRIM( METNAME )
-                        CALL M3EXIT( PROGNAME, PDATE, 0, MESG, 2 )
+     &                               JDATE, 0, MAXTEMP ) ) THEN
+
+C.........................  Look for a backup max temp from the first day of processing year
+                        WRITE( TDATE, '(I7)' ) JDATE
+                        PDATE = STR2INT( YEAR // TDATE( 5:7 ) )
+                        IF( .NOT. READ3( METNAME, 'MAXTEMP', 1,
+     &                                   PDATE, 0, MAXTEMP ) ) THEN
+                            MESG = 'Could not read MAXTEMP'//
+     &                             ' from ' // TRIM( METNAME )
+                            CALL M3EXIT( PROGNAME, JDATE, 0, MESG, 2 )
+                        END IF
+
                     END IF
 
                     IF( .NOT. READ3( METNAME, 'MINTEMP', 1, 
-     &                               PDATE, 0, MINTEMP ) ) THEN
-                        MESG = 'Could not read MINTEMP' //
-     &                         ' from ' // TRIM( METNAME )
-                        CALL M3EXIT( PROGNAME, PDATE, 0, MESG, 2 )
+     &                               JDATE, 0, MINTEMP ) ) THEN
+
+C.........................  Look for a backup min temp from the first day of processing year
+                        IF( .NOT. READ3( METNAME, 'MINTEMP', 1,
+     &                                   PDATE, 0, MINTEMP ) ) THEN
+                            MESG = 'Could not read MINTEMP' //
+     &                             ' from ' // TRIM( METNAME )
+                            CALL M3EXIT( PROGNAME, JDATE, 0, MESG, 2 )
+                        END IF
                     END IF
+
                 END IF
 
 C.................  Loop over sources in reference county
@@ -751,8 +763,8 @@ C.............................  MCFIP(SRC) and maxmum values within the index
 C.............................  Check that min and max county temps were found
                             IF( MINTVAL .LT. AMISS3 .OR. MAXTVAL .LT. AMISS3 ) THEN
                                 WRITE( MESG, 94010 ) 'Could not find minimum ' //
-     &                            'and maximum temperatures for county' // CIFIP( SRC ) 
-     &                            // 'and episode month', MONTH
+     &                            'or maximum temperatures for county ' // CIFIP( SRC ) 
+     &                            // ' and episode month', MONTH
                                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                             END IF
 
