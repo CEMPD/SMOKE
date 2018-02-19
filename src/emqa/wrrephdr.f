@@ -1872,7 +1872,7 @@ C.................  Add next entry to units line buffer
             END DO
 
         END IF     ! End if any data to output or not
-
+        print*,trim( OUTFMT)
 C............................................................................
 C.........  Write out the header to the report
 C............................................................................
