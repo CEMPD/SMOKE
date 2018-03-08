@@ -293,6 +293,7 @@ while (my $line = <$in_fh>) {
   foreach my $poll (@pollutants) {
     @output = $state;
     push @output, @common;
+    splice @output, 3, 0, $data[$headers{'Source type'}];
     push @output, $poll;
     push @output, $data[$headers{$poll}];
     print $x_fh join(',', @output) . "\n";
