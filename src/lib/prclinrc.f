@@ -826,6 +826,7 @@ C.............  AERMOD support report
 
                 IF( SEGMENT( 2 ) .EQ. 'POINT' ) THEN
 
+                    RPT_%BYSRCTYP  = .TRUE.      ! By facility source type
                     RPT_%BYSTAT    = .TRUE.      ! report by state
                     RPT_%GRDCOR    = .TRUE.      ! calculate grid lambert_x-y and utm x_y with zone
                     RPT_%SRCMAP    = .TRUE.      ! output source mapping output file
@@ -850,7 +851,6 @@ C.............  AERMOD support report
                     IF( SEGMENT( 3 ) .EQ. 'PTNONIPM' .OR.
      &                  SEGMENT( 3 ) .EQ. 'PTEGU'         ) THEN
 
-                        RPT_%BYSRCTYP  = .TRUE.   ! By facility source type
                         RPT_%BYERPTYP  = .TRUE.   ! By release point type
                         RPT_%BYSTKPARM = .TRUE.   ! By stack parameters
                         RPT_%STKPARM   = .TRUE.   ! stack parameters
