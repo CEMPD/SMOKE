@@ -75,10 +75,10 @@ my $loc_fh = open_output("$output_dir/locations/ptegu_location.csv");
 write_point_location_header($loc_fh);
 
 my $pt_fh = open_output("$output_dir/parameters/ptegu_point_srcparam.csv");
-print $pt_fh "facility_id,facility_name,src_id,aermod_src_type,height,temp,velocity,diameter\n";
+write_point_srcparam_header($pt_fh);
 
 my $ar_fh = open_output("$output_dir/parameters/ptegu_fug_srcparam.csv");
-print $ar_fh "facility_id,facility_name,src_id,aermod_src_type,rel_ht,x_length,y_length,angle,szinit\n";
+write_fug_srcparam_header($ar_fh);
 
 my $x_fh = open_output("$output_dir/xwalk/ptegu_srcid_emis.csv");
 write_crosswalk_header($x_fh);

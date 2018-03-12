@@ -10,6 +10,18 @@ sub write_line_location_header() {
   print $fh "state,facility_id,facility_name,src_id,xs1,ys1,xs2,ys2,utm_zone,col,row\n";
 }
 
+sub write_point_srcparam_header() {
+  my ($fh) = @_;
+  
+  print $fh "facility_id,facility_name,src_id,aermod_src_type,height,temp,velocity,diameter\n";
+}
+
+sub write_fug_srcparam_header() {
+  my ($fh) = @_;
+  
+  print $fh "facility_id,facility_name,src_id,aermod_src_type,rel_ht,x_length,y_length,angle,szinit\n";
+}
+
 sub write_temporal_header() {
   my ($fh) = @_;
   

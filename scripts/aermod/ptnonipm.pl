@@ -32,22 +32,22 @@ my %daily = read_profiles($prof_file, 24);
 print "Creating output files...\n";
 my $output_dir = $ENV{'OUTPUT_DIR'};
 
-my $loc_fh = open_output("$output_dir/locations/point_location.csv");
+my $loc_fh = open_output("$output_dir/locations/ptnonipm_location.csv");
 write_point_location_header($loc_fh);
 
-my $pt_fh = open_output("$output_dir/parameters/point_point_srcparam.csv");
-print $pt_fh "facility_id,facility_name,src_id,aermod_src_type,height,temp,velocity,diameter\n";
+my $pt_fh = open_output("$output_dir/parameters/ptnonipm_point_srcparam.csv");
+write_point_srcparam_header($pt_fh);
 
-my $ar_fh = open_output("$output_dir/parameters/point_fug_srcparam.csv");
-print $ar_fh "facility_id,facility_name,src_id,aermod_src_type,rel_ht,x_length,y_length,angle,szinit\n";
+my $ar_fh = open_output("$output_dir/parameters/ptnonipm_fug_srcparam.csv");
+write_fug_srcparam_header($ar_fh);
 
-my $tmp_fh = open_output("$output_dir/temporal/point_temporal.csv");
+my $tmp_fh = open_output("$output_dir/temporal/ptnonipm_temporal.csv");
 write_temporal_header($tmp_fh);
 
-my $x_fh = open_output("$output_dir/xwalk/point_srcid_emis.csv");
+my $x_fh = open_output("$output_dir/xwalk/ptnonipm_srcid_emis.csv");
 write_crosswalk_header($x_fh);
 
-my $src_fh = open_output("$output_dir/xwalk/point_srcid_xwalk.csv");
+my $src_fh = open_output("$output_dir/xwalk/ptnonipm_srcid_xwalk.csv");
 write_source_header($src_fh);
 
 my %rep_xwalk;
