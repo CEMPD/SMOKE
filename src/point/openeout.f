@@ -128,6 +128,9 @@ C               the output file
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )            
             END IF            
 
+            COORUN3D = 'METERS '
+            IF ( GDTYP3D .EQ. 1 ) COORUN3D = 'DEGREES '
+
 C............. Finalize i/o api header fields
 C............. NOTE - this is a time-independent file, but the Plume Dynamics
 C              Model that reads this file needs to have the start date and time
