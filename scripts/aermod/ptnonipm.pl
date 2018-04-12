@@ -8,6 +8,8 @@ use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 require 'aermod.subs';
 require 'aermod_pt.subs';
 
+my $sector = $ENV{'SECTOR'} || 'ptnonipm';
+
 # check environment variables
 foreach my $envvar (qw(REPORT REP_XWALK PTPRO_MONTHLY PTPRO_WEEKLY PTPRO_HOURLY OUTPUT_DIR)) {
   die "Environment variable '$envvar' must be set" unless $ENV{$envvar};
@@ -32,22 +34,22 @@ my %daily = read_profiles($prof_file, 24);
 print "Creating output files...\n";
 my $output_dir = $ENV{'OUTPUT_DIR'};
 
-my $loc_fh = open_output("$output_dir/locations/ptnonipm_location.csv");
+my $loc_fh = open_output("$output_dir/locations/${sector}_location.csv");
 write_point_location_header($loc_fh);
 
-my $pt_fh = open_output("$output_dir/parameters/ptnonipm_point_srcparam.csv");
+my $pt_fh = open_output("$output_dir/parameters/${sector}_point_srcparam.csv");
 write_point_srcparam_header($pt_fh);
 
-my $ar_fh = open_output("$output_dir/parameters/ptnonipm_fug_srcparam.csv");
+my $ar_fh = open_output("$output_dir/parameters/${sector}_fug_srcparam.csv");
 write_fug_srcparam_header($ar_fh);
 
-my $tmp_fh = open_output("$output_dir/temporal/ptnonipm_temporal.csv");
+my $tmp_fh = open_output("$output_dir/temporal/${sector}_temporal.csv");
 write_temporal_header($tmp_fh);
 
-my $x_fh = open_output("$output_dir/xwalk/ptnonipm_srcid_emis.csv");
+my $x_fh = open_output("$output_dir/xwalk/${sector}_srcid_emis.csv");
 write_crosswalk_header($x_fh);
 
-my $src_fh = open_output("$output_dir/xwalk/ptnonipm_srcid_xwalk.csv");
+my $src_fh = open_output("$output_dir/xwalk/${sector}_srcid_xwalk.csv");
 write_source_header($src_fh);
 
 my %rep_xwalk;
