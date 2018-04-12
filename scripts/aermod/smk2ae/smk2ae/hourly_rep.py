@@ -1,11 +1,12 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import object
+from past.utils import old_div
 import os.path
 from datetime import datetime, timedelta
 import pandas as pd
 
-def fix_fips(fips):
-    return '%0.5d' %int(fips)
-
-class HourlyReports:
+class HourlyReports(object):
     '''
     Import the hourly reports typically for EGU sources
     '''
@@ -19,11 +20,10 @@ class HourlyReports:
                 day_df = self._load_report(fpath, today, st_fips)
                 self.aermod = pd.concat((self.aermod, day_df))
             else:
-                print 'WARNING: No report file: %s' %fpath
+                print('WARNING: No report file: %s' %fpath)
             today += timedelta(days=1)
         self.egu_units = pd.DataFrame()
         if not self.aermod.empty:
-#            self.aermod.to_csv('/sol/work/EMIS/users/bte/WO150.1_2014plat/AERMOD/hrly.out')
             self.aermod = self._calc_scalar(self.aermod)
             self.egu_units = self.aermod[['year','unit_id']].copy().drop_duplicates()
             self.egu_units['uniq'] = 'Y'
@@ -37,6 +37,9 @@ class HourlyReports:
         return x.strip()
 
     def _parse_header(self, fpath):
+        '''
+        Read in the EGU hourly report. Format may change.
+        '''
         col_dict = {'plant id': 'facility_id', 'char 1': 'unit_id'} #, 'stk tmp': 'stktemp', 'stk vel': 'stkvel'}
         with open(fpath) as f:
             ln = 0
@@ -46,7 +49,7 @@ class HourlyReports:
                     if 'date' in line[:7].lower():
                         hdr = [cell.strip().lower() for cell in line[1:].strip().split(';') if cell.strip()]
                         for (i, col) in enumerate(hdr):
-                            if col in col_dict.keys():
+                            if col in list(col_dict.keys()):
                                 hdr[i] = col_dict[col]
                         self.header = hdr
                         self.header_len = ln
@@ -60,13 +63,13 @@ class HourlyReports:
             self._parse_header(fpath)
         df = pd.read_csv(fpath, sep=';', skiprows=self.header_len, skipinitialspace=True, names=self.header,
           usecols=['hour','facility_id','unit_id','co','voc_inv','pm2_5','region'], 
-          dtype={'facility_id': '|S15', 'region': '|S7', 'hour': '|S2', 
-          'unit_id': '|S15'}, converters={'facility_id': self.strip, 'unit_id': self.strip})
+          dtype={'facility_id': str, 'region': str, 'hour': str, 
+          'unit_id': str}, converters={'facility_id': self.strip, 'unit_id': self.strip})
         df = df.groupby(['facility_id','unit_id','region','hour'], as_index=False).sum()
         if 'voc' in df.columns and 'voc_inv' not in df.columns:
             df.rename(columns={'voc': 'voc_inv'}, inplace=True)
         if st_fips:
-            df['region'] = df['region'].apply(fix_fips)
+            df['region'] = df['region'].str.zfill(5)
             df = df[df['region'].str.startswith(st_fips)]
         df['year'] = today.year
         df['month'] = today.month
@@ -74,7 +77,7 @@ class HourlyReports:
         try:
             df['emis'] = df['co'] + df['pm2_5'] + df['voc_inv']
         except KeyError:
-            raise KeyError, "Missing CO, PM2_5, or VOC_INV in hourly PTEGU report"
+            raise KeyError("Missing CO, PM2_5, or VOC_INV in hourly PTEGU report")
         return df[['facility_id','unit_id','year','month','day','hour','emis']].copy()
 
     def _calc_scalar(self, prof):
@@ -85,6 +88,6 @@ class HourlyReports:
           as_index=False).sum()
         sum_df.rename(columns={'emis': 'sum'}, inplace=True)
         prof = pd.merge(prof, sum_df, on=['facility_id','unit_id'], how='left')
-        prof['hour_factor'] = (prof['emis']/prof['sum']) * 8760.
+        prof['hour_factor'] = (old_div(prof['emis'],prof['sum'])) * 8760.
         return prof[['facility_id','unit_id','year','month','day','hour','hour_factor']].copy()
 

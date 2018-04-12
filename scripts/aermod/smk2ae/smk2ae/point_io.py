@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import csv
 import os
 import os.path
@@ -17,7 +22,7 @@ def proc_points(inv, temp, hrly, work_path, grid_info):
     '''
     qa = QA(work_path)
     qa.sources = inv.stk.shape[0]
-    print 'Total Input Sources: %s' %qa.sources
+    print('Total Input Sources: %s' %qa.sources)
     pt_df = get_point_params(inv.stk[inv.stk['erptype'] != 1].copy())
     fug_df = get_fug_params(inv.stk[inv.stk['erptype'] == 1].copy())
     src_map = get_src_map(pt_df, fug_df)
@@ -26,7 +31,7 @@ def proc_points(inv, temp, hrly, work_path, grid_info):
     write_relpt_xwalk(inv.stk, work_path)
     inv.stk.drop_duplicates(['facility_id','src_id'], inplace=True)
     qa.uniq_srcs = inv.stk.shape[0]
-    print 'Total Unique Source IDs Across all facilities: %s' %qa.uniq_srcs
+    print('Total Unique Source IDs Across all facilities: %s' %qa.uniq_srcs)
     inv.stk = calc_predom_cell(inv, qa)
     inv.stk = get_utm_location(inv.stk, grid_info)
     write_src_xwalk(inv, src_map, work_path)
@@ -59,11 +64,6 @@ def get_grid_location(df, grid_info):
       pd.Series(grid_info.get_coords(x['longitude'],x['latitude'])), axis=1)
     df[['col','row']] = df[['grid_x','grid_y']].apply(lambda x: \
       pd.Series(grid_info.get_cell(x['grid_x'],x['grid_y'])), axis=1)
-#    orig_points = len(df['facility_id'].drop_duplicates())
-#    df = df[(df['col'] > 0) & (df['col'] <= grid_info.ncols) \
-#      & (df['row'] > 0) & (df['row'] <= grid_info.nrows)].copy()
-#    new_points = len(df['facility_id'].drop_duplicates())
-#    print 'NOTE: Dropped %s facilities outside the grid domain' %(orig_points-new_points)
     return df
 
 def get_utm_location(df, grid_info):
@@ -97,7 +97,7 @@ def calc_predom_cell(inv, qa):
         fac_df = inv.stk.ix[inv.stk['facility_id'] == fac, ['col','row','ann_value']].copy()
         fac_df = fac_df.groupby(['col','row'], as_index=False).sum()
         if len(fac_df[['col','row']]) > 1:
-            fac_df.sort('ann_value', ascending=False, inplace=True)
+            fac_df.sort_values('ann_value', ascending=False, inplace=True)
             fac_df.drop_duplicates(['col','row'],inplace=True)
             qa.moved_facs.append(str(fac))
             inv.stk.ix[inv.stk['facility_id'] == fac, 'col'] = fac_df['col'].values[0]
@@ -113,7 +113,7 @@ def get_point_params(df):
     df['height'] = 0.3048 * df['stkhgt']
     df['diameter'] = 0.3048 * df['stkdiam']
     df['velocity'] = 0.3048 * df['stkvel']
-    df['temp'] = (df['stktemp'] + 459.67) * (5./9.)
+    df['temp'] = (df['stktemp'] + 459.67) * (old_div(5.,9.))
     src_types = {'2': 'POINT', '3': 'POINTHOR', '4': 'POINT', '5': 'POINTCAP', '6': 'POINTHOR', 
       '99': 'POINT'}
     df['aermod_src_type'] = df['erptype'].apply(lambda x: src_types[str(int(x))])
@@ -138,7 +138,7 @@ def get_fug_params(df):
     df['rel_ht'] = df['fug_height'] * 0.3048
     df['x_length'] = df['fug_width_ydim'] * 0.3048
     df['y_length'] = df['fug_length_xdim'] * 0.3048
-    df.ix[df['rel_ht'] > 10, 'szinit'] = df.ix[df['rel_ht'] > 10, 'rel_ht'] / 4.3
+    df.ix[df['rel_ht'] > 10, 'szinit'] = old_div(df.ix[df['rel_ht'] > 10, 'rel_ht'], 4.3)
     df.ix[df['rel_ht'] <= 10, 'szinit'] = 0
     df.rename(columns={'fug_angle': 'angle'}, inplace=True)
     df.ix[df['angle'] == -99., 'angle'] = 0
@@ -160,7 +160,7 @@ def get_temp_codes(df, xref):
 
     *  Assume that only diurnal profiles only vary by weekday/weekend or
         are constant across all days of the week. 
-       This assumption is currently good for all US point sources.
+       This assumption is good for all US point sources in 2014v2.
     '''
     if len(xref[xref['ALLDAY'].isnull()]) > 0:
         if 'TUESDAY' in list(xref.columns):
@@ -193,13 +193,13 @@ def write_temp_factors(df, temp, work_path):
     df = df[cols+scalar_cols].copy().drop_duplicates(['facility_id','src_id'])
     qflag_list = list(df['qflag'].drop_duplicates())
     if 'MHRDOW7' in qflag_list:
-        col_names = cols + ['Scalar%s' %x for x in xrange(1,2017)]
+        col_names = cols + ['Scalar%s' %x for x in range(1,2017)]
     elif 'MHRDOW' in qflag_list:
-        col_names = cols + ['Scalar%s' %x for x in xrange(1,865)]
+        col_names = cols + ['Scalar%s' %x for x in range(1,865)]
     elif 'HROFDAY' in qflag_list:
-        col_names = cols + ['Scalar%s' %x for x in xrange(1,25)]
+        col_names = cols + ['Scalar%s' %x for x in range(1,25)]
     else:
-        col_names = cols + ['Scalar%s' %x for x in xrange(1,13)]
+        col_names = cols + ['Scalar%s' %x for x in range(1,13)]
     fname = os.path.join(work_path, 'temporal', 'point_temporal.csv')
     df.to_csv(fname, columns=col_names, index=False, quotechar=' ')
 
@@ -257,7 +257,7 @@ def write_hourly_factors(df, hr_facs, work_path):
         fac_df = df[df['facility_id'] == fac].copy()
         state = fac_df['state'].values[0]
         fname = os.path.join(work_path,'temporal','%s_%s_hourly.csv' %(fac,state))
-        fac_df.sort(['year','month','day','hour'], inplace=True)
+        fac_df.sort_values(['year','month','day','hour'], inplace=True)
         fac_df.to_csv(fname, index=False, columns=cols)
 
 def fix_fips(fips):

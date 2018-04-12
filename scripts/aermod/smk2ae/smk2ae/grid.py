@@ -1,71 +1,77 @@
+from __future__ import division
+from builtins import object
 from math import floor
 import numpy as np
 import pandas as pd
-from mpl_toolkits.basemap.pyproj import Proj
+from pyproj import Proj
 
 class Grid(object):
     """
     Reads the grid description file and loads the grid information for the specified grid named.
     """
     def __init__(self, grid_name, grid_desc):
-        self.gdnam = grid_name
-        self.grid_desc = grid_desc
-        self.proj_dict = {'POL_HEMI': {'gdtyp': 6, 'p_alp': 1., 'p_bet': 45., 'p_gam': -98., 
-            'xcent': -98., 'ycent': 90.},
-            'LAM_40N97W': {'gdtyp': 2, 'p_alp': 33., 'p_bet': 45., 'p_gam': -97., 'xcent': -97., 'ycent': 40.},
-            '12CONUS1': {'gdtyp': 2, 'p_alp': 33., 'p_bet': 45., 'p_gam': -97., 'xcent': -97., 'ycent': 40.}}
-        self._load_gd()
+        self.GDNAM = grid_name
+        self.load_gridinfo(grid_desc)
+        self._set_proj()
 
     def _parse_float(self, x):
         """
         Returns a floating point with the correct number of trailing zeros based on the .Dx
         """
-        if 'D' in x:    
-            num = x.strip().split('.')[0]
-            zerofloat = x.strip().split('.')[1][1:]
-            numlen = len(num) + int(zerofloat)
-            while len(num) < numlen:
-                num = num + '0'
-            return np.float64(num)
-        else:
-            return np.float64(x)
+        x = x.replace('D','E') 
+        return np.float64(x)
 
-    def _load_gd(self):
+    def _split_line(self, line):
+        return [cell.strip().strip("'") for cell in line.strip().split('!')[0].split(',')]
+
+    def load_gridinfo(self, grid_desc):
         """
         Read in the grid description file and store the grid data as object attributes
+        The grid description file is multi-part containing inconsistently ordered information for
+          grids and projections.
         """
-        with open(self.grid_desc) as gd:
-            state = 1
-            for line in gd.readlines():
-                if state == 1:
-                    if self.gdnam.strip().upper() in line.split('!')[0].upper():
-                        state = 2
-                    continue
-                elif state == 2:
-                    split_line = line.split(',')
-                    self.proj_name = split_line[0].strip("'")
-                    self.xorig = self._parse_float(split_line[1])
-                    self.yorig = self._parse_float(split_line[2])
-                    self.xcell = self._parse_float(split_line[3])
-                    self.ycell = self._parse_float(split_line[4])
-                    self.ncols = int(split_line[5])
-                    self.nrows = int(split_line[6])
-                    self._set_proj()
-                    break
-            if state == 1: 
-                raise ValueError, 'Grid %s not found in grid description file.' %self.gdnam
+        with open(grid_desc) as gd:
+            state = 'proj'
+            proj_table = dict()
+            for line in gd:
+                s_line = self._split_line(line)
+                if state == 'proj':
+                    if s_line[0]:
+                        if s_line[0] == ' ':
+                            state = 'grid'
+                        else:
+                            proj_name = line.strip().strip("'")
+                            line = next(gd)
+                            s_line = self._split_line(line)
+                            proj_table[proj_name] = {'GDTYP': int(s_line[0]),
+                                'P_ALP': self._parse_float(s_line[1]),
+                                'P_BET': self._parse_float(s_line[2]),
+                                'P_GAM': self._parse_float(s_line[3]),
+                                'XCENT': self._parse_float(s_line[4]),
+                                'YCENT': self._parse_float(s_line[5])}
+                else:
+                    if s_line[0] == self.GDNAM:
+                        line = next(gd)
+                        s_line = self._split_line(line)
+                        proj_name = s_line[0]
+                        self.XORIG, self.YORIG, self.XCELL, self.YCELL = \
+                          [self._parse_float(x) for x in s_line[1:5]]
+                        self.NCOLS, self.NROWS, self.NTHIK = [int(x) for x in s_line[5:8]]
+                        for k, v in list(proj_table[proj_name].items()):
+                            setattr(self, k, v)
+                        state = 'done'
+                        break
+            if state == 'grid':
+                raise ValueError('Grid %s not found in grid description file.' %self.GDNAM)
 
     def _set_proj(self):
         '''
         Define the projection
         '''
-        if self.proj_name in self.proj_dict:
-            for k,v in self.proj_dict[self.proj_name].iteritems():
-                setattr(self, k, v)
-        if self.gdtyp == 6:
-            self.proj = Proj(proj='stere', lat_ts=self.p_bet, lat_0=self.ycent, lon_0=self.p_gam)
-        elif self.gdtyp == 2:
-            self.proj = Proj(proj='lcc', lat_1=self.p_alp, lat_2=self.p_bet, lon_0=self.p_gam, lat_0=self.ycent, a=6370000, b=6370000, no_defs=True)
+        if self.GDTYP == 6:
+            self.proj = Proj(proj='stere', lat_ts=self.P_BET, lat_0=self.YCENT, lon_0=self.P_GAM)
+        elif self.GDTYP == 2:
+            self.proj = Proj(proj='lcc', lat_1=self.P_ALP, lat_2=self.P_BET, lon_0=self.P_GAM, lat_0=self.YCENT, a=6370000, b=6370000, no_defs=True)
 
     def get_coords(self, lon, lat):
         '''
@@ -79,14 +85,14 @@ class Grid(object):
         '''
         x_0, y_0 = self.get_coords(lon_0, lat_0)
         x_1, y_1 = self.get_coords(lon_1, lat_1)
-        return (abs(x_1-x_0)**2. + abs(y_1-y_0)**2.)**(1./2.)
+        return (abs(x_1-x_0)**2. + abs(y_1-y_0)**2.)**(0.5)
 
     def get_cell(self, x, y):
         '''
         Get the grid col and row of the projected (x,y) coordinates
         '''
-        col = int(floor((x-self.xorig)/self.xcell) + 1)
-        row = int(floor((y-self.yorig)/self.ycell) + 1)
+        col = int(floor((x-self.XORIG)/self.XCELL) + 1)
+        row = int(floor((y-self.YORIG)/self.YCELL) + 1)
         return col, row
 
     def ll_to_colrow(self,lon,lat):
@@ -107,16 +113,17 @@ class Grid(object):
         Get the lon and lat SW corner from the column and row
         '''
         cells = pd.DataFrame()
-        cells['x'] = ((col.astype('f') - 1) * self.xcell) + self.xorig
-        cells['y'] = ((row.astype('f') - 1) * self.ycell) + self.yorig
+        cells['x'] = ((col.astype('f') - 1) * self.XCELL) + self.XORIG
+        cells['y'] = ((row.astype('f') - 1) * self.YCELL) + self.YORIG
         df = cells.apply(lambda row: self.inverse_proj(*row), axis=1)
-        return pd.DataFrame(df.tolist(), columns=['lon','lat'], index=df.index)
+        return pd.DataFrame(df.values.tolist(), columns=['lon','lat'], index=df.index)
         
     def colrow_to_coords(self, col, row):
         '''
         Get the lambert SW corner from the column and row
         '''
-        x = ((col - 1) * self.xcell) + self.xorig
-        y = ((row - 1) * self.ycell) + self.yorig
+        x = ((col - 1) * self.XCELL) + self.XORIG
+        y = ((row - 1) * self.YCELL) + self.YORIG
         return x,y
+
 
