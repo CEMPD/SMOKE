@@ -1,7 +1,10 @@
+from __future__ import division
+from builtins import str
+from builtins import object
 from math import floor
-from mpl_toolkits.basemap.pyproj import Proj
+from pyproj import Proj
 
-class UTM:
+class UTM(object):
     '''
     Define various functions for finding UTM coordinates form the lat and lon
     '''
@@ -18,8 +21,7 @@ class UTM:
         '''
         Get the UTM coordinates from the lat/lon
         '''
-#        zone = self.get_zone(lon,lat)
-        if zone not in self.projs.keys():
+        if zone not in list(self.projs.keys()):
             self._define_proj(zone)
         return self.projs[zone](lon,lat)
 
@@ -28,7 +30,7 @@ class UTM:
         Get the UTM zone from the lat
         '''
         zone = str(int(floor(((lon+180)/6)+1)))
-        if zone not in self.projs.keys():
+        if zone not in list(self.projs.keys()):
             self._define_proj(zone)
         return zone
 

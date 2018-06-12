@@ -1,10 +1,16 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import os.path
 from math import ceil, log10
 import pandas as pd
 from smk2ae.utm import UTM
 from smk2ae.temporal import match_temporal
 
-class Airports:
+class Airports(object):
     def __init__(self, airports):
         self.locs = self._read_airport_locs(airports)
         self.refresh_fac_list(self.locs['facility_id'].drop_duplicates())
@@ -51,7 +57,7 @@ class Airports:
         self.inv = inv.stk[inv.stk['fac_source_type'] == '100'].copy()
         inv_fac_list = list(self.inv['facility_id'].drop_duplicates())
         self.refresh_fac_list(inv_fac_list)
-        print 'Total airport facilities: %s' %len(inv_fac_list)
+        print('Total airport facilities: %s' %len(inv_fac_list))
         self.emis = inv.emis.ix[inv.emis['facility_id'].isin(self.fac_list), 
           ['facility_id','smoke_name','ann_value']].groupby(['facility_id','smoke_name'], 
           as_index=False).sum()
@@ -65,11 +71,11 @@ class Airports:
         inv_cols = ['facility_id','facility_name','fac_col','fac_row','state']
         df = pd.merge(self.locs, self.inv[inv_cols].drop_duplicates(), on='facility_id', how='left')
         if not df.empty:
-            print 'Airports facilities with runways: %s' %len(df['facility_id'].drop_duplicates())
+            print('Airports facilities with runways: %s' %len(df['facility_id'].drop_duplicates()))
             df['length'] = df.apply(lambda row: grid.calc_dist(\
                 row['start_x'],row['start_y'],row['end_x'],row['end_y']), axis=1)
             df['area'] = df['length'] * df['width']
-            df['lnemis'] = 1000. / df['area']
+            df['lnemis'] = old_div(1000., df['area'])
             df['relhgt'] = 3.
             df['szinit'] = 3.
             df['type'] = 'LINE'
@@ -105,7 +111,7 @@ class Airports:
         runway_cnt = df[['facility_id','src_id']].drop_duplicates().groupby('facility_id').size()
         runway_cnt = pd.DataFrame(runway_cnt, columns=['fract']).reset_index()
         df = pd.merge(df, runway_cnt, on='facility_id', how='left')
-        df['fract'] = 1. / df['fract']
+        df['fract'] = old_div(1., df['fract'])
         df.drop_duplicates(['facility_id','src_id'], inplace=True)
         fname = os.path.join(os.environ['WORK_PATH'],'parameters','airport_line_params.csv')
         df.to_csv(fname,  index=False, quotechar=' ',
@@ -128,13 +134,13 @@ class Airports:
         temp = match_temporal(inv_df, temp, ['qflag',]+scalar_cols, hierarchy)
         qflag_list = list(temp['qflag'].drop_duplicates())
         if 'MHRDOW7' in qflag_list:
-            scalar_cols = ['Scalar%s' %x for x in xrange(1,2017)]
+            scalar_cols = ['Scalar%s' %x for x in range(1,2017)]
         elif 'MHRDOW' in qflag_list:
-            scalar_cols = ['Scalar%s' %x for x in xrange(1,865)]
+            scalar_cols = ['Scalar%s' %x for x in range(1,865)]
         elif 'HROFDY' in qflag_list:
-            scalar_cols = ['Scalar%s' %x for x in xrange(1,25)]
+            scalar_cols = ['Scalar%s' %x for x in range(1,25)]
         else:
-            scalar_cols = ['Scalar%s' %x for x in xrange(1,13)]
+            scalar_cols = ['Scalar%s' %x for x in range(1,13)]
         df = pd.merge(df, temp[['facility_id','qflag']+scalar_cols], on='facility_id', how='left') 
         df.drop_duplicates(['facility_id','src_id'], inplace=True)
         fname = os.path.join(os.environ['WORK_PATH'],'temporal','airport_%s_temporal.csv' %airport_type)
@@ -150,7 +156,7 @@ class Airports:
           inv_cols].copy()
         df.drop_duplicates(inplace=True)
         if not df.empty:
-            print 'Airports facilities without runways: %s' %len(df['facility_id'].drop_duplicates())
+            print('Airports facilities without runways: %s' %len(df['facility_id'].drop_duplicates()))
             df['len_x'] = 10.
             df['len_y'] = 10.
             df['src_id'] = 'AP1'
@@ -195,13 +201,6 @@ class Airports:
         air_to_cell = calc_predominate_cell(self.inv, met_grid)
         air_to_cell = air_to_cell.drop_duplicates().sort()
         self.inv = pd.merge(self.inv, air_to_cell, on='facility_id', how='left')
-#        orig_airports = len(self.inv['facility_id'].drop_duplicates())
-#        self.inv = self.inv[(self.inv['fac_col'] > 0) & (self.inv['fac_col'] <= met_grid.ncols) \
-#          & (self.inv['fac_row'] > 0) & (self.inv['fac_row'] <= met_grid.nrows)].copy()
-#        new_airports = len(self.inv['facility_id'].drop_duplicates())
-#        self.refresh_fac_list(self.inv['facility_id'].drop_duplicates())
-#        print 'NOTE: Dropped %s airports outside the grid domain' %(orig_airports-new_airports)
-#        self.refresh_locs()
         self.write_emis_xwalk()
 
     def write_emis_xwalk(self):
@@ -229,6 +228,5 @@ def calc_predominate_cell(inv, grid_info):
         'fac_row'], as_index=False).sum() 
     df.sort(['facility_id','ann_value'], ascending=False, inplace=True)
     df.drop_duplicates('facility_id', inplace=True)
-#    df['fac_cell'] = (df['fac_col'] * 1000) + df['fac_row']
     return df[['facility_id','fac_col','fac_row']].copy() 
 

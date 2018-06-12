@@ -7,46 +7,31 @@ import pandas as pd
 import smk2ae
 from smk2ae.grid import Grid
 from smk2ae.utm import UTM
+from smk2ae.ar_ff10 import AnnualFF10
+from smk2ae.source_groups import SourceGroups
+from smk2ae.temporal import Temporal, match_temporal
 
-def read_emissions(emis_list, haps_list, state_fips=False):
+def label_emis(inv, shape_facs):
     '''
-    Read in the ACCESS exported emissions allocation input
-    These files should be converted into a standard condensed format where
-     region_cd, poll, scc, facid, and ann_value are all present as columns.
+    Label the FF10 emissions with facid and src_id based on class and activity
     '''
-    emis = pd.DataFrame()
-    haps = pd.read_csv(haps_list,usecols=['poll','smoke_name','spec_factor','ure'],
-      dtype={'poll':'|S16'})
-    for emis_name in emis_list:
-        df = pd.read_csv(emis_name, usecols=['facid','scc','poll','ann_value'],
-          dtype={'poll': '|S16', 'scc': '|S10', 'ann_value': 'f'})
-        df['region_cd'] = df['facid'].apply(lambda x: x.split('F')[1][:5])
-        if state_fips:
-            df = df[df['region_cd'].str.startswith('%0.2d' %int(state_fips))].copy()
-        df['region_cd'] = df['region_cd'].str.zfill(5)
-        df = pd.merge(df, haps, on='poll', how='left')
-        df = df[df['spec_factor'].notnull()].copy()
-        df['ann_value'] = df['ann_value'] * df['spec_factor']
-        df.drop(['poll','spec_factor'], axis=1, inplace=True)
-        df.ix[df['scc'].isin(('2280002100','2280002200')), 'scc'] = 'c1c2'
-        df.ix[df['scc'].isin(('2280003100','2280003200')), 'scc'] = 'c3'
-        df = df.groupby(['region_cd','facid','scc','smoke_name','ure'], as_index=False).sum()
-        emis = pd.concat((emis, df))
-    emis['src_id'] = emis['facid'].apply(name_polygon)
-    emis['facid'] = emis[['facid','region_cd']].apply(lambda row: '%sF%s' %(row['facid'].split('F')[0],
-      row['region_cd']), axis=1)
-    return emis
+    inv.loc[inv['scc'].str[6] == '2', 'class'] = 'c1'
+    inv.loc[inv['scc'].str[6] == '3', 'class'] = 'c3'
+    inv.loc[inv['scc'].str.endswith('100'), 'shape_id'] = inv.loc[inv['scc'].str.endswith('100'), 
+      'shape_id'].astype(str).str.zfill(5)
+    inv.loc[inv['scc'].str.endswith('200'), 'shape_id'] = inv.loc[inv['scc'].str.endswith('200'), 
+      'shape_id'].astype(str).str.zfill(4)
+    emis = inv.groupby(['region_cd','shape_id','scc','class','smoke_name'], as_index=False).sum()
+    emis = pd.merge(emis, shape_facs, on='shape_id', how='left')
+    emis['ann_value'] = emis['ann_value'] * emis['area_frac']
+    ports = emis[emis['facid'].str.startswith('P')].copy()
+    ports['src_id'] = ports['facid'].str[:6] + ports['class']
+    uw = emis[emis['facid'].str.startswith('U')].copy()
+    uw['src_id'] = uw['facid'].str[:5] + uw['facid'].str[-4:] + uw['class']
+    emis = pd.concat((ports, uw))
+    return emis[['region_cd','facid','src_id','scc','smoke_name','ann_value']]
 
-def name_polygon(facid):
-    '''
-    Format the source ID name based on the polygon number
-    '''
-    if facid[0] == 'U':
-        return facid[:5] + 'P' + facid.split('P')[1]
-    else:
-        return facid
-
-def read_shapes(shapes_file, st_fips):
+def read_shapes(shapes_file):
     '''
     Read in the shapes from the shapes file
 
@@ -54,15 +39,22 @@ def read_shapes(shapes_file, st_fips):
     facid,sourceid,loctype,lon,lat,zone,numvert,area
     U0612F10001P001,TRACT,L,-75.103862,38.995806,,45,586792801
     U0612F10001P001,TRACT,L,-75.311905,38.945821,,45,586792801
+
+    Port facility IDs follow P[5-character-shapeid]F[5-character-fips]
+    Underway facility IDs follow U[4-character-shapeid]F[5-character-fips]P[3-character-polygonid]
     '''
-    df = pd.read_csv(shapes_file, usecols=['facid','lon','lat','numvert','area'])
-    df['region_cd'] = df['facid'].apply(lambda x: x.split('F')[1][:5])
-    if st_fips:
-        df = df[df['region_cd'].str.startswith(st_fips)].copy()
-    df['region_cd'] = df['region_cd'].str.zfill(5)
-    df['src_id'] = df['facid'].apply(name_polygon)
-    df['facid'] = df[['facid','region_cd']].apply(lambda row: '%sF%s' %(row['facid'].split('F')[0],
-      row['region_cd']), axis=1)
+    df = pd.read_csv(shapes_file, usecols=['facid','lon','lat','numvert','area'], dtype={'facid': str})
+    # Calc polygon area fraction for splitting a shape into polygons
+    df['shape_id'] = df['facid'].str.split('F').str[0].str[1:].astype(int).astype(str)
+    df.loc[df['facid'].str.startswith('P'), 'shape_id'] = df.loc[df['facid'].str.startswith('P'), 
+      'shape_id'].str.zfill(5)
+    df.loc[df['facid'].str.startswith('U'), 'shape_id'] = df.loc[df['facid'].str.startswith('U'), 
+      'shape_id'].str.zfill(4)
+    area = df[['facid','shape_id','area']].drop_duplicates(['facid','shape_id'])
+    area_sum = area[['shape_id','area']].groupby('shape_id', as_index=False).sum()
+    area = pd.merge(area, area_sum, on='shape_id', how='left', suffixes=['','_sum'])
+    area['area_frac'] = area['area'] / area['area_sum']
+    df = pd.merge(df, area[['facid','area_frac']], on='facid', how='left')
     return df
 
 def get_met_cell(shapes_df, met_grid):
@@ -156,14 +148,13 @@ def get_dominant_cell(poly_df, met_grid, facid):
     else:
         src_poly = poly_list[0]
     if src_poly.IsValid():
-        for cell, cell_poly in cell_polys.iteritems():
+        for cell, cell_poly in cell_polys.items():
             overlap_area = src_poly.Intersection(cell_poly).GetArea()
             if  overlap_area > max_area:
                 max_area = overlap_area
                 dom_cell = cell
     else:
-        #raise AttributeError,'Shape %s %s contains an invalid polygon' %(facid, src_id)
-        print 'WARNING: Shape %s %s contains an invalid polygon' %(facid, src_id)
+        print('WARNING: Shape %s %s contains an invalid polygon' %(facid, src_id))
         # For an invalid polygon use the grid cell that contains the most source points 
         cell_count = Counter(list(poly_df['cell']))
         dom_cell = cell_count.most_common()[0][0]
@@ -188,121 +179,104 @@ def gen_cell_polys(cell_df, met_grid):
         cell_polys[cell['cell']] = cell_poly
     return cell_polys
 
-def write_locations(type_df, source_type):
+def write_locations(df):
     '''
     Write the locations file
     '''
+    df.drop_duplicates(['region_cd','facid','src_id','type','col','row','utm_zone'], inplace=True)
     out_cols = ['state','region_cd','facid','src_id','type','col','row','utmx','utmy','utm_zone',
       'lon','lat']
-    fname = os.path.join(os.environ['WORK_PATH'], 'locations', '%s_locations.csv' %source_type)
-    type_df.sort().to_csv(fname, columns=out_cols, index=False)
+    fname = os.path.join(os.environ['WORK_PATH'], 'locations', 'CMV_locations.csv')
+    df.to_csv(fname, columns=out_cols, index=False)
 
-def calc_state_rh(emis):
-    '''
-    Calculate the state release height from the emissions
-
-    The release height is calculated for an entire state based on the function:
-      8.4*(sum of c1&c2 HAPS)/(sum of all CMV HAPS) + 20*(sum of c3 HAPS)/(sum of all CMV HAPS)
-
-    Although the release height is the same for the entire state, it is returned as a dataframe
-      of release heights by full state and county level FIPS
-    '''
-    emis['ann_value'] = emis['ann_value'] * emis['ure']
-    emis['state'] = emis['region_cd'].str[:2]
-    c1c2 = emis.ix[emis['scc'] == 'c1c2', ['state','ann_value']].groupby('state').sum()
-    c3 = emis.ix[emis['scc'] == 'c3', ['state','ann_value']].groupby('state').sum()
-    rh = c1c2.join(c3, how='outer', lsuffix='_c1c2', rsuffix='_c3').reset_index()
-    rh.fillna(0, inplace=True)
-    rh['sum'] = rh['ann_value_c1c2'] + rh['ann_value_c3']
-    rh['rh'] = (8.4 * rh['ann_value_c1c2']/rh['sum']) + (20. * rh['ann_value_c3']/rh['sum'])
-    return rh[['state','rh']].copy().drop_duplicates()
-
-def write_parameters(type_df, state_rh, source_type):
+def write_parameters(df):
     '''
     Write the parameters file
     
     The maximum number of vertices for a polygon needs to be calculated first
     The coordinates for each polygon is written to a single line
     '''
-    param_df = pd.merge(type_df, state_rh, on='state', how='left')
-    param_df['sz'] = param_df['rh']/2.15 
-    fname = os.path.join(os.environ['WORK_PATH'], 'parameters', '%s_area_params.csv' %source_type)
-    maxverts = param_df['numvert'].max()
+    df.loc[df['src_id'].str.endswith('c1'), 'sz'] = 3.907
+    df.loc[df['src_id'].str.endswith('c1'), 'rel_ht'] = 8.4
+    df.loc[df['src_id'].str.endswith('c3'), 'sz'] = 40.7
+    df.loc[df['src_id'].str.endswith('c3'), 'rel_ht'] = 20
+    fname = os.path.join(os.environ['WORK_PATH'], 'parameters', 'CMV_area_params.csv')
+    maxverts = df['numvert'].max()
     coord_cols = []
-    [coord_cols.extend(['utmx','utmy']) for vert_num in xrange(1, maxverts + 1)]
+    [coord_cols.extend(['utmx','utmy']) for vert_num in range(1, maxverts + 1)]
     ll_cols = []
-    [ll_cols.extend(['lon','lat']) for vert_num in xrange(1, maxverts + 1)]
-    out_cols = ['state','region_cd','facid','src_id','type','area','rh','numvert','sz'] + coord_cols\
+    [ll_cols.extend(['lon','lat']) for vert_num in range(1, maxverts + 1)]
+    out_cols = ['state','region_cd','facid','src_id','type','area','rel_ht','numvert','sz'] + coord_cols\
       + ll_cols
     with open(fname,'w') as f:
         f.write('%s\n' %','.join(out_cols))
-        for facid in list(param_df['facid'].drop_duplicates()):
-            for src_id in list(param_df.ix[param_df['facid'] == facid, 'src_id'].drop_duplicates()):
-                src_df = param_df[(param_df['facid']==facid) & (param_df['src_id']==src_id)].copy()
+        for facid in list(df['facid'].drop_duplicates()):
+            for src_id in list(df.ix[df['facid'] == facid, 'src_id'].drop_duplicates()):
+                src_df = df[(df['facid']==facid) & (df['src_id']==src_id)].copy()
                 numverts = src_df['numvert'].values[0]
                 out_line = [src_df['state'].values[0], src_df['region_cd'].values[0], facid, 
                   src_id, src_df['type'].values[0], str(src_df['area'].values[0]),
-                  str(src_df['rh'].values[0]), str(numverts),str(src_df['sz'].values[0])]
+                  str(src_df['rel_ht'].values[0]), str(numverts),str(src_df['sz'].values[0])]
                 for ix, row in src_df.iterrows():
                     out_line.extend([str(row['utmx']),str(row['utmy'])])
                 if numverts < maxverts:
-                    for x in xrange(maxverts - numverts):
+                    for x in range(maxverts - numverts):
                         out_line.extend(['',''])
                 for ix, row in src_df.iterrows():
                     out_line.extend([str(row['lon']),str(row['lat'])])
                 if numverts < maxverts:
-                    for x in xrange(maxverts - numverts):
+                    for x in range(maxverts - numverts):
                         out_line.extend(['',''])
                 f.write('%s\n' %','.join(out_line))
         
-def write_temporal(emis, type_df, source_type):
+def calc_monthly_temp(df, temp):
     '''
-    Write the standard non-hourly non-daily profile based temporal profiles
-    The profiles are based on the toxicity weighted emissions.
+    Get monthly only temporlization
     '''
-    temp_df = pd.merge(type_df[['state','facid','src_id']], emis[['facid','src_id','scc',
-      'ann_value','ure']], on=['facid','src_id'], how='left')
-    temp_df['ann_value'] = temp_df['ann_value'] * temp_df['ure']
-    c1c2 = temp_df.ix[temp_df['scc'] == 'c1c2', ['state','ann_value']].groupby('state').sum()
-    c3 = temp_df.ix[temp_df['scc'] == 'c3', ['state','ann_value']].groupby('state').sum()
-    scalars = c1c2.join(c3, how='outer', lsuffix='_c1c2', rsuffix='_c3').reset_index()
-    scalars.fillna(0, inplace=True)
-    # These are provided c3 monthly factors
-    c3_facs = (0.077, 0.072, 0.077, 0.08, 0.086, 0.087, 0.09, 0.091, 0.085, 0.084, 0.084, 0.087)
-    for scalar_num, c3_factor in enumerate(c3_facs):
-        scalars['Scalar%s' %(scalar_num + 1)] = 12. * (((scalars['ann_value_c1c2'] * (1/12.)) + \
-          (scalars['ann_value_c3'] * c3_factor)) / (scalars['ann_value_c1c2'] + scalars['ann_value_c3']))
-    temp_df = pd.merge(temp_df[['state','facid','src_id']].drop_duplicates(), scalars, on='state', 
-      how='left')
-    temp_df['qflag'] = 'MONTH'
-    fname = os.path.join(os.environ['WORK_PATH'],'temporal','%s_temporal.csv' %source_type)
-    cols = ['state','facid','src_id','qflag'] + ['Scalar%s' %x for x in xrange(1,13)]
-    temp_df.to_csv(fname, index=False, columns=cols)
+    scalar_cols = [s_col for s_col in temp.profs.columns if s_col.startswith('Scalar')]
+    value_cols = ['qflag',] + scalar_cols
+    # Only match by fips/scc or fips; SCC only gets default
+    hierarchy = [['region_cd','scc'],['region_cd',],['scc',]]
+    df = match_temporal(df, temp.profs, value_cols, hierarchy)
+    df['state'] = df['region_cd'].str[:2]
+    df.drop(['region_cd','scc'], axis=1, inplace=True)
+    df.drop_duplicates(inplace=True)
+    if len(df[df['qflag'] != 'MONTH']) > 0:
+        print('WARNING: Non-MONTH profiles found. This should not be for CMV.')
+    scalar_cols = ['Scalar%s' %x for x in range(1,13)]
+    return df[['state','facid','src_id','qflag']+scalar_cols]
 
-def write_emis(emis, source_type):
+def write_temporal(temp):
+    '''
+    Write the standard monthly temporal profiles "MONTH"
+    '''
+    fname = os.path.join(os.environ['WORK_PATH'],'temporal','CMV_temporal.csv')
+    temp.to_csv(fname, index=False)
+
+def write_emis(emis, source_groups):
     '''
     Write the "AFTER-AERMOD" Emissions files
 
     These are the HAP emissions by facility and source ID
     '''
+    cols = ['state','run_group','facid','src_id','source_group','smoke_name','ann_value']
+    emis = pd.merge(emis, source_groups.xref[['scc','source_group']], on='scc', how='left')
     emis['state'] = emis['region_cd'].str[:2]
-    emis = emis[['state','facid','src_id','smoke_name','ann_value']].copy().groupby(['state',
-      'facid','src_id','smoke_name'], as_index=False).sum()
     emis['run_group'] = 'CMV'
-    emis['source_group'] = source_type
-    fname = os.path.join(os.environ['WORK_PATH'], 'emis', '%s_emis.csv' %source_type)
-    emis.to_csv(fname, columns=['state','run_group','facid','src_id','source_group','smoke_name',
-      'ann_value'], index=False)
+    emis = emis[cols].groupby(['run_group','state','facid','src_id','source_group','smoke_name'], 
+      as_index=False).sum()
+    fname = os.path.join(os.environ['WORK_PATH'], 'emis', 'CMV_emis.csv')
+    emis.to_csv(fname, columns=cols, index=False)
 
-def check_env_vars(vars):
+def check_env_vars(evars):
     '''
     Verify that all required environment variables are set
     '''
-    for env_var in vars:
+    for env_var in evars:
         try:
             os.environ[env_var]
         except KeyError:
-            raise KeyError, 'Missing environment variable: %s' %env_var
+            raise KeyError('Missing environment variable: %s' %env_var)
 
 def get_inv_list():
     '''
@@ -314,47 +288,61 @@ def get_inv_list():
             inv_list.append(os.environ[inv_var])
     return inv_list
 
-def main():
-    var_list = ('GRIDDESC','REGION_IOAPI_GRIDNAME','EMISINV_A','HAPS_LIST','BASE_YEAR',
-      'SECTOR','WORK_PATH','POLY_FILE','STATE_FIPS')
-    check_env_vars(var_list)
-    inv_list = get_inv_list()
-    state_fips = os.environ['STATE_FIPS']
-    emis = read_emissions(inv_list, os.environ['HAPS_LIST'], state_fips)
-    shapes = read_shapes(os.environ['POLY_FILE'], state_fips)
-    # Drop shapes that have no emissions
-    shapes = pd.merge(shapes, emis[['facid','src_id','scc']].drop_duplicates(['facid','src_id']), 
-      on=['facid','src_id'], how='left')
-    shapes = shapes[shapes['scc'].notnull()].copy()
-    shapes.drop('scc', axis=1, inplace=True)
-    met_grid = Grid(os.environ['REGION_IOAPI_GRIDNAME'], os.environ['GRIDDESC'])
+def get_invtable(fn):
+    '''
+    Read in the inventory table for the kept pollutants
+    '''
+    invtable = pd.read_fwf(fn, comment='#', colspecs=[(0,11), (16,32), (41,42), (43,49)], 
+      names=['smoke_name','poll','keep','spec_factor'], 
+      converters={'smoke_name': str.strip, 'poll': str.strip, 'keep': str.strip})
+    invtable = invtable[invtable['keep'].str.upper() == 'Y'].copy()
+    invtable.drop_duplicates(inplace=True)
+    return invtable
+
+def proc_shapes(shapes, met_grid):
+    '''
+    Process the shapes into the correct cells and reproject to UTM
+    '''
     cell_poly_df = get_met_cell(shapes, met_grid)
-    shapes.drop(['col','row','cell'],axis=1,inplace=True)
+    shapes.drop(['col','row','cell'], axis=1, inplace=True)
     shapes = pd.merge(shapes, cell_poly_df, on=['facid','src_id'], how='left')
-    shapes['centroid_lon'] = met_grid.colrow_to_ll(shapes['col'].astype('f') + 0.5, 
-      shapes['row'].astype('f') + 0.5)['lon'].astype('f')
+    shapes['centroid_lon'] = met_grid.colrow_to_ll(shapes['col'].astype('f'), 
+      shapes['row'].astype('f'))['lon'].astype('f')
     utm = UTM()
     shapes['utm_zone'] = shapes['centroid_lon'].apply(utm.get_zone)
     shapes[['utmx','utmy']] = shapes[['lon','lat','utm_zone']].apply(lambda x: \
       pd.Series(utm.get_coords(x['lon'],x['lat'],x['utm_zone'])), axis=1)
     shapes['type'] = 'AREAPOLY'
-    state_rh = calc_state_rh(emis[['region_cd','scc','ann_value','ure']].copy())
-    '''
-    Ports and underway get separate output files except for the emissions files
-    '''
     shapes['state'] = shapes['region_cd'].str[:2]
-    for source_type in ('ports','underway'):
-        print 'Running for %s' %source_type
-        shapes_type = shapes[shapes['facid'].str.startswith(source_type[0].upper())].copy()
-        if shapes_type.empty:
-            print 'WARNING: No %s sources found' %source_type
-        else:
-            emis_type = emis[emis['facid'].str.startswith(source_type[0].upper())].copy()
-            write_emis(emis_type.copy(), source_type)
-            write_locations(shapes_type.copy().drop_duplicates(['region_cd','facid','src_id',
-              'type','col','row','utm_zone']), source_type)
-            write_parameters(shapes_type, state_rh, source_type) 
-            write_temporal(emis_type, shapes_type, source_type)
+    return shapes
+
+def main():
+    var_list = ('ATPRO_HOURLY','ATPRO_WEEKLY','ATPRO_MONTHLY','ATREF','EMISINV_A','SOURCE_GROUPS',
+      'COSTCY','POLY_FILE','INVTABLE','WORK_PATH','GRIDDESC','REGION_IOAPI_GRIDNAME','STATE_FIPS')
+    check_env_vars(var_list)
+    inv_list = get_inv_list()
+    state_fips = os.environ['STATE_FIPS']
+    invtable = get_invtable(os.environ['INVTABLE'])
+    inv = AnnualFF10(inv_list, invtable, state_fips, use_shapes=True)
+    src_groups = SourceGroups(os.environ['SOURCE_GROUPS'])
+    # Read in the shapes files and drop ones that aren't needed
+    shapes = read_shapes(os.environ['POLY_FILE'])
+    emis = label_emis(inv.emis, shapes[['facid','shape_id','area_frac']].drop_duplicates('facid'))
+    emis_id = emis[['facid','src_id','region_cd']].drop_duplicates(['facid','src_id'])
+    shapes = pd.merge(shapes, emis_id, on='facid', how='left')
+    shapes = shapes[shapes['src_id'].notnull()].copy()
+    met_grid = Grid(os.environ['REGION_IOAPI_GRIDNAME'], os.environ['GRIDDESC'])
+    shapes = proc_shapes(shapes, met_grid)
+    write_emis(emis.copy(), src_groups)
+    write_locations(shapes.copy())
+    write_parameters(shapes) 
+    # Temporalization
+    scc_list = list(emis['scc'].drop_duplicates())
+    fips_list = list(emis['region_cd'].drop_duplicates())
+    temp = Temporal(os.environ['ATREF'],os.environ['ATPRO_HOURLY'],os.environ['ATPRO_WEEKLY'],
+        os.environ['ATPRO_MONTHLY'], scc_list, fips_list)
+    temp_profs = calc_monthly_temp(emis.drop_duplicates(['facid','src_id']), temp)
+    write_temporal(temp_profs)
 
 if __name__ == '__main__':
 	main()

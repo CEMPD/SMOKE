@@ -27,6 +27,7 @@ To group the inventory sources into AERMOD sources, run Smkreport with the follo
 This creates a report where the inventory sources are grouped by:
 
 * facility
+* facility source type
 * temporal profile (month-of-year, day-of-week, and hour-of-day)
 * emission release point type
 * stack parameters
@@ -39,14 +40,24 @@ The report also includes the grid cell, coordinates in Lambert and UTM projectio
 
 The Perl script ptnonipm.pl reads the Smkreport files and temporal profile files to create the AERMOD helper outputs:
 
+    locations/ptnonipm_location.csv
+    parameters/ptnonipm_fug_srcparam.csv
+    parameters/ptnonipm_point_srcparam.csv
+    temporal/ptnonipm_temporal.csv
+    xwalk/ptnonipm_srcid_emis.csv
+    xwalk/ptnonipm_srcid_xwalk.csv
+
+The script uses environment variables to locate the input files ($REPORT, $REP\_XWALK, $PTPRO\_MONTHLY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY) and the directory where the outputs will be written ($OUTPUT\_DIR). The shell script run_ptnonipm.sh sets up the environment variables and runs ptnonipm.pl.
+
+After processing both the ptnonipm and ptegu sectors, the outputs need to be combined use the Perl script combine_point.pl. This script uses the environment variable $OUTPUT_DIR to locate the individual sector output files, and write the combined files:
+
     locations/point_location.csv
-    parameters/point_fug_srcparam.csv
     parameters/point_point_srcparam.csv
-    temporal/point_temporal.csv
+    parameters/point_fug_srcparam.csv
     xwalk/point_srcid_emis.csv
     xwalk/point_srcid_xwalk.csv
 
-The script uses environment variables to locate the input files ($REPORT, $REP\_XWALK, $PTPRO\_MONTHLY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY) and the directory where the outputs will be written ($OUTPUT\_DIR). The shell script run_ptnonipm.sh sets up the environment variables and runs ptnonipm.pl.
+The shell script run_combine_point.sh sets up the $OUTPUT_DIR environment variable and runs combine_point.pl.
 
 ## ptairport sector
 
@@ -65,6 +76,7 @@ Airports should be separated from the ptnonipm inventory and processed as a sepa
 This report groups inventory sources by:
 
 * facility
+* facility source type
 * temporal profile (month-of-year, day-of-week, and hour-of-day)
 
 The report also includes the grid cell, coordinates in lat-lon, Lambert, and UTM projections, and the facility name.
@@ -82,6 +94,10 @@ The Perl script ptairport.pl reads the Smkreport file, temporal profile files, a
     xwalk/airport_srcid_emis.csv
 
 The shell script run_ptairport.sh sets up the environment variables needed by ptairport.pl ($REPORT, $RUNWAYS, $PTPRO\_MONTHLY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY, and $OUTPUT\_DIR).
+
+### Runway data file
+
+TODO
 
 ## ptegu sector
 
@@ -114,7 +130,9 @@ The Perl script ptegu.pl reads the Smkreport file, temporal profile files, and t
     xwalk/ptegu_srcid_emis.csv
     xwalk/ptegu_srcid_xwalk.csv
 
-The shell script run_ptegu.sh runs both convert\_phour and ptegu.pl. convert\_phour uses the environment variables $PHOUR, $PHOUR\_OUT, and $YEAR. ptegu.pl uses $REPORT, $REP\_XWALK, $PHOUR\_OUT, $PTPRO\_MONTHLY, $PTPRO\_DAILY, $PTPRO\_HOURLY\_WINTER, $PTPRO\_HOURLY\_SUMMER, and $OUTPUT\_DIR.
+The shell script run_ptegu.sh runs both convert\_phour and ptegu.pl. convert\_phour uses the environment variables $PHOUR, $PHOUR\_OUT, and $YEAR. ptegu.pl uses $REPORT, $REP\_XWALK, $PHOUR\_OUT, $YEAR, $PTPRO\_MONTHLY, $PTPRO\_DAILY, $PTPRO\_HOURLY\_WINTER, $PTPRO\_HOURLY\_SUMMER, and $OUTPUT\_DIR.
+
+After running the ptegu sector, the outputs need to be combined with the outputs from the ptnonipm sector. See the [ptnonipm](#ptnonipm-sector) section for more information.
 
 ## nonpoint sector
 

@@ -9,6 +9,8 @@ use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 require 'aermod.subs';
 require 'aermod_pt.subs';
 
+my $sector = $ENV{'SECTOR'} || 'ptegu';
+
 my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 
 # check environment variables
@@ -71,19 +73,19 @@ my %daily_summer = read_profiles($prof_file, 24);
 print "Creating output files...\n";
 my $output_dir = $ENV{'OUTPUT_DIR'};
 
-my $loc_fh = open_output("$output_dir/locations/ptegu_location.csv");
+my $loc_fh = open_output("$output_dir/locations/${sector}_location.csv");
 write_point_location_header($loc_fh);
 
-my $pt_fh = open_output("$output_dir/parameters/ptegu_point_srcparam.csv");
+my $pt_fh = open_output("$output_dir/parameters/${sector}_point_srcparam.csv");
 write_point_srcparam_header($pt_fh);
 
-my $ar_fh = open_output("$output_dir/parameters/ptegu_fug_srcparam.csv");
+my $ar_fh = open_output("$output_dir/parameters/${sector}_fug_srcparam.csv");
 write_fug_srcparam_header($ar_fh);
 
-my $x_fh = open_output("$output_dir/xwalk/ptegu_srcid_emis.csv");
+my $x_fh = open_output("$output_dir/xwalk/${sector}_srcid_emis.csv");
 write_crosswalk_header($x_fh);
 
-my $src_fh = open_output("$output_dir/xwalk/ptegu_srcid_xwalk.csv");
+my $src_fh = open_output("$output_dir/xwalk/${sector}_srcid_xwalk.csv");
 write_source_header($src_fh);
 
 my %rep_xwalk;
