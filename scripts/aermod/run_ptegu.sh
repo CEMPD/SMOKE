@@ -1,7 +1,18 @@
 #!/bin/bash
 
 # location of PHOUR file created by Smkinven
-export PHOUR=$INVOPD/phour.ptegu.2011ek.ncf
+export PHOUR01=$INVOPD/phour.ptegu.jan.2011ek.ncf
+export PHOUR02=$INVOPD/phour.ptegu.feb.2011ek.ncf
+export PHOUR03=$INVOPD/phour.ptegu.mar.2011ek.ncf
+export PHOUR04=$INVOPD/phour.ptegu.apr.2011ek.ncf
+export PHOUR05=$INVOPD/phour.ptegu.may.2011ek.ncf
+export PHOUR06=$INVOPD/phour.ptegu.jun.2011ek.ncf
+export PHOUR07=$INVOPD/phour.ptegu.jul.2011ek.ncf
+export PHOUR08=$INVOPD/phour.ptegu.aug.2011ek.ncf
+export PHOUR09=$INVOPD/phour.ptegu.sep.2011ek.ncf
+export PHOUR10=$INVOPD/phour.ptegu.oct.2011ek.ncf
+export PHOUR11=$INVOPD/phour.ptegu.nov.2011ek.ncf
+export PHOUR12=$INVOPD/phour.ptegu.dec.2011ek.ncf
 
 # location of AERMOD-source report created by Smkreport
 export REPORT=$REPSCEN/pointgt.aermod.ptegu.12US2.2011ek.2011001.rpt

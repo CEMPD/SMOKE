@@ -4,10 +4,10 @@ program convert_phour
 
   implicit none
   
-  character*16 phour
+  character*16 phour, infile
   integer phourout
-  integer year, jdate, jtime
-  integer ios, srcidx, tstep
+  integer year, jdate, jtime, month, pmonth, day
+  integer ios, srcidx, tstep, t
   
   integer, dimension(:), allocatable :: indxh
   real, dimension(:), allocatable :: tmpannfac
@@ -15,7 +15,7 @@ program convert_phour
   
   character*16 :: progname = 'convert_phour'
   
-  phour = promptmfile('PHOUR', fsread3, 'PHOUR', progname)
+  phour = promptmfile('PHOUR01', fsread3, 'PHOUR01', progname)
   phourout = promptffile('PHOUR_OUT', .false., .true., 'PHOUR_OUT', progname)
   year = envint('YEAR', 'YEAR', 2011, ios)
 
@@ -26,10 +26,6 @@ program convert_phour
     call m3exit(progname, 0, 0, 'Could not get PHOUR description', -1)
   end if
   
-  if (mxrec3d < 365*24) then
-    call m3exit(progname, 0, 0, 'PHOUR must contain data for 365 days', -1)
-  end if
-
   allocate(indxh(nrows3d))
   allocate(tmpannfac(nrows3d))
   allocate(annfac(nrows3d, 366*24))
@@ -38,8 +34,24 @@ program convert_phour
     call m3exit(progname, 0, 0, 'Could not read INDXH from PHOUR', -1)
   end if
 
+  if( .not. close3(phour) ) then
+   call m3exit(progname, 0, 0, 'Could not close PHOUR', -1)
+  end if
+
   tstep = 1
-  do while (jdate / 1000 == year)
+  do t = 1,365*24
+
+    call daymon( jdate, month, day)
+
+    if( month /= pmonth ) then
+        write(infile,'(a,i2.2)') 'PHOUR',month
+        phour = promptmfile(infile, fsread3, infile, progname)
+
+        if (.not. desc3(phour)) then
+           call m3exit(progname, 0, 0, 'Could not get PHOUR description', -1)
+        end if
+    end if
+
     if (.not. read3(phour, 'STKFL', allays3, jdate, jtime, tmpannfac)) then
       call m3exit(progname, jdate, jtime, 'Could not read STKFL from PHOUR', -1)
     end if
@@ -50,6 +62,8 @@ program convert_phour
 
     call nextime(jdate, jtime, 10000)
     tstep = tstep + 1
+    pmonth = month
+
   end do
   
   do srcidx = 1, nrows3d
