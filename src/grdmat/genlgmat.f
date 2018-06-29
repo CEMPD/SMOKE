@@ -173,27 +173,62 @@ C.............   Save modeling-domain description in MODGRID variables:
 
         END IF        
 
-        ALLOCATE( MSFX2( NGRID ), STAT=IOS )
+        ALLOCATE( MSFX2( NGRID ), STAT=IOS )    !!  ratio  dx*dy/true-Earth-area( cell )
         CALL CHECKMEM( IOS, 'MSFX2', PROGNAME )
 
-        IF( .NOT. READ3('GRID_CRO_2D', 'MSFX2', 1,0,0, MSFX2 ) ) THEN
-            MESG  = 'Could not read "MSFX2" from "GRID_CRO_2D"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        IF ( GDTYP .EQ. LATGRD3 ) THEN
 
-        END IF
+!$OMP       PARALLEL DO DEFAULT( NONE ),
+!$OMP&                   SHARED( NCOLS, NROWS, MSFX2 ),
+!$OMP&                  PRIVATE( C, R, K )
+                DO R = 1, NROWS
+                DO C = 1, NCOLS
+                    Y = YORIG + ( DBLE( R ) - 0.5d0 )*YCELL
+                    K = C + NCOLS*( R - 1 )
+                    MSFX2( K ) = 1.0 / ( DG2M**2 * COS( PI180*Y ) )
+                END DO
+                END DO
 
-        IF ( GDTYPE .EQ. LATGRD3 ) THEN
+            IF ( GDTYPE .EQ. LATGRD3 ) THEN
+
+                DXRAT  = ABS( XCELL / XCELLE )
+                DYRAT  = ABS( YCELL / YCELLE )
+
+            ELSE        !!  gdtype not latgrd3:
+            
+                X = YORIG + 0.5d0 * YCELL
+                Y = YORIG + ( DBLE( NROWS ) - 0.5d0 )*YCELL
+                IF ( X * Y .LT. 0.0d0 ) THEN
+                    COSFAC = 1.0d0      !!  grid crosses equator, where cosfac==1
+                ELSE
+                    COSFAC = MAX( COS( PI180*X ), COS( PI180*Y ) )
+                END IF
+
+                DXRAT  = ABS( DG2M * XCELL * COSFAC / XCELLE )
+                DYRAT  = ABS( DG2M * YCELL          / YCELLE )
+
+            END IF      !!  if gdtype is latgrd3, or not
+        
+        ELSE
+
+            IF( .NOT. READ3('GRID_CRO_2D', 'MSFX2', 1,0,0, MSFX2 ) ) THEN
+                MESG  = 'Could not read "MSFX2" from "GRID_CRO_2D"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END IF
+
+            IF ( GDTYPE .EQ. LATGRD3 ) THEN
 
 C.........   Compute output-grid Lat-Lon:
 
-            ALLOCATE( XLON( NCOLS,NROWS ),
-     &                YLAT( NCOLS,NROWS ),  STAT=IOS )
-            CALL CHECKMEM( IOS, 'XLON.YLAT', PROGNAME )
+                ALLOCATE( XLON( NCOLS,NROWS ),
+     &                    YLAT( NCOLS,NROWS ),  STAT=IOS )
+                CALL CHECKMEM( IOS, 'XLON.YLAT', PROGNAME )
 
-            CALL GRID2XY( GDTYPE,P_ALPE, P_BETE, P_GAME, XCENTE, YCENTE,
-     &                    GDTYP, P_ALP,  P_BET,  P_GAM,  XCENT,  YCENT,
-     &                    NCOLS, NROWS,  XORIG,  YORIG,  XCELL,  YCELL,
-     &                    XLON, YLAT )
+                CALL GRID2XY( GDTYPE,P_ALPE, P_BETE, P_GAME, XCENTE, YCENTE,
+     &                        GDTYP, P_ALP,  P_BET,  P_GAM,  XCENT,  YCENT,
+     &                        NCOLS, NROWS,  XORIG,  YORIG,  XCELL,  YCELL,
+     &                        XLON, YLAT )
 
 C  compute grid refinement ratio (at least 2x finer than input-grid)
 C  Need min of cos(lat) on the modeling grid in order to find the
@@ -202,29 +237,31 @@ C  This min will occur either on the top row or on the bottom row,
 C  depending upon (N or S) hemisphere coverage of modeling grid...
 C  Needs XCELLE,YCELLE converted to meters...
 
-            COSFAC = COS( PI180*YLAT(1,1) )
+                COSFAC = COS( PI180*YLAT(1,1) )
 
 !$OMP       PARALLEL DO DEFAULT( NONE ),
 !$OMP&                   SHARED( NCOLS, NROWS, YLAT ),
 !$OMP&                  PRIVATE( C ),
 !$OMP&                REDUCTION( MIN: COSFAC )
 
-            DO C = 1, NCOLS
-                COSFAC = MIN( COSFAC, COS( PI180 * YLAT( C,1 ) ),
-     &                                COS( PI180 * YLAT( C,NROWS ) ) )
-            END DO
+                DO C = 1, NCOLS
+                    COSFAC = MIN( COSFAC, COS( PI180 * YLAT( C,1 ) ),
+     &                                    COS( PI180 * YLAT( C,NROWS ) ) )
+                END DO
 
-            DXRAT  = ABS( XCELL / ( DG2M * XCELLE * COSFAC ) )
-            DYRAT  = ABS( YCELL / ( DG2M * YCELLE ) )
+                DXRAT  = ABS( XCELL / ( DG2M * XCELLE * COSFAC ) )
+                DYRAT  = ABS( YCELL / ( DG2M * YCELLE ) )
 
-            DEALLOCATE( XLON, YLAT )
+                DEALLOCATE( XLON, YLAT )
 
-        ELSE
+            ELSE        !!  gdtype not latgrd3:
 
-            DXRAT  = ABS( XCELL / XCELLE )
-            DYRAT  = ABS( YCELL / YCELLE )
+                DXRAT  = ABS( XCELL / XCELLE )
+                DYRAT  = ABS( YCELL / YCELLE )
 
-        END IF
+            END IF      !!  if gdtype is latgrd3, or not
+
+        END IF      !!  if gdtyp  is latgrd3, or not
 
         RATIO  = CEILING( 3.0D0 * MAX( DXRAT, DYRAT ) ) !  samples at least 3x per input-cell
         NCOLS2 = RATIO * NCOLS
