@@ -55,7 +55,7 @@ C***********************************************************************
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: XLOCA, YLOCA, STKDM, STKHT, STKTK, STKVE,
-     &                      CSOURC, CIFIP, CPDESC, CSCC
+     &                      CSOURC, CIFIP, CPDESC, CSCC, CNAICS
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: LMAJOR, LPING, LCUTOFF, GROUPID, GINDEX,
@@ -119,7 +119,7 @@ C...........  LOCAL PARAMETERS and their descriptions:
 
         
 C...........   Indicator for which public inventory arrays need to be read
-        INTEGER,            PARAMETER :: NINVARR = 11
+        INTEGER,            PARAMETER :: NINVARR = 12
         CHARACTER(IOVLEN3), PARAMETER :: IVARNAMS( NINVARR ) = 
      &                                 ( / 'CIFIP          '
      &                                   , 'TZONES         ' 
@@ -130,6 +130,7 @@ C...........   Indicator for which public inventory arrays need to be read
      &                                   , 'STKTK          '
      &                                   , 'STKVE          '
      &                                   , 'CSOURC         '
+     &                                   , 'CNAICS         '
      &                                   , 'CPDESC         '
      &                                   , 'CSCC           ' / )
 
@@ -1367,7 +1368,7 @@ C.............  Subprogram arguments
             CHARACTER(*), INTENT(IN):: TYPES  ( NORS, MXAND, NV ) ! Condition
             LOGICAL     , INTENT(IN):: STATUS ( NORS, MXAND, NV ) ! true: condition met
 
-            INTEGER, PARAMETER :: NHEADER  = 16
+            INTEGER, PARAMETER :: NHEADER  = 17
             CHARACTER(15), PARAMETER :: HEADERS( NHEADER ) = 
      &                              ( / 'Source ID      ',
      &                                  'Region         ',
@@ -1377,6 +1378,7 @@ C.............  Subprogram arguments
      &                                  'Char 3         ',
      &                                  'Char 4         ',
      &                                  'Char 5         ',
+     &                                  'NAICS          ',
      &                                  'Plt Name       ',
      &                                  'Elevstat       ',
      &                                  'Group          ',
@@ -1483,10 +1485,6 @@ C.................  Add results onto header
 C.................  Write out header
                 WRITE( FDEV, '(A)' ) TRIM( BUFFER )
 
-                L1 = LEN_TRIM( BUFFER )
-                BUFFER =  REPEAT( '-', L1 )
-                WRITE( FDEV, '(A)' ) TRIM( BUFFER )
-
                 FIRSTIME = .FALSE.
 
             END IF
@@ -1497,11 +1495,11 @@ C.............  Subdivide source description
 
 C.............  Write source information format and then use format
             WRITE( FMTBUF, 94790 ) FIPLEN3, PLTLEN3, 
-     &           ( CHRLEN3, N=1,NCHARS-2 ), DSCLEN3
+     &           ( CHRLEN3, N=1,NCHARS-2 ), NAILEN3, DSCLEN3
             FMTBUF = TRIM( FMTBUF ) // ')'
 
             WRITE( BUFFER, FMTBUF ) S, ( CHARS( N ), N = 1, NCHARS ), 
-     &                              CPDESC( S )
+     &                              CNAICS( S ), CPDESC( S )
             
 C.............  Add label, group number, stack parameters, and emissions
             WRITE( BUFFER, 94791 ) TRIM( BUFFER ), LABEL, IGRP,
