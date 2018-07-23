@@ -378,11 +378,11 @@ C.................  Define inventory temporal resoltion (annual or avg-day)
             IF( CMON == '0' .OR. CMON == 'N' .OR. CMON == ' ' ) THEN   ! Annual inventory
                 TPF = MTPRFAC * WKSET
                 IDX = NEM
-                CNVFAC = 1000. * GM2TON * NDAYS * DAY2SEC  ! kg/m2/s -> kg/m2/year
+                CNVFAC = 1000. * GM2TON * NDAYS * DAY2SEC  ! kg/m2/s -> tons/m2/year
             ELSE
                 TPF = WKSET
                 IDX = NDY
-                CNVFAC = 1000. * GM2TON * DAY2SEC  ! kg/m2/s -> kg/m2/day
+                CNVFAC = 1000. * GM2TON * DAY2SEC  ! kg/m2/s -> tons/m2/day
             END IF
 
 C.............  Set output logical file name
