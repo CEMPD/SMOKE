@@ -198,8 +198,10 @@ C.............  Create reverse index for pollutants and activities
 
 C.............  Create array to store original no of VOC/TOG values
             IF( INTGRFLAG ) THEN
+                IF( ALLOCATED( NHAPMOD ) ) DEALLOCATE( NHAPMOD )
                 ALLOCATE( NHAPMOD( NNHV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'NHAPMOD', PROGNAME )
+                IF( ALLOCATED( NHAPPOS ) ) DEALLOCATE( NHAPPOS )
                 ALLOCATE( NHAPPOS( NNHV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'NHAPPOS', PROGNAME )
                 NHAPMOD = ''
