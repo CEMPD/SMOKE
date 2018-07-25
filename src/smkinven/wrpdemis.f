@@ -275,6 +275,8 @@ C.........  Store sorted records for this hour
           V = CODEA ( J,TIDX )
           N = CIDXA ( J,TIDX )
 
+          IF( S < 1 ) CYCLE  ! Skip if source is missing
+
           POLNAM = EANAM( V ) 
 
 C...........  Add multiple inventory pollutant(s) with same CAS name
@@ -318,7 +320,7 @@ C.............  Initialize duplicates flag
             NHVPOS = 0
 
 C.............  If current source is not equal to previous source
-            IF( S .NE. LS  .OR. I .EQ. NPDPT( TIDX )) THEN
+            IF( S .NE. LS  .OR. I .EQ. NPDPT( TIDX ) ) THEN
 
 C.................  Count no of source
                 IF( S .NE. LS ) THEN
@@ -327,9 +329,9 @@ C.................  Count no of source
                 END IF 
 
 C.................  Get the location of start and end index 
-                IF ( I .EQ. 1 ) THEN 
+                IF ( K .EQ. 1 ) THEN 
                     SIDX( K ) = I
-                ELSE IF ( I .GT. 1 .AND. I .LT. NPDPT( TIDX )) THEN 
+                ELSE IF ( K .GT. 1 .AND. I .LT. NPDPT( TIDX )) THEN 
                     SIDX( K ) = I
                     EIDX( K-1 ) = I - 1
                     LK = K-1
@@ -341,7 +343,7 @@ C.................  Only specify the end index for last source
 
 C.................  Calculate formula if needed
                 IF( NP < 1 ) THEN       ! Skip PMC and Integration calcuation
-                IF( NCOMP > 0 .AND. I > 1 ) THEN
+                IF( NCOMP > 0 .AND. K > 1 ) THEN
 
                     DO F = 1, NCOMP
                         IDXA = 0
@@ -436,7 +438,7 @@ c                                CALL M3MESG( MESG )
 C.................  Combine VOC + HAPs for integrate/non-integrate option
 C.................  Determine no of VOCs and store VOC/NONHAPVOC positions
 C                   for later NONHAPVOC calculation by substracting
-                IF( INTGRFLAG .AND. I > 1 ) THEN
+                IF( INTGRFLAG .AND. K > 1 ) THEN
 
 C.....................  Count no of HAPs
                     NHAP = 0
