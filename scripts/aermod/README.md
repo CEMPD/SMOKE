@@ -97,7 +97,7 @@ The shell script run_ptairport.sh sets up the environment variables needed by pt
 
 ### Runway data file
 
-The runway data file lists start and end coordinates and widths for runways corresponding to each airport facility. A default file [Final_2014_Runway_Source_Airports_Endpoints_4.csv](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/Final_2014_Runway_Source_Airports_Endpoints_4.csv) is provided.
+The runway data file lists start and end coordinates and widths for runways corresponding to each airport facility. A default file [Final_2014_Runway_Source_Airports_Endpoints_4.csv](https://raw.githubusercontent.com/CEMPD/SMOKE/master/scripts/aermod/Final_2014_Runway_Source_Airports_Endpoints_4.csv) is provided.
 
 ## ptegu sector
 
