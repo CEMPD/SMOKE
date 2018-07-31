@@ -168,6 +168,12 @@ The Perl script nonpt.pl reads the Smkreport file, temporal profile files, and r
 
 The shell script run_nonpt.sh sets up the environment variables needed by nonpt.pl ($REPORT, $SOURCE_GROUPS, $GROUP_PARAMS, $ATPRO_MONTHLY, $ATPRO_WEEKLY, $ATPRO_HOURLY, and $OUTPUT_DIR).
 
+### Run group configuration files
+
+The source groups file assigns each SCC to a source group and a run group. A default file [hem_aermod_groups_2014_25jan2018](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/hem_aermod_groups_2014_25jan2018.csv) is provided.
+
+The group parameters file provides the release height and initial vertical dispersion (sigma z) values for each run group. Both values are in meters. A default file [nonpoint_rungroup_parameters.csv](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/nonpoint_rungroup_parameters.csv) is provided.
+
 ## nonroad sector
 
 After running Smkinven, Grdmat, and Temporal, Smkreport should be run for each month of the year. This will produce a set of 12 custom AERMOD reports with emissions for each month.
@@ -186,6 +192,10 @@ The Perl script nonroad.pl reads the monthly Smkreport files, temporal profile f
     nonroad_emis.csv
 
 The shell script run_nonroad.sh sets up the environment variables needed by nonroad.pl ($REPORT_JAN, $REPORT_FEB, ..., $REPORT_DEC, $SOURCE_GROUPS, $GROUP_PARAMS, $ATPRO_MONTHLY, $ATPRO_WEEKLY, $ATPRO_HOURLY, and $OUTPUT_DIR).
+
+### Run group configuration files
+
+Same as the [nonpoint sector](#nonpoint-sector) configuration files.
 
 ## np_oilgas sector
 
@@ -206,6 +216,10 @@ The Perl script np_oilgas.pl reads the Smkreport file, temporal profile files, a
 
 The shell script run_np_oilgas.sh sets up the environment variables needed by np_oilgas.pl ($REPORT, $SOURCE_GROUPS, $GROUP_PARAMS, $ATPRO_MONTHLY, $ATPRO_WEEKLY, $ATPRO_HOURLY, and $OUTPUT_DIR).
 
+### Run group configuration files
+
+Same as the [nonpoint sector](#nonpoint-sector) configuration files.
+
 ## rwc sector
 
 The rwc sector reads day-of-month temporal profiles in addition to month-of-year, day-of-week, and hour-of-day profiles. Currently, the RWC post-processing requires that each individual source use the same hour-of-day profile for every day of the week. The RWC post-processing is set up for the year 2014.
@@ -225,3 +239,7 @@ The Perl script rwc.pl reads the Smkreport file, temporal profile files, and run
     rwc_emis.csv
 
 The shell script run_rwc.sh sets up the environment variables needed by rwc.pl ($REPORT, $SOURCE_GROUPS, $GROUP_PARAMS, $ATPRO_MONTHLY, $ATPRO_DAILY, $ATPRO_WEEKLY, $ATPRO_HOURLY, and $OUTPUT_DIR).
+
+### Run group configuration files
+
+Same as the [nonpoint sector](#nonpoint-sector) configuration files.
