@@ -29,7 +29,7 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: NAILEN3 =  6 ! NAICS code
         INTEGER, PARAMETER :: ORSLEN3 =  6 ! DOE plant ID field
         INTEGER, PARAMETER :: PHYLEN3 = 512! physical file name length
-        INTEGER, PARAMETER :: PLTLEN3 = 15 ! plant ID field 
+        INTEGER, PARAMETER :: PLTLEN3 = 20 ! plant ID field 
         INTEGER, PARAMETER :: POLLEN3 =  5 ! pol position field 
         INTEGER, PARAMETER :: PRCLEN3 =  3 ! mv emissions process
         INTEGER, PARAMETER :: RWTLEN3 =  3 ! roadway type 

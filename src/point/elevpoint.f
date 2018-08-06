@@ -1326,7 +1326,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93620   FORMAT( 3(I8,1X) )
 
-93630   FORMAT( 3(I8,1X), A, 1X, 2(A15,1X), F10.3 )
+93630   FORMAT( 3(I8,1X), A, 1X, 2(A20,1X), F10.3 )
 
 C...........   Internal buffering formats............ 94xxx
 
