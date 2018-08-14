@@ -669,8 +669,16 @@ C.........................  Make sure we have a facility/plant ID
                         IF( FCID == ' ' ) THEN
                             EFLAG = .TRUE.
                             WRITE( MESG,94010 ) 'ERROR: Missing ' //
-     &                          'plant ID code at line', IREC
+     &                          'plant/facility ID code at line', IREC
                             CALL M3MESG( MESG )
+                        ELSE IF( LEN_TRIM( FCID ) > PLTLEN3 ) THEN
+                            IF( NWARN0 < MXWARN ) THEN
+                                WRITE( MESG,94010 ) 'WARNING: Facility ' //
+     &                             'ID is longer than maximum 20 characters ' //
+     &                             'long at line', IREC
+                                CALL M3MESG( MESG )
+                                NWARN0 = NWARN0 + 1
+                            END IF
                         END IF
 
                     END IF
