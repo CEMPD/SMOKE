@@ -86,10 +86,10 @@ C...........   Local allocatable arrays
         INTEGER,      ALLOCATABLE :: LMAJOR ( : ) ! major source flag
         INTEGER,      ALLOCATABLE :: LPING  ( : ) ! PinG source flag
         INTEGER,      ALLOCATABLE :: INTDATA( : ) ! generic integer data
-        REAL*8,       ALLOCATABLE :: XLOCA  ( : ) ! x-location at center of grid cell
-        REAL*8,       ALLOCATABLE :: YLOCA  ( : ) ! y-location at center of grid cell
-        REAL*8,       ALLOCATABLE :: LAT    ( : ) ! latitude of YLOCA
-        REAL*8,       ALLOCATABLE :: LONG   ( : ) ! longitude of XLOCA
+        REAL,         ALLOCATABLE :: XLOCA  ( : ) ! x-location at center of grid cell
+        REAL,         ALLOCATABLE :: YLOCA  ( : ) ! y-location at center of grid cell
+        REAL,         ALLOCATABLE :: LAT    ( : ) ! latitude of YLOCA
+        REAL,         ALLOCATABLE :: LONG   ( : ) ! longitude of XLOCA
         REAL,         ALLOCATABLE :: STKDM  ( : ) ! inside stack diameter
         REAL,         ALLOCATABLE :: STKHT  ( : ) ! stack height
         REAL,         ALLOCATABLE :: STKTK  ( : ) ! stack exit temperature
@@ -97,7 +97,6 @@ C...........   Local allocatable arrays
         REAL,         ALLOCATABLE :: STKFLW ( : ) ! stack exit flow rate
         REAL,         ALLOCATABLE :: ACRES  ( : ) ! acres burned for a fire
         REAL, SAVE,   ALLOCATABLE :: OUTEMIS( : ) ! output emissions
-        REAL*8,       ALLOCATABLE :: DBLEDATA( : )! generic double real data
         REAL,         ALLOCATABLE :: REALDATA( : )! generic real data
 
 C...........   Other local variables
@@ -107,8 +106,8 @@ C...........   Other local variables
         INTEGER          COLNUM        ! grid cell column
         INTEGER          ELEVIDX       ! starting index for elevated sources
 
-        REAL*8           XLOCACELL     ! x-location for grid cell
-        REAL*8           YLOCACELL     ! y-location for grid cell
+        REAL             XLOCACELL     ! x-location for grid cell
+        REAL             YLOCACELL     ! y-location for grid cell
 
         LOGICAL, SAVE :: FIRSTTIME = .TRUE. ! true: first time routine called
 
@@ -247,19 +246,16 @@ C.............  Append data for elevated source groups
                 ALLOCATE( REALDATA( NGROUP ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'REALDATA', PROGNAME )
 
-                ALLOCATE( DBLEDATA( NGROUP ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'DBLEDATA', PROGNAME )
-
-                CALL DBLE_READ3( PVNAME, 'XLOCA', 1, PVSDATE, PVSTIME, DBLEDATA )
+                CALL REAL_READ3( PVNAME, 'XLOCA', 1, PVSDATE, PVSTIME, REALDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
-                    XLOCA( IDX ) = DBLEDATA( ELEVSTKGRP( G ) )
+                    XLOCA( IDX ) = REALDATA( ELEVSTKGRP( G ) )
                 END DO
 
-                CALL DBLE_READ3( PVNAME, 'YLOCA', 1, PVSDATE, PVSTIME, DBLEDATA )
+                CALL REAL_READ3( PVNAME, 'YLOCA', 1, PVSDATE, PVSTIME, REALDATA )
                 DO G = 1, NELEVGRPS
                     IDX = ELEVIDX + G - 1
-                    YLOCA( IDX ) = DBLEDATA( ELEVSTKGRP( G ) )
+                    YLOCA( IDX ) = REALDATA( ELEVSTKGRP( G ) )
                 END DO
 
                 CALL REAL_READ3( PVNAME, 'STKDM', 1, PVSDATE, PVSTIME, REALDATA )
@@ -293,18 +289,18 @@ C.............  Append data for elevated source groups
                 END DO
 
 C.................  If lat/lon is in existing stack groups file, append it
-                IF( READ3( PVNAME, 'LATITUDE', 1, PVSDATE, PVSTIME, DBLEDATA ) ) THEN
+                IF( READ3( PVNAME, 'LATITUDE', 1, PVSDATE, PVSTIME, REALDATA ) ) THEN
 
                     DO G = 1, NELEVGRPS
                         IDX = ELEVIDX + G - 1
-                        LAT( IDX ) = DBLEDATA( ELEVSTKGRP( G ) )
+                        LAT( IDX ) = REALDATA( ELEVSTKGRP( G ) )
                     END DO
 
 C.....................  Assume longitude is available if latitude was
-                    CALL DBLE_READ3( PVNAME, 'LONGITUDE', 1, PVSDATE, PVSTIME, DBLEDATA )
+                    CALL REAL_READ3( PVNAME, 'LONGITUDE', 1, PVSDATE, PVSTIME, REALDATA )
                     DO G = 1, NELEVGRPS
                         IDX = ELEVIDX + G - 1
-                        LONG( IDX ) = DBLEDATA( ELEVSTKGRP( G ) )
+                        LONG( IDX ) = REALDATA( ELEVSTKGRP( G ) )
                     END DO
 
                 ELSE
@@ -344,10 +340,10 @@ C.................  If acres burned is in existing stack groups file, add to out
             CALL INT_WRITE3( SRCGRPNAME, 'LMAJOR', JDATE, JTIME, LMAJOR )
             CALL INT_WRITE3( SRCGRPNAME, 'LPING',  JDATE, JTIME, LPING )
 
-            CALL DBLE_WRITE3( SRCGRPNAME, 'XLOCA', JDATE, JTIME, XLOCA )
-            CALL DBLE_WRITE3( SRCGRPNAME, 'YLOCA', JDATE, JTIME, YLOCA )
-            CALL DBLE_WRITE3( SRCGRPNAME, 'LATITUDE',  JDATE, JTIME, LAT )
-            CALL DBLE_WRITE3( SRCGRPNAME, 'LONGITUDE', JDATE, JTIME, LONG )
+            CALL REAL_WRITE3( SRCGRPNAME, 'XLOCA', JDATE, JTIME, XLOCA )
+            CALL REAL_WRITE3( SRCGRPNAME, 'YLOCA', JDATE, JTIME, YLOCA )
+            CALL REAL_WRITE3( SRCGRPNAME, 'LATITUDE',  JDATE, JTIME, LAT )
+            CALL REAL_WRITE3( SRCGRPNAME, 'LONGITUDE', JDATE, JTIME, LONG )
             CALL REAL_WRITE3( SRCGRPNAME, 'STKDM', JDATE, JTIME, STKDM )
             CALL REAL_WRITE3( SRCGRPNAME, 'STKHT', JDATE, JTIME, STKHT )
             CALL REAL_WRITE3( SRCGRPNAME, 'STKTK', JDATE, JTIME, STKTK )
@@ -453,44 +449,6 @@ C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 
-C.............  This internal subprogram reads real data from an
-C               I/O API file, and aborts if not successful.
-            SUBROUTINE DBLE_READ3( FILNAM, VARNAM, LAYER,
-     &                             RDATE, RTIME, DBLEBUF )
-
-C.............  Subprogram arguments
-            CHARACTER(*) FILNAM       ! logical file name
-            CHARACTER(*) VARNAM       ! variable name
-            INTEGER      LAYER        ! layer number
-            INTEGER      RDATE        ! read Julian date
-            INTEGER      RTIME        ! read time
-            REAL*8       DBLEBUF(*)   ! real data buffer
-
-C.............  Local variables
-            INTEGER L1, L2
-
-C----------------------------------------------------------------------
-
-            IF ( GET_VTYPE( FILNAM, VARNAM, RDATE, RTIME ) .NE. M3DBLE ) THEN
-                    MESG = 'Type for variable "' // TRIM( VARNAM ) //
-     &                     '" in "'// TRIM( FILNAM ) // '" not M3DBLE'
-                    CALL M3EXIT( PROGNAME, RDATE, RTIME, MESG, 2 )
-            ELSE IF ( .NOT. READ3( FILNAM, VARNAM, LAYER,
-     &                             RDATE, RTIME, DBLEBUF ) ) THEN
-
-                L1 = LEN_TRIM( VARNAM )
-                L2 = LEN_TRIM( FILNAM )
-                MESG = 'Could not read "' // TRIM( VARNAM ) //
-     &                 '" from file "' // FILNAM( 1:L2 ) // '"'
-                CALL M3EXIT( PROGNAME, RDATE, RTIME, MESG, 2 )
-
-            END IF
-
-            END SUBROUTINE DBLE_READ3
-
-C----------------------------------------------------------------------
-C----------------------------------------------------------------------
-
 C.............  This internal subprogram reads integer data from an
 C               I/O API file, and aborts if not successful.
             SUBROUTINE INT_READ3( FILNAM, VARNAM, LAYER,
@@ -558,41 +516,6 @@ C----------------------------------------------------------------------
             END IF
 
             END SUBROUTINE REAL_WRITE3
-
-C----------------------------------------------------------------------
-C----------------------------------------------------------------------
-
-C.............  This internal subprogram writes real data to an
-C               I/O API file, and aborts if not successful.
-            SUBROUTINE DBLE_WRITE3( FILNAM, VARNAM,
-     &                              WDATE, WTIME, DBLEBUF )
-
-C.............  Subprogram arguments
-            CHARACTER(*) FILNAM       ! logical file name
-            CHARACTER(*) VARNAM       ! variable name
-            INTEGER      WDATE        ! write Julian date
-            INTEGER      WTIME        ! write time
-            REAL*8       DBLEBUF(*)   ! real data buffer
-
-C----------------------------------------------------------------------
-
-            IF ( GET_VTYPE( FILNAM, VARNAM, WDATE, WTIME ) .NE. M3DBLE ) THEN
-
-                    MESG = 'Type for variable "' // TRIM( VARNAM ) //
-     &                     '" in "'              // TRIM( FILNAM ) //
-     &                     '" not M3DBLE'
-                    CALL M3EXIT( PROGNAME, WDATE, WTIME, MESG, 2 )
-
-            ELSE IF ( .NOT. WRITE3( FILNAM, VARNAM,
-     &                         WDATE, WTIME, DBLEBUF ) ) THEN
-
-                MESG = 'Could not write "' // TRIM( VARNAM ) //
-     &                 '" to file "'       // TRIM( FILNAM ) // '"'
-                CALL M3EXIT( PROGNAME, WDATE, WTIME, MESG, 2 )
-
-            END IF
-
-            END SUBROUTINE DBLE_WRITE3
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------

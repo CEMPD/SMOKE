@@ -229,13 +229,13 @@ C.............  Set the file variables
             J = J + 1
 
             VNAME3D( J ) = 'XLOCA'
-            VTYPE3D( J ) = M3DBLE
+            VTYPE3D( J ) = M3REAL
             UNITS3D( J ) = COORUN3D
             VDESC3D( J ) = 'Projection x coordinate'
             J = J + 1
 
             VNAME3D( J ) = 'YLOCA'
-            VTYPE3D( J ) = M3DBLE
+            VTYPE3D( J ) = M3REAL
             UNITS3D( J ) = COORUN3D
             VDESC3D( J ) = 'Projection y coordinate'
 
