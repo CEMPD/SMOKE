@@ -65,8 +65,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT(OUT) :: SN   ( NRECS ) ! record number
 
 C...........   Allocatable arrays
-        REAL, ALLOCATABLE :: XVALS( :,: ) ! x values for grid cell boundaries
-        REAL, ALLOCATABLE :: YVALS( :,: ) ! y values for grid cell boundaries
+        REAL*8, ALLOCATABLE :: XVALS( :,: ) ! x values for grid cell boundaries
+        REAL*8, ALLOCATABLE :: YVALS( :,: ) ! y values for grid cell boundaries
 
 C...........   Local variables
 
@@ -80,7 +80,7 @@ C...........   Local variables
         INTEGER         NRDOT ! number of rows in dot file
 
         REAL            STEP      ! distance to edge of column or row
-        REAL            XX, YY    ! tmp X and Y coordinates
+        REAL*8          XX, YY    ! tmp X and Y coordinates
         REAL            XMIN      ! minimum location for column
         REAL            XMAX      ! maximum location for column
         REAL            YMIN      ! minimum location for row
