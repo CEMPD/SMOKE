@@ -975,11 +975,11 @@ C.............  Compute un-gridding matrices for dot and cross point met data
                 CALL UNGRIDBV( METNCOLS, METNROWS, XXVALS, XYVALS,
      &                         NSRC, XLOCA, YLOCA, NX, CX )
             ELSE
-                CALL UNGRIDB( METNCOLS+1, METNROWS+1,
+                CALL UNGRIDBD1( METNCOLS+1, METNROWS+1,
      &                        XORIGDG, YORIGDG, XCELLDG, YCELLDG,
      &                        NSRC, XLOCA, YLOCA, ND, CD )
 
-                CALL UNGRIDB( METNCOLS, METNROWS,
+                CALL UNGRIDBD1( METNCOLS, METNROWS,
      &                        METXORIG, METYORIG, XCELL, YCELL,
      &                        NSRC, XLOCA, YLOCA, NX, CX )
             END IF
