@@ -223,7 +223,7 @@ The shell script run_nonpt.sh sets up the environment variables needed by nonpt.
 
 ### Run group configuration files
 
-The source groups file assigns each SCC to a source group and a run group. A default file [hem_aermod_groups_2014_25jan2018](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/hem_aermod_groups_2014_25jan2018.csv) is provided.
+The source groups file assigns each SCC to a source group and a run group. A default file [aermod_groups_2014_25jan2018](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/aermod_groups_2014_25jan2018.csv) is provided.
 
 The group parameters file provides the release height and initial vertical dispersion (sigma z) values for each run group. Both values are in meters. A default file [nonpoint_rungroup_parameters.csv](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/nonpoint_rungroup_parameters.csv) is provided.
 

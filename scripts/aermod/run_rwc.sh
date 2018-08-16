@@ -5,7 +5,7 @@ export REPORT=$REPSCEN/rep_rwc_2011ek_cb6v2_v6_11g_aermod.txt
 
 # locations of source groups data files
 export GROUP_PARAMS=$SCRIPTS/aermod/nonpoint_rungroup_parameters.csv
-export SOURCE_GROUPS=$SCRIPTS/aermod/hem_aermod_groups_2014_25jan2018.csv
+export SOURCE_GROUPS=$SCRIPTS/aermod/aermod_groups_2014_25jan2018.csv
 
 # locations of temporal profile files
 export ATPRO_MONTHLY=$GE_DAT/Gentpro_TPRO_MONTHLY_RWC_2011v2_07nov2014_v0
