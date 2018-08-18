@@ -26,12 +26,12 @@ Table 1.1. Format of the SOURCE_GROUPS comma delimited ancillary file.
 Position|Name|Type|Description
 -|-|-|-
 1|source_group|char|AERMOD source group name
-2|run_group|char|AERMOD run group name (name excludes grid resolution)
+2|run_group|char|AERMOD run group name
 3|nata_cat|char|NATA category
 4|nei_cat|char|NEI category
 5|scc|char(20)|Source Category Code
 
-The grid resolutions are specified in the processing script described below. For 12 km CONUS domains the run groups HDON, LDON, and HOTEL generate 4 km AERMOD helper files; the RUN_GROUPS environment variable is specified as HDON4, LDON4, and HOTEL4 respectively. The off-network groups, HDOFF and LDOFF, generate 12 km AERMOD helper files for 12 km CONUS domains. These run groups are specified as HDOFF12 and LDOFF12.
+The grid resolutions are specified in the processing script described below. For 12 km CONUS domains, the run groups HDON, LDON, and HOTEL generate 4 km AERMOD helper files; the RUN_GROUPS environment variable is specified as HDON4, LDON4, and HOTEL4 respectively. The off-network groups, HDOFF and LDOFF, generate 12 km AERMOD helper files for 12 km CONUS domains. These run groups are specified as HDOFF12 and LDOFF12.
 
 For non-CONUS state specific domains, the resolution is the same across all run groups. These run groups are specified by the name of the run group followed by the resolution and state-specific suffix: eg. HDON9AK, LDOFF3PR, HDOFF3HI, etc. All five run groups may not exist within smaller domains depending on which SCCs are available. When no data is available within a selected run group no helper files will be returned for that run group.
 
@@ -52,7 +52,7 @@ Environment Variable|File Description
 GROUP_PARAMS|Area release parameters (release height and sigma z) by run group
 SOURCE_GROUPS|SCC to source and run group cross-reference
 EMISINV_A|Area FF10 containing monthly emissions. May have multiple FF10 inputs by iterating the letter in the suffix (eg. EMISINV_B, EMISINV_C)
-INVTABLE|SMOKE compatible inventory table with SMOKE names; these are the name of the pollutants that will be in the emis helper files.
+INVTABLE|SMOKE compatible inventory table specifying which pollutants to run. The NAME is the name of the pollutant that will be in the emis helper files and is also referred to as “SMOKE name”.
 SRGPRO|Domain specific SMOKE-compatible gridding surrogates (4 km for HDON4, LDON4, and HOTEL4)
 SRGDESC|Domain specific SMOKE-compatible surrogate description file
 COSTCY|SMOKE-compatible country, state, county definition file
@@ -96,9 +96,7 @@ A special county to grid cross-reference file is output under the “xwalk” su
 
 Commercial marine vessel processing produces a single run group, CMV, with multiple source groups as defined in the source groups file (table 1.1). Unlike other AERMOD run groups the CMV helper files are based on polygons rather than grid cells. A polygon facility ID based on the polygon shape ID and the county FIPS is used to cross-reference the FF10 inventory data to the polygon vertices.
 
-The polygon file (table 3.1) is a comma delimited file that contains the vertices of all the CMV polygon vertices, both port and underway. These are simplified polygons based on NEI port and underway shapes. It is assumed that the emissions are homogeneous in each polygon and for underway shapes,
-
-the emissions contained are proportional to the area of the polygon relative to the total area of all source polygons in the NEI shape.
+The polygon file (table 3.1) is a comma delimited file that contains the vertices of all the CMV polygon vertices, both port and underway. These are simplified polygons based on NEI port and underway shapes. For ports, the simplified polygons are the same as the NEI port shapes.  For underway, simplified polygons that had been previously developed were used.  There may be multiple polygons per NEI underway shape. The emissions for each simplified polygon are assumed proportional to the simplified polygon area comprising underway shape.
 
 Table 3.1. Format of the POLY_FILE comma delimited ancillary file.
 
@@ -125,7 +123,7 @@ Environment Variable|File Description
 POLY_FILE|Comma delimited file of lat/lon vertices and area of simplified port and underway shape
 SOURCE_GROUPS|SCC to source and run group cross-reference
 EMISINV_A|Area FF10 containing monthly emissions. May have multiple FF10 inputs by iterating the letter in the suffix (eg. EMISINV_B, EMISINV_C)
-INVTABLE|SMOKE compatible inventory table with SMOKE names; these are the name of the pollutants that will be in the emis helper files.
+INVTABLE|SMOKE compatible inventory table with SMOKE names
 COSTCY|SMOKE-compatible country, state, county definition file
 GRIDDESC|SMOKE and IOAPI compatible grid description file that contains all grids and projections to be run.
 ATREF|Temporal cross-reference by county and source code (SCC).
@@ -149,4 +147,4 @@ A driver script should be used to define the environment variables described in 
 
 Emissions for all supplied facilities in the run group are found in the “emis” subdirectory under the WORK_PATH. The emissions file is typically named “CMV_emis.csv”
 
-Locations, parameters, and temporal files are found under the respective “locations”, “parameters”, and temporal subdirectories. Each helper file follows a naming scheme that is typically CMV_[helper type]. For example, CMV_parameters.csv
+Locations, parameters, and temporal files are found under the respective “locations”, “parameters”, and temporal subdirectories. Each helper file follows a naming scheme that is typically CMV [helper type]. For example, CMV_parameters.csv
