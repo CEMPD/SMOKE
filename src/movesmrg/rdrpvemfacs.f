@@ -511,6 +511,14 @@ C.............  Store emission factors for each pollutant
             DO P = 1, NMVSPOLS
             
                 EMVAL = STR2REAL( SEGMENT( NNONPOL + P ) )
+
+                IF( EMVAL < 0 ) THEN    ! reset negative EF to zero
+                    EMVAL = 0.0
+                    WRITE( MESG, 94010 ) 'WARNING: Resetting negative ' //
+     &                ' emission factor to zero at line', IREC
+                    CALL M3MESG( MESG )
+                END IF
+
                 RPVEMFACS( DAYIDX, SCCIDX, HOUR, TMPIDX, P ) = EMVAL
             
             END DO
