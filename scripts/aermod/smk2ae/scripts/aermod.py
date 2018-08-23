@@ -36,6 +36,7 @@ def get_inv_list():
 def parse_costcy(costcy):
     '''
     Parse in the COSTCY file and get a postal code to state fips x-ref
+    See SMOKE and IOAPI documentation for more information
     '''
     with open(costcy) as infile:
         st_dict = {}
@@ -49,6 +50,7 @@ def parse_costcy(costcy):
                 read_state = False
                 read_county = True
             elif read_state:
+                # Pad state FIPS to 2 characters
                 if line.startswith('0'):
                     stfips = '%0.2d' %int(line[1:3])
                     st_dict[stfips] = line[3:5].strip()
@@ -73,19 +75,22 @@ def init_paths(work_path, sub_dirs):
 
 def proc_point_sector(inv_list, grid_name, grid_desc, state_fips):
     '''
-    Process a point sector
+    Process a point sector that may have mutiple run groups
     '''
     from smk2ae.point_io import get_temp_codes, proc_points, get_grid_location
     from smk2ae.pt_ff10 import AnnualFF10
     grid_info = Grid(grid_name, grid_desc)
+    # Check for point sector specific variables
     var_list = ('PTPRO_HOURLY','PTPRO_WEEKLY','PTPRO_MONTHLY','PTREF','REPORT_PATH','CASE')
     check_env_vars(var_list)
     init_paths(os.environ['WORK_PATH'], ['xwalk','qa','locations','parameters','temporal'])
     invtable = get_invtable(os.environ['INVTABLE'])
+    # Read in the point FF10
     inv = AnnualFF10(os.environ['SECTOR'], inv_list, invtable, state_fips)
     if inv.stk.empty:
         raise ValueError('No facilities found containing HAPS. Check state list and inventories.')
     inv.stk['facility_name'] = '"' + inv.stk['facility_name'] + '"'
+    # Get the state names and filter down if specific states were specified
     inv.stk = insert_states(inv.stk, os.environ['COSTCY'])
     if state_fips:
         inv.state = inv.stk.loc[inv.stk['stfips'] == inv.st_fips, 'state'].drop_duplicates().values[0]
@@ -105,7 +110,7 @@ def proc_point_sector(inv_list, grid_name, grid_desc, state_fips):
           'unit_id'].astype('i')
         inv.stk.loc[inv.stk['uniq'] == 'Y', 'MONTHLY'] =  inv.stk.loc[inv.stk['uniq'] == 'Y', 
           'rel_point_id'].astype('i')
-    # Process airports
+    # Process airports if the airport locations file was defined in the driver script
     try:
         os.environ['AIRPORT_LOCS']
     except KeyError:
@@ -127,6 +132,7 @@ def proc_point_sector(inv_list, grid_name, grid_desc, state_fips):
 def get_invtable(fn):
     '''
     Read in the inventory table for the kept pollutants
+    See SMOKE documentation for more information about the INVTABLE
     '''
     invtable = pd.read_fwf(fn, comment='#', colspecs=[(0,11), (16,32), (41,42), (43,49)], 
       names=['smoke_name','poll','keep','spec_factor'], 
@@ -137,7 +143,8 @@ def get_invtable(fn):
 
 def release_params(fn, rg_suffix):
     '''
-    Get the release parameters file
+    Get the release parameters file used to define release height and sigma z
+     for area sources
     '''
     df = pd.read_csv(fn)
     df.rename(columns={'release_height': 'rel_ht', 'sigma_z': 'sz'}, inplace=True)
@@ -146,7 +153,8 @@ def release_params(fn, rg_suffix):
 
 def get_sw_corner(df, met_grid):
     '''
-    Find the SW corner of the grid cell associated with the lat-lon
+    Find the SW corner of the grid cell associated with the lat-lon. This is used for 
+      gridding and determining the UTM zone
     '''
     df['met_swcorner_lon'] = met_grid.colrow_to_ll(df['met_col'].astype('f'), 
       df['met_row'].astype('f'))['lon'].astype('f')
@@ -155,18 +163,22 @@ def get_sw_corner(df, met_grid):
 
 def proc_area_sector(inv_list, grid_name, grid_desc, state_fips):
     '''
-    Process an area sector
+    Process an area sector or run group
     '''
     from smk2ae.ar_ff10 import AnnualFF10
     from smk2ae.grid_surg import GridSurg, match_surrogate, grid_sources
     from smk2ae.source_groups import SourceGroups
+    # Check for area specific environment variables
     var_list = ('ATPRO_HOURLY','ATPRO_WEEKLY','ATPRO_MONTHLY','ATREF','SRGPRO','AGREF','SRGDESC',
       'SOURCE_GROUPS','COSTCY','RUN_GROUPS','GROUP_PARAMS','RUN_GROUP_SUFFIX')
     check_env_vars(var_list)
+    # Setup the output paths
     init_paths(os.environ['WORK_PATH'], ['emis','qa','locations','parameters','temporal','xwalk'])
     invtable = get_invtable(os.environ['INVTABLE'])
+    # Read the nonpoint FF10s
     inv = AnnualFF10(inv_list, invtable, state_fips)
     scc_list = list(inv.emis['scc'].drop_duplicates()) 
+    # Load all of the appropriate gridding surrogates
     surg = GridSurg(os.environ['AGREF'], os.environ['SRGPRO'], os.environ['SRGDESC'], scc_list)
     src_groups = SourceGroups(os.environ['SOURCE_GROUPS'])
     src_groups.xref['run_group'] = src_groups.xref['run_group'] + os.environ['RUN_GROUP_SUFFIX']
@@ -176,6 +188,8 @@ def proc_area_sector(inv_list, grid_name, grid_desc, state_fips):
         run_groups = [rg.strip() for rg in os.environ['RUN_GROUPS'].split(',')]
     else:
         run_groups = list(inv.emis['run_group'].drop_duplicates())
+    # Setup the met grid. This is the IOAPI grid specified, but may not be the same as the cell grid
+    #  if this is a sector with 4 km cells such as HDON, OILGAS, etc.
     met_grid = Grid(grid_name, grid_desc)
     for run_group in run_groups:
         print('NOTE: Running for %s' %run_group)
@@ -190,10 +204,12 @@ def proc_area_sector(inv_list, grid_name, grid_desc, state_fips):
         else:
             cell_grid = met_grid
         run_emis = grid_sources(run_emis, surg, cell_grid)
+        # If the cell and met grid are the same, then set up the parameters to be equivalent
         if cell_grid.GDNAM == met_grid.GDNAM:
             run_emis['met_col'] = run_emis['col']
             run_emis['met_row'] = run_emis['row']
             run_emis['src_id'] = '%s_1' %int(met_grid.XCELL/1000.)
+        # Otherwise find the met cell based on the cell grid
         elif (cell_grid.XCELL == 4000.) and (met_grid.XORIG == cell_grid.XORIG) and (met_grid.XCELL == 12000.):
             run_emis = define_met_cell(run_emis, cell_grid, met_grid)
         else:
@@ -202,6 +218,7 @@ def proc_area_sector(inv_list, grid_name, grid_desc, state_fips):
         run_emis = pd.merge(run_emis, swcorners, on=['met_col','met_row'], how='left')
         grid_keys = ['region_cd','scc','src_id','met_cell']
         write_aermod_emis(inv, cell_grid.XCELL, run_emis[grid_keys+['frac',]].drop_duplicates(grid_keys), src_groups.xref)
+        # Onroad run groups have temporal helper files calculated outside of this processor
         if run_group[:3] in ('HDO','LDO','HOT'):
             temp = None 
         else:
@@ -255,6 +272,7 @@ def write_aermod_emis(inv, cell_size, run_emis, xref):
     # Merge in the pollutants
     group_df = pd.merge(run_emis, inv.emis, on=['region_cd','scc'], how='left')
     group_df['ann_value'] = group_df['ann_value'] * group_df['frac']
+    # Fill in the monthly emissions if this is a sector with montly emissions
     if inv.monthly:
         mons = ['january','february','march','april','may','june','july','august','september',
           'october','november','december']
@@ -263,6 +281,7 @@ def write_aermod_emis(inv, cell_size, run_emis, xref):
             group_df[mon] = group_df[mon] * group_df['frac']
     group_df = pd.merge(group_df, xref[['scc','source_group']], on='scc', how='left')
     group_df.drop(['frac','scc'], axis=1, inplace=True)
+    # Aggregate up emissions by source for writing
     group_df = group_df.groupby(['run_group','region_cd','source_group','met_cell','src_id','smoke_name'],
       as_index=False, sort=False).sum()
     run_group = group_df['run_group'].values[0]
@@ -278,8 +297,10 @@ def main():
     inv_list = get_inv_list()
     grid_name = os.environ['REGION_IOAPI_GRIDNAME']
     grid_desc = os.environ['GRIDDESC']
+    # Select point processing if the sector name falls under the list below
     if os.environ['SECTOR'].lower() in ('ptnonipm','pt_oilgas','ptegu','ptegu_pk','ptipm','point'):
         proc_point_sector(inv_list, grid_name, grid_desc, state_fips)
+    # Otherwise process as area/nonpoint
     else:
         proc_area_sector(inv_list, grid_name, grid_desc, state_fips)
 

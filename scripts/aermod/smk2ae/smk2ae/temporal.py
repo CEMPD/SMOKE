@@ -37,14 +37,18 @@ class Temporal(object):
         xref = pd.read_csv(tref, comment='#', names=names, usecols=usecols, dtype=dtype)
         xref.fillna('', inplace=True)
         key_cols = ['scc','region_cd','facility_id']
+        # Replace 0s with null strings
         for col in key_cols:
             xref.ix[xref[col].str.zfill(15) == '000000000000000', col] = ''
+        # Fill region_cd to 5 characters using 0s
         xref.ix[xref['region_cd'] != '', 'region_cd'] = xref.ix[xref['region_cd'] != '', 
           'region_cd'].str[-5:].str.zfill(5)
         # Narrow down the x-refs to the ones that are in the inventory. This saves processing time.
         xref.set_index(key_cols, inplace=True)
         xref.sort_index(inplace=True)
         out_xref = pd.DataFrame()
+        # Iterate over a matching hierarchy for the temporal x-ref. Hierarchy goes from most specific
+        #  and highest rank to least specific and lowest rank.
         for idx_keys in ((scc_list, fips_list, fac_list), (scc_list, fips_list, ''), 
           (scc_list, '', fac_list), ('', fips_list, fac_list), (scc_list, '', ''),
           ('', fips_list, ''), ('', '', fac_list)):
@@ -55,6 +59,7 @@ class Temporal(object):
             else:
                 out_xref = pd.concat((out_xref, xref_idx))
         out_xref = out_xref.reset_index().drop_duplicates(key_cols.extend('type'))
+        # Weekly profiles are not used if there are daily profiles
         if 'DAILY' in list(out_xref['type'].drop_duplicates()):
             self.use_daily = True
             out_xref = out_xref[out_xref['type'] != 'WEEKLY'].copy()
@@ -83,6 +88,7 @@ class Temporal(object):
                     break
         df = pd.read_csv(hour, skiprows=skip_lines, names=names, usecols=usecols, dtype=dtype,
           index_col=False)
+        # There are multiple types of diurnal profiles that go from general (ALLDAY) to specific (MONDAY...SUNDAY)
         types = ['ALLDAY','WEEKDAY','WEEKEND','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY',
             'SATURDAY','SUNDAY']
         df = pd.merge(self.xref[self.xref['type'].isin(types)], df, on='code', how='left')
@@ -126,6 +132,7 @@ class Temporal(object):
     def _calc_daily_prof(self, row):
         '''
         Calculate the hourly temporal profiles using the month->day daily profiles
+        This is for sectors that use daily profiles rather than monthly/weekly.
         '''
         from calendar import monthrange
         month_prof = self._month[self._month['code'] == row['MONTHLY']]
@@ -157,6 +164,7 @@ class Temporal(object):
     def fill_missing(self, keys):
         '''
         Fill missing profile codes by moving to SCC for entries with scc/region combos
+        Looks for unmatched xrefs that have scc xrefs
         '''
         for key in keys:
             idx = (self.xref['region_cd'] != '') & (self.xref[key].isnull())
@@ -171,6 +179,8 @@ class Temporal(object):
     def gen_temp_prof(self):
         '''
         Calculate the AERMOD ready temporal profiles from the temporal XREF
+        This iterates through all selected cross references to retrieve a complete set of scalars
+          for that profile.
         '''
         keys = ['facility_id','scc','region_cd']
         self.xref = pd.pivot_table(self.xref, index=keys,
@@ -181,6 +191,7 @@ class Temporal(object):
         self.fill_missing(vals)
         uniq_profs = self.xref[vals].copy().drop_duplicates()
         aermod_profs = pd.DataFrame()
+        # Iterate over all of the unique profiles as a combination of x-refs
         for idx, row in uniq_profs.iterrows():
             if self.use_daily:
                 prof = self._calc_daily_prof(row)
@@ -198,6 +209,7 @@ class Temporal(object):
         if aermod_profs.empty:
             print('WARNING: No temporal profiles found')
         else:
+            # Merge the calculated profiles onto the xrefs
             aermod_profs.drop_duplicates(keys, inplace=True)
             if self.use_daily:
                 aermod_profs[['month','day','hour']] = \
@@ -205,6 +217,7 @@ class Temporal(object):
                 aermod_profs = pd.merge(self.xref, aermod_profs, on=vals, how='left')
             else:
                 aermod_profs = pd.merge(self.xref, aermod_profs, on=vals, how='left')
+        # Keep track of columns because not all of the profiles have the same number of scalars
         columns = [col for col in aermod_profs.columns if col not in vals]
         return aermod_profs[columns]
 
@@ -233,6 +246,7 @@ class Temporal(object):
     def _calc_temp_prof(self, row):
         '''
         Calculate the AERMOD ready temporal profile for each region/SCC in temporal XREF
+        This is the calculation of a unique profile using each unique combination of xref keys.
         '''
         row = row[row.notnull()].copy()
         month_prof = self._month[self._month['code'] == row['MONTHLY']].drop_duplicates()
@@ -247,14 +261,18 @@ class Temporal(object):
         hours = ['hr%0.2d' %hr for hr in range(1,25)]
         col_names = list(row.index) + ['qflag',]
         cols = list(row.values)
+        # If a profile is flat over a week and diurnal, then it only varies by MONTH so it is monthly
         if str(row['WEEKLY']) == '7' and str(row['ALLDAY']) == '24':
             cols, col_names = self._calc_month(month_prof, cols, col_names, sum_mon)
+        # If a profile is flat over the months and a week, then it only varies by hour so it is hourly
         elif str(row['MONTHLY']) == '262' and str(row['WEEKLY']) == '7':
             cols, col_names = self._calc_hrofdy(hour_prof, cols, col_names, hours)
+        # Otherwise it varies across multiple profile types
         else:
             '''
             Otherwise assume variation by month of year, day of week, and hour of day
             '''
+            # Try to get the weekday average.
             try:
                 wkday_avg = sum(week_prof[['mon','tue','wed','thu','fri']].values[0])/5.
             except KeyError:
@@ -266,6 +284,7 @@ class Temporal(object):
                 '''
                 day_dict = {'tue': 'TUESDAY', 'sat': 'SATURDAY', 'sun': 'SUNDAY'}
                 day_list = ['tue','sat','sun']
+                # This profile will end up with 864 scalars
                 col_names += ['Scalar%s' %x for x in range(1,865)]
                 cols.append('MHRDOW')
             else:
@@ -278,6 +297,8 @@ class Temporal(object):
                 col_names += ['Scalar%s' %x for x in range(1,2017)]
                 cols.append('MHRDOW7')
             sum_day = float(week_prof[['mon','tue','wed','thu','fri','sat','sun']].sum(axis=1))
+            # Check for diurnal profiles by day of weekday, weekday, weekend, otherwise go with
+            #  the all day profile
             for day in day_list:
                 day_key = day_dict[day]
                 day_val = float(week_prof[day])/sum_day
@@ -311,9 +332,11 @@ def match_temporal(df, xref, val_cols, hierarchy, use_daily=False):
     '''
     key_cols = [col for col in df.columns if col not in val_cols]
     matched_df = pd.DataFrame(columns=[val_cols[0],])
+    # Iterate over the index groups in the passed hierarchy
     for match_cols in hierarchy:
         df.set_index(match_cols, inplace=True)
         h_xref = xref.copy()
+        # Try to matc those columns, otherwise move on to the next level
         for col in key_cols:
             if col in h_xref.columns:
                 if col in match_cols:
@@ -336,6 +359,7 @@ def match_temporal(df, xref, val_cols, hierarchy, use_daily=False):
             if df.empty:
                 break
     df = pd.concat((matched_df, df))
+    # Check for any source that weren't matched to the tref
     unmatched = df[df['qflag'].isnull()].copy()
     if len(unmatched) > 0:
         print(unmatched[:20])

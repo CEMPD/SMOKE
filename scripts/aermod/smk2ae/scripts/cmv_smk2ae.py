@@ -196,6 +196,7 @@ def write_parameters(df):
     The maximum number of vertices for a polygon needs to be calculated first
     The coordinates for each polygon is written to a single line
     '''
+    # Set the release height and sigma z based on source group names
     df.loc[df['src_id'].str.endswith('c1'), 'sz'] = 3.907
     df.loc[df['src_id'].str.endswith('c1'), 'rel_ht'] = 8.4
     df.loc[df['src_id'].str.endswith('c3'), 'sz'] = 40.7
@@ -211,6 +212,7 @@ def write_parameters(df):
     with open(fname,'w') as f:
         f.write('%s\n' %','.join(out_cols))
         for facid in list(df['facid'].drop_duplicates()):
+            # Iterate over vertices in a polygon. This isn't consistent across polygons
             for src_id in list(df.ix[df['facid'] == facid, 'src_id'].drop_duplicates()):
                 src_df = df[(df['facid']==facid) & (df['src_id']==src_id)].copy()
                 numverts = src_df['numvert'].values[0]
@@ -231,7 +233,7 @@ def write_parameters(df):
         
 def calc_monthly_temp(df, temp):
     '''
-    Get monthly only temporlization
+    Get monthly only temporlization. The CMV run group only varies by month.
     '''
     scalar_cols = [s_col for s_col in temp.profs.columns if s_col.startswith('Scalar')]
     value_cols = ['qflag',] + scalar_cols
@@ -291,6 +293,7 @@ def get_inv_list():
 def get_invtable(fn):
     '''
     Read in the inventory table for the kept pollutants
+    See the SMOKE documentation for more information
     '''
     invtable = pd.read_fwf(fn, comment='#', colspecs=[(0,11), (16,32), (41,42), (43,49)], 
       names=['smoke_name','poll','keep','spec_factor'], 

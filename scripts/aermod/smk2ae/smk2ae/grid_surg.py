@@ -8,6 +8,7 @@ import pandas as pd
 class GridSurg(object):
     '''
     Import the temporal crossreference file and merge against the temporal profiles
+    For more information about these files see the SMOKE documentation.
     '''
     def __init__(self, gref, srg_path, srg_desc, scc_list):
         self.xref = self._get_gref(gref, scc_list)
@@ -72,6 +73,7 @@ class GridSurg(object):
         Load the surrogates by code and file name into a surrogate object
          stored in a srg code indexed dictionary
         '''
+        # Only load the codes that are needed based on the sources selected in the xref
         xref = pd.merge(self.xref, self.desc, on='code', how='left')
         xref = xref[['code','fname']].copy().drop_duplicates()
         codes = list(xref['code'].drop_duplicates())
@@ -128,6 +130,7 @@ def match_surrogate(df, xref):
     '''
     hierarchy = [['region_cd','scc'],['scc',],['region_cd',]]
     matched_df = pd.DataFrame()
+    # Iterate over the passed hierarchies until a successful match is made
     for match_cols in hierarchy:
         df = pd.merge(df, xref[match_cols+['code',]], on=match_cols, how='left')
         if matched_df.empty:
@@ -138,6 +141,7 @@ def match_surrogate(df, xref):
         df.drop('code', axis=1, inplace=True)
         if df.empty:
             break
+    # Notify that there was an unmatched source
     if not df.empty:
         print(df[['region_cd','scc','code']])
         raise ValueError('Unmatched sources for gridding')
@@ -154,6 +158,7 @@ def grid_sources(emis, surg, grid_info):
     # Iterate over the surrogate codes associated with the emissions
     for code in code_list:
         code_emis = emis[emis['code'] == code].copy()
+        # Look for the code, hopefully it was read and subsets
         try:
             src_surg = surg.surgs[code]
         except KeyError:
@@ -161,6 +166,8 @@ def grid_sources(emis, surg, grid_info):
         if src_surg.cell != grid_info.XCELL:
             raise ValueError('Gridding surrogate cell size does not match grid cell size')
         code_emis = pd.merge(code_emis, src_surg.table, on='region_cd', how='left')
+        # Identify sources the cross reference successfully to a surrogate but are either missing a fraction
+        #   or have a fraction that equals zero. These sources will ened up with dropped emissions
         zero_fracs = code_emis[['region_cd','scc','code','ann_value','frac']].groupby(['region_cd',
           'scc','code'], as_index=False).sum()
         zero_fracs['frac'] = zero_fracs['frac'].fillna(0)
@@ -168,7 +175,9 @@ def grid_sources(emis, surg, grid_info):
         if len(zero_fracs) > 0:
             print('WARNING: Gridding the following sources will result in dropped emissions.')
             print(zero_fracs)
+        # Multiply the emissions that use this surrogate code by the county->cell gridding fractions
         code_emis['ann_value'] = code_emis['ann_value'] * code_emis['frac']
+        # Only keep emissions with a value over 0.
         code_emis = code_emis[code_emis['ann_value'] > 0].copy()
         if not code_emis[(code_emis['col'].isnull()) | (code_emis['row'].isnull())].empty:
             bad_cell = code_emis[(code_emis['col'].isnull()) | (code_emis['row'].isnull())]
@@ -186,6 +195,7 @@ def grid_sources(emis, surg, grid_info):
 def calc_offset(surg_orig, grid_orig, cell_size):
     '''
     Offset number of grid cells from surrogate grid to emissions grid
+    The emissions grid should nest and subset under the surrogate grid
     '''
     return int((surg_orig - grid_orig)/cell_size)
 

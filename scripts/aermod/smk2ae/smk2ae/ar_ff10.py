@@ -12,13 +12,17 @@ class AnnualFF10(object):
     def __init__(self, inv_list, invtable, st_fips='', use_shapes=False):
         self.emis = pd.DataFrame() 
         self._st_fips = st_fips
+        # Specifications of monthly data fields in the FF10
         self.mon_vals = ['jan_value','feb_value','mar_value','apr_value','may_value','jun_value',
           'jul_value','aug_value','sep_value','oct_value','nov_value','dec_value']
+        # Specification of possible months
         self.mons = ['january','february','march','april','may','june','july','august','september',
           'october','november','december']
+        # Roll up for the data to region_cd and scc. Use the shape_id too if the use_shapes flag is true.
         self._keys = ['region_cd','scc']
         if use_shapes:
             self._keys.append('shape_id')
+        # Read in the columns that we think that we need
         self._usecols = self._keys+['ann_value',] + self.mon_vals
         self._dtype = {'region_cd': str, 'scc': str, 'poll': str, 'ann_value': 'f'}
         for mon in self.mon_vals:
@@ -62,13 +66,16 @@ class AnnualFF10(object):
         print('Loading %s' %inv_file)
         df = pd.read_csv(inv_file, comment='#', usecols=self._usecols+['poll',], dtype=self._dtype)
         df.rename(columns=dict(zip(self.mon_vals, self.mons)), inplace=True)
+        # Zero pad the FIPS to 5 characters
         df['region_cd'] = df['region_cd'].str.zfill(5)
+        # Split out the mode types
         df.ix[df['poll'].str.contains('__'), 'poll'] = df.ix[df['poll'].str.contains('__'), 
           'poll'].str.split('__').str[1]
+        # Keep only the pollutants that are marked as kept in the inventory table
         df = pd.merge(df, invtable, on='poll', how='left')
         df = df[df['smoke_name'].notnull()].copy()
         df['ann_value'] = df['ann_value'] * df['spec_factor']
-        # Only keep emissions greater than 0
+        # Only keep emissions greater than 0. This reduces the size of helper files
         df = df[df['ann_value'] > 0].copy()
         df.drop(['poll','spec_factor'], inplace=True, axis=1)
         if self._st_fips:

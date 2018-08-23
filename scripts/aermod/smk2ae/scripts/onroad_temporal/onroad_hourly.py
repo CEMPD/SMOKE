@@ -33,6 +33,7 @@ def write_state_profile(state_df, outpath):
     state_df.to_csv(fn, index=False, float_format='%.12g')
 
 def main():
+    # Select the input path, output path, and run groups for the onroad temporal profiles
     inpath = '/work/EMIS/users/bte/WO150.8_2014v2/aermod_helper/2014_onroad_diurnal'
     outpath = '/work/EMIS/users/bte/WO150.8_2014v2/aermod_helper/2014_onroad_diurnal/out'
     run_groups = ['LDOFF12','HOTEL4','HDON4','LDON4','HDOFF12']

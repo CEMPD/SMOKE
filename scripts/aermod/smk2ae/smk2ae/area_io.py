@@ -21,7 +21,7 @@ def proc_area(df, grid_info, temp, params):
 
 def calc_cell_corner(df, grid_info, utm):
     '''
-    Calc SW UTM corner
+    Calc SW UTM corner. This is used to identify UTM zone for the cell
     '''
     df['utm_zone'] = df['met_swcorner_lon'].apply(utm.get_zone)
     df[['lon','lat']] = grid_info.colrow_to_ll(df['col'], df['row'])
@@ -31,7 +31,7 @@ def calc_cell_corner(df, grid_info, utm):
 
 def calc_polygons(df, grid, utm):
     '''
-    Calc remainder of UTM polygon
+    Calc remainder of UTM polygon (vertices 2-4) based on lat/lon and UTM zone
     '''
     df[['lon2','lat2']] = grid.colrow_to_ll(df['col'], df['row']+1)
     df[['lon3','lat3']] = grid.colrow_to_ll(df['col']+1, df['row']+1)
@@ -64,6 +64,7 @@ def write_parameters(df, grid_info, utm, params):
     '''
     cols = ['run_group','met_cell','src_id','utmx','utmy','col','row','utm_zone','lon','lat']
     df = df[cols].copy().drop_duplicates()
+    # The polygons are grid cells
     df = calc_polygons(df, grid_info, utm)
     df = pd.merge(df, params, on='run_group', how='left')
     if len(df[df['rh'].isnull()]) > 0:
@@ -198,7 +199,6 @@ def write_onroad_hourly(df, fips_map, run_group, state):
     from os import environ
     df['year'] = str(environ['BASE_YEAR'])[2:]
     df = pd.concat((df, vcalc_mdh(df['tstep'])), axis=1)
-#    df[['month','dow','hour']] = df['tstep'].apply(calc_mdh)
     cols = ['run_group','region_cd','year','month','dow','hour','scalar']
     fname = os.path.join(os.environ['WORK_PATH'],'temporal','%s_%s_hourly.csv' %(run_group, state))
     df.to_csv(fname, columns=cols, index=False, float_format='%.12g')

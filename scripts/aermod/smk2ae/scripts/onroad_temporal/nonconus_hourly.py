@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # Calculate the onroad hourly profiles by county for AERMOD
+# This script calculates the non-CONUS run group values based on the US values
 
 import os.path
 import pandas as pd
@@ -38,6 +39,7 @@ def main():
     inpath = '/work/EMIS/users/bte/WO150.8_2014v2/aermod_helper/2014_onroad_diurnal'
     outpath = '/work/EMIS/users/bte/WO150.8_2014v2/aermod_helper/2014_onroad_diurnal/out'
     run_groups = ['LDOFF12','HOTEL4','HDON4','LDON4','HDOFF12']
+    # Define dictionary of states to generate and all counties contained in those states
     states = {'15': [1,3,5,7,9], '02': [13,16,20,50,60,68,70,90,100,105,110,122,130,150,164,170,180,
       185,188,195,198,220,230,240,261,270,275,282,290], '78': [10,20,30], '72': [1,3,5,7,9,11,13,15,
       17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,49,51,53,54,55,57,59,61,63,65,67,69,71,73,75,

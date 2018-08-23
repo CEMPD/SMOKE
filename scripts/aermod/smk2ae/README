@@ -1,0 +1,16 @@
+smk2ae v0.2
+
+Requires
+Python 3.5+ with the packages:
+Pandas 0.20.1+
+Numpy 1.12.1+
+Pyproj 1.9.5.1+
+GDAL 2.2.0+
+
+To test the requirements through build:
+python setup.py build
+
+To install in the python site-packages:
+python setup.py install
+
+

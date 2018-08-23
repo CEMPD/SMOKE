@@ -22,6 +22,9 @@ class Grid(object):
         return np.float64(x)
 
     def _split_line(self, line):
+        '''
+        The grid description file is terminated with a ! and separated with ","
+        '''
         return [cell.strip().strip("'") for cell in line.strip().split('!')[0].split(',')]
 
     def load_gridinfo(self, grid_desc):
@@ -29,8 +32,10 @@ class Grid(object):
         Read in the grid description file and store the grid data as object attributes
         The grid description file is multi-part containing inconsistently ordered information for
           grids and projections.
+        See the IOAPI or SMOKE documentation for information on the grid description file
         """
         with open(grid_desc) as gd:
+            # Start out by reading all of the projections in the file
             state = 'proj'
             proj_table = dict()
             for line in gd:
@@ -40,6 +45,7 @@ class Grid(object):
                         if s_line[0] == ' ':
                             state = 'grid'
                         else:
+                            # Read the projection parameters
                             proj_name = line.strip().strip("'")
                             line = next(gd)
                             s_line = self._split_line(line)
@@ -50,6 +56,7 @@ class Grid(object):
                                 'XCENT': self._parse_float(s_line[4]),
                                 'YCENT': self._parse_float(s_line[5])}
                 else:
+                    # Read through the grids until the specified grid name is found
                     if s_line[0] == self.GDNAM:
                         line = next(gd)
                         s_line = self._split_line(line)
@@ -67,6 +74,8 @@ class Grid(object):
     def _set_proj(self):
         '''
         Define the projection
+        Only included LCC and polar sterographic. Really should only use LCC for these.
+        LCC parameters follow typical SMOKE grid definitions including a radius of 6370 km
         '''
         if self.GDTYP == 6:
             self.proj = Proj(proj='stere', lat_ts=self.P_BET, lat_0=self.YCENT, lon_0=self.P_GAM)
