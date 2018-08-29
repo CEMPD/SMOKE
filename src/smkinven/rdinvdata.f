@@ -1385,33 +1385,45 @@ C.....................  Convert UTM values to lat-lon
 C.....................  Convert units on values
                     IF( STKHT( CURSRC ) < 0. ) THEN
                         STKHT( CURSRC ) = 0.
+                        IF( NWARN < MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: Negative stack ' //
      &                      'height :: Reset to zero at line', IREC
                         CALL M3MESG( MESG )
+                        NWARN = NWARN +1
+                        END IF
                     END IF
                     STKHT( CURSRC ) = STKHT( CURSRC ) * FT2M   ! ft to m
 
                     IF( STKDM( CURSRC ) < 0. ) THEN
                         STKDM( CURSRC ) = 0.
+                        IF( NWARN < MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: Negative stack ' //
      &                      'diameter :: Reset to zero at line', IREC
                         CALL M3MESG( MESG )
+                        NWARN = NWARN +1
+                        END IF
                     END IF
                     STKDM( CURSRC ) = STKDM( CURSRC ) * FT2M   ! ft to m
 
                     IF( STKVE( CURSRC ) < 0. ) THEN
                         STKVE( CURSRC ) = 0.
+                        IF( NWARN < MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: Negative stack ' //
      &                      'exit velocity :: Reset to zero at line', IREC
                         CALL M3MESG( MESG )
+                        NWARN = NWARN +1
+                        END IF
                     END IF
                     STKVE( CURSRC ) = STKVE( CURSRC ) * FT2M  ! ft/s to m/s
 
                     IF( STKTK( CURSRC ) < 0. ) THEN
                         STKTK( CURSRC ) = 0.
+                        IF( NWARN < MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: Negative stack ' //
      &                      'exit temperature :: Reset to zero at line', IREC
                         CALL M3MESG( MESG )
+                        NWARN = NWARN +1
+                        END IF
                     ELSE
                         STKTK( CURSRC ) = ( STKTK( CURSRC ) - 32.0 ) *   ! F to K
      &                                    FTOC + CTOK

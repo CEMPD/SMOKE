@@ -538,21 +538,21 @@ C.....................  Error if VOC or HAP is missing for integration
                       ELSE IF( NVOC > 0 .AND. NHAP < 1 ) THEN
                         CALL FMTCSRC( CSOURC( LS ), NCHARS, BUFFER, L2 )
                         MESG = 'ERROR: Found VOC|TOG but no toxics found '//
-     &                       ' for the sourc:'//CRLF()//BLANK10//BUFFER(1:L2)
+     &                       ' for the source:'//CRLF()//BLANK10//BUFFER(1:L2)
                         CALL M3MESG( MESG )
                         EFLAG = .TRUE.
 
                       ELSE IF( NVOC < 1 .AND. NHAP > 0 ) THEN
                         CALL FMTCSRC( CSOURC( LS ), NCHARS, BUFFER, L2 )
                         MESG = 'ERROR: Found toxics but no VOC|TOG found '//
-     &                       ' for the sourc:'//CRLF()//BLANK10//BUFFER(1:L2)
+     &                       ' for the source:'//CRLF()//BLANK10//BUFFER(1:L2)
                         CALL M3MESG( MESG )
                         EFLAG = .TRUE.
 
                       ELSE IF( NVOC < 1 .AND. NHAP < 1 ) THEN
                         CALL FMTCSRC( CSOURC( LS ), NCHARS, BUFFER, L2 )
                         MESG = 'ERROR: Both VOC|TOG and toxics are not found '//
-     &                       ' for the sourc:'//CRLF()//BLANK10//BUFFER(1:L2)
+     &                       ' for the source:'//CRLF()//BLANK10//BUFFER(1:L2)
                         CALL M3MESG( MESG )
                         EFLAG = .TRUE.
                       END IF
