@@ -21,6 +21,10 @@ The Perl dependencies are included in the Git repository:
 * [NONPOINT_ONROAD_AERMOD_INPUT_FILE.pdf](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/docs/NONPOINT_ONROAD_AERMOD_INPUT_FILE.pdf)
 * [POINT_AIRPORT_AERMOD_INPUT_FILE.pdf](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/docs/POINT_AIRPORT_AERMOD_INPUT_FILE.pdf)
 
+# Input Data Files
+
+SMOKE flatfiles input for SMOKE4AERMOD for the 2014 NATA application and other inputs for the 2014 NATA modeling platform can be downloaded from EPA's modeling platform website: https://www.epa.gov/air-emissions-modeling/2014-version-71-platform  
+
 # Sectors
 
 ## Point sectors
