@@ -67,7 +67,7 @@ SMKLIB = -L${OBJDIR} -lsmoke
 ########  netCDF-4 needs "-lnetcdff -lnetcdf":
 
 # IOLIB = -L$(IOBIN) -lioapi -lnetcdff -lnetcdf ${PVMLIBS}
-  IOLIB = -L$(IOBIN) -lioapi -lnetcdf
+  IOLIB = -L$(IOBIN) -lioapi -lnetcdff -lnetcdf  
 
 ########  Note that we must resolve the  %^&$*! circular dependency
 ########  between libfileset and libsmoke:
