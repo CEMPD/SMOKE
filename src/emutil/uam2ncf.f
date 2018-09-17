@@ -62,7 +62,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   PARAMETER
 
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv4.5_Apr2017$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv4.6_Sep2018$' ! CVS release tag
 
 C.......  Input and output emissions
 
