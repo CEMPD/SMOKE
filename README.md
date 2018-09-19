@@ -1,4 +1,4 @@
-# SMOKE [![DOI](https://zenodo.org/badge/42116709.svg)](https://zenodo.org/badge/latestdoi/42116709)
+# SMOKE [![DOI](https://zenodo.org/badge/39790736.svg)](https://zenodo.org/badge/latestdoi/39790736)
 
 The Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling System was originally developed at MCNC to integrate emissions data processing with high-performance computing (HPC) sparse-matrix algorithms. SMOKE is now under active development at the Institute for the Environment and is partially supported by the Community Modeling and Analysis System (CMAS).
 
