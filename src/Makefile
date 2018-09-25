@@ -245,7 +245,7 @@ MRGSRC = \
  mrgonams.f    mrgunits.f     mrgvnams.f     \
  openmrgin.f   openmrgout.f   rdmrginv.f     \
  setoutdate.f  smkmerge.f     wmrgelev.f     \
- wmrgemis.f    wrmrgrep.f
+ wmrgemis.f    wrmrgrep.f     mrgpt.f
 
 MRGOBJ =  $(MRGSRC:.f=.o)
 
@@ -285,7 +285,7 @@ UTIL  = aggwndw     beld3to2    bluesky2inv cemscan     extractida  \
 EXE   = normbeis3   tmpbeis3    cntlmat     smkreport   grdmat      \
         movesmrg    met4moves   laypoint    elevpoint   smkinven    \
         grwinven    smkmerge    mrggrid     mrgelev     spcmat      \
-        temporal                                                    \
+        temporal    mrgpt                                           \
         ${UTIL}
 
 
@@ -318,7 +318,7 @@ point:  laypoint    elevpoint
 
 inven:  smkinven    grwinven
 
-merge:  smkmerge    mrggrid     mrgelev
+merge:  smkmerge    mrggrid     mrgelev      mrgpt
 
 spc  :  spcmat
 
@@ -729,6 +729,9 @@ mrggrid: mrggrid.o setoutdate.o
 mrgelev: mrgasciielev.o setoutdate.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 
+mrgpt: mrgpt.o setoutdate.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+ 
 spcmat: $(SPCOBJ)
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 

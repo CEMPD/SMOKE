@@ -20,7 +20,7 @@ C
 C  REVISION  HISTORY:
 C    Original by G. Pouliot 11/30/2007
 C    Revised by M. Omary 08/05/2010
-C
+C    Revised by H. Tran 09/25/2018
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -79,7 +79,7 @@ C...........   EXTERNAL FUNCTIONS
 C.........  LOCAL PARAMETERS and their descriptions:
 
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name: SMOKEv25_11302007 $' ! CVS release tag
+     &  CVSW = '$Name: SMOKEv4.6_Sep2018$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -208,8 +208,11 @@ C...........   Other local variables
         INTEGER       TSTEP                      ! time step
         INTEGER       VLB                        ! VGLVS3D lower bound 
         INTEGER       VTYPE                      
-        INTEGER       NSTATES(2)                 ! no. of states   
-        INTEGER       STATEFIPS(120,2)           ! State fips 
+        INTEGER, PARAMETER :: MAXFIP = 120       ! Maximum number of FIPS; HTmd            
+C       INTEGER       NSTATES(2)                 ! no. of states   
+        INTEGER, ALLOCATABLE :: NSTATES(:)       ! no. of states; HTmd
+C       INTEGER       STATEFIPS(120,2)           ! State fips 
+        INTEGER, ALLOCATABLE :: STATEFIPS(:,:)   ! State fips in SSCCC format; HTmd
         INTEGER       FIPS                       ! Temporay State fips   
         INTEGER, PARAMETER :: NLIST = 2          ! Number of list files to be read   
                            
@@ -236,7 +239,8 @@ C...........   Other local variables
    
         CHARACTER(16) :: PROGNAME = 'MRGPT' ! program name
         CHARACTER(5)  :: IFIP2
-        CHARACTER(5)  :: STATEFIP2(120,NLIST)
+C       CHARACTER(5)  :: STATEFIP2(120,NLIST)
+        CHARACTER(5), ALLOCATABLE :: STATEFIP2(:,:)  ! State code in SS format; HTmd
         CHARACTER(17) :: UNDERLINE(120) 
 C***********************************************************************
 C   begin body of program MRGGRID
@@ -420,6 +424,18 @@ C.............  Read file names - exit if read is at end of file
       WRITE(*,*)'########  Finished Reading the List Files and ########'
       WRITE(*,*)'######## Opennig the input Files              ########'
       WRITE(*,*)'######################################################'      
+
+c----HTmd: Allocate memory for some variables with the defined NFILE----
+      ALLOCATE( NSTATES( NFILE ) )
+      CALL CHECKMEM( IOS, 'STATES', PROGNAME )
+      ALLOCATE( STATEFIPS( MAXFIP, NFILE ) )
+      CALL CHECKMEM( IOS, 'STATEFIPS', PROGNAME )
+      ALLOCATE( STATEFIP2( MAXFIP, NFILE ) )
+      CALL CHECKMEM( IOS, 'STATEFIP2', PROGNAME )
+      ALLOCATE ( USEFIRST ( NFILE ) ) 
+      CALL CHECKMEM( IOS, 'USEFIRST', PROGNAME )
+c----End HTmd
+
 c#########################################################################
 C.........  Get file descriptions and store for all input files
 C.........  Loop through 2 sets of input files
@@ -746,6 +762,8 @@ C.................  Output array
            DO F = 1, NFILE
 
            NAM = FNAME(F,S)
+           IF ( ALLOCATED(VAR_I) ) DEALLOCATE(VAR_I) !HTmd
+           IF ( ALLOCATED(VAR_R) ) DEALLOCATE(VAR_R) !HTmd
            ALLOCATE(VAR_I  (NCOLSA(F,S),NROWSA(F,S),NLAYSA(F,S)))
 	   ALLOCATE(VAR_R  (NCOLSA(F,S),NROWSA(F,S),NLAYSA(F,S)))
            VAR_R = 0.0
@@ -845,7 +863,6 @@ C.....................  Assign adjustment factor for the current species
 		        DO J = 1,NSRC(S,F)
 			   IFIP1 =STACK_PARAM_I_IN(J,IDX_FIP,F)/1000
                            WRITE(IFIP2,'(I3)')IFIP1
-
 C.................  Look for state fips in output list
                 K = INDEX1( IFIP2, NSTATES(F), STATEFIP2(1,F)  )  ! look in output list
 
