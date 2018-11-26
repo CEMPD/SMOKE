@@ -124,7 +124,7 @@ C...........   Other local variables
         CHARACTER*16    CVAR, TFILE, TLAY, VNM
         CHARACTER*100   LINE
         CHARACTER*256   MESG
-        CHARACTER*20    SEGMENT( 5 )
+        CHARACTER*30    SEGMENT( 5 )
 
         CHARACTER*16 :: PROGNAME = 'LAYALLOC'   !  program name
 
@@ -283,8 +283,6 @@ C.............................  User-define layers
                             ZBOT  = UBOT( I )
                             ZFRAC = UFRAC( I )
             
-                            IF( ZFRAC == 0.0 ) CYCLE
-            
 C.............................  Sum of user-defined layer fractions
                             TFRAC = TFRAC + ZFRAC
             
@@ -354,7 +352,7 @@ C.................................  Calculate a fraction for the top layer
 
                         ENDDO     ! loop over user-define layers
         
-                        IF( TFRAC > 1.0 ) THEN
+                        IF( TFRAC > 1.001 ) THEN
                             MESG = 'ERROR: The total user-defined layer fractions ' //
      &                             ' can not be greater than 1.0'
                             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
