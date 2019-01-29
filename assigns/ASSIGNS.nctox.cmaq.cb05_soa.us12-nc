@@ -74,7 +74,8 @@
    setenv SMKROOT     $SMK_SUBSYS/smoke             # System root dir
    setenv SMKDAT      $SMK_HOME/data                # Data root dir
    setenv ASSIGNS     $SMKROOT/assigns              # smoke assigns files
-#
+   setenv IOAPIDIR    $SMK_SUBSYS/ioapi/$BIN        # IOAPI directory
+
 ## Override speciation setting, if override variable is set
 if ( $?SPC_OVERRIDE ) then
    if ( $SPC != " " ) then
