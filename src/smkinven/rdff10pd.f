@@ -463,6 +463,11 @@ C.............  Read FIPS code
                 CFIP( FIPEXPLEN3+2:FIPEXPLEN3+6 ) = ADJUSTR( SEGMENT( 2 )( 1:5 ) )  ! state/county code
             END IF
 
+C.............  Replace blanks with zeros
+            DO I = 1,FIPLEN3
+                IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
+            END DO
+
 C.............  Search for time zone for current county
             I = FINDC( CFIP, NCOUNTY, CNTYCOD )
 
