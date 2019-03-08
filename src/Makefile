@@ -195,7 +195,7 @@ MOVSRC = \
  rdfmref.f        rdmrclist.f       rdmxref.f     \
  rdrpdemfacs.f    rdrphemfacs.f     rdrppemfacs.f \
  rdrpvemfacs.f    rdspdpro.f        setrefcnty.f  \
- wrtemprof.f
+ wrtemprof.f      rdspdist.f
  
 MOVOBJ =  $(MOVSRC:.f=.o)
 
@@ -540,6 +540,7 @@ rdrphemfacs.o : $(MODMBSET)  $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 rdrppemfacs.o : $(MODMBSET)  $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 rdrpvemfacs.o : $(MODMBSET)  $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 rdspdpro.o    : $(MODMVSMRG) $(MODLISTS)  $(MODMOBIL)
+rdspdist.o    : $(MODMVSMRG) $(MODLISTS)  $(MODMOBIL)
 setrefcnty.o  : $(MODMVSMRG) $(MODINFO)   $(MODSOURC) $(MODLISTS) $(MODMBSET)
 mwrmrgrep.o   : $(MODMERGE)  $(MODSTCY)   $(MODLISTS) $(MODMVSMRG)
 wrmrgrep.o    : $(MODGRID)
@@ -689,7 +690,7 @@ movesmrg: movesmrg.o mbldmrgidx.o bldprocidx.o bldsrccell.o \
  mgetmrgev.o minitstcy.o mmrgonams.o mmrgunits.o  mmrgvnams.o   \
  mopenmrgin.o mopenmrgout.o rdfmref.o  rdmrclist.o rdmxref.o    \
  rdrpdemfacs.o rdrppemfacs.o rdrpvemfacs.o rdrphemfacs.o rdspdpro.o     \
- rdcfpro.o setrefcnty.o mwrmrgrep.o
+ rdcfpro.o setrefcnty.o mwrmrgrep.o rdspdist.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) $^ ${LIBS} -o $@
 
 met4moves: met4moves.o rdmxref.o rdfmref.o hourmet.o wrtemprof.o

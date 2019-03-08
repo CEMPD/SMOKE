@@ -105,8 +105,10 @@ C.........  Emission factors data
                                                              ! day, SCC, hour, temp profile, process, pollutant
 
 C.........  Hourly speed data and control factor data
-        LOGICAL, PUBLIC :: SPDFLAG                     ! use hourly speed data
-        REAL, ALLOCATABLE, PUBLIC :: SPDPRO( :,:,:,: ) ! indexes: FIP, SCC, weekend/weekday, local hour
+        LOGICAL, PUBLIC :: SPDPROFLAG                     ! use hourly speed data
+        LOGICAL, PUBLIC :: SPDISTFLAG                     ! use hourly speed data
+        REAL, ALLOCATABLE, PUBLIC :: SPDPRO( :,:,:,: )    ! indexes: FIP, SCC, weekend/weekday, local hour
+        REAL, ALLOCATABLE, PUBLIC :: SPDIST( :,:,:,:,: )  ! indexes: FIP, SCC, weekend/weekday, local hour, spd bins
         LOGICAL, PUBLIC :: CFFLAG                      ! use control factor data
         LOGICAL, PUBLIC :: EXPCFFLAG                   ! use explicit poll/species specific control factor data
         LOGICAL, PUBLIC :: REFCFFLAG                   ! use reference county-specific control factor data

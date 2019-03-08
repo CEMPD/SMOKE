@@ -50,8 +50,8 @@ C.........  This module contains the major data structure and control flags
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, RPHFLAG,
-     &          TVARNAME, METNAME, XDEV, MDEV, FDEV, CFFLAG,
-     &          SPDFLAG, MSNAME_L, MSNAME_S, MNSMATV_L, MNSMATV_S,
+     &          TVARNAME, METNAME, XDEV, MDEV, FDEV, CFFLAG, SPDISTFLAG,
+     &          SPDPROFLAG, MSNAME_L, MSNAME_S, MNSMATV_L, MNSMATV_S,
      &          MSVDESC_L, MSVDESC_S, MSVUNIT_L, MSVUNIT_S
 
 C...........  This module contains the information about the source category
@@ -105,6 +105,7 @@ C.........  Other local variables
         INTEGER         IDEV          ! tmp unit number if ENAME is map file
         INTEGER         TDEV          ! unit number for MEPROC file
         INTEGER         SPDEV         ! unit number for SPDPRO file
+        INTEGER         SDDEV         ! unit number for SPDIST file
         INTEGER         IOS           ! tmp I/O status
         INTEGER         ISECS         ! tmp duration in seconds
         INTEGER         NPACT         ! no. variables per activity
@@ -450,11 +451,19 @@ C.........  Get reference county emission factors file list
      &           .TRUE., .TRUE., 'MRCLIST', PROGNAME )
 
 C.........  Open and read hourly speed data
-        IF( RPDFLAG .AND. SPDFLAG ) THEN
+        IF( RPDFLAG .AND. SPDPROFLAG ) THEN
             SPDEV = PROMPTFFILE(
      &              'Enter logical name for speed profiles file',
      &              .TRUE., .TRUE., 'SPDPRO', PROGNAME )
             CALL RDSPDPRO( SPDEV )
+        END IF
+
+C.........  Open and read avereage speed distribution data
+        IF( RPDFLAG .AND. SPDISTFLAG ) THEN
+            SDDEV = PROMPTFFILE(
+     &              'Enter logical name for average speed distribution file',
+     &              .TRUE., .TRUE., 'SPDIST', PROGNAME )
+            CALL RDSPDIST( SDDEV )
         END IF
 
 C.........  Get control factor file 

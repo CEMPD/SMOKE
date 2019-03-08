@@ -70,7 +70,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          EMPOLIDX,
      &          NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX,
      &          RPDEMFACS, RPHEMFACS, RPVEMFACS, RPPEMFACS,
-     &          SPDFLAG, SPDPRO, MISCC,
+     &          SPDPROFLAG, SPDPRO, SPDISTFLAG, SPDIST, MISCC,
      &          MSNAME_L, MSMATX_L, MNSMATV_L, GRDENV,
      &          MSNAME_S, MSMATX_S, MNSMATV_S,
      &          EANAMREP, CFPRO, CFFLAG,
@@ -150,7 +150,7 @@ C...........   Other local variables
     
         INTEGER          I, J, K, L1, L2, M, N, NG, V, NV, S, T ! counters and indices
 
-        INTEGER          BIN1, BIN2    ! speed bins for current source
+        INTEGER          BIN1, BIN2, IBIN  ! speed bins for current source
         INTEGER          CELL          ! current grid cell
         INTEGER          DAY           ! day-of-week index (monday=1)
         INTEGER          DAYMONTH      ! day-of-month
@@ -191,6 +191,7 @@ C...........   Other local variables
         REAL             GFRAC         ! grid cell fraction
         REAL             SPEEDVAL      ! average speed value for current source
         REAL             TEMPVAL       ! temperature value for current grid cell
+        REAL             ASDVAL        ! avg speed distrubtion values 
         REAL             SPDFAC        ! speed interpolation factor
         REAL             TEMPFAC       ! temperature interpolation factor
         REAL             MINTVAL, MAXTVAL  ! min and max temperature for current source
@@ -599,7 +600,7 @@ C.....................  Determine SCC index for source
 C.....................  Determine speed bins for source
                     IF( RPDFLAG ) THEN
                         SPEEDVAL = BADVAL3
-                        IF( SPDFLAG ) THEN
+                        IF( SPDPROFLAG ) THEN
                             SPEEDVAL = SPDPRO( MCFIP( SRC ), SCCIDX, DAYIDX, HOURIDX )
                         END IF
 
@@ -636,6 +637,16 @@ C.........................  Calculate speed interpolation factor
                         ELSE
                             SPDFAC = 0.
                         END IF
+
+C.........................  Check whether vaild avg speed distributions are avail to apply
+                        IF( SPDISTFLAG ) THEN
+                           ASDVAL = SPDIST( MCFIP( SRC ), SCCIDX, DAYIDX, HOURIDX, 1 )
+                           IF( .NOT. ( ASDVAL < AMISS3 ) ) THEN
+                               BIN1 = 0
+                               BIN2 = 0
+                           END IF
+                        END IF
+
                     END IF
 
 C.....................  Loop over grid cells for this source
@@ -967,8 +978,21 @@ C.............................  Check if emission factors exist for this process
                             IF( POLIDX .EQ. 0 ) CYCLE
 
 C.............................  Calculate interpolated emission factor if process/pollutant has changed
+                            EFVALA = 0.0
+                            EFVALB = 0.0
+
                             IF( RPDFLAG ) THEN
-                                IF( BIN1 .NE. BIN2 ) THEN
+C.................................  retrieve avg spd distributino values
+                                IF( BIN1 == 0 .AND. BIN2 == 0 ) THEN
+                                    DO IBIN = 1, MXSPDBINS
+                                        ASDVAL = SPDIST( MCFIP( SRC ), SCCIDX, DAYIDX, HOURIDX, IBIN )
+                                        EFVAL1 = RPDEMFACS( SCCIDX, IBIN, IDX1, POLIDX )
+                                        EFVALA = EFVALA + EFVAL1 * ASDVAL
+                                        EFVAL2 = RPDEMFACS( SCCIDX, IBIN, IDX2, POLIDX )
+                                        EFVALB = EFVALB + EFVAL2 * ASDVAL
+                                    END DO
+
+                                ELSE IF( BIN1 .NE. BIN2 ) THEN
                                     EFVAL1 = RPDEMFACS( SCCIDX, BIN1, IDX1, POLIDX )
                                     EFVAL2 = RPDEMFACS( SCCIDX, BIN2, IDX1, POLIDX )
                                     EFVALA = SPDFAC * (EFVAL2 - EFVAL1) + EFVAL1
@@ -976,6 +1000,7 @@ C.............................  Calculate interpolated emission factor if proces
                                     EFVAL1 = RPDEMFACS( SCCIDX, BIN1, IDX2, POLIDX )
                                     EFVAL2 = RPDEMFACS( SCCIDX, BIN2, IDX2, POLIDX )
                                     EFVALB = SPDFAC * (EFVAL2 - EFVAL1) + EFVAL1
+
                                 ELSE
                                     EFVALA = RPDEMFACS( SCCIDX, BIN1, IDX1, POLIDX )
                                     EFVALB = RPDEMFACS( SCCIDX, BIN1, IDX2, POLIDX )
