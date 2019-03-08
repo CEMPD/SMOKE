@@ -252,7 +252,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
 
-94000   FORMAT( I2.2 )
+94000   FORMAT( I5 )
  
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
