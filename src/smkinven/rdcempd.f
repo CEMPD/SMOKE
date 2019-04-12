@@ -510,7 +510,7 @@ C.............  Get number of inventory sources for this ORIS/boiler
             ALLZERO = .FALSE.
 
 C.............  Check if NOx emissions are valid
-            IF( CEMEMIS( NOXIDX ) <= 0. ) CEMEMIS( NOXIDX ) = 0.0 
+C           IF( CEMEMIS( NOXIDX ) <= 0. ) CEMEMIS( NOXIDX ) = 0.0 
 
 C.............  Compute factor for calculate hourly emissions; check that
 C               hourly value is valid
@@ -577,7 +577,7 @@ C.................  Check if pollutant is CEM pollutant
                 DO N = 1, NCEMPOL
                     IF( CEMPIDX( N ) == V ) THEN
 
-C.........................  Only use CEM data for SO2 if annual emissions are non-zero
+C.........................  Only use CEM data for NOX and SO2 if annual emissions are non-zero
                         IF( N == SO2IDX ) THEN
                           IF( ANNSO2( MASOBPOS ) > 0. ) THEN
                             CEMPOL = .TRUE.
@@ -585,6 +585,20 @@ C.........................  Only use CEM data for SO2 if annual emissions are no
                               CEMEMIS( N ) = 0.
                               WRITE( MESG,94010 ) 
      &                          'WARNING: Missing SO2 emissions for ' //
+     &                          'ORIS: ' // CORS // ' Boiler: ' // 
+     &                          BLID // CRLF() // BLANK10 // 
+     &                          'for date: ', YYMMDD, 'and hour: ', HH,
+     &                          'reset to 0.'
+                              CALL M3MESG( MESG )
+                            END IF
+                          END IF
+                        ELSE IF( N == NOXIDX ) THEN
+                          IF( ANNNOX( MASOBPOS ) > 0. ) THEN
+                            CEMPOL = .TRUE.
+                            IF( CEMEMIS( N ) < 0. ) THEN
+                              CEMEMIS( N ) = 0.
+                              WRITE( MESG,94010 ) 
+     &                          'WARNING: Missing NOX emissions for ' //
      &                          'ORIS: ' // CORS // ' Boiler: ' // 
      &                          BLID // CRLF() // BLANK10 // 
      &                          'for date: ', YYMMDD, 'and hour: ', HH,
