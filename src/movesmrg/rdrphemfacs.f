@@ -42,7 +42,7 @@ C.........  This module is used for reference county information
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: MRCLIST, MVFILDIR, EMPOLIDX,
      &                       NEMTEMPS, EMTEMPS, RPHEMFACS,
-     &                       NMVSPOLS, MVSPOLNAMS
+     &                       NMVSPOLS, MVSPOLNAMS, NOXADJFLAG
 
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NSMATV, TSVDESC, NMSPC, NIPPA, EMNAM, EANAM
@@ -96,6 +96,7 @@ C...........   Other local variables
         REAL        PTMP        ! previous temperature value
         REAL        EMVAL       ! emission factor value
 
+        LOGICAL     NOX_ADJ_CHECK  ! true? header for NOx adj was found
         LOGICAL     FOUND       ! true: header record was found
         LOGICAL     SKIPSCC     ! true: current SCC is not in inventory
         LOGICAL  :: EFLAG = .FALSE.
@@ -144,6 +145,7 @@ C.........  Allocate memory to parse lines
         CALL CHECKMEM( IOS, 'SEGMENT', PROGNAME )
 
 C.........  Read header line to get list of pollutants in file
+        NOX_ADJ_CHECK = .FALSE.
         FOUND = .FALSE.
         IREC = 0
         NEMTEMPS = 0
@@ -164,6 +166,11 @@ C.............  Check for header line
             IF( LINE( 1:12 ) .EQ. 'NUM_TEMP_BIN' ) THEN
                 LJ = LEN_TRIM( LINE )
                 NEMTEMPS = STR2INT( LINE( 13:LJ ) )
+
+            ELSE IF( LINE( 1:21 ) .EQ. 'HUMIDITY_ADJUSTED_NOX' ) THEN
+                NOX_ADJ_CHECK = .TRUE.
+                LJ = LEN_TRIM( LINE )
+                IF( TRIM( LINE( 23:LJ ) ) == 'Y' ) NOXADJFLAG = .FALSE.  ! Do not apply NOx humidity adj
 
             ELSE IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) THEN
                 FOUND = .TRUE.
@@ -203,6 +210,9 @@ C.................  Store pollutant names
             END IF
 
         END DO
+
+C.........  Do not apply NOx humidity adjustment since it has been already applied
+        IF( .NOT. NOX_ADJ_CHECK ) NOXADJFLAG = .FALSE.
 
 100     CONTINUE
 

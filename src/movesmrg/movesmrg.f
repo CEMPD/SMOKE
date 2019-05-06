@@ -75,7 +75,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          MSNAME_S, MSMATX_S, MNSMATV_S,
      &          EANAMREP, CFPRO, CFFLAG,
      &          NMVSPOLS, MVSPOLNAMS,              ! MOVES lookup poll/spc names
-     &          TEMPBIN, MTMP_OUT
+     &          TEMPBIN, MTMP_OUT, NOXADJFLAG, DSFLTYP, MDSFL
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVSCC, INVSCC
@@ -115,9 +115,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         WKDAY
         INTEGER         ENVINT
         INTEGER         STR2INT
+        CHARACTER(16)   PROMPTMFILE
 
         EXTERNAL    HHMMSS, INDEX1, FINDCFIRST, FINDC, WKDAY, 
-     &              STR2INT, ENVINT, CRLF
+     &              PROMPTMFILE, STR2INT, ENVINT, CRLF
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -134,7 +135,8 @@ C...........   Local arrays for per-source information
 C...........   Local arrays for hourly data
         REAL, ALLOCATABLE :: VMT( : )
         REAL, ALLOCATABLE :: HOTEL( : )
-        REAL, ALLOCATABLE :: TEMPG( : )    ! Temp array for RPD and RPV
+        REAL, ALLOCATABLE :: QV( : )          ! water vapor mixing ratio array
+        REAL, ALLOCATABLE :: TEMPG( : )       ! Temp array
         REAL, ALLOCATABLE :: MAXTEMP( : )     ! max temp array for RPP
         REAL, ALLOCATABLE :: MINTEMP( : )     ! min temp array for RPP
         REAL, ALLOCATABLE :: MTMP_INVT( :,:,: )  ! tmp hourly emissoin for output temporal int output file
@@ -191,6 +193,8 @@ C...........   Other local variables
         REAL             GFRAC         ! grid cell fraction
         REAL             SPEEDVAL      ! average speed value for current source
         REAL             TEMPVAL       ! temperature value for current grid cell
+        REAL             QVVAL,QVMOL,A,B ! vapor mixing ratio value for current grid cell
+        REAL             NOXADJ        ! humidity adjustment factor for NOx 
         REAL             ASDVAL        ! avg speed distrubtion values 
         REAL             SPDFAC        ! speed interpolation factor
         REAL             TEMPFAC       ! temperature interpolation factor
@@ -204,11 +208,14 @@ C...........   Other local variables
         REAL             EMVALSPC      ! speciated emissions value
         REAL          :: CFFAC = 1.0   ! control factor
 
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.      ! true: first time routine called
+        LOGICAL       :: NOXFLAG  = .FALSE.     ! true: NOx huidity correction
         LOGICAL       :: NO_INTRPLT = .FALSE.   ! true: single interploation, false: bi-interpolation
 
         CHARACTER(300)     MESG    ! message buffer
         CHARACTER( 4 )     YEAR    ! modelin year
         CHARACTER( 7 )     TDATE   ! tmp julinan date
+        CHARACTER(IOVLEN3) QVARNAME,MET3DNAME    ! tmp variable type name
         CHARACTER(IOVLEN3) CPOL    ! tmp pollutant or emission type name
         CHARACTER(IOVLEN3) CSPC    ! tmp species name
         CHARACTER(IOVLEN3) LSPC    ! previous tmp species name
@@ -331,6 +338,10 @@ C........ when not optimize memory
         IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG ) THEN
             ALLOCATE( TEMPG( NGRID ), STAT=IOS )    ! hourly temperatures
             CALL CHECKMEM( IOS, 'TEMPG', PROGNAME )
+            IF( NOXADJFLAG ) THEN
+                ALLOCATE( QV( NGRID ), STAT=IOS )    ! hourly water vapor mixing ratio
+                CALL CHECKMEM( IOS, 'QV', PROGNAME )
+            END IF
         ELSE
             ALLOCATE( MAXTEMP( NGRID ), STAT=IOS )    ! hourly temperatures
             CALL CHECKMEM( IOS, 'MAXTEMP', PROGNAME )
@@ -532,7 +543,33 @@ C.................  In RPH mode, read HOTELLING for current hour
                     END IF
                 END IF
 
-C.................  In RPD and RPV modes, read temperatures for current hour
+C.................  Read specific humidity for NOx humidity adjustment
+                IF( NOXADJFLAG ) THEN
+
+                    IF( FIRSTIME ) THEN
+                      MESG = 'Name of water vapor mixing ratio (kg/kg)'
+                      CALL ENVSTR( 'QVARNAME', MESG, 'QV', QVARNAME, IOS )
+
+                      MESG = 'Enter logical name for the METCRO3D meteorology file'
+                      MET3DNAME = PROMPTMFILE( MESG, FSREAD3, 'MET_CRO_3D', PROGNAME )
+
+                      IF( .NOT. DESC3( MET3DNAME ) ) THEN
+                        MESG = 'Could not get description of file "' //
+     &                         METNAME( 1:LEN_TRIM( METNAME ) ) // '" '
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                      END IF
+                      FIRSTIME = .FALSE.
+                    END IF
+
+                    IF( .NOT. READ3( MET3DNAME, QVARNAME, 1,
+     &                          JDATE, JTIME, QV ) ) THEN
+                        MESG = 'Could not read ' // TRIM( QVARNAME ) //
+     &                         ' from ' // TRIM( METNAME )
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    END IF
+                END IF
+
+C.................  Read temperatures for current hour
                 IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG ) THEN
                     IF( .NOT. READ3( METNAME, TVARNAME, 1, 
      &                               JDATE, JTIME, TEMPG ) ) THEN
@@ -542,10 +579,10 @@ C.................  In RPD and RPV modes, read temperatures for current hour
                     END IF
 
                 ELSE   ! RPP MODE
+C.....................  Look for a backup max temp from the first day of processing year
                     IF( .NOT. READ3( METNAME, 'MAXTEMP', 1, 
      &                               JDATE, 0, MAXTEMP ) ) THEN
 
-C.........................  Look for a backup max temp from the first day of processing year
                         WRITE( TDATE, '(I7)' ) JDATE
                         PDATE = STR2INT( YEAR // TDATE( 5:7 ) )
                         IF( .NOT. READ3( METNAME, 'MAXTEMP', 1,
@@ -557,16 +594,17 @@ C.........................  Look for a backup max temp from the first day of pro
 
                     END IF
 
+C.....................  Look for a backup min temp from the first day of processing year
                     IF( .NOT. READ3( METNAME, 'MINTEMP', 1, 
      &                               JDATE, 0, MINTEMP ) ) THEN
 
-C.........................  Look for a backup min temp from the first day of processing year
                         IF( .NOT. READ3( METNAME, 'MINTEMP', 1,
      &                                   PDATE, 0, MINTEMP ) ) THEN
                             MESG = 'Could not read MINTEMP' //
      &                             ' from ' // TRIM( METNAME )
                             CALL M3EXIT( PROGNAME, JDATE, 0, MESG, 2 )
                         END IF
+
                     END IF
 
                 END IF
@@ -659,6 +697,21 @@ C.....................  Loop over grid cells for this source
                         IF( RPHFLAG ) EMFAC = HOTEL( SRC ) * GFRAC
                         IF( RPVFLAG .OR. RPPFLAG ) THEN
                             EMFAC = VPOP( SRC ) * GFRAC
+                        END IF
+
+C.........................  NOx humidity adjustment
+                        IF( NOXADJFLAG ) THEN
+                            QVVAL = QV( CELL ) * 1000.0  ! convert from kg of water /kg of dry air to g/kg
+                            QVMOL = QVVAL * 0.001607524  ! convert from g of water/kg of dry air to moles of water/moles of dry air
+                            IF( MDSFL( SRC ) ) THEN      ! diesel fuel type correction
+                                A = MIN( QVMOL, 0.035 )
+                                B = MAX( 0.002, A     )
+                                NOXADJ = 1.0 / ( 9.953 * B  + 0.832 )
+                            ELSE                         ! for non-diesel fuel type correctoin
+                                A = MIN( QVVAL, 17.71 )
+                                B = MAX(   3.0, A     )
+                                NOXADJ = 1.0 - 0.0329 * ( B - 10.71 )
+                            END IF
                         END IF
 
 C.............................  Determine temperature indexes for cell
@@ -977,6 +1030,15 @@ C.............................  Lookup poll/species index from MOVES lookup EF
 C.............................  Check if emission factors exist for this process/pollutant
                             IF( POLIDX .EQ. 0 ) CYCLE
 
+C.............................  Check pol names to be NOx/NO/NO2/HONO for NOX humidity adjustment
+                            NOXFLAG = .FALSE.
+                            IF( NOXADJFLAG ) THEN
+                                IF( MVSPOLNAMS( POLIDX ) == 'NOX' .OR.
+     &                              MVSPOLNAMS( POLIDX ) == 'NO'  .OR.
+     &                              MVSPOLNAMS( POLIDX ) == 'NO2' .OR.
+     &                              MVSPOLNAMS( POLIDX ) == 'HONO' ) NOXFLAG = .TRUE.
+                            END IF
+
 C.............................  Calculate interpolated emission factor if process/pollutant has changed
                             EFVALA = 0.0
                             EFVALB = 0.0
@@ -1037,6 +1099,8 @@ C.................................  retrieve avg spd distributino values
                                     
                                 END IF
                             END IF
+
+                            IF( NOXFLAG ) EFVAL = EFVAL * NOXADJ    !  Apply humidity adjustment factor for NOx emissions
 
                             IF( CFFLAG ) EFVAL = EFVAL * CFFAC 
 

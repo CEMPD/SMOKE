@@ -49,7 +49,7 @@ C.........  This module contains the major data structure and control flags
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
      &                       SPDPROFLAG, SPDISTFLAG, CFFLAG, EXPCFFLAG, REFCFFLAG, TEMPBIN,
-     &                       MOPTIMIZE, GRDENV, TOTENV, MTMP_OUT
+     &                       MOPTIMIZE, GRDENV, TOTENV, MTMP_OUT, NOXADJFLAG
 
         IMPLICIT NONE
 
@@ -213,13 +213,15 @@ C.........  Select default processing mode
 C.........  Check if hourly speeds should be used
         IF( RPDFLAG ) THEN
             SPDPROFLAG = ENVYN( 'USE_HOURLY_SPEEDS', 'Use hourly ' //
-     &                       'speed data', .FALSE., IOS )
-
+     &                       'speed profile data', .FALSE., IOS )
 
             SPDISTFLAG = ENVYN( 'USE_AVG_SPD_DIST', 'Use average ' //
-     &                       'speed distribution data', .FALSE., IOS )
-
+     &                       'speed distribution profile data', .FALSE., IOS )
         END IF
+
+C.........  Get if NOx adjustment should be applied
+        NOXADJFLAG = ENVYN( 'APPLY_NOX_HUMIDITY_ADJ', 'Apply ' //
+     &                'humidity adjusment to NOx emissions', .FALSE., IOS )
 
 C.........  Get directory where MOVES output files are stored
         BUFFER = 'Location of MOVES output files'

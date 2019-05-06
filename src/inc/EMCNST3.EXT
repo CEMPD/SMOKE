@@ -23,6 +23,7 @@ C.........   Physical constants and conversion factors
         REAL, PARAMETER :: GM2TON  = 1. / TON2GM  ! Grams to tons
         REAL, PARAMETER :: LB2TON  = 1. / 2000.   ! Pounds to short tons
         REAL, PARAMETER :: PA2INHG = 1. / 3386.39 ! Pascals to inches of Hg
+        REAL, PARAMETER :: G2M_HMD = 0.001607524  ! g_water/kg_dry_air to moles_w/moles_dry_air
 
 C.........  Source-category flags 
         INTEGER,      PARAMETER :: NCAT = 3          ! number src categories

@@ -57,7 +57,7 @@ C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: CIFIP, CSCC
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: MISCC
+        USE MODMVSMRG, ONLY: MISCC, DSFLTYP, MDSFL
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVIFIP, INVCFIP
@@ -71,15 +71,16 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         INTEGER         FIND1  
-        INTEGER         FINDC
+        INTEGER         FINDC, ENVINT
 
-        EXTERNAL   FIND1, FINDC
+        EXTERNAL   FIND1, FINDC, ENVINT
 
 C...........   Other local variables
 
         INTEGER          IOS      ! i/o status
         INTEGER          J, K, S  ! counter
-        
+        INTEGER          IDSFL    ! diesel fuel type
+ 
         LOGICAL, SAVE :: FIRSTIME = .TRUE. ! true: first time routine called
 
         CHARACTER(FIPLEN3) CFIP      ! tmp cy/st/co code
@@ -103,7 +104,14 @@ C.............  Allocate memory for index from master list of SCCs to source SCC
             CALL CHECKMEM( IOS, 'MISCC', PROGNAME )
             ALLOCATE( MCFIP( NMSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MCFIP', PROGNAME )
-    
+            ALLOCATE( MDSFL( NMSRC ), STAT=IOS )       ! arry for diesel fuel type or not
+            CALL CHECKMEM( IOS, 'MDSFL', PROGNAME )
+            MDSFL = .FALSE.
+
+            IDSFL = ENVINT( 'DIESEL_FUEL_CODE', 'Diesel fuel ' //
+     &                      'type code [ex: 2]', 2, IOS )
+            WRITE( DSFLTYP,'( I2.2)' ) IDSFL
+ 
 C.............  Create indices to counties from Co/st/cy codes and for SCCs
             PFIP = ' ' 
             DO S = 1, NMSRC
@@ -121,7 +129,12 @@ C.............  Create indices to counties from Co/st/cy codes and for SCCs
                 MICNY( S ) = J
                 MCFIP( S ) = K 
                 MISCC( S ) = MAX( FINDC( CSCC( S ), NINVSCC, INVSCC ), 0 )
-                
+
+C..............   Check whether diseel fuel type or not
+                IF( CSCC(S)( 11:12 ) == '22' ) THEN
+                    IF( CSCC(S)( 13:14 ) == DSFLTYP ) MDSFL( S ) = .TRUE.
+                END IF
+ 
             END DO
             
             FIRSTIME = .FALSE.

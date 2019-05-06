@@ -43,7 +43,7 @@ C.........  This module is used for reference county information
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: MRCLIST, MVFILDIR, EMPOLIDX,
      &                       NEMTEMPS, EMTEMPS, RPVEMFACS,
-     &                       NMVSPOLS, MVSPOLNAMS
+     &                       NMVSPOLS, MVSPOLNAMS, NOXADJFLAG
 
 
 C.........  This module contains the major data structure and control flags
@@ -100,7 +100,8 @@ C...........   Other local variables
         REAL        TMPVAL      ! temperature value
         REAL        PTMP        ! previous temperature value
         REAL        EMVAL       ! emission factor value
-        
+
+        LOGICAL     NOX_ADJ_CHECK   ! true: header NOx adjusted was found
         LOGICAL     FOUND       ! true: header record was found
         LOGICAL     SKIPSCC     ! true: current SCC is not in inventory
         LOGICAL  :: EFLAG = .FALSE.
@@ -150,6 +151,7 @@ C.........  Allocate memory to parse lines
 
 C.........  Read header line to get list of pollutants in file
         FOUND = .FALSE.
+        NOX_ADJ_CHECK = .FALSE.
         IREC = 0
         NEMTEMPS = 0
         DO
@@ -169,6 +171,11 @@ C.............  Check for header line
             IF( LINE( 1:12 ) .EQ. 'NUM_TEMP_BIN' ) THEN
                 LJ = LEN_TRIM( LINE )
                 NEMTEMPS = STR2INT( LINE( 13:LJ ) )
+
+            ELSE IF( LINE( 1:21 ) .EQ. 'HUMIDITY_ADJUSTED_NOX' ) THEN
+                NOX_ADJ_CHECK = .TRUE.
+                LJ = LEN_TRIM( LINE )
+                IF( TRIM( LINE( 23:LJ ) ) == 'Y' ) NOXADJFLAG = .FALSE.  ! Do not apply NOx humidity adj
 
             ELSE IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) THEN
                 FOUND = .TRUE.
@@ -208,6 +215,9 @@ C.................  Store pollutant names
             END IF
 
         END DO
+
+C.........  Do not apply NOx humidity adjustment since it has been already applied 
+        IF( .NOT. NOX_ADJ_CHECK ) NOXADJFLAG = .FALSE.
 
 100     CONTINUE
 

@@ -82,6 +82,10 @@ C.........  NONHAPTOG calculation information
 C.........  Emission factors data
         REAL,                 PUBLIC :: TEMPBIN           ! temperature buffer for max/min profiles
 
+        LOGICAL, PUBLIC              :: NOXADJFLAG        ! true: apply humidity adjustment for NOx emissions
+        CHARACTER(FLTLEN3), PUBLIC   :: DSFLTYP           ! diesel fuel type code in NEI MOVES SCC '03'
+        LOGICAL, ALLOCATABLE, PUBLIC :: MDSFL( : )        ! index for fuel type SCC
+
         INTEGER, ALLOCATABLE, PUBLIC :: EMPOLIDX( : )     ! index of emission pollutant name
         INTEGER,                        PUBLIC :: NMVSPOLS         ! number of MOVES pollutants/species
         CHARACTER(IOVLEN3),ALLOCATABLE, PUBLIC :: MVSPOLNAMS( : )  ! arry for poll/spc names
