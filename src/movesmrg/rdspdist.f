@@ -103,21 +103,24 @@ C   begin body of subroutine RDSPDIST
 C.........  Get maximum number of warnings
         MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
 
+        MESG = 'Use referenced SCC activity inventory file'
+        SCCMAPFLAG = ENVYN ( 'USE_REF_SCC_YN', MESG, .FALSE., IOS )
+
 C.........  Read cross-refrenced SCC input file
-        IF( .NOT. ALLOCATED( SCCMAPLIST ) ) THEN
-            MESG = 'Use referenced SCC activity inventory file'
-            SCCMAPFLAG = ENVYN ( 'USE_REF_SCC_YN', MESG, .FALSE., IOS )
+        IF( SCCMAPFLAG .AND. ALLOCATED( SCCMAPLIST ) ) THEN
+             DEALLOCATE( SCCMAPLIST )
+        ENDIF
 
             IF( SCCMAPFLAG )  THEN
-                MESG = 'Enter logical name for reference SCC input file'
-                MDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SCCXREF',
+                MESG = 'Enter logical name for reference SCC input file '//
+     &                 'for average speed distribution profiles'
+                MDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'AVGSPD_SCCXREF',
      &                      PROGNAME )
                 CALL RDSCCMAP( MDEV )
 
                 MESG = 'Exclude SCCs not found in SCCXREF input file'
                 EXCLSCCFLAG = ENVYN ( 'EXCLUDE_REF_SCC_YN', MESG, .FALSE., IOS )
             END IF
-        END IF
 
 C.........  Allocate storage based on number of FIPs and SCCs in inventory
         ALLOCATE( SPDIST( NINVIFIP, NINVSCC, 2, 24, MXSPDBINS ), STAT=IOS )
