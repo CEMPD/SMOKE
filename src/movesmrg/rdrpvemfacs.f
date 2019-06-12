@@ -101,7 +101,7 @@ C...........   Other local variables
         REAL        PTMP        ! previous temperature value
         REAL        EMVAL       ! emission factor value
 
-        LOGICAL     NOX_ADJ_CHECK   ! true: header NOx adjusted was found
+        LOGICAL     NOX_ADJUSTED   ! true: header NOx adjusted was found
         LOGICAL     FOUND       ! true: header record was found
         LOGICAL     SKIPSCC     ! true: current SCC is not in inventory
         LOGICAL  :: EFLAG = .FALSE.
@@ -151,7 +151,7 @@ C.........  Allocate memory to parse lines
 
 C.........  Read header line to get list of pollutants in file
         FOUND = .FALSE.
-        NOX_ADJ_CHECK = .FALSE.
+        NOX_ADJUSTED = .TRUE.
         IREC = 0
         NEMTEMPS = 0
         DO
@@ -173,9 +173,8 @@ C.............  Check for header line
                 NEMTEMPS = STR2INT( LINE( 13:LJ ) )
 
             ELSE IF( LINE( 1:21 ) .EQ. 'HUMIDITY_ADJUSTED_NOX' ) THEN
-                NOX_ADJ_CHECK = .TRUE.
                 LJ = LEN_TRIM( LINE )
-                IF( TRIM( LINE( 23:LJ ) ) == 'Y' ) NOXADJFLAG = .FALSE.  ! Do not apply NOx humidity adj
+                IF( TRIM( LINE( 23:LJ ) ) == 'N' ) NOX_ADJUSTED = .FALSE.  ! Do not apply NOx humidity adj
 
             ELSE IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) THEN
                 FOUND = .TRUE.
@@ -217,7 +216,12 @@ C.................  Store pollutant names
         END DO
 
 C.........  Do not apply NOx humidity adjustment since it has been already applied 
-        IF( .NOT. NOX_ADJ_CHECK ) NOXADJFLAG = .FALSE.
+        IF( NOX_ADJUSTED .AND. NOXADJFLAG ) THEN
+            MESG = 'WARNING: OVERRIDE the setting of APPLY_NOX_HUMIDITY_ADJ to N '//
+     &             'since NOx adustment has been already made by MOVES'
+            CALL M3MESG( MESG )
+            NOXADJFLAG = .FALSE.
+        END IF
 
 100     CONTINUE
 
@@ -327,6 +331,7 @@ C.............  Skip blank or comment lines
 C.............  Skip header line
             IF( LINE( 1:12 ) .EQ. 'NUM_TEMP_BIN' ) CYCLE
             IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) CYCLE
+            IF( LINE( 1:21 ) .EQ. 'HUMIDITY_ADJUSTED_NOX' ) CYCLE
 
 C.............  Parse line into segments
             CALL PARSLINE( LINE, NNONPOL + NMVSPOLS, SEGMENT )
@@ -438,6 +443,7 @@ C.............  Skip blank or comment lines
 C.............  Skip header line
             IF( LINE( 1:12 ) .EQ. 'NUM_TEMP_BIN' ) CYCLE
             IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) CYCLE
+            IF( LINE( 1:21 ) .EQ. 'HUMIDITY_ADJUSTED_NOX' ) CYCLE
 
 C.............  Parse line into segments
             CALL PARSLINE( LINE, NNONPOL + NMVSPOLS, SEGMENT )
