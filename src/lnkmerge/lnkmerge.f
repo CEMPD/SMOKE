@@ -39,7 +39,7 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: TSVDESC, TZONE,
+        USE MODMERGE, ONLY: TSVDESC,
      &          MFLAG_BD, LREPANY, LGRDOUT, LREPSRC,
      &          LREPSTA, LREPCNY, LREPSCC,         ! report flags, gridded output
      &          CDEV, MONAME, NMSRC,               ! costcy
@@ -88,7 +88,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        USEEXPGEO, INGRID, GETFLINE, CHKINT, BLKORCMT
 
 C.........  LOCAL PARAMETERS and their descriptions:
-        INTEGER, PARAMETER :: MXSEG = 25    ! number of segments in line
+        INTEGER, PARAMETER :: MXSEG = 50    ! number of segments in line
         CHARACTER(30)      :: SEGMENT( MXSEG ) = ''
 
         CHARACTER(50), PARAMETER :: CVSW = '$Name $' ! CVS release tag
@@ -104,6 +104,8 @@ C...........   Local arrays for per-source information
         REAL,    ALLOCATABLE :: VGLVSXG( : )      ! gridded mask values to be output
         REAL,    ALLOCATABLE :: ZZF   ( :,: )     ! layer's full ENDHGT (m)
         REAL,    ALLOCATABLE :: TMP3D ( :,:,:,: ) ! tmp emissions
+        REAL,    ALLOCATABLE :: POLVAL( : )           ! array for poll values
+        CHARACTER(IOVLEN3),ALLOCATABLE:: POLNAM( : )  ! array for poll names
         CHARACTER (256),ALLOCATABLE :: LINKLIST( : )  ! list of hourly link input files
 
 C.........   Local arrays dimensioned by subroutine arguments
@@ -124,7 +126,7 @@ C.........  File units and logical names
         CHARACTER*16    PNAME               ! cross-point met file for surface pressure values
      
 C...........   Other local variables
-        INTEGER         C, I, II, J, K, L, N, NC, NL, NS, ES, S, SS, T, NV, V  ! counters and indices
+        INTEGER         C, I, II, J, K, L, N, NC, NL, NS, ES, P, S, SS, T, NV, V  ! counters and indices
         INTEGER         IOS                 ! i/o status
         INTEGER         IREC                ! line counter
         INTEGER         NCEL                ! tmp number of cells
@@ -151,7 +153,7 @@ C...........   Other local variables
 
         REAL            ZFRAC, PFRAC, LTOT
 
-        REAL            POLVAL, TMPVAL
+        REAL            TMPVAL
         REAL         :: LTOALT = 0.0        ! LTO operations altitude (ft)
         REAL         :: ALEN   = 0.0        ! link length
         REAL         :: STRLAT = 0.0        ! absolute latitude
@@ -174,7 +176,6 @@ C...........   Other local variables
         CHARACTER(SCCLEN3)   TSCC                ! tmp scc code
         CHARACTER(IOVLEN3)   VBUF                ! tmp variable name buffer
         CHARACTER(FIPLEN3)   CFIP, LFIP          ! tmp FIPS code
-        CHARACTER(IOVLEN3)   POLNAM              ! tmp pollutant name
         CHARACTER(IOVLEN3)   TMPOUT              ! temporal resolution
         CHARACTER(LNKLEN3)   DPRTID              ! tmp departure airport code
         CHARACTER(LNKLEN3)   ARRVID              ! tmp arriving airport code
@@ -265,6 +266,11 @@ C.........  Open NetCDF output files, open ASCII report files, and write headers
         CALL OPENMRGOUT
 
 C.........  Buid speciation matrices
+        ALLOCATE( POLNAM( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'POLNAM', PROGNAME )
+        ALLOCATE( POLVAL( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
+
         NVARS = MNSMATV_L
         ALLOCATE( MSMATX_L( NMSRC, MNSMATV_L ), STAT=IOS )    ! mole speciation matrix
         CALL CHECKMEM( IOS, 'MSMATX_L', PROGNAME )
@@ -350,7 +356,7 @@ C.........  Reading individual hourly link inventory files
 
             IF( LINE( 1:1 ) == '#' ) CYCLE
 
-            IF( MOD( IREC,1000000 ) == 0 ) THEN
+            IF( MOD( IREC,100000 ) == 0 ) THEN
                 WRITE( MESG, 94010 ) 'Processing line at', IREC
                 CALL M3MSG2( MESG )
             END IF
@@ -415,8 +421,7 @@ C.............  local to output time zone shift
             END IF
 
             ZONE = TZONNUM( K ) 
-            DZONE = ZONE - TZONE
-            CALL NEXTIME( JDATE, JTIME, DZONE * 10000 )
+            CALL NEXTIME( JDATE, JTIME, ZONE * 10000 )
 
 C.............  Check segment time
             SEGTIME =  STR2INT( SEGMENT( 13 ) )  ! Duration (seconds)
@@ -456,26 +461,31 @@ C.............  Adjust starting/ending time modeling period
             END IF
 
 C.............  Store poll name and values and compute emission rate based on segment duration (se
-            POLNAM = TRIM( SEGMENT( 21 ) )
-            IF( INDEX1( POLNAM, NIPPA, EANAM ) < 1 ) CYCLE
+            POLNAM = ''
+            POLVAL = 0.0
 
-C.............  Compute the ratio of segment based on segment duration and modeling duration
-            RATIO = 1.0 - ( FLOAT( DSTR + DLST ) / FLOAT( SEGHOUR ) )
-            POLVAL = RATIO * STR2REAL( SEGMENT(22) )
+            DO P = 1, NIPPA
+                POLNAM( P ) = TRIM( SEGMENT( 20 + 2*P ) )
+                IF( INDEX1( POLNAM( P ), NIPPA, EANAM ) < 1 ) CYCLE
+
+C..................  Compute the ratio of segment based on segment duration and modeling duration
+                RATIO = 1.0 - ( FLOAT( DSTR + DLST ) / FLOAT( SEGHOUR ) )
+                POLVAL( P ) = RATIO * STR2REAL( SEGMENT(21 + 2*P) ) * 1000.
+            END DO
 
 C.............  Skip when it is out of range of episode dates or non-matched link IDs
             LNKID = TRIM( SEGMENT( 4 ) )       ! Flight ID
             NLNK = INDEX1( LNKID, NMSRC, CLINK ) 
-            IF( NLNK < 1 ) CYCLE
+C            IF( NLNK < 1 ) CYCLE
 
 C.............  Convert source coordinates from lat-lon to output grid
-            STRLON = STR2REAL( SEGMENT( 15 ) )
-            STRLAT = STR2REAL( SEGMENT( 16 ) )
-            STRHGT = FT2M * STR2REAL( SEGMENT( 17 ) )   ! altitude in unit of feet
+            STRLON = STR2REAL( SEGMENT( 16 ) )
+            STRLAT = STR2REAL( SEGMENT( 17 ) )
+            STRHGT = FT2M * STR2REAL( SEGMENT( 18 ) )   ! altitude in unit of feet
 
-            ENDLON = STR2REAL( SEGMENT( 18 ) )
-            ENDLAT = STR2REAL( SEGMENT( 19 ) )
-            ENDHGT = FT2M * STR2REAL( SEGMENT( 20 ) )   ! altitude in unit of feet
+            ENDLON = STR2REAL( SEGMENT( 19 ) )
+            ENDLAT = STR2REAL( SEGMENT( 20 ) )
+            ENDHGT = FT2M * STR2REAL( SEGMENT( 21 ) )   ! altitude in unit of feet
 
             Zo = STRHGT                ! origin height
             Zh = ENDHGT                ! end height
@@ -503,7 +513,7 @@ C.............  Make sure that there was enough storage
 C.............  Skip if there is no intersected grid cell
             IF( NCEL == 0 ) CYCLE
 
-        write(*,'(9I10,2f12.5,a)') irec,ncel,jdate,jtime,tdate,ttime,segtime,str,lst,zo,zh,POLNAM
+c bbaek        write(*,'(10I10,2f12.5)') s,irec,ncel,jdate,jtime,tdate,ttime,segtime,str,lst,zo,zh
 C.............  If source is in the domain, get cell number and store
             ORG_CELLID = 0
             END_CELLID = 0
@@ -680,11 +690,11 @@ C................. Before applying layer fractions make sure that they add to 1.
                     LTOT = LTOT + LFRAC( NL )
                 ENDDO
 
-                IF( LTOT < 1.0 ) THEN
+                IF( LTOT < 0.99999 ) THEN
                     MESG = 'ERROR: Total of layer fractions '//
      &                     'are less than 1.0.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ELSE IF( LTOT > 1.0 ) THEN
+                ELSE IF( LTOT > 1.00001 ) THEN
                     MESG = 'ERROR: Total of layer fractions '//
      &                     'are greater than 1.0.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -696,11 +706,13 @@ C.................  Loop over allocated layers by link
 C.....................  Apply speciation matrix and layer fractions to compute
 C                       gridded/speciated/hourly model specie emissions rate in output unit
                     DO T = STR, LST
+                    DO P = 1, NIPPA
                     DO V = 1, NVARS
-                        IF( POLNAM == EANAM( SIINDEX( V,1 ) ) ) THEN
-                            TMPVAL = POLVAL * MSMATX_L( S, SPINDEX(V,1) ) * GRDFAC( SPINDEX(V,1) ) 
+                        IF( POLNAM( P ) == EANAM( SIINDEX( V,1 ) ) ) THEN
+                            TMPVAL = POLVAL( P ) * MSMATX_L( S, SPINDEX(V,1) ) * GRDFAC( SPINDEX(V,1) ) 
                             TMP3D( C,L,V,T ) = TMP3D( C,L,V,T ) + TMPVAL * ZFRAC * LFRAC( L )
                         END IF
+                    END DO
                     END DO
                     END DO
 
@@ -728,8 +740,7 @@ C.........  Define top layer for output file
         JTIME = STIME
         DO T = 1, NSTEPS
             DO V = 1, NVARS
-                POLNAM = EMNAM( V )
-                IF ( .NOT. WRITE3( MONAME, POLNAM, JDATE, JTIME, 
+                IF ( .NOT. WRITE3( MONAME, EMNAM(V), JDATE, JTIME, 
      &                            TMP3D( :,1:NLAYS,V,T ) ) ) THEN
                     WRITE( MESG, 93000 ) 'Could not write to "'
      &                    // TRIM( MONAME ) // '".'
