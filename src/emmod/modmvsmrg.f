@@ -83,8 +83,13 @@ C.........  Emission factors data
         REAL,                 PUBLIC :: TEMPBIN           ! temperature buffer for max/min profiles
 
         LOGICAL, PUBLIC              :: NOXADJFLAG        ! true: apply humidity adjustment for NOx emissions
-        CHARACTER(FLTLEN3), PUBLIC   :: DSFLTYP           ! diesel fuel type code in NEI MOVES SCC '03'
-        LOGICAL, ALLOCATABLE, PUBLIC :: MDSFL( : )        ! index for fuel type SCC
+        LOGICAL, PUBLIC              :: NOXADJEQS         ! true: apply older humidity adjustment for NOx emissions
+        CHARACTER(FLTLEN3), PUBLIC   :: GASFLTYP          ! gasoline fuel type code in NEI MOVES SCC '03'
+        CHARACTER(FLTLEN3), PUBLIC   :: DISFLTYP          ! diesel fuel type code in NEI MOVES SCC '03'
+        CHARACTER(FLTLEN3), PUBLIC   :: ETHFLTYP          ! ethanol fuel type code in NEI MOVES SCC '03'
+        LOGICAL, ALLOCATABLE, PUBLIC :: DISFL( : )        ! index for diesel fuel type SCC
+        LOGICAL, ALLOCATABLE, PUBLIC :: GASFL( : )        ! index for gasoline fuel type SCC
+        LOGICAL, ALLOCATABLE, PUBLIC :: ETHFL( : )        ! index for ethanol fuel type SCC
 
         INTEGER, ALLOCATABLE, PUBLIC :: EMPOLIDX( : )     ! index of emission pollutant name
         INTEGER,                        PUBLIC :: NMVSPOLS         ! number of MOVES pollutants/species

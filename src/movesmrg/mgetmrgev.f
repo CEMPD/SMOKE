@@ -49,7 +49,7 @@ C.........  This module contains the major data structure and control flags
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
      &                       SPDPROFLAG, SPDISTFLAG, CFFLAG, EXPCFFLAG, REFCFFLAG, TEMPBIN,
-     &                       MOPTIMIZE, GRDENV, TOTENV, MTMP_OUT, NOXADJFLAG
+     &                       MOPTIMIZE, GRDENV, TOTENV, MTMP_OUT, NOXADJFLAG, NOXADJEQS
 
         IMPLICIT NONE
 
@@ -222,6 +222,14 @@ C.........  Check if hourly speeds should be used
 C.........  Get if NOx adjustment should be applied
         NOXADJFLAG = ENVYN( 'APPLY_NOX_HUMIDITY_ADJ', 'Apply ' //
      &                'humidity adjusment to NOx emissions', .FALSE., IOS )
+
+C............  Define the type of NOx adj eqs (MOVES 3 or older version)
+        IF( NOXADJFLAG ) THEN
+            NOXADJEQS = .FALSE.     ! True: Use the latest MOVES3 NOx adj eqs
+            NOXADJEQS = ENVYN( 'USE_MOVES3_NOX_ADJ_EQS', 'Use ' //
+     &                    'the MOVES NOx humidity correction equations',
+     &                    .FALSE., IOS )
+        END IF
 
 C.........  Get directory where MOVES output files are stored
         BUFFER = 'Location of MOVES output files'

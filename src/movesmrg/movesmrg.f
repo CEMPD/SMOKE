@@ -75,7 +75,8 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          MSNAME_S, MSMATX_S, MNSMATV_S,
      &          EANAMREP, CFPRO, CFFLAG,
      &          NMVSPOLS, MVSPOLNAMS,              ! MOVES lookup poll/spc names
-     &          TEMPBIN, MTMP_OUT, NOXADJFLAG, DSFLTYP, MDSFL
+     &          TEMPBIN, MTMP_OUT, 
+     &          NOXADJFLAG, NOXADJEQS, DISFL, GASFL, ETHFL
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVSCC, INVSCC
@@ -193,7 +194,7 @@ C...........   Other local variables
         REAL             GFRAC         ! grid cell fraction
         REAL             SPEEDVAL      ! average speed value for current source
         REAL             TEMPVAL       ! temperature value for current grid cell
-        REAL             QVVAL,QVMOL,A,B ! vapor mixing ratio value for current grid cell
+        REAL             QVVAL,QVMOL,QVLBS,A,B ! vapor mixing ratio value for current grid cell
         REAL             NOXADJ        ! humidity adjustment factor for NOx 
         REAL             ASDVAL        ! avg speed distrubtion values 
         REAL             SPDFAC        ! speed interpolation factor
@@ -698,19 +699,28 @@ C.....................  Loop over grid cells for this source
                         IF( RPVFLAG .OR. RPPFLAG ) THEN
                             EMFAC = VPOP( SRC ) * GFRAC
                         END IF
-
 C.........................  NOx humidity adjustment
                         IF( NOXADJFLAG ) THEN
                             QVVAL = QV( CELL ) * 1000.0  ! convert from kg of water /kg of dry air to g/kg
-                            QVMOL = QVVAL * 0.001607524  ! convert from g of water/kg of dry air to moles of water/moles of dry air
-                            IF( MDSFL( SRC ) ) THEN      ! diesel fuel type correction
-                                A = MIN( QVMOL, 0.035 )
-                                B = MAX( 0.002, A     )
-                                NOXADJ = 1.0 / ( 9.953 * B  + 0.832 )
-                            ELSE                         ! for non-diesel fuel type correctoin
-                                A = MIN( QVVAL, 17.71 )
-                                B = MAX(   3.0, A     )
-                                NOXADJ = 1.0 - 0.0329 * ( B - 10.71 )
+                            IF( NOXADJEQS ) THEN     ! Use the MOVES3 NOx humidity adj eqs
+                                QVLBS = QVVAL * 7.0          ! specific humidity in grams/lb 
+                                A = MIN( QVLBS, 124.0)
+                                B = MAX( 21.0, B ) - 75.0
+                                NOXADJ = 1.0
+                                IF( GASFL( SRC ) ) NOXADJ = ( 1.0 - ( B * 0.0038 ) )
+                                IF( DISFL( SRC ) ) NOXADJ = ( 1.0 - ( B * 0.0026 ) )
+                                IF( ETHFL( SRC ) ) NOXADJ = ( 1.0 - ( B * 0.0038 ) )
+                            ELSE   ! Use the older NOx humidity correctin eqs
+                                IF( DISFL( SRC ) ) THEN   ! diesel fuel only
+                                    QVMOL = QVVAL * 0.001607524  ! convert from g of water/kg of dry air to moles of water/moles of dry air
+                                    A = MIN( QVMOL, 0.035 )
+                                    B = MAX( 0.002, A     )
+                                    NOXADJ = 1.0 / ( 9.953 * B  + 0.832 )
+                                ELSE
+                                    A = MIN( QVVAL, 17.71 )
+                                    B = MAX(   3.0, A     )
+                                    NOXADJ = 1.0 - 0.0329 * ( B - 10.71 )
+                                END IF
                             END IF
                         END IF
 

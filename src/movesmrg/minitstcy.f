@@ -57,7 +57,7 @@ C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: CIFIP, CSCC
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: MISCC, DSFLTYP, MDSFL
+        USE MODMVSMRG, ONLY: MISCC, DISFLTYP, DISFL, GASFLTYP, GASFL, ETHFLTYP, ETHFL
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVIFIP, INVCFIP
@@ -79,7 +79,9 @@ C...........   Other local variables
 
         INTEGER          IOS      ! i/o status
         INTEGER          J, K, S  ! counter
-        INTEGER          IDSFL    ! diesel fuel type
+        INTEGER          IDISFL    ! diesel fuel type
+        INTEGER          IGASFL    ! gasoline fuel type
+        INTEGER          IETHFL    ! ethanol fuel type
  
         LOGICAL, SAVE :: FIRSTIME = .TRUE. ! true: first time routine called
 
@@ -104,14 +106,28 @@ C.............  Allocate memory for index from master list of SCCs to source SCC
             CALL CHECKMEM( IOS, 'MISCC', PROGNAME )
             ALLOCATE( MCFIP( NMSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MCFIP', PROGNAME )
-            ALLOCATE( MDSFL( NMSRC ), STAT=IOS )       ! arry for diesel fuel type or not
-            CALL CHECKMEM( IOS, 'MDSFL', PROGNAME )
-            MDSFL = .FALSE.
+            ALLOCATE( DISFL( NMSRC ), STAT=IOS )       ! arry for diesel fuel type or not
+            CALL CHECKMEM( IOS, 'DISFL', PROGNAME )
+            ALLOCATE( GASFL( NMSRC ), STAT=IOS )       ! arry for gasoline fuel type or not
+            CALL CHECKMEM( IOS, 'GASFL', PROGNAME )
+            ALLOCATE( ETHFL( NMSRC ), STAT=IOS )       ! arry for ethnol fuel type or not
+            CALL CHECKMEM( IOS, 'ETHFL', PROGNAME )
+            DISFL = .FALSE.
+            GASFL = .FALSE.
+            ETHFL = .FALSE.
 
-            IDSFL = ENVINT( 'DIESEL_FUEL_CODE', 'Diesel fuel ' //
-     &                      'type code [ex: 2]', 2, IOS )
-            WRITE( DSFLTYP,'( I2.2)' ) IDSFL
+            IGASFL = ENVINT( 'GASOLINE_FUEL_CODE', 'Diesel fuel ' //
+     &                      'type code [ex: 1]', 1, IOS )
+            WRITE( GASFLTYP,'( I2.2)' ) IGASFL
  
+            IDISFL = ENVINT( 'DIESEL_FUEL_CODE', 'Diesel fuel ' //
+     &                      'type code [ex: 2]', 2, IOS )
+            WRITE( DISFLTYP,'( I2.2)' ) IDISFL
+
+            IETHFL = ENVINT( 'ETHANOL_FUEL_CODE', 'Diesel fuel ' //
+     &                      'type code [ex: 5]', 5, IOS )
+            WRITE( ETHFLTYP,'( I2.2)' ) IETHFL
+
 C.............  Create indices to counties from Co/st/cy codes and for SCCs
             PFIP = ' ' 
             DO S = 1, NMSRC
@@ -132,7 +148,9 @@ C.............  Create indices to counties from Co/st/cy codes and for SCCs
 
 C..............   Check whether diseel fuel type or not
                 IF( CSCC(S)( 11:12 ) == '22' ) THEN
-                    IF( CSCC(S)( 13:14 ) == DSFLTYP ) MDSFL( S ) = .TRUE.
+                    IF( CSCC(S)( 13:14 ) == GASFLTYP ) GASFL( S ) = .TRUE.
+                    IF( CSCC(S)( 13:14 ) == DISFLTYP ) DISFL( S ) = .TRUE.
+                    IF( CSCC(S)( 13:14 ) == ETHFLTYP ) ETHFL( S ) = .TRUE.
                 END IF
  
             END DO

@@ -71,7 +71,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local allocatable arrays
 
 C...........   Local arrays
-        CHARACTER(20)  SEGMENT( 53 )          ! parsed input line
+        CHARACTER(30)  SEGMENT( 53 )          ! parsed input line
 
 C...........   Other local variables
         INTEGER         I, J, JJ, KK, IDY, IHR     ! counters and indexes
@@ -88,7 +88,7 @@ C...........   Other local variables
 
         LOGICAL      :: EFLAG = .FALSE.   ! true: error found
 
-        CHARACTER(1060)    LINE     ! line buffer
+        CHARACTER(1600)    LINE     ! line buffer
 
         CHARACTER(300)     MESG     ! message buffer
         CHARACTER(FIPLEN3) CFIP     ! current FIPS
