@@ -137,6 +137,8 @@ C...........   Local arrays for hourly data
         REAL, ALLOCATABLE :: VMT( : )
         REAL, ALLOCATABLE :: HOTEL( : )
         REAL, ALLOCATABLE :: QV( : )          ! water vapor mixing ratio array
+        REAL, ALLOCATABLE :: GAS_NOXADJ( : )  ! NOx humidity adj fac for gasoline & ethanol
+        REAL, ALLOCATABLE :: DIS_NOXADJ( : )  ! NOx humidity adj fac for diesel
         REAL, ALLOCATABLE :: TEMPG( : )       ! Temp array
         REAL, ALLOCATABLE :: MAXTEMP( : )     ! max temp array for RPP
         REAL, ALLOCATABLE :: MINTEMP( : )     ! min temp array for RPP
@@ -194,7 +196,7 @@ C...........   Other local variables
         REAL             GFRAC         ! grid cell fraction
         REAL             SPEEDVAL      ! average speed value for current source
         REAL             TEMPVAL       ! temperature value for current grid cell
-        REAL             QVVAL,QVMOL,QVLBS,A,B ! vapor mixing ratio value for current grid cell
+        REAL             QVMOL,QVLBS,A,B ! vapor mixing ratio value for current grid cell
         REAL             NOXADJ        ! humidity adjustment factor for NOx 
         REAL             ASDVAL        ! avg speed distrubtion values 
         REAL             SPDFAC        ! speed interpolation factor
@@ -342,6 +344,13 @@ C........ when not optimize memory
             IF( NOXADJFLAG ) THEN
                 ALLOCATE( QV( NGRID ), STAT=IOS )    ! hourly water vapor mixing ratio
                 CALL CHECKMEM( IOS, 'QV', PROGNAME )
+                ALLOCATE( GAS_NOXADJ( NGRID ), STAT=IOS )    ! NOx humidity adj factor for gasoline and ethanol
+                CALL CHECKMEM( IOS, 'GAS_NOXADJ', PROGNAME )
+                ALLOCATE( DIS_NOXADJ( NGRID ), STAT=IOS )    ! NOx humidity adj factor for diesel
+                CALL CHECKMEM( IOS, 'DIS_NOXADJ', PROGNAME )
+                QV = 0.0
+                GAS_NOXADJ = 1.0
+                DIS_NOXADJ = 1.0
             END IF
         ELSE
             ALLOCATE( MAXTEMP( NGRID ), STAT=IOS )    ! hourly temperatures
@@ -562,12 +571,35 @@ C.................  Read specific humidity for NOx humidity adjustment
                       FIRSTIME = .FALSE.
                     END IF
 
-                    IF( .NOT. READ3( MET3DNAME, QVARNAME, 1,
-     &                          JDATE, JTIME, QV ) ) THEN
+                    IF( .NOT. READ3( MET3DNAME, QVARNAME, 1, JDATE, JTIME, QV ) ) THEN
                         MESG = 'Could not read ' // TRIM( QVARNAME ) //
      &                         ' from ' // TRIM( METNAME )
                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                     END IF
+
+C.....................  Compute NOx humidity correction factors
+                    NOXADJ = 1.0          ! default NOx adj factor = 1.0
+                    QV = QV * 1000.0      ! convert from kg water/kg dry air to g/kg
+                    IF( .NOT. NOXADJEQS ) QV = QV * 7.0   ! convert to g/lbs using older NOx humidity correction equations
+
+                    DO CELL = 1, NGRID
+                        IF( NOXADJEQS ) THEN   ! Use newer MOVES3 NOx humidity correction eqs
+                            A = MIN( QV(CELL), 17.71 )
+                            B = MAX( 3.0, A )
+                            GAS_NOXADJ( CELL ) = 1.0 - 0.0329 * ( B - 10.71 )
+
+                            QVMOL = QV( CELL ) * 0.001607524  ! convert from g of water/kg of dry air to moles of water/moles of dry air
+                            A = MIN( QVMOL, 0.035 )
+                            B = MAX( 0.002, A )
+                            DIS_NOXADJ( CELL ) = 1.0 / ( 9.953 * B  + 0.832 )
+                        ELSE   ! Use older MOVES NOx humidity correction eqs
+                            A = MIN( QV(CELL), 124.0)
+                            B = MAX( 21.0, A ) - 75.0
+                            GAS_NOXADJ( CELL ) = 1.0 - ( B * 0.0038 )
+                            DIS_NOXADJ( CELL ) = 1.0 - ( B * 0.0026 )
+                        END IF                            
+                    END DO
+
                 END IF
 
 C.................  Read temperatures for current hour
@@ -699,28 +731,19 @@ C.....................  Loop over grid cells for this source
                         IF( RPVFLAG .OR. RPPFLAG ) THEN
                             EMFAC = VPOP( SRC ) * GFRAC
                         END IF
+
 C.........................  NOx humidity adjustment
                         IF( NOXADJFLAG ) THEN
-                            QVVAL = QV( CELL ) * 1000.0  ! convert from kg of water /kg of dry air to g/kg
                             IF( NOXADJEQS ) THEN     ! Use the MOVES3 NOx humidity adj eqs
-                                QVLBS = QVVAL * 7.0          ! specific humidity in grams/lb 
-                                A = MIN( QVLBS, 124.0)
-                                B = MAX( 21.0, B ) - 75.0
-                                NOXADJ = 1.0
-                                IF( GASFL( SRC ) ) NOXADJ = ( 1.0 - ( B * 0.0038 ) )
-                                IF( DISFL( SRC ) ) NOXADJ = ( 1.0 - ( B * 0.0026 ) )
-                                IF( ETHFL( SRC ) ) NOXADJ = ( 1.0 - ( B * 0.0038 ) )
-                            ELSE   ! Use the older NOx humidity correctin eqs
                                 IF( DISFL( SRC ) ) THEN   ! diesel fuel only
-                                    QVMOL = QVVAL * 0.001607524  ! convert from g of water/kg of dry air to moles of water/moles of dry air
-                                    A = MIN( QVMOL, 0.035 )
-                                    B = MAX( 0.002, A     )
-                                    NOXADJ = 1.0 / ( 9.953 * B  + 0.832 )
+                                    NOXADJ = DIS_NOXADJ( CELL )
                                 ELSE
-                                    A = MIN( QVVAL, 17.71 )
-                                    B = MAX(   3.0, A     )
-                                    NOXADJ = 1.0 - 0.0329 * ( B - 10.71 )
+                                    NOXADJ = GAS_NOXADJ( CELL )
                                 END IF
+                            ELSE   ! Use the older NOx humidity correctin eqs
+                                IF( GASFL( SRC ) ) NOXADJ = GAS_NOXADJ( CELL )
+                                IF( ETHFL( SRC ) ) NOXADJ = GAS_NOXADJ( CELL )
+                                IF( DISFL( SRC ) ) NOXADJ = DIS_NOXADJ( CELL )
                             END IF
                         END IF
 
