@@ -220,14 +220,16 @@ C.........  Check if hourly speeds should be used
         END IF
 
 C.........  Get if NOx adjustment should be applied
-        NOXADJFLAG = ENVYN( 'APPLY_NOX_HUMIDITY_ADJ', 'Apply ' //
+        IF( RPDFLAG .OR. RPHFLAG ) THEN
+            NOXADJFLAG = ENVYN( 'APPLY_NOX_HUMIDITY_ADJ', 'Apply ' //
      &                'humidity adjusment to NOx emissions', .FALSE., IOS )
+        END IF
 
 C............  Define the type of NOx adj eqs (MOVES 3 or older version)
         IF( NOXADJFLAG ) THEN
             NOXADJEQS = .FALSE.     ! True: Use the latest MOVES3 NOx adj eqs
             NOXADJEQS = ENVYN( 'USE_MOVES3_NOX_ADJ_EQS', 'Use ' //
-     &                    'the MOVES NOx humidity correction equations',
+     &                    'the MOVES3 NOx humidity correction equations',
      &                    .FALSE., IOS )
         END IF
 
