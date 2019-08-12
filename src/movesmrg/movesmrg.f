@@ -76,7 +76,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          EANAMREP, CFPRO, CFFLAG,
      &          NMVSPOLS, MVSPOLNAMS,              ! MOVES lookup poll/spc names
      &          TEMPBIN, MTMP_OUT, 
-     &          NOXADJFLAG, NOXADJEQS, DISFL, GASFL, ETHFL
+     &          NOXADJFLAG, NOXADJEQS, DISFL, GASFL, ETHFL, LPGFL, CNGFL
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVSCC, INVSCC
@@ -578,7 +578,6 @@ C.................  Read specific humidity for NOx humidity adjustment
                     END IF
 
 C.....................  Compute NOx humidity correction factors
-                    NOXADJ = 1.0          ! default NOx adj factor = 1.0
                     QV = QV * 1000.0      ! convert from kg water/kg dry air to g/kg
                     IF( .NOT. NOXADJEQS ) QV = QV * 7.0   ! convert to g/lbs using older NOx humidity correction equations
 
@@ -587,7 +586,6 @@ C.....................  Compute NOx humidity correction factors
                             A = MIN( QV(CELL), 17.71 )
                             B = MAX( 3.0, A )
                             GAS_NOXADJ( CELL ) = 1.0 - 0.0329 * ( B - 10.71 )
-
                             QVMOL = QV( CELL ) * 0.001607524  ! convert from g of water/kg of dry air to moles of water/moles of dry air
                             A = MIN( QVMOL, 0.035 )
                             B = MAX( 0.002, A )
@@ -737,10 +735,13 @@ C.........................  NOx humidity adjustment
                             IF( NOXADJEQS ) THEN     ! Use the MOVES3 NOx humidity adj eqs
                                 IF( DISFL( SRC ) ) THEN   ! diesel fuel only
                                     NOXADJ = DIS_NOXADJ( CELL )
+                                ELSE IF( LPGFL( SRC ) ) THEN
+                                    NOXADJ = 1.0     ! No NOx humidity adj for LPG fuel
                                 ELSE
                                     NOXADJ = GAS_NOXADJ( CELL )
                                 END IF
                             ELSE   ! Use the older NOx humidity correctin eqs
+                                NOXADJ = 1.0   ! No NOx humidity adj for CNG and LPG fuel
                                 IF( GASFL( SRC ) ) NOXADJ = GAS_NOXADJ( CELL )
                                 IF( ETHFL( SRC ) ) NOXADJ = GAS_NOXADJ( CELL )
                                 IF( DISFL( SRC ) ) NOXADJ = DIS_NOXADJ( CELL )

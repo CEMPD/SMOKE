@@ -57,8 +57,8 @@ C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: CIFIP, CSCC
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: MISCC, DISFLTYP, DISFL, GASFLTYP, GASFL, ETHFLTYP, ETHFL
-
+        USE MODMVSMRG, ONLY: MISCC, DISFLTYP, DISFL, GASFLTYP, GASFL, ETHFLTYP, ETHFL,
+     &                       CNGFLTYP, CNGFL, LPGFLTYP, LPGFL
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVIFIP, INVCFIP
 
@@ -82,6 +82,8 @@ C...........   Other local variables
         INTEGER          IDISFL    ! diesel fuel type
         INTEGER          IGASFL    ! gasoline fuel type
         INTEGER          IETHFL    ! ethanol fuel type
+        INTEGER          ICNGFL    ! CNG fuel type
+        INTEGER          ILPGFL    ! LPG fuel type
  
         LOGICAL, SAVE :: FIRSTIME = .TRUE. ! true: first time routine called
 
@@ -116,7 +118,7 @@ C.............  Allocate memory for index from master list of SCCs to source SCC
             GASFL = .FALSE.
             ETHFL = .FALSE.
 
-            IGASFL = ENVINT( 'GASOLINE_FUEL_CODE', 'Diesel fuel ' //
+            IGASFL = ENVINT( 'GASOLINE_FUEL_CODE', 'Gasoline fuel ' //
      &                      'type code [ex: 1]', 1, IOS )
             WRITE( GASFLTYP,'( I2.2)' ) IGASFL
  
@@ -124,7 +126,15 @@ C.............  Allocate memory for index from master list of SCCs to source SCC
      &                      'type code [ex: 2]', 2, IOS )
             WRITE( DISFLTYP,'( I2.2)' ) IDISFL
 
-            IETHFL = ENVINT( 'ETHANOL_FUEL_CODE', 'Diesel fuel ' //
+            ICNGFL = ENVINT( 'CNG_FUEL_CODE', 'CNG fuel ' //
+     &                      'type code [ex: 3]', 3, IOS )
+            WRITE( CNGFLTYP,'( I2.2)' ) ICNGFL
+
+            ILPGFL = ENVINT( 'LPG_FUEL_CODE', 'LPG fuel ' //
+     &                      'type code [ex: 4]', 4, IOS )
+            WRITE( LPGFLTYP,'( I2.2)' ) ILPGFL
+
+            IETHFL = ENVINT( 'ETHANOL_FUEL_CODE', 'Ethanol fuel ' //
      &                      'type code [ex: 5]', 5, IOS )
             WRITE( ETHFLTYP,'( I2.2)' ) IETHFL
 
@@ -150,6 +160,8 @@ C..............   Check whether diseel fuel type or not
                 IF( CSCC(S)( 11:12 ) == '22' ) THEN
                     IF( CSCC(S)( 13:14 ) == GASFLTYP ) GASFL( S ) = .TRUE.
                     IF( CSCC(S)( 13:14 ) == DISFLTYP ) DISFL( S ) = .TRUE.
+                    IF( CSCC(S)( 13:14 ) == CNGFLTYP ) CNGFL( S ) = .TRUE.
+                    IF( CSCC(S)( 13:14 ) == LPGFLTYP ) LPGFL( S ) = .TRUE.
                     IF( CSCC(S)( 13:14 ) == ETHFLTYP ) ETHFL( S ) = .TRUE.
                 END IF
  

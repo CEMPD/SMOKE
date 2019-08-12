@@ -84,11 +84,15 @@ C.........  Emission factors data
 
         LOGICAL, PUBLIC              :: NOXADJFLAG        ! true: apply humidity adjustment for NOx emissions
         LOGICAL, PUBLIC              :: NOXADJEQS         ! true: apply older humidity adjustment for NOx emissions
-        CHARACTER(FLTLEN3), PUBLIC   :: GASFLTYP          ! gasoline fuel type code in NEI MOVES SCC '03'
-        CHARACTER(FLTLEN3), PUBLIC   :: DISFLTYP          ! diesel fuel type code in NEI MOVES SCC '03'
-        CHARACTER(FLTLEN3), PUBLIC   :: ETHFLTYP          ! ethanol fuel type code in NEI MOVES SCC '03'
-        LOGICAL, ALLOCATABLE, PUBLIC :: DISFL( : )        ! index for diesel fuel type SCC
+        CHARACTER(FLTLEN3), PUBLIC   :: GASFLTYP          ! gasoline fuel type code in NEI MOVES SCC '01'
+        CHARACTER(FLTLEN3), PUBLIC   :: DISFLTYP          ! diesel fuel type code in NEI MOVES SCC '02'
+        CHARACTER(FLTLEN3), PUBLIC   :: CNGFLTYP          ! CNG fuel type code in NEI MOVES SCC '03'
+        CHARACTER(FLTLEN3), PUBLIC   :: LPGFLTYP          ! LPG fuel type code in NEI MOVES SCC '04'
+        CHARACTER(FLTLEN3), PUBLIC   :: ETHFLTYP          ! ethanol fuel type code in NEI MOVES SCC '05'
         LOGICAL, ALLOCATABLE, PUBLIC :: GASFL( : )        ! index for gasoline fuel type SCC
+        LOGICAL, ALLOCATABLE, PUBLIC :: DISFL( : )        ! index for diesel fuel type SCC
+        LOGICAL, ALLOCATABLE, PUBLIC :: CNGFL( : )        ! index for CNG fuel type SCC
+        LOGICAL, ALLOCATABLE, PUBLIC :: LPGFL( : )        ! index for LPG fuel type SCC
         LOGICAL, ALLOCATABLE, PUBLIC :: ETHFL( : )        ! index for ethanol fuel type SCC
 
         INTEGER, ALLOCATABLE, PUBLIC :: EMPOLIDX( : )     ! index of emission pollutant name
