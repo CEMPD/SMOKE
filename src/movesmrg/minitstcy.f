@@ -108,14 +108,20 @@ C.............  Allocate memory for index from master list of SCCs to source SCC
             CALL CHECKMEM( IOS, 'MISCC', PROGNAME )
             ALLOCATE( MCFIP( NMSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MCFIP', PROGNAME )
-            ALLOCATE( DISFL( NMSRC ), STAT=IOS )       ! arry for diesel fuel type or not
-            CALL CHECKMEM( IOS, 'DISFL', PROGNAME )
             ALLOCATE( GASFL( NMSRC ), STAT=IOS )       ! arry for gasoline fuel type or not
             CALL CHECKMEM( IOS, 'GASFL', PROGNAME )
+            ALLOCATE( DISFL( NMSRC ), STAT=IOS )       ! arry for diesel fuel type or not
+            CALL CHECKMEM( IOS, 'DISFL', PROGNAME )
+            ALLOCATE( CNGFL( NMSRC ), STAT=IOS )       ! arry for CNG fuel type or not
+            CALL CHECKMEM( IOS, 'CNGFL', PROGNAME )
+            ALLOCATE( LPGFL( NMSRC ), STAT=IOS )       ! arry for LPG fuel type or not
+            CALL CHECKMEM( IOS, 'LPGFL', PROGNAME )
             ALLOCATE( ETHFL( NMSRC ), STAT=IOS )       ! arry for ethnol fuel type or not
             CALL CHECKMEM( IOS, 'ETHFL', PROGNAME )
             DISFL = .FALSE.
             GASFL = .FALSE.
+            CNGFL = .FALSE.
+            LPGFL = .FALSE.
             ETHFL = .FALSE.
 
             IGASFL = ENVINT( 'GASOLINE_FUEL_CODE', 'Gasoline fuel ' //
