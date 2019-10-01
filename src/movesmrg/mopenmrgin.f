@@ -49,7 +49,7 @@ C.........  This module contains the major data structure and control flags
      &          VARFLAG, SRCGRPFLAG, SGDEV
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, RPHFLAG,
+        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, RPHFLAG, ONIFLAG,
      &          TVARNAME, METNAME, XDEV, MDEV, FDEV, CFFLAG, SPDISTFLAG,
      &          SPDPROFLAG, MSNAME_L, MSNAME_S, MNSMATV_L, MNSMATV_S,
      &          MSVDESC_L, MSVDESC_S, MSVUNIT_L, MSVUNIT_S
@@ -220,7 +220,15 @@ C.........  Read hotelling data from the inventory
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
         END IF
-        
+
+        IF( ONIFLAG ) THEN
+            M = INDEX1( 'IDLING', NMAP, MAPNAM )
+            IF( M <= 0 ) THEN
+                MESG = 'Mobile inventory does not include idling data'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        END IF
+ 
         IF( RPVFLAG .OR. RPPFLAG ) THEN
             M = INDEX1( 'VPOP', NMAP, MAPNAM )
             IF( M <= 0 ) THEN
@@ -244,7 +252,7 @@ C.........  Get number of sources from MODINFO and store in MODMERGE variable
 C.........  Determine the year and projection status of the inventory
         CALL CHECK_INVYEAR( MENAME, MPRJFLAG, FDESC3D )
 
-        IF( RPDFLAG .OR. RPHFLAG ) THEN
+        IF( RPDFLAG .OR. RPHFLAG .OR. ONIFLAG  ) THEN
 
 C.............  Open all temporal files for either by-day or standard
 C               processing. 
@@ -345,7 +353,7 @@ C.........  Check that variables in mole and mass speciation matrices match
         END DO
 
 C.........  Open meteorology file
-        IF( RPDFLAG .OR. RPVFLAG .OR. RPHFLAG ) THEN
+        IF( RPDFLAG .OR. RPVFLAG .OR. RPHFLAG .OR. ONIFLAG ) THEN
             METNAME = PROMPTMFILE(
      &           'Enter logical name for the METCRO2D meteorology file', 
      &           FSREAD3, 'MET_CRO_2D', PROGNAME )
@@ -365,7 +373,7 @@ C.........  Check the grid definition
         CALL CHKGRID( 'mobile', 'GRID', 0, EFLAG )
     
 C.........  Check the hours in the met file
-        IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG ) THEN
+        IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG .OR. ONIFLAG ) THEN
             CALL UPDATE_TIME_INFO( METNAME, .FALSE. )
 
 C.............  Make sure met file contains requested temperature variable
@@ -411,7 +419,11 @@ C.........  Store process/pollutants combinations for correct activity
         IF( RPHFLAG ) THEN
             M = INDEX1( 'HOTELLING', NIACT, ACTVTY )
         END IF
-        
+
+        IF( ONIFLAG ) THEN
+            M = INDEX1( 'IDLING', NIACT, ACTVTY )
+        END IF
+ 
         IF( RPVFLAG .OR. RPPFLAG ) THEN
             M = INDEX1( 'VPOP', NIACT, ACTVTY )
         END IF
