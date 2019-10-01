@@ -42,7 +42,7 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
-        USE M3UTILIO
+        USE M3UTILIO, M3U_INITSPHERES => INITSPHERES
         USE MODGCTP
 
         IMPLICIT NONE
@@ -84,8 +84,9 @@ C***************************************************************************
         END INTERFACE UNGRIDBV
 
 
-
         PRIVATE         !!  everything else
+
+        LOGICAL :: FIRSTIME = .TRUE.
 
 
       CONTAINS    !!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -115,6 +116,15 @@ C...........   Other local variables
         REAL(8)     XLOC( NSRC ), YLOC( NSRC )  ! tmp x and y coordinates
 
 C...........   Subroutine body ..........................................
+
+        IF ( FIRSTIME ) THEN
+            IF ( INITSPHERES() ) THEN
+                FIRSTIME = .FALSE.
+            ELSE
+                CALL M3EXIT( 'MODGRDLIB/CONVRTLL', 0,0,
+     &                       'Failure in INITSPHERES()', 2 )
+            END IF
+        END IF
 
         CALL XY2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
      &              CTYPE, P_ALP, P_BET, P_GAM, XCENT, YCENT,
@@ -156,6 +166,15 @@ C...........   Other local variables
         REAL(8)     XLOC( NSRC ), YLOC( NSRC )  ! tmp x and y coordinates
 
 C...........   Subroutine body ..........................................
+
+        IF ( FIRSTIME ) THEN
+            IF ( INITSPHERES() ) THEN
+                FIRSTIME = .FALSE.
+            ELSE
+                CALL M3EXIT( 'MODGRDLIB/CONVRTLL', 0,0,
+     &                       'Failure in INITSPHERES()', 2 )
+            END IF
+        END IF
 
         XVAL = XVALS
         YVAL = YVALS
@@ -200,6 +219,15 @@ C...........   Other local variables
 
 C...........   Subroutine body ..........................................
 
+        IF ( FIRSTIME ) THEN
+            IF ( INITSPHERES() ) THEN
+                FIRSTIME = .FALSE.
+            ELSE
+                CALL M3EXIT( 'MODGRDLIB/CONVRTLL', 0,0,
+     &                       'Failure in INITSPHERES()', 2 )
+            END IF
+        END IF
+
         CALL XY2XY( LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
      &              CTYPE, P_ALP, P_BET, P_GAM, XCENT, YCENT,
      &              NCOL, NROW, XVALS, YVALS, XLOC, YLOC )
@@ -241,6 +269,15 @@ C...........   Other local variables
 
 C...........   Subroutine body ..........................................
 
+        IF ( FIRSTIME ) THEN
+            IF ( INITSPHERES() ) THEN
+                FIRSTIME = .FALSE.
+            ELSE
+                CALL M3EXIT( 'MODGRDLIB/CONVRTLL', 0,0,
+     &                       'Failure in INITSPHERES()', 2 )
+            END IF
+        END IF
+
         XVAL = XVALS
         YVAL = YVALS
 
@@ -280,6 +317,15 @@ C...........   Other local variables
 
 C...........   Subroutine body ..........................................
 
+        IF ( FIRSTIME ) THEN
+            IF ( INITSPHERES() ) THEN
+                FIRSTIME = .FALSE.
+            ELSE
+                CALL M3EXIT( 'MODGRDLIB/CONVRTXY', 0,0,
+     &                       'Failure in INITSPHERES()', 2 )
+            END IF
+        END IF
+
         CALL XY2XY( CTYPE, P_ALP, P_BET, P_GAM, XCENT, YCENT,
      &              LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
      &              NSRC, XVALS, YVALS, XLOC, YLOC )
@@ -316,6 +362,15 @@ C...........   Other local variables
         REAL(8)     XLOC( NSRC ), YLOC( NSRC )  ! tmp x and y coordinates
 
 C...........   Subroutine body ..........................................
+
+        IF ( FIRSTIME ) THEN
+            IF ( INITSPHERES() ) THEN
+                FIRSTIME = .FALSE.
+            ELSE
+                CALL M3EXIT( 'MODGRDLIB/CONVRTXY', 0,0,
+     &                       'Failure in INITSPHERES()', 2 )
+            END IF
+        END IF
 
         XVAL = XVALS
         YVAL = YVALS
@@ -356,6 +411,15 @@ C...........   Other local variables
 
 C...........   Subroutine body ..........................................
 
+        IF ( FIRSTIME ) THEN
+            IF ( INITSPHERES() ) THEN
+                FIRSTIME = .FALSE.
+            ELSE
+                CALL M3EXIT( 'MODGRDLIB/CONVRTXY', 0,0,
+     &                       'Failure in INITSPHERES()', 2 )
+            END IF
+        END IF
+
         CALL XY2XY( CTYPE, P_ALP, P_BET, P_GAM, XCENT, YCENT,
      &              LATGRD3, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0,
      &              NCOL, NROW, XVALS, YVALS, XLOC, YLOC )
@@ -392,6 +456,15 @@ C...........   Other local variables
         REAL(8)     XVAL( NCOL,NROW ), YVAL( NCOL,NROW )  ! tmp x and y coordinates
 
 C...........   Subroutine body ..........................................
+
+        IF ( FIRSTIME ) THEN
+            IF ( INITSPHERES() ) THEN
+                FIRSTIME = .FALSE.
+            ELSE
+                CALL M3EXIT( 'MODGRDLIB/CONVRTXY', 0,0,
+     &                       'Failure in INITSPHERES()', 2 )
+            END IF
+        END IF
 
         XVAL = XVALS
         YVAL = YVALS
