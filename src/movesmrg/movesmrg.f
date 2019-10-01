@@ -64,8 +64,8 @@ C.........  This module contains the major data structure and control flags
      &          SGINLNNAME, NSGOUTPUT              ! source group emissions output file
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, RPVFLAG, RPPFLAG, MOPTIMIZE,
-     &          TVARNAME, METNAME,
+        USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, ONIFLAG, RPVFLAG, RPPFLAG,
+     &          TVARNAME, METNAME, MOPTIMIZE,
      &          NREFSRCS, REFSRCS, NSRCCELLS, SRCCELLS, SRCCELLFRACS,
      &          EMPOLIDX,
      &          NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX,
@@ -333,12 +333,12 @@ C........ when not optimize memory
             CALL CHECKMEM( IOS, 'VMT', PROGNAME )
         END IF
 
-        IF( RPHFLAG ) THEN
-            ALLOCATE( HOTEL( NMSRC ), STAT=IOS )     ! hourly hotelling 
+        IF( RPHFLAG .OR. ONIFLAG ) THEN
+            ALLOCATE( HOTEL( NMSRC ), STAT=IOS )     ! hourly hotelling or offnetwork idling
             CALL CHECKMEM( IOS, 'HOTEL', PROGNAME )
         END IF
         
-        IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG ) THEN
+        IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG .OR. ONIFLAG ) THEN
             ALLOCATE( TEMPG( NGRID ), STAT=IOS )    ! hourly temperatures
             CALL CHECKMEM( IOS, 'TEMPG', PROGNAME )
             IF( NOXADJFLAG ) THEN
@@ -496,7 +496,7 @@ C                       at the last hour of the last day in fuel month to proces
                             CALL RDRPDEMFACS( I, FUELMONTH )
                         END IF
 
-                        IF( RPHFLAG ) THEN
+                        IF( RPHFLAG .OR. ONIFLAG ) THEN
                             CALL RDRPHEMFACS( I, FUELMONTH )
                         END IF
              
@@ -520,7 +520,7 @@ C.................  Set start hour of day for all sources
                 END IF
 
 C.................  Write out files that are being used for by-day treatment
-                IF( RPDFLAG .OR. RPHFLAG .AND. DAY .NE. PDAY ) THEN
+                IF( RPDFLAG .OR. RPHFLAG .OR. ONIFLAG .AND. DAY .NE. PDAY ) THEN
                     IF( MFLAG_BD ) THEN
                         MESG = '   with MTMP file ' // MTNAME( DAY )
                         CALL M3MSG2( MESG )
@@ -549,6 +549,15 @@ C.................  In RPH mode, read HOTELLING for current hour
                     IF( .NOT. READSET( MTNAME( DAY ), 'HOTELLING', 1, ALLFILES,
      &                                 MJDATE, JTIME, HOTEL ) ) THEN
                         MESG = 'Could not read HOTELLING from MTMP file'
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    END IF
+                END IF
+
+C.................  In ONI mode, read HOTELLING for current hour
+                IF( ONIFLAG ) THEN
+                    IF( .NOT. READSET( MTNAME( DAY ), 'IDLING', 1, ALLFILES,
+     &                                 MJDATE, JTIME, HOTEL ) ) THEN
+                        MESG = 'Could not read IDLING from MTMP file'
                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                     END IF
                 END IF
@@ -601,7 +610,7 @@ C.....................  Compute NOx humidity correction factors
                 END IF
 
 C.................  Read temperatures for current hour
-                IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG ) THEN
+                IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG .OR. ONIFLAG ) THEN
                     IF( .NOT. READ3( METNAME, TVARNAME, 1, 
      &                               JDATE, JTIME, TEMPG ) ) THEN
                         MESG = 'Could not read ' // TRIM( TVARNAME ) //
@@ -725,10 +734,8 @@ C.....................  Loop over grid cells for this source
                         GFRAC = SRCCELLFRACS( NG, SRC )
 
                         IF( RPDFLAG ) EMFAC = VMT( SRC ) * GFRAC
-                        IF( RPHFLAG ) EMFAC = HOTEL( SRC ) * GFRAC
-                        IF( RPVFLAG .OR. RPPFLAG ) THEN
-                            EMFAC = VPOP( SRC ) * GFRAC
-                        END IF
+                        IF( RPVFLAG .OR. RPPFLAG ) EMFAC = VPOP( SRC ) * GFRAC
+                        IF( RPHFLAG .OR. ONIFLAG ) EMFAC = HOTEL( SRC ) * GFRAC
 
 C.........................  NOx humidity adjustment
                         IF( NOXADJFLAG ) THEN
@@ -749,7 +756,7 @@ C.........................  NOx humidity adjustment
                         END IF
 
 C.............................  Determine temperature indexes for cell
-                        IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG ) THEN
+                        IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG .OR.  ONIFLAG ) THEN
 
                             TEMPVAL = ( TEMPG( CELL ) - CTOK ) * CTOF + 32.
 
@@ -1104,7 +1111,7 @@ C.................................  retrieve avg spd distributino values
                                 EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
                             END IF
 
-                            IF( RPHFLAG ) THEN
+                            IF( RPHFLAG .OR. ONIFLAG ) THEN
                                 EFVALA = RPHEMFACS( SCCIDX, IDX1, POLIDX )
                                 EFVALB = RPHEMFACS( SCCIDX, IDX2, POLIDX )
                                 EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA

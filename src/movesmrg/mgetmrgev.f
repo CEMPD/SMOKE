@@ -47,7 +47,7 @@ C.........  This module contains the major data structure and control flags
      &                      SRCGRPFLAG, SMATCHK
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
+        USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, ONIFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
      &                       SPDPROFLAG, SPDISTFLAG, CFFLAG, EXPCFFLAG, REFCFFLAG, TEMPBIN,
      &                       MOPTIMIZE, GRDENV, TOTENV, MTMP_OUT, NOXADJFLAG, NOXADJEQS
 
@@ -172,6 +172,9 @@ C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile p
         RPPFLAG = ENVYN( 'RPP_MODE', 'Calculate rate-per-profile ' //
      &                   'emissions', .FALSE., IOS )
 
+        ONIFLAG = ENVYN( 'ONI_MODE', 'Calculate Off-Network Idling ' //
+     &                   'emissions', .FALSE., IOS )
+
         MOPTIMIZE = ENVYN( 'MEMORY_OPTIMIZE_YN', 'Optimize Memory usage' //
      &                    " ", .FALSE., IOS )
 
@@ -190,11 +193,12 @@ C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile p
         END IF
 
         IF( .NOT. RPDFLAG .AND.
+     &      .NOT. ONIFLAG .AND.
      &      .NOT. RPHFLAG .AND.
      &      .NOT. RPVFLAG .AND.
      &      .NOT. RPPFLAG ) THEN
             MESG = 'No mode selected!  You must set either RPD_MODE, ' //
-     &             'RPH_MODE, RPV_MODE, or RPP_MODE to "Y".'
+     &             'RPH_MODE, RPV_MODE, RPP_MODE or ONI_MODE to "Y".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
@@ -203,11 +207,22 @@ C.........  Select default processing mode
             RPHFLAG = .FALSE.
             RPVFLAG = .FALSE.
             RPPFLAG = .FALSE.
+            ONIFLAG = .FALSE.
         ELSE IF( RPVFLAG ) THEN
+            RPDFLAG = .FALSE.
             RPHFLAG = .FALSE.
             RPPFLAG = .FALSE.
+            ONIFLAG = .FALSE.
         ELSE IF( RPPFLAG ) THEN
+            RPDFLAG = .FALSE.
+            RPHFLAG = .FALSE.
             RPVFLAG = .FALSE.
+            ONIFLAG = .FALSE.
+        ELSE IF( RPHFLAG ) THEN
+            RPDFLAG = .FALSE.
+            RPVFLAG = .FALSE.
+            RPPFLAG = .FALSE.
+            ONIFLAG = .FALSE.
         END IF
 
 C.........  Check if hourly speeds should be used
