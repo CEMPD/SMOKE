@@ -235,7 +235,7 @@ C.........  Check if hourly speeds should be used
         END IF
 
 C.........  Get if NOx adjustment should be applied
-        IF( RPDFLAG .OR. RPHFLAG ) THEN
+        IF( RPDFLAG .OR. RPHFLAG .OR. ONIFLAG ) THEN
             NOXADJFLAG = ENVYN( 'APPLY_NOX_HUMIDITY_ADJ', 'Apply ' //
      &                'humidity adjusment to NOx emissions', .FALSE., IOS )
         END IF
