@@ -15,7 +15,7 @@ my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 
 # check environment variables
 foreach my $envvar (qw(REPORT REP_XWALK PHOUR_OUT YEAR 
-                       PTPRO_MONTHLY PTPRO_DAILY PTPRO_HOURLY_WINTER PTPRO_HOURLY_SUMMER OUTPUT_DIR)) {
+                       PTPRO_MONTHLY PTPRO_DAILY PTPRO_WEEKLY PTPRO_HOURLY_WINTER PTPRO_HOURLY_SUMMER OUTPUT_DIR)) {
   die "Environment variable '$envvar' must be set" unless $ENV{$envvar};
 }
 
@@ -62,6 +62,9 @@ my %monthly = read_profiles($prof_file, 12);
 
 $prof_file = $ENV{'PTPRO_DAILY'};
 my %dayofmonth = read_dom_profiles($prof_file, 31, \@days_in_month);
+
+$prof_file = $ENV{'PTPRO_WEEKLY'};
+my %weekly = read_profiles($prof_file, 7);
 
 $prof_file = $ENV{'PTPRO_HOURLY_WINTER'};
 my %daily_winter = read_profiles($prof_file, 24);
@@ -231,8 +234,18 @@ while (my $line = <$in_fh>) {
     my @monthly_factors = @{$monthly{$monthly_prof}};
     
     my $dom_prof = $data[$headers{'Day-Month Prf'}];
-    die "Unknown day-of-month profile code: $dom_prof" unless exists $dayofmonth{$dom_prof};
-    my %dom_factors = %{$dayofmonth{$dom_prof}};
+    my %dom_factors;
+    if ($dom_prof) {
+      die "Unknown day-of-month profile code: $dom_prof" unless exists $dayofmonth{$dom_prof};
+      %dom_factors = %{$dayofmonth{$dom_prof}};
+    }
+    
+    my $weekly_prof = $data[$headers{'Weekly  Prf'}];
+    my @weekly_factors;
+    if ($weekly_prof) {
+      die "Unknown weekly profile code: $weekly_prof" unless exists $weekly{$weekly_prof};
+      @weekly_factors = @{$weekly{$weekly_prof}};
+    }
     
     my $monday_prof = $data[$headers{'Mon Diu Prf'}];
     # check that all days of the week use the same profile
@@ -253,17 +266,26 @@ while (my $line = <$in_fh>) {
 
     my @factors;
     my $month = 1;
+    my $day_of_week = 2;  # Jan. 1, 2014 was a Wednesday
     foreach my $month_factor (@monthly_factors) {
       # use summer factors for May through Sep
       my @hourly_factors = @hourly_winter_factors;
       @hourly_factors = @hourly_summer_factors if ($month >= 5 && $month <= 9);
 
       # note: factors average to 1 rather than summing to 1, so adjust when fractions are needed
-      my $day_of_month = 1;
-      foreach my $dom_factor (@{$dom_factors{$month}}) {
-        last if $day_of_month > $days_in_month[$month];
-        push @factors, map { $_ * $dom_factor * $month_factor } @hourly_factors;
-        $day_of_month++;
+      if ($dom_prof) {
+        my $day_of_month = 1;
+        foreach my $dom_factor (@{$dom_factors{$month}}) {
+          last if $day_of_month > $days_in_month[$month];
+          push @factors, map { $_ * $dom_factor * $month_factor } @hourly_factors;
+          $day_of_month++;
+        }
+      } else {
+        my $month_to_week = 7 / $days_in_month[$month];
+        for (my $day_of_month = 1; $day_of_month <= $days_in_month[$month]; $day_of_month++) {
+          push @factors, map { $_ * $weekly_factors[$day_of_week] * $month_to_week * $month_factor } @hourly_factors;
+          $day_of_week = ($day_of_week + 1) % 7;
+        }
       }
       $month++;
     }

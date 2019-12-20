@@ -21,6 +21,7 @@ export REP_XWALK=$REPSCEN/pointgt.aermod.ptegu.12US2.2011ek.2011001.rpt_src_cros
 # locations of temporal profile files
 export PTPRO_MONTHLY=$GE_DAT/noncem_2014_tpro_monthly_csv_19jul2016_v0
 export PTPRO_DAILY=$GE_DAT/noncem_2014_tpro_daily_07_21_2016_19jul2016_v0
+export PTPRO_WEEKLY=$GE_DAT/amptpro_general_2011platform_tpro_weekly_13nov2014_v1
 # used for Jan, Feb, Mar, Apr, Oct, Nov, Dec
 export PTPRO_HOURLY_WINTER=$GE_DAT/ptegu_2014_tpro_hourly_winter_07_21_2016_csv_21jul2016_v0
 # used for May through Sep

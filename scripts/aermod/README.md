@@ -126,7 +126,7 @@ The Perl script ptegu.pl reads the Smkreport file, temporal profile files, and t
     xwalk/ptegu_srcid_emis.csv
     xwalk/ptegu_srcid_xwalk.csv
 
-The shell script run_ptegu.sh runs both convert\_phour and ptegu.pl. convert\_phour uses the environment variables $PHOUR, $PHOUR\_OUT, and $YEAR. ptegu.pl uses $REPORT, $REP\_XWALK, $PHOUR\_OUT, $YEAR, $PTPRO\_MONTHLY, $PTPRO\_DAILY, $PTPRO\_HOURLY\_WINTER, $PTPRO\_HOURLY\_SUMMER, and $OUTPUT\_DIR.
+The shell script run_ptegu.sh runs both convert\_phour and ptegu.pl. convert\_phour uses the environment variables $PHOUR, $PHOUR\_OUT, and $YEAR. ptegu.pl uses $REPORT, $REP\_XWALK, $PHOUR\_OUT, $YEAR, $PTPRO\_MONTHLY, $PTPRO\_DAILY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY\_WINTER, $PTPRO\_HOURLY\_SUMMER, and $OUTPUT\_DIR.
 
 After running the ptegu sector, the outputs need to be combined with the outputs from the ptnonipm sector. See the [ptnonipm](#ptnonipm-sector) section for more information.
 
