@@ -160,7 +160,7 @@ C.........  LOCAL VARIABLES and their descriptions
 	
 	INTEGER     ::    LAI_SAVE_INDEX(3)
         INTEGER :: NLINES	
-	INTEGER :: IS_AG, IS_TAG
+	LOGICAL :: IS_AG, IS_TAG
 
         REAL, ALLOCATABLE    :: XVALS ( :, : )     ! x values for grid cell boundaries
         REAL, ALLOCATABLE    :: YVALS ( :, : )     ! y values for grid cell boundaries
