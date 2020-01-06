@@ -1659,8 +1659,8 @@ C.........  Compute month of year temporal profiles
 
 C.............  Output monthly profiles by county
             DO S = 1, NSRGFIPS
-                WRITE( MODEV, "(A,12(A,E10.3))" ) SRGFIPS( S ),
-     &              ((',', PROF_MON( S,NP )), NP = 1,12 )
+                WRITE( MODEV, "(A,12(',',E10.3))" ) SRGFIPS( S ),
+     &              ((PROF_MON( S,NP )), NP = 1,12 )
             END DO
 
         END IF
@@ -1690,9 +1690,9 @@ C.................  Output daily profiles by county
                 IF( MONTH /= TMPMNTH ) THEN
 
                     DO S = 1, NSRGFIPS
-                        WRITE( DODEV, "(A,A,I2.2,31(A,E10.3))" )
+                        WRITE( DODEV, "(A,A,I2.2,31(',',E10.3))" )
      &                      SRGFIPS( S ), ',', MONTH,
-     &                      ( (',', PROF_DAY( S,NP ) ), NP = 1,31 )
+     &                      ( (PROF_DAY( S,NP ) ), NP = 1,31 )
                     END DO
 
                     PROF_DAY = 0.0    ! re-initializing 
