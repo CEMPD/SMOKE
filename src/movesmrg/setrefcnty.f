@@ -156,7 +156,7 @@ C           Start by counting number of sources for each reference county
                     SKIPFIP = .TRUE.
                     WRITE( MESG, 94010 ) 'WARNING: No emissions will '//
      &                'be calculated for inventory county ' //CIFIP( S )//
-     &                'because it is not listed in the county '//
+     &                ' because it is not listed in the county '//
      &                'cross-reference file'
                     CALL M3MESG( MESG )
                     CYCLE
