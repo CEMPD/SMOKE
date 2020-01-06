@@ -84,7 +84,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER*4       GETPID   
         LOGICAL         USEEXPGEO
 
-        EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR, GETPID,
+        EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR, 
      &                  JUNIT, FIND1, FIND1FIRST, FINDC,
      &                  CHKINT, STR2INT, INDEX1, BLKORCMT, SETENVVAR,
      &                  USEEXPGEO
