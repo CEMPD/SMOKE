@@ -205,6 +205,7 @@ C.........  Set local variables for determining input inventory variables
      &                  ANY_TRUE( NREPORT, ALLRPT%BYCNRY ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYSTAT ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYCNTY ) .OR.
+     &                  ANY_TRUE( NREPORT, ALLRPT%BYUNIT ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYPLANT ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYORIS ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYSPC ) .OR.
@@ -268,6 +269,7 @@ C.........  Source type code
 
 C.........  Source description
             IF( ANY_TRUE( NREPORT, ALLRPT%BYSRC ) .OR.
+     &          ANY_TRUE( NREPORT, ALLRPT%BYUNIT ) .OR. 
      &          ANY_TRUE( NREPORT, ALLRPT%BYPLANT )    ) THEN
                 NINVARR = NINVARR + 1
                 IVARNAMS( NINVARR ) = 'CSOURC'
@@ -960,6 +962,7 @@ C           for the entire run of the program, so that it doesn't have to be
 C           done for each report (it is slow)
 
         IF( ANY_TRUE( NREPORT, ALLRPT%BYSRC  ) .OR.
+     &      ANY_TRUE( NREPORT, ALLRPT%BYUNIT ) .OR.
      &      ANY_TRUE( NREPORT, ALLRPT%BYPLANT )    ) THEN
 
 C.............  Determine width of source chararactistic columns over the

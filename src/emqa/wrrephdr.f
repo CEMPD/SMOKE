@@ -66,12 +66,12 @@ C.........  This module contains Smkreport-specific settings
      &                      PYEAR, PRBYR, PRPYR, OUTUNIT, TITLES,
      &                      ALLRPT, LOC_BEGP, LOC_ENDP,
      &                      SICWIDTH, SIDSWIDTH, MACTWIDTH, MACDSWIDTH,
-     &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH, UNITWIDTH,
+     &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH,
      &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
      &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
      &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
-     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH
+     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH, POINTWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -83,7 +83,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX, BINERPTYP
+     &                      BINGEO1IDX, BINUNIT
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
@@ -179,24 +179,25 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRCARB = 56
         INTEGER, PARAMETER :: IHDRCADT = 57
         INTEGER, PARAMETER :: IHDRERTYP= 58
-        INTEGER, PARAMETER :: IHDRFUGHT= 59
-        INTEGER, PARAMETER :: IHDRFUGWD= 60
-        INTEGER, PARAMETER :: IHDRFUGLN= 61
-        INTEGER, PARAMETER :: IHDRFUGAN= 62
-        INTEGER, PARAMETER :: IHDRLAMBX= 63
-        INTEGER, PARAMETER :: IHDRLAMBY= 64
-        INTEGER, PARAMETER :: IHDRUTMX = 65
-        INTEGER, PARAMETER :: IHDRUTMY = 66
-        INTEGER, PARAMETER :: IHDRUTMZ = 67
-        INTEGER, PARAMETER :: IHDRSWLAT= 68
-        INTEGER, PARAMETER :: IHDRSWLON= 69
-        INTEGER, PARAMETER :: IHDRNWLAT= 70
-        INTEGER, PARAMETER :: IHDRNWLON= 71
-        INTEGER, PARAMETER :: IHDRNELAT= 72
-        INTEGER, PARAMETER :: IHDRNELON= 73
-        INTEGER, PARAMETER :: IHDRSELAT= 74
-        INTEGER, PARAMETER :: IHDRSELON= 75
-        INTEGER, PARAMETER :: NHEADER  = 75
+        INTEGER, PARAMETER :: IHDPOINT = 59
+        INTEGER, PARAMETER :: IHDRFUGHT= 60
+        INTEGER, PARAMETER :: IHDRFUGWD= 61
+        INTEGER, PARAMETER :: IHDRFUGLN= 62
+        INTEGER, PARAMETER :: IHDRFUGAN= 63
+        INTEGER, PARAMETER :: IHDRLAMBX= 64
+        INTEGER, PARAMETER :: IHDRLAMBY= 65
+        INTEGER, PARAMETER :: IHDRUTMX = 66
+        INTEGER, PARAMETER :: IHDRUTMY = 67
+        INTEGER, PARAMETER :: IHDRUTMZ = 68
+        INTEGER, PARAMETER :: IHDRSWLAT= 69
+        INTEGER, PARAMETER :: IHDRSWLON= 70
+        INTEGER, PARAMETER :: IHDRNWLAT= 71
+        INTEGER, PARAMETER :: IHDRNWLON= 72
+        INTEGER, PARAMETER :: IHDRNELAT= 73
+        INTEGER, PARAMETER :: IHDRNELON= 74
+        INTEGER, PARAMETER :: IHDRSELAT= 75
+        INTEGER, PARAMETER :: IHDRSELON= 76
+        INTEGER, PARAMETER :: NHEADER  = 76
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -258,6 +259,7 @@ C...........   Local parameters
      &                              'Geo Regn Level 4 ',
      &                              'T,Yr,Mon,Jday,Dow',
      &                              'Basin,Dist,Cnty  ',
+     &                              'Point Unit Type  ',
      &                              'Emis Release Type',
      &                              'Fug Ht           ',
      &                              'Fug Wdt          ',
@@ -1228,6 +1230,24 @@ C.........  Plant ID
 
         END IF
 
+C.........  Point Unit ID
+        IF( RPT_%BYUNIT ) THEN
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINUNIT( I ) ) )
+            END DO
+
+            J  = LEN_TRIM( CHRHDRS( 3 ) )
+            W1 = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( W1, CHRHDRS( 3 ), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( CHARFMT, 94645 ) W1, RPT_%DELIM
+            CHARWIDTH = W1 + LV
+
+        END IF
+
 C.........  ORIS ID
         IF( RPT_%BYORIS ) THEN
             NWIDTH = 0
@@ -1468,6 +1488,17 @@ C.........  Stack group IDs when BY ELEVSTAT (RPT_%BYELEV)
 
             WRITE( STKGFMT, 94625 ) W1, RPT_%DELIM
             STKGWIDTH = W1 + LV
+        END IF
+
+C.........  Point unit type column
+        IF( RPT_%BYUNIT ) THEN
+            J = LEN_TRIM( HEADERS( IHDPOINT ) )
+            J = MAX( CHRLEN3, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDPOINT), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            POINTWIDTH = J + LV
         END IF
 
 C.........  Emissions release point type column

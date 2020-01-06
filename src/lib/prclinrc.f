@@ -456,6 +456,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYCYNAM   = .FALSE.
                         RPT_%BYDATE    = .FALSE.
                         RPT_%BYELEV    = .FALSE.
+                        RPT_%BYUNIT    = .FALSE.
                         RPT_%BYERPTYP  = .FALSE.
                         RPT_%BYGEO1    = .FALSE.
                         RPT_%BYGEO1NAM = .FALSE.
@@ -943,6 +944,15 @@ C.............  BY options affecting inputs needed
 
                         CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
 
+                    END IF
+
+                CASE( 'UNIT' )
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
+                        IF( CATEGORY .EQ. 'POINT' ) THEN
+                            RPT_%BYUNIT = .TRUE.
+                        ELSE IF( FIRSTLOOP ) THEN
+                            CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
+                        END IF
                     END IF
                 
                 CASE( 'ERPTYPE' )

@@ -80,7 +80,7 @@ C.........  This module contains Smkreport-specific settings
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
      &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
-     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH
+     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH, POINTWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -94,7 +94,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX, BINERPTYP
+     &                      BINGEO1IDX, BINERPTYP, BINUNIT
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC,
@@ -666,6 +666,17 @@ C.............  Include plant ID
                     L1 = L - LV - 1                        ! 1 for space
                     STRING = STRING( 1:LE ) //
      &                       BINPLANT( I )( 1:L1 ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include point Unit ID
+                IF( RPT_%BYUNIT ) THEN
+                    L = CHARWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) //
+     &                       BINUNIT( I )( 1:L1 ) // DELIM
                     MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0

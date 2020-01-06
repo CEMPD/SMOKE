@@ -73,11 +73,11 @@ C............  MODINFO contains the information about the source category
      &                      BINMNDID, BINTUEID, BINWEDID, BINTHUID,
      &                      BINFRIID, BINSATID, BINSUNID, BINMETID,
      &                      BINSPCID, BINPLANT, BINX, BINY, BINELEV,
-     &                      BINPOPDIV, OUTBIN, OUTCELL,OUTSRC,
+     &                      BINPOPDIV, OUTBIN, OUTCELL, OUTSRC,
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
      &                      BINNAICS, BINNAIIDX, BINSRCTYP, BINORIS,
      &                      BINORSIDX, BINSTKGRP, BININTGR, BINGEO1IDX,
-     &                      BINERPTYP
+     &                      BINERPTYP, BINUNIT
 
         USE MODGRID, ONLY: NCOLS
 
@@ -114,7 +114,7 @@ C...........   Local parameters:
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
-     &                                     + ERPLEN3 + 26 + 65 + 64
+     &                                     + ERPLEN3 + CHRLEN3 + 26 + 65 + 64
         INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) = (/ 1, 3, 6,  8, 9 /)
         INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) = (/ 2, 4, 7, 10, 9 /)
 
@@ -156,6 +156,7 @@ C...........   Local variables
         CHARACTER(BUFLEN)  LBUF         ! previous sorting info buffer
         CHARACTER(SCCLEN3) SCC          ! tmp SCC
         CHARACTER(SICLEN3) SIC          ! tmp SIC
+        CHARACTER(CHRLEN3) POINTYP      ! tmp point unit TYP
         CHARACTER(ERPLEN3) ERPTYP       ! tmp ERPTYP
         CHARACTER(INTLEN3) INTGR        ! tmp INTEGRATE
         CHARACTER(MACLEN3) MACT         ! tmp MACT
@@ -339,6 +340,13 @@ C.................  code, so for now save space for the SRCID.
                     II = IJ + 1
                 END IF
 
+                IF( RPT_%BYUNIT ) THEN
+                    IJ = II + 7
+                    SRCID = OUTSRC( I )
+                    WRITE( SORTBUF( I )( II:IJ ), '( I8.8 )' ) SRCID
+                    II = IJ + 1
+                END IF
+
                 IF( RPT_%BYCNTY ) THEN
                     IJ = II + FIPLEN3 - 1
                     CFIP  = CIFIP( OUTSRC( I ) )
@@ -511,6 +519,37 @@ C.................  code, so for now save space for the SRCID.
 
         END IF          !!  if report-by-plant
 
+        IF( RPT_%BYUNIT ) THEN
+
+            PREVPLT   = '????????'
+            PREVFIP   = '????????'
+            PREVSRCID = -9999
+            IJ = II + PLTLEN3 - 1
+
+            DO I = 1, NOUTREC
+                S     = OUTSRC( I )
+                PLANT = CSOURC( S ) (LOC_BEGP(3):LOC_ENDP(3))
+                IF ( CIFIP( S ) .EQ. PREVFIP .AND.
+     &               PLANT      .EQ. PREVPLT       ) THEN
+                    SRCID = PREVSRCID
+                    WRITE( SORTBUF( I )( IS:IS+7 ), '( I8.8 )' ) PREVSRCID
+                ELSE
+                    SRCID     = S
+                    PREVFIP   = CIFIP( S )
+                    PREVPLT   = PLANT
+                    PREVSRCID = S
+                END IF
+                SORTBUF( I )( II:IJ ) = PLANT
+            END DO
+            II = IJ + 1
+
+        END IF          !!  if report-by-plant
+
+
+
+
+
+
         IS = II
 
 !$OMP   PARALLEL DO DEFAULT( SHARED ),
@@ -582,13 +621,11 @@ C.................  code, so for now save space for the SRCID.
                 II = IJ + 1
             END IF          !!  if report-by-integrate
 
-
             IF ( RPT_%BYERPTYP ) THEN
                 IJ = II + ERPLEN3 - 1
                 SORTBUF( I )( II:IJ ) =  CERPTYP( OUTSRC( I ) )
                 II = IJ + 1
             END IF          !!  if report-by-emissions-release-point-type
-
 
             IF ( RPT_%BYLATLON ) THEN
                 IJ = II + 26 - 1
@@ -696,11 +733,13 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINMETID  ) ) DEALLOCATE( BINMETID )
         IF( ALLOCATED( BINSPCID  ) ) DEALLOCATE( BINSPCID )
         IF( ALLOCATED( BINPLANT  ) ) DEALLOCATE( BINPLANT )
+        IF( ALLOCATED( BINUNIT   ) ) DEALLOCATE( BINUNIT  )
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
         IF( ALLOCATED( BINY      ) ) DEALLOCATE( BINY )
         IF( ALLOCATED( BINELEV   ) ) DEALLOCATE( BINELEV )
         IF( ALLOCATED( BINSTKGRP ) ) DEALLOCATE( BINSTKGRP )
         IF( ALLOCATED( BINPOPDIV ) ) DEALLOCATE( BINPOPDIV )
+        IF( ALLOCATED( BINUNIT   ) ) DEALLOCATE( BINUNIT   )
         IF( ALLOCATED( BINERPTYP ) ) DEALLOCATE( BINERPTYP )
 
 C.........  Allocate memory for bins
@@ -729,7 +768,7 @@ C.........  Allocate memory for bins
             ALLOCATE( BINREGN  ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINREGN', PROGNAME )
         ENDIF
-        IF( RPT_%BYSRC .OR. RPT_%BYPLANT ) THEN
+        IF( RPT_%BYSRC .OR. RPT_%BYPLANT .OR. RPT_%BYUNIT ) THEN
             ALLOCATE( BINSMKID ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSMKID', PROGNAME )
         ENDIF
@@ -850,6 +889,10 @@ C.........  Allocate memory for bins
             ALLOCATE( BINPLANT ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINPLANT', PROGNAME )
         ENDIF
+        IF( RPT_%BYUNIT ) THEN
+            ALLOCATE( BINUNIT( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINUNIT', PROGNAME )
+        ENDIF
         IF( RPT_%BYRCL   ) THEN
             ALLOCATE( BINRCL   ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINRCL', PROGNAME )
@@ -870,7 +913,6 @@ C.........  Allocate memory for bins
             ALLOCATE( BINSTKGRP  ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSTKGRP', PROGNAME )
         ENDIF
-
         IF( RPT_%BYERPTYP ) THEN
             ALLOCATE( BINERPTYP( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINERPTYP', PROGNAME )
@@ -923,7 +965,7 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( RPT_%BYSUN )     BINSUNID( B ) =    CSUN( S )
             IF( RPT_%BYMET )     BINMETID( B ) =    CMET( S )
             IF( RPT_%BYSPC )     BINSPCID( B ) =  SPPROF( S,IV )
-            IF( RPT_%BYERPTYP ) BINERPTYP( B ) = CERPTYP( S )
+            IF( RPT_%BYERPTYP )  BINERPTYP( B ) = CERPTYP( S )
 
             IF( LREGION ) THEN
                 IF( RPT_%BYCNTY ) THEN
@@ -1064,6 +1106,12 @@ C.................  index with CSCC maps to SCC from BUFFER properly)
 C.................  Store plant ID code
             IF( RPT_%BYPLANT ) THEN
                 BINPLANT( B ) = CSOURC( S )( LOC_BEGP(2) : LOC_ENDP(2) )
+                BINSMKID( B ) = S           !! Needed for plant names
+            END IF
+
+C.................  Store point unit ID code
+            IF( RPT_%BYUNIT ) THEN
+                BINUNIT( B ) = CSOURC( S )( LOC_BEGP(3) : LOC_ENDP(3) )
                 BINSMKID( B ) = S           !! Needed for plant names
             END IF
 
