@@ -819,7 +819,7 @@ C.............  Skip file header
 
 C...............  Parse line into parts
                 SEGMENT = ' '  ! array
-                CALL PARSLINE( LINE, 4, SEGMENT )
+                CALL PARSLINE( LINE, 20, SEGMENT )
 
                 TTYP = TRIM   ( SEGMENT( 1 ) )
                 NV   = STR2INT( SEGMENT( 2 ) )
