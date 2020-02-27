@@ -883,6 +883,13 @@ C.............  AERMOD support report
                     RPT_%BYSAT  = .TRUE.
                     RPT_%BYSUN  = .TRUE.
 
+                ELSE IF( SEGMENT( 2 ) .EQ. 'ANNUAL' ) THEN
+
+                    RPT_%BYCNTY = .TRUE.   ! by county level report
+                    RPT_%BYSRC  = .TRUE.   ! by source level report
+                    RPT_%GRDPNT = .TRUE.   ! report grid corner coordinates
+
+
                 ELSE
 
                     IF( FIRSTLOOP ) THEN
