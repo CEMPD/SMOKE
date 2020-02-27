@@ -350,7 +350,7 @@ C.............  Check that county matches requested county
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            CFIP = SEGMENT( 4 )
+            CFIP = SEGMENT( 6 )
             CALL PADZERO( CFIP )
 
             IF( CFIP .NE. MCREFIDX( REFIDX,1 ) ) THEN
