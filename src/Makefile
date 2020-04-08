@@ -170,7 +170,7 @@ UTISRC = \
  gentpro.f   geofac.f         invsplit.f           \
  layalloc.f  metcombine.f     metscan.f            \
  pktreduc.f  smk2emis.f       surgtool.f           \
- uam2ncf.f   inlineto2d.f
+ uam2ncf.f   inlineto2d.f     saregroup.f
  
 UTIOBJ =  $(UTISRC:.f=.o)
 
@@ -280,7 +280,7 @@ FLIB  = libfileset.a
 UTIL  = aggwndw     beld3to2    bluesky2inv cemscan     extractida  \
         geofac      invsplit    metcombine  metscan     pktreduc    \
         smk2emis    surgtool    uam2ncf     gentpro     gcntl4carb  \
-        layalloc    inlineto2d
+        layalloc    inlineto2d  saregroup
 
 EXE   = normbeis3   tmpbeis3    cntlmat     smkreport   grdmat      \
         movesmrg    met4moves   laypoint    elevpoint   smkinven    \
@@ -781,6 +781,9 @@ metscan: metscan.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 
 pktreduc: pktreduc.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+saregroup: saregroup.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 
 smk2emis: smk2emis.o
