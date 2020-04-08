@@ -45,6 +45,7 @@ C.........  Program settings
         LOGICAL, PUBLIC :: RPHFLAG  ! mode is rate-per-hour for extended idle
         LOGICAL, PUBLIC :: RPVFLAG  ! mode is rate-per-vehicle
         LOGICAL, PUBLIC :: RPPFLAG  ! mode is rate-per-profile
+        LOGICAL, PUBLIC :: RPSFLAG  ! mode is rate-per-start
         LOGICAL, PUBLIC :: ONIFLAG  ! mode is off-network idling
         LOGICAL, PUBLIC :: MTMP_OUT ! output temporal intermediate MTMP files
         LOGICAL, PUBLIC :: MOPTIMIZE ! memory optimize option
