@@ -689,6 +689,9 @@ C.............  Initialize reference grid with met file
 C.........  Determine whether height information is time dependent or time
 C           independent. Non-hydrostatic is time-independent and hydrostatic
 C           is time-dependent.
+
+            IF( VGTYP == -9999 ) VGTYP = 7   ! Reset WRF hybrid to WRF sigma layers
+
             SELECT CASE( VGTYP )
             CASE ( VGSGPH3, VGHVAL3, VGWRFEM )
                 ZSTATIC = .FALSE.
