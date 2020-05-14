@@ -23,16 +23,16 @@
 !
 ! COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 ! All Rights Reserved
-! 
+!
 ! Carolina Environmental Program
 ! University of North Carolina at Chapel Hill
 ! 137 E. Franklin St., CB# 6116
 ! Chapel Hill, NC 27599-6116
-! 
+!
 ! smoke@unc.edu
 !
 ! Pathname: $Source$
-! Last updated: $Date$ 
+! Last updated: $Date$
 !
 !****************************************************************************
 
@@ -40,7 +40,7 @@
 
         INCLUDE 'EMPRVT3.EXT'   !  emissions private parameters
 
-!.........  Flag to indicate whether source is intergrated or not 
+!.........  Flag to indicate whether source is intergrated or not
         LOGICAL, SAVE :: INTGRFLAG = .FALSE.
 
 !.........  Sorted list of point sources for SMOKE inventory file
@@ -58,11 +58,11 @@
         INTEGER, ALLOCATABLE, PUBLIC:: IWEK  ( : )  !  Wk prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: IMON  ( : )  !  Mn prof code per source
 
-        REAL*8 , ALLOCATABLE, PUBLIC:: XLOCA ( : )  !  lon X-location 
-        REAL*8 , ALLOCATABLE, PUBLIC:: YLOCA ( : )  !  lat Y-location 
-        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC1 ( : )  !  lon X-location link start 
+        REAL*8 , ALLOCATABLE, PUBLIC:: XLOCA ( : )  !  lon X-location
+        REAL*8 , ALLOCATABLE, PUBLIC:: YLOCA ( : )  !  lat Y-location
+        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC1 ( : )  !  lon X-location link start
         REAL*8 , ALLOCATABLE, PUBLIC:: YLOC1 ( : )  !  lat Y-location link start
-        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC2 ( : )  !  lon X-location link end 
+        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC2 ( : )  !  lon X-location link end
         REAL*8 , ALLOCATABLE, PUBLIC:: YLOC2 ( : )  !  lat Y-location link end
         REAL   , ALLOCATABLE, PUBLIC:: SPEED ( : )  !  speed
         REAL   , ALLOCATABLE, PUBLIC:: STKHT ( : )  !  stack height   (m)
@@ -85,15 +85,21 @@
         CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC ( : ) ! plant desc
         CHARACTER(ALLLEN3), POINTER,     PUBLIC:: CSOURC ( : ) ! concat src
         CHARACTER(VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE ( : ) ! vehicle type
-        CHARACTER(INTLEN3), POINTER,     PUBLIC:: CINTGR ( : ) ! integrate status 
+        CHARACTER(INTLEN3), POINTER,     PUBLIC:: CINTGR ( : ) ! integrate status
         CHARACTER(ERPLEN3), ALLOCATABLE, PUBLIC:: CERPTYP( : ) ! emission release point type
         CHARACTER(MACLEN3), POINTER,     PUBLIC:: CMACT  ( : ) ! MACT code
         CHARACTER(NAILEN3), POINTER,     PUBLIC:: CNAICS ( : ) ! NAICS code
         CHARACTER(STPLEN3), POINTER,     PUBLIC:: CSRCTYP( : ) ! source type code code
         CHARACTER(SICLEN3), POINTER,     PUBLIC:: CISIC  ( : ) ! SIC
         CHARACTER(SHPLEN3), POINTER,     PUBLIC:: CSHAPE ( : ) ! area-source SHAPE_ID
-       
-        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: )! spec prof
+
+        !!  <source,pollutant> :: speciation-profiles/fractions matrix, read by RDSSUP()
+        INTEGER           ,              PUBLIC:: NSPFRC       ! total # of profiles&fractions
+        INTEGER           , ALLOCATABLE, PUBLIC:: SPPNLO( : )  ! spec prof counts    (nsrc)
+        INTEGER           , ALLOCATABLE, PUBLIC:: SPPNHI( : )  ! spec prof counts    (nsrc)
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( : )  ! spec prof codes     (nspfrc)
+        REAL              , ALLOCATABLE, PUBLIC:: SPFRAC( : )  ! spec prof fractions (nspfrc)
+
         CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CMON   ( : ) ! monthly profile code
         CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CWEK   ( : ) ! weekly profile code
         CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CDOM   ( : ) ! day of month profile code
@@ -121,9 +127,9 @@
 
         REAL*8 , POINTER,     PUBLIC:: XLOCAA( : ) !  UTM X-location (m)
         REAL*8 , POINTER,     PUBLIC:: YLOCAA( : ) !  UTM Y-location (m)
-        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC1A( : ) !  lon X-location link start 
+        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC1A( : ) !  lon X-location link start
         REAL*8 , ALLOCATABLE, PUBLIC:: YLOC1A( : ) !  lat Y-location link start
-        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC2A( : ) !  lon X-location link end 
+        REAL*8 , ALLOCATABLE, PUBLIC:: XLOC2A( : ) !  lon X-location link end
         REAL*8 , ALLOCATABLE, PUBLIC:: YLOC2A( : ) !  lat Y-location link end
         REAL   , ALLOCATABLE, PUBLIC:: SPEEDA( : ) !  speed
         REAL   , ALLOCATABLE, PUBLIC:: STKHTA( : ) !  stack height   (m)

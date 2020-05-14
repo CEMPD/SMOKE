@@ -46,7 +46,7 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: SRGID, CSOURC, CDOM, CWEK, CMON,
      &                      CMND, CTUE, CWED, CTHU, CFRI, CSAT,
      &                      CSUN, CMET,
-     &                      SPPROF, CIFIP, STKHT, STKDM, STKTK,
+     &                      CIFIP, STKHT, STKDM, STKTK,
      &                      STKVE, CINTGR
 
 C.........  This module contains Smkreport-specific settings
@@ -693,66 +693,8 @@ C.............  Get file header for variable names
         END IF
 
 C.........  If needed, read in speciation supplementation file
-        IF( PSFLAG ) THEN
+        IF( PSFLAG ) CALL RDSSUP( PDEV )
 
-            MESG = 'Reading supplemental speciation file...'
-            CALL M3MSG2( MESG )
-
-            ALLOCATE( SPPROF( NSRC,NSPCPOL ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SPPROF', PROGNAME )
-            SPPROF = ' '
-
-            MESG = 'supplemental speciation file'
-            N = GETFLINE( PDEV, MESG )
-
-            IREC = 0
-            
-            DO I = 1, N
-
-                READ( PDEV, '(A)', END=1001, IOSTAT=IOS ) BUFFER
-                IREC = IREC + 1
-
-                IF ( IOS .NE. 0 ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 
-     &                'I/O error', IOS, 'reading supplemental ' //
-     &                'speciation file at line', IREC
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
-
-C.................  See if this line is a pollutant name
-                L1 = INDEX( BUFFER, '"' )        ! Find start quote
-
-C.................  If pollutant name, figure out which pollutant index and
-C                   reset source counter to 0.
-                IF ( L1 .GT. 0 ) THEN
-
-                    L2 = LEN_TRIM( BUFFER )     ! Find end quote
-                    CBUF = BUFFER( L1+1:L2-1 )  
-
-C.....................  Check if this pollutant is one selected for reporting 
-                    V = INDEX1( CBUF, NSPCPOL, SPCPOL )
-                    IF ( V .GT. 0 ) THEN
-                        LSPCPOL( V ) = .TRUE.
-                        S = 0
-                    END IF
-                        
-C.................  If not pollutant name, then continue to read in the 
-C                   pollutant codes and store them by source
-                ELSE IF ( V .GT. 0 ) THEN
-                    S = S + 1
-                    BUFFER = ADJUSTL( BUFFER )
-                    SPPROF( S,V ) = ADJUSTR( BUFFER( 1:SPNLEN3 ) )
-
-C.....................  Handle case where spaces have been added to file.
-                    IF ( S .EQ. NSRC ) V = 0
-
-                END IF
-                
-            END DO            
-
-        END IF
 
 C.........  If needed, read in temporal supplementation matrix
         IF( TSFLAG ) THEN

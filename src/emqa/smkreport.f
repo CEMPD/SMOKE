@@ -5,7 +5,7 @@ C***********************************************************************
 C  subroutine body starts at line 129
 C
 C  DESCRIPTION:
-C    The SMKREPORT routine create emissions and activity reports for one 
+C    The SMKREPORT routine create emissions and activity reports for one
 C    major source category at a time (area, mobile, or point). It permits
 C    the user to control the columns and rows in the report through a series
 C    of instructions.  These reports allow users to quality assure emissions
@@ -21,24 +21,24 @@ C  REVISION  HISTORY:
 C     Revised 7/2003 by A. Holland
 C
 C***********************************************************************
-C  
+C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
-C  
+C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
-C  
+C
 C Pathname: $Source$
-C Last updated: $Date$ 
-C  
+C Last updated: $Date$
+C
 C***********************************************************************
 
 C...........   MODULES for public variables
@@ -50,7 +50,7 @@ C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NSPCIN
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID, ONLY: NGRID 
+        USE MODGRID, ONLY: NGRID
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, INVPIDX, NCHARS, JSCC
@@ -58,7 +58,7 @@ C...........  This module contains the information about the source category
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        
+
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
@@ -66,7 +66,7 @@ C...........   INCLUDES:
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
+
         CHARACTER(2)      CRLF
         LOGICAL           ENVYN
         INTEGER           PROMPTFFILE
@@ -75,7 +75,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  CRLF, ENVYN, PROMPTFFILE, SECSDIFF
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
+        CHARACTER(50), PARAMETER ::
      &  CVSW = '$Name SMOKEv4.7_Oct2019$' ! CVS release tag
 
 C...........   Gridding Matrix
@@ -96,7 +96,7 @@ C...........   File units and logical/physical names
         INTEGER :: NMDEV = 0  !  MACT descriptions
         INTEGER :: NNDEV = 0  !  NAICS descriptions
         INTEGER :: NODEV = 0  !  ORIS descriptions
-        INTEGER :: MODEV = 0  !  src mapping file 
+        INTEGER :: MODEV = 0  !  src mapping file
         INTEGER :: PDEV = 0   !  speciation supplemental file
         INTEGER :: RDEV(3) = ( / 0,0,0 / ) !  ASCII reports from Cntlmat program
         INTEGER :: SDEV = 0   !  ASCII inven input file
@@ -105,7 +105,7 @@ C...........   File units and logical/physical names
 
         INTEGER, ALLOCATABLE :: ODEV( : )   !  output file unit numbers
 
-        CHARACTER(16)  :: ANAME  = ' '   !  logical name for ASCII inven input 
+        CHARACTER(16)  :: ANAME  = ' '   !  logical name for ASCII inven input
         CHARACTER(16)  :: ENAME  = ' '   !  logical name for I/O API inven input
         CHARACTER(16)  :: CUNAME = ' '   !  multiplicative control matrix input
         CHARACTER(16)  :: GNAME  = ' '   !  gridding matrix input
@@ -141,7 +141,7 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of program SMKREPORT
-        
+
         LDEV = INIT3()
 
 C.........  Write out copyright, version, web address, header info, and prompt
@@ -149,7 +149,7 @@ C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Prompt for and open REPCONFIG file
-        CDEV = PROMPTFFILE( 
+        CDEV = PROMPTFFILE(
      &           'Enter logical name for the REPORT CONFIGURATION file',
      &           .TRUE., .TRUE., 'REPCONFIG', PROGNAME )
 
@@ -164,10 +164,10 @@ C.........  Get environment variable settings
      &                    .FALSE., IOS )
 
 C.........  Prompt for and open all other input files
-        CALL OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, PRNAME, 
-     &                  SLNAME, SSNAME, TNAME, RDEV, SDEV, GDEV, PDEV, 
-     &                  TDEV, EDEV, YDEV, NDEV, NIDEV, ADEV, NMDEV,
-     &                  NNDEV, NODEV )
+        CALL OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME,
+     &                  PRNAME, SLNAME, SSNAME, TNAME, RDEV,
+     &                  SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV,
+     &                  NIDEV, ADEV, NMDEV, NNDEV, NODEV )
 
 C.........  Read and store all report instructions
         CALL RDRPRTS( CDEV )
@@ -183,7 +183,7 @@ C           can be passed through subroutines)
         ALLOCATE( GMAT( GDIM ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
 
-C.........  Allocate memory for speciation matrices (even if no speciation 
+C.........  Allocate memory for speciation matrices (even if no speciation
 C           so that arrays can be passed through subroutines).
         N = 1
         IF( SLFLAG .OR. SSFLAG ) N = NSRC
@@ -198,18 +198,18 @@ C           so that arrays can be passed through subroutines).
 
 C.........  Read one-time input file data
         CALL RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV,
-     &                EDEV, YDEV, NDEV, NIDEV, NMDEV, NNDEV, 
-     &                NODEV, ADEV, ENAME, CUNAME, GNAME, LNAME, 
+     &                EDEV, YDEV, NDEV, NIDEV, NMDEV, NNDEV,
+     &                NODEV, ADEV, ENAME, CUNAME, GNAME, LNAME,
      &                PRNAME, SLNAME, SSNAME, GMAT( 1 ),
      &                GMAT( NGRID+1 ), GMAT( NGRID+NMATX+1 ),
      &                SSMAT, SLMAT )
 
 C.........  Preprocess the country/state/county data
-c note: Could add routine to reduce list of co/st/cy data to just records 
+c note: Could add routine to reduce list of co/st/cy data to just records
 c    n: selected.
 
 C.........  Preprocess the inventory data
-c note: Could add routine to reduce source to just records 
+c note: Could add routine to reduce source to just records
 c    n: selected across all groups.
 
 C.........  Read and store all group definitions
@@ -239,7 +239,7 @@ C............  Determine number of output files/sections per report
                 ELSE
 
                     RPT_%NUMFILES = INT( RNFILES )
-        
+
                     IF( RNFILES .GT. RPT_%NUMFILES ) THEN
                         RPT_%NUMFILES = RPT_%NUMFILES + 1
                     END IF
@@ -276,9 +276,9 @@ C............  Determine number of output files/sections per report
             ALLRPT( N )%NUMFILES = RPT_%NUMFILES
             ALLRPT( N )%NUMSECT  = RPT_%NUMSECT
             ALLRPT( N )%RPTNVAR  = RPT_%RPTNVAR
-        
 
-            WRITE( MESG,94010 ) 
+
+            WRITE( MESG,94010 )
      &             '***** CHECKING INPUTS FOR REPORT', N, ' *****'
             CALL M3MSG2( MESG )
 
@@ -296,7 +296,7 @@ C.............  Skip report if errors are found
 C.............  Write message to log and standard output for report that is
 C               being processed
 
-C.............  Get file name 
+C.............  Get file name
             FNAME = RPT_%OFILENAM
 
 C.............  If current file is different than previous
@@ -324,15 +324,16 @@ C.....................  Close output file(s)
 
                 END IF
 
-C.................  Open new output file if current file number is different 
+C.................  Open new output file if current file number is different
 C                   previous file number.
                 CALL OPENREPOUT( FNAME, ODEV, MODEV )
 
             END IF
 
-        
+
             MESG = BLANK10 // 'Selecting records...'
             CALL M3MSG2( MESG )
+
 C.............  Select inventory records
             CALL SELECTSRC( N )
 
@@ -351,11 +352,11 @@ C.............  Skip remainder of report if error found so far
 C.............  Assign bin numbers to selected records
             CALL ASGNBINS( N )
 
-            MESG = BLANK10 // 
+            MESG = BLANK10 //
      &             'Reading emissions data and writing report...'
             CALL M3MSG2( MESG )
 
-C.............  Update inventory input names and units, depending on status of 
+C.............  Update inventory input names and units, depending on status of
 C               average day emissions.
             INVPIDX = 0
             IF ( RPT_%AVEDAY ) INVPIDX = 1
@@ -364,13 +365,13 @@ C               average day emissions.
 
 C.............  Determine input units and create conversion factors
             CALL REPUNITS( N )
-                
+
 C.............  If report is multifile or database
             IF( RPT_%RPTMODE .EQ. 1 .OR. RPT_%RPTMODE .EQ. 3
      &          .OR. RPT_%RPTMODE .EQ. 0 ) THEN
                 EDIDX = RPT_%NUMFILES
 
-C.............  If report is multisection 
+C.............  If report is multisection
             ELSE
                 EDIDX = RPT_%NUMSECT
 
@@ -390,13 +391,13 @@ C               for the appropriate time resolution...
 C.............  For mole-based speciation...
                 IF( RPT_%USESLMAT ) THEN
                     CALL GENRPRT( ODEV( J ), N, ADEV, MODEV,  ENAME,
-     &                     TNAME, LNAME, OUTFMT, SLMAT, ZEROFLAG, 
+     &                     TNAME, LNAME, OUTFMT, SLMAT, ZEROFLAG,
      &                     EFLAG )
 
 C.............  For mass-based and no speciation
                 ELSE
                     CALL GENRPRT( ODEV( J ), N, ADEV, MODEV, ENAME,
-     &                     TNAME, LNAME, OUTFMT, SSMAT, ZEROFLAG, 
+     &                     TNAME, LNAME, OUTFMT, SSMAT, ZEROFLAG,
      &                     EFLAG )
                 END IF
 
@@ -424,5 +425,5 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I10, :, 1X ) )
 
         END PROGRAM SMKREPORT
-        
- 
+
+

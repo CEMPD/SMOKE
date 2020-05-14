@@ -57,7 +57,8 @@ C............  MODINFO contains the information about the source category
      &                      CSAT, CSUN, CMET, SPPROF, CISIC, CMACT,
      &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP,
      &                      XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE,
-     &                      FUGHGT, FUGWID, FUGLEN, FUGANG
+     &                      FUGHGT, FUGWID, FUGLEN, FUGANG,
+     &                      SPPNLO, SPPNHI
 
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
@@ -65,8 +66,8 @@ C............  MODINFO contains the information about the source category
         USE MODREPRT, ONLY: RPT_, LREGION, AFLAG, ALLRPT, NSPCPOL,
      &                      SPCPOL, STKX, STKY, LOC_BEGP, LOC_ENDP
 
-        USE MODREPBN, ONLY: NOUTREC, NOUTBINS, NBINS, ISRCB, GFACB,
-     &                      OUTGFAC, BINBAD, BINCOIDX,
+        USE MODREPBN, ONLY: NOUTREC, NOUTBINS, NBINS, ISRCB, ISPRO, GFACB,
+     &                      OUTGFAC, OUTSPRO, OUTSFAC, BINBAD, BINCOIDX,
      &                      BINSTIDX, BINCYIDX, BINREGN, BINSMKID,
      &                      BINSCC, BINSRGID1, BINSRGID2, BINSNMIDX,
      &                      BINRCL, BINMONID, BINWEKID, BINDOMID,
@@ -163,7 +164,6 @@ C...........   Local variables
         CHARACTER(NAILEN3) NAICS        ! tmp NAICS
         CHARACTER(ORSLEN3) ORIS         ! tmp ORIS
         CHARACTER(STPLEN3) SRCTYP       ! tmp SRCTYP
-        CHARACTER(SPNLEN3) SPCID        ! tmp speciation profile
         CHARACTER(PLTLEN3) PLANT        ! tmp plant ID
         CHARACTER(PLTLEN3) PREVPLT      ! previous plant ID
         CHARACTER(FIPLEN3) CFIP         ! tmp country/state/county
@@ -254,6 +254,7 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 
         IF( ALLOCATED( NBINS ) ) DEALLOCATE( NBINS )
         IF( ALLOCATED( ISRCB ) ) DEALLOCATE( ISRCB )
+        IF( ALLOCATED( ISPRO ) ) DEALLOCATE( ISPRO )
         IF( ALLOCATED( GFACB ) ) DEALLOCATE( GFACB )
 
         ALLOCATE( BOUTIDX( NOUTREC ),
@@ -261,6 +262,7 @@ C.........  Allocate (and deallocate) memory for sorting arrays
      &            SORTBUF( NOUTREC ),
      &            NBINS( 0:NOUTREC ),       !!  zero-based cumulative counts
      &              ISRCB( NOUTREC ),
+     &              ISPRO( NOUTREC ),
      &              GFACB( NOUTREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BOUTIDX...GFACB', PROGNAME )
 
@@ -274,7 +276,7 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
 
 !$OMP   PARALLEL DO DEFAULT( SHARED ),
 !$OMP&              PRIVATE( I, L, ROW, COL, SRCID, CFIP, SCC, SIC, 
-!$OMP&                       SRGID1, SRGID2, SPCID ), 
+!$OMP&                       SRGID1, SRGID2 ), 
 !$OMP&          LASTPRIVATE( II, IJ, IS )
 
         DO I = 1, NOUTREC
@@ -486,8 +488,7 @@ C.................  code, so for now save space for the SRCID.
 
             IF( RPT_%BYSPC ) THEN
                 IJ = II + SPNLEN3 - 1
-                SPCID = SPPROF( OUTSRC(I),IV )
-                SORTBUF( I )( II:IJ ) = SPPROF( OUTSRC(I),IV )
+                SORTBUF( I )( II:IJ ) = OUTSPRO( I )
                 II = IJ + 1
             END IF          !!  if report-by-species
 
@@ -544,11 +545,6 @@ C.................  code, so for now save space for the SRCID.
             II = IJ + 1
 
         END IF          !!  if report-by-plant
-
-
-
-
-
 
         IS = II
 
@@ -671,6 +667,7 @@ C.........  NOTE:  sequential dependency for B
                     BOUTIDX( B ) = J
                 END IF
                 NBINS( B )  = I
+                ISPRO( I )  = J      ! added for GSPRO split factors
                 ISRCB( I )  =  OUTSRC( J )
                 GFACB( I )  = OUTGFAC( J )
                 OUTBIN( J ) = B
@@ -687,7 +684,9 @@ C.........  NOTE:  sequential dependency for B
                     LBUF = SORTBUF( J )
                     BOUTIDX( B ) = J
                 END IF
+
                 NBINS( B )  = I
+                ISPRO( I )  = J      ! added for GSPRO split factors
                 ISRCB( I )  = OUTSRC( J )
                 OUTBIN( J ) = B
             END DO
@@ -695,6 +694,7 @@ C.........  NOTE:  sequential dependency for B
         END IF      !!  if usegmat, or not
 
         NOUTBINS = B
+
         DEALLOCATE( SORTIDX, SORTBUF )
 
 C.........  If memory is allocated for bin arrays, then deallocate
@@ -945,26 +945,26 @@ C.........  Populate the bin characteristic arrays (not the data array)
             CFIP =  CIFIP( S )
             SCC  =   CSCC( S )
 
-            IF( RPT_%BYSRC )     BINSMKID( B ) = S
-            IF( RPT_%BYSCC )       BINSCC( B ) = SCC
-            IF( RPT_%BYSIC )       BINSIC( B ) =   CISIC( S )
-            IF( RPT_%BYINTGR )   BININTGR( B ) =  CINTGR( S )
-            IF( RPT_%BYMACT  )    BINMACT( B ) =   CMACT( S )
-            IF( RPT_%BYNAICS )   BINNAICS( B ) =  CNAICS( S )
-            IF( RPT_%BYORIS  )    BINORIS( B ) =   CORIS( S )
-            IF( RPT_%BYSRCTYP ) BINSRCTYP( B ) = CSRCTYP( S )
-            IF( RPT_%BYMON )     BINMONID( B ) =    CMON( S )
-            IF( RPT_%BYWEK )     BINWEKID( B ) =    CWEK( S )
-            IF( RPT_%BYDOM )     BINDOMID( B ) =    CDOM( S )
-            IF( RPT_%BYMND )     BINMNDID( B ) =    CMND( S )
-            IF( RPT_%BYTUE )     BINTUEID( B ) =    CTUE( S )
-            IF( RPT_%BYWED )     BINWEDID( B ) =    CWED( S )
-            IF( RPT_%BYTHU )     BINTHUID( B ) =    CTHU( S )
-            IF( RPT_%BYFRI )     BINFRIID( B ) =    CFRI( S )
-            IF( RPT_%BYSAT )     BINSATID( B ) =    CSAT( S )
-            IF( RPT_%BYSUN )     BINSUNID( B ) =    CSUN( S )
-            IF( RPT_%BYMET )     BINMETID( B ) =    CMET( S )
-            IF( RPT_%BYSPC )     BINSPCID( B ) =  SPPROF( S,IV )
+            IF( RPT_%BYSRC )     BINSMKID( B )  = S
+            IF( RPT_%BYSCC )       BINSCC( B )  = SCC
+            IF( RPT_%BYSIC )       BINSIC( B )  =   CISIC( S )
+            IF( RPT_%BYINTGR )   BININTGR( B )  =  CINTGR( S )
+            IF( RPT_%BYMACT  )    BINMACT( B )  =   CMACT( S )
+            IF( RPT_%BYNAICS )   BINNAICS( B )  =  CNAICS( S )
+            IF( RPT_%BYORIS  )    BINORIS( B )  =   CORIS( S )
+            IF( RPT_%BYSRCTYP ) BINSRCTYP( B )  = CSRCTYP( S )
+            IF( RPT_%BYMON )     BINMONID( B )  =    CMON( S )
+            IF( RPT_%BYWEK )     BINWEKID( B )  =    CWEK( S )
+            IF( RPT_%BYDOM )     BINDOMID( B )  =    CDOM( S )
+            IF( RPT_%BYMND )     BINMNDID( B )  =    CMND( S )
+            IF( RPT_%BYTUE )     BINTUEID( B )  =    CTUE( S )
+            IF( RPT_%BYWED )     BINWEDID( B )  =    CWED( S )
+            IF( RPT_%BYTHU )     BINTHUID( B )  =    CTHU( S )
+            IF( RPT_%BYFRI )     BINFRIID( B )  =    CFRI( S )
+            IF( RPT_%BYSAT )     BINSATID( B )  =    CSAT( S )
+            IF( RPT_%BYSUN )     BINSUNID( B )  =    CSUN( S )
+            IF( RPT_%BYMET )     BINMETID( B )  =    CMET( S )
+            IF( RPT_%BYSPC )     BINSPCID( B )  = OUTSPRO( J )
             IF( RPT_%BYERPTYP )  BINERPTYP( B ) = CERPTYP( S )
 
             IF( LREGION ) THEN

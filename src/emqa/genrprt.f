@@ -55,8 +55,8 @@ C.........  This module contains Smkreport-specific settings
      &                      LOC_BEGP, LOC_ENDP
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN, ONLY: NSVARS, NOUTBINS, NOUTREC, BINDATA,
-     &                      NBINS, ISRCB, GFACB,
+        USE MODREPBN, ONLY: NSVARS, NOUTBINS, NOUTREC, OUTSFAC,
+     &                      NBINS, BINDATA, ISRCB, ISPRO, GFACB,
      &                      TODOUT, TOSOUT, SPCTOTPR, SPCTOINV,
      &                      INVIDX, TPRIDX, INVTOPRJ, INVTOCMU,
      &                      SPCIDX, OUTSRC, OUTBIN, OUTGFAC,
@@ -385,8 +385,8 @@ C.............................  Gridding factor has normalization by cell area
 
 !$OMP                           PARALLEL DO
 !$OMP&                           DEFAULT( NONE ),
-!$OMP&                            SHARED( NOUTBINS, NBINS, ISRCB, GFACB,
-!$OMP&                                    POLVAL, SMAT, LFRAC1L, PRMAT,
+!$OMP&                            SHARED( NOUTBINS, NBINS, ISRCB, ISPRO, GFACB,
+!$OMP&                                    POLVAL, SMAT, OUTSFAC, LFRAC1L, PRMAT,
 !$OMP&                                    ACUMATX, BINPOPDIV, BINDATA,
 !$OMP&                                    J, K, KP, KM, IS, IE, IP, SE, SP, SS ),
 !$OMP&                           PRIVATE( N, BSUM, M, S, F )
@@ -401,7 +401,8 @@ C.............................  Gridding factor has normalization by cell area
      &                                                    SMAT   ( S,K ) *
      &                                                    LFRAC1L( S )   *
      &                                                    PRMAT  ( S,KP) *
-     &                                                    ACUMATX( S,KM)
+     &                                                    ACUMATX( S,KM) *
+     &                                                    OUTSFAC( ISPRO(M) )
                                         IF( RPT_%SRCMAP ) THEN
                                             CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
      &                                                     LOC_ENDP, LF, NC, CHARS )
@@ -430,8 +431,8 @@ C.............................  Sum non-gridded output records into tmp bins
 
 !$OMP                           PARALLEL DO
 !$OMP&                           DEFAULT( NONE ),
-!$OMP&                            SHARED( NOUTBINS, NBINS, ISRCB,
-!$OMP&                                    POLVAL, SMAT, LFRAC1L, PRMAT,
+!$OMP&                            SHARED( NOUTBINS, NBINS, ISRCB, ISPRO,
+!$OMP&                                    POLVAL, SMAT, OUTSFAC, LFRAC1L, PRMAT,
 !$OMP&                                    ACUMATX, BINPOPDIV, BINDATA,
 !$OMP&                                    J, K, KP, KM, IS, IE, IP, SE, SP, SS ),
 !$OMP&                           PRIVATE( N, BSUM, M, S )
@@ -443,9 +444,11 @@ C.............................  Sum non-gridded output records into tmp bins
                                         S = ISRCB( M )
                                         BSUM = BSUM + POLVAL ( S,J ) *
      &                                                SMAT   ( S,K ) *
+     &                                                OUTSFAC( N ) *
      &                                                LFRAC1L( S )   *
      &                                                PRMAT  ( S,KP) *
-     &                                                ACUMATX( S,KM)
+     &                                                ACUMATX( S,KM) *
+     &                                                OUTSFAC( ISPRO(M) )
                                         IF( RPT_%SRCMAP ) THEN
                                             CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
      &                                                     LOC_ENDP, LF, NC, CHARS )
@@ -495,7 +498,7 @@ C..........................  Gridding factor has normalization by cell area
 
 !$OMP                       PARALLEL DO
 !$OMP&                       DEFAULT( NONE ),
-!$OMP&                        SHARED( NOUTBINS, NBINS, ISRCB, GFACB,
+!$OMP&                        SHARED( NOUTBINS, NBINS, ISRCB, GFACB, ISPRO,
 !$OMP&                                POLVAL, LFRAC1L, PRMAT, ACUMATX,
 !$OMP&                                BINDATA, BINPOPDIV, J, KP, KM, ID, IE ),
 !$OMP&                       PRIVATE( N, BSUM, M, S, F )
@@ -507,8 +510,10 @@ C..........................  Gridding factor has normalization by cell area
                                     F = GFACB( M )
                                     BSUM = BSUM + F * POLVAL ( S,J ) *
      &                                                LFRAC1L( S )   *
+     &                                                OUTSFAC( N )   *
      &                                                PRMAT  ( S,KP) *
-     &                                                ACUMATX( S,KM)
+     &                                                ACUMATX( S,KM) *
+     &                                                OUTSFAC( ISPRO(M) )
                                     IF( RPT_%SRCMAP ) THEN
                                         CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
      &                                                 LOC_ENDP, LF, NC, CHARS )
@@ -532,7 +537,7 @@ C.........................  Sum non-gridded output records into temporary bins
 
 !$OMP                       PARALLEL DO
 !$OMP&                       DEFAULT( NONE ),
-!$OMP&                        SHARED( NOUTBINS, NBINS, ISRCB,
+!$OMP&                        SHARED( NOUTBINS, NBINS, ISRCB, ISPRO,
 !$OMP&                                POLVAL, LFRAC1L, PRMAT, ACUMATX,
 !$OMP&                                BINDATA, BINPOPDIV, J, KP, KM, ID, IE ),
 !$OMP&                       PRIVATE( N, BSUM, M, S )
@@ -543,8 +548,10 @@ C.........................  Sum non-gridded output records into temporary bins
                                     S = ISRCB( M )
                                     BSUM = BSUM + POLVAL ( S,J ) *
      &                                            LFRAC1L( S )   *
+     &                                            OUTSFAC( N )   *
      &                                            PRMAT  ( S,KP) *
-     &                                            ACUMATX( S,KM)
+     &                                            ACUMATX( S,KM) *
+     &                                            OUTSFAC( ISPRO(M) )
                                     IF( RPT_%SRCMAP ) THEN
                                         CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
      &                                                 LOC_ENDP, LF, NC, CHARS )

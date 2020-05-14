@@ -73,17 +73,21 @@
         INTEGER, PUBLIC :: NOUTREC  = 0   ! no. of output records to be summed
         INTEGER, PUBLIC :: NSRCDROP = 0   ! no. of sources being dropped
 
-        INTEGER, ALLOCATABLE, PUBLIC :: OUTSRC ( : )  ! smoke src ID
-        INTEGER, ALLOCATABLE, PUBLIC :: OUTBIN ( : )  ! bin number
-        INTEGER, ALLOCATABLE, PUBLIC :: OUTCELL( : )  ! cell number or zero
+        INTEGER, ALLOCATABLE, PUBLIC :: OUTSRC ( : )    ! smoke src ID
+        INTEGER, ALLOCATABLE, PUBLIC :: OUTBIN ( : )    ! bin number
+        REAL   , ALLOCATABLE, PUBLIC :: OUTSFAC( : )    ! per-species factor (noutrec,mxspec ) or 1
+        INTEGER, ALLOCATABLE, PUBLIC :: OUTCELL( : )    ! cell number or zero
 
-        REAL   , ALLOCATABLE, PUBLIC :: OUTGFAC( : )  ! gridding factor or 1.
+        REAL   , ALLOCATABLE, PUBLIC :: OUTGFAC( : )    ! gridding factor or 1.
+
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: OUTSPRO( : )
 
 !.........  Sparse bin-aggregation matrix:
 !.........  uses zero-based, cumulative-count NBINS
 
         INTEGER, ALLOCATABLE, PUBLIC :: NBINS( : )  ! ( 0:NOUTBINS ): cumulative record-counts for BINDATA calculation
         INTEGER, ALLOCATABLE, PUBLIC :: ISRCB( : )  ! ( NOUTREC )   : sources for      "
+        INTEGER, ALLOCATABLE, PUBLIC :: ISPRO( : )  ! ( NOUTREC )   : index for speication profile split factors "
         REAL   , ALLOCATABLE, PUBLIC :: GFACB( : )  ! ( NOUTREC )   : grid-factors for "
 
 !.........  Scalar values for data bins

@@ -1,5 +1,5 @@
 
-        SUBROUTINE ASGNSPRO( MASSOUT, MOLEOUT, REPORT, NSRCIN, SDEV,
+        SUBROUTINE ASGNSPRO( MASSOUT, MOLEOUT, REPORT, NSRCIN, UDEV,
      &                       ENAM, LVALCHK, MASSMATX, MOLEMATX )
 
 C***********************************************************************
@@ -80,6 +80,11 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
+C...........   PARAMETERs
+
+        CHARACTER(1),  PARAMETER :: QUOTE    = "'"
+        CHARACTER(16), PARAMETER :: PROGNAME = 'ASGNSPRO' ! program name
+
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         LOGICAL         ENVYN
@@ -98,7 +103,7 @@ C.........  SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT    (IN) :: MOLEOUT        ! true: create mole-based
         LOGICAL     , INTENT    (IN) :: REPORT         ! true: rep defaults
         INTEGER     , INTENT    (IN) :: NSRCIN         ! number of sources
-        INTEGER     , INTENT    (IN) :: SDEV           ! suplmt file unit no.
+        INTEGER     , INTENT    (IN) :: UDEV           ! suplmt file unit no.
         CHARACTER(*), INTENT    (IN) :: ENAM    ! pol/emis type name of interest
         LOGICAL     , INTENT    (IN) :: LVALCHK ! true: check value of pol/emis from EI
         REAL        , INTENT(IN OUT) :: MASSMATX( NSRCIN,* )! mass spec matx
@@ -176,8 +181,6 @@ C.........  Other local variables
         CHARACTER(MACLEN3)   CMCT    ! tmp MACT code
         CHARACTER(SICLEN3)   CSIC    ! tmp SIC code
         CHARACTER(SICLEN3)   CSICL   ! tmp left SIC code
-
-        CHARACTER(16) :: PROGNAME = 'ASGNSPRO' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ASGNSPRO
@@ -262,7 +265,7 @@ C.........  Only do this when emissions (not VMT) in inventory (LVALCHK=TRUE)
         IF( LVALCHK ) CALL RDMAPPOL( NSRCIN, 1, 1, ENAM, EMISTMP )
 
 C.........  Write pollutant of interest to the supplemental file
-        WRITE( SDEV, '(A)' ) '"' // ENAM // '"'
+        WRITE( UDEV, '(A)' ) '"' // ENAM // '"'
 
 C.........  Initialize index check
         NCHKCHR = NCHARS
@@ -276,7 +279,7 @@ C.........  Find index in complete list of pollutants and set length of name
 C.............  If emissions are zero for this source, then skip it
           IF( LVALCHK .AND. LNOZERO .AND. EMISTMP( S ) <= 0 ) THEN
 
-            WRITE( SDEV, '(A)' ) ' Drop'   ! assign "fake" speciation profile
+            WRITE( UDEV, '(A)' ) ' Drop'   ! assign "fake" speciation profile
 
           ELSE      !  if emissions are not zero for this source
 
@@ -812,6 +815,14 @@ C               use the single profile specified
 
             END IF
 
+C.............  Write speciation profile codes and fractions for this source
+C               to the speciation supplemental file (to be used by SMKREPORT).
+
+            WRITE( UDEV, '( 5X, 3A, 2X, A, I9 )' )
+     &             QUOTE, TRIM( CSRC ), QUOTE, 'NFRAC=', NPCOMBO
+            WRITE( UDEV, '( 5X, 999( 3A, F10.7, : 2X ) )' )
+     &             ( QUOTE, TRIM( CCODE(K) ), QUOTE, CWEIGHT(K), K = 1, NPCOMBO )
+
 C.............  Loop over all profiles in combination profile
 C.............  Note that for non-combo profiles, NPCOMBO has been set to 1
 C                  and CCODE(1) to SPCODE.
@@ -820,12 +831,12 @@ C                  and CCODE(1) to SPCODE.
                 VALID = .TRUE.
                 K = MAX( INDEX1( CCODE( NP ), NSPROF, SPROFN ),0 )
 
-C.................  If specificv profile is not found in set of profiles,
+C.................  If specific profile is not found in set of profiles,
 C                   try to apply the default for this pollutant.
-C                   If COMBO or fractional, give a different error and 
+C                   If COMBO or fractional, give a different error and
 C                   don't look for the default)
                 IF( K .LE. 0 ) THEN
-                
+
                     CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
 
                     IF ( USECOMBO ) THEN
@@ -839,12 +850,12 @@ C                   don't look for the default)
                         ERRCNT(5) = ERRCNT(5) + 1
                         EFLAG = .TRUE.
                         CYCLE
-                    
+
                     ELSE IF ( USEFRACS ) THEN
 
                         MESG = 'ERROR: Speciation profile "'// CCODE(NP)//
      &                     '" is not in profiles, but it was assigned' //
-     &                     CRLF() // BLANK10 // 
+     &                     CRLF() // BLANK10 //
      &                     'as as fractional-profile to source:' //
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                     ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
@@ -852,7 +863,7 @@ C                   don't look for the default)
                         ERRCNT(5) = ERRCNT(5) + 1
                         EFLAG = .TRUE.
                         CYCLE
-                    
+
                     ELSE
 
                         MESG = 'WARNING: Speciation profile "'// CCODE(NP)//
@@ -1008,17 +1019,6 @@ C.....................  Get indices to full speciation table
                 END IF
 
             END DO  ! Loop over combination profiles, index NP
-
-C.............  Write speciation profile code by source to the speciation
-C               supplemental file (to be used by Smkreport). If using a
-C               COMBO profile, it will just read COMBO
-            IF ( NPCOMBO .GT. 0 .AND. K .GT. 0 ) THEN
-                WRITE( SDEV, '(A)' ) SPCODE
-            ELSE
-                WRITE( SDEV, '(A)' ) 'Drop'
-            END IF
-
-C------------------- SUBPROGRAM FORMAT STATEMENTS ----------------------
 
             END SUBROUTINE SETSOURCE_SMATS
 

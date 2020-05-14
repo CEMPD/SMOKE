@@ -43,21 +43,23 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: INDEXA, CIFIP 
+        USE MODSOURC, ONLY: CIFIP, SPPNLO, SPPNHI, SPPROF, SPFRAC, INDEXA
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: RPT_, LREGION, NREGNGRP, REGNNAM,
-     &                      PINGOUT3, ELEVOUT3, NOELOUT3,
-     &                      ALLRPT, NREGREC, EXCLDRGN
+     &                      PINGOUT3, ELEVOUT3, NOELOUT3, PSFLAG,
+     &                      ALLRPT, SLFLAG, SSFLAG, NREGREC, EXCLDRGN
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN, ONLY: NOUTREC, NSRCDROP, OUTSRC, OUTBIN
+        USE MODREPBN, ONLY: NOUTREC, NSRCDROP, OUTSRC, OUTBIN, OUTSPRO, OUTSFAC
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: LMAJOR, LPING
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC
+
+        USE MODSPRO, ONLY: MXSPEC
 
         IMPLICIT NONE
 
@@ -75,16 +77,14 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: RCNT    ! current report number
 
 C...........  Local variables
-        INTEGER         J, L, S    ! counters and indices
-
-        INTEGER         IOS        ! i/o status
-        INTEGER         REGNIDX    ! index to list of region groups for this rpt 
-
+        INTEGER         J, L, N, S      ! counters and indices
+        INTEGER         IOS             ! i/o status
+        INTEGER         REGNIDX         ! index to list of region groups for this rpt 
 
         LOGICAL      :: EFLAG = .FALSE.  ! True: error has been detected
 
         CHARACTER(FIPLEN3) CFIP                ! tmp country/state/county code
-        CHARACTER(256)  MESG                   ! message buffer
+        CHARACTER(256)     MESG                ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'SELECTSRC' ! program name
 
@@ -121,25 +121,12 @@ C.........  Report internal errors if group name is not found
         END IF 
 
 C.........  Deallocate arrays if they've been allocated before
-        IF( ALLOCATED( OUTSRC ) ) DEALLOCATE( OUTSRC, OUTBIN, INDEXA )
-
-C.........  Allocate memory for a list of source IDs
-        NOUTREC  = NSRC
-        NSRCDROP = 0
-        ALLOCATE( OUTSRC( NOUTREC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'OUTSRC', PROGNAME )
-        ALLOCATE( OUTBIN( NOUTREC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'OUTBIN', PROGNAME )
-
-        ALLOCATE( INDEXA( NOUTREC ), STAT=IOS )
+        ALLOCATE( INDEXA( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDEXA', PROGNAME )
 
 C......... Initialize list of selected sources
         DO S = 1, NSRC
-
-            OUTSRC( S ) = S
             INDEXA( S ) = 1
-
         END DO
 
 C.........  If need to select sources, loop through sources to identify 
@@ -181,34 +168,67 @@ C.................  Keep a count of the number of selected sources
 
 C.........  Now create compressed list of sources, but leave INDEXA as is 
 C           for use by REPMRGGRD
-        IF( NSRCDROP .GT. 0 ) THEN
 
+        IF( PSFLAG ) THEN
+            NOUTREC = 0
+            DO S = 1, NSRC
+
+                IF ( INDEXA( S ) .EQ. 1 ) THEN
+                    NOUTREC = NOUTREC + SPPNHI( S ) - SPPNLO( S ) + 1
+               END IF
+
+            END DO
+        
+        ELSE
+        
             NOUTREC = NSRC - NSRCDROP
+        
+        END IF
+        
+        IF ( ALLOCATED( OUTSRC  ) )  DEALLOCATE( OUTSRC )
+        IF ( ALLOCATED( OUTBIN  ) )  DEALLOCATE( OUTBIN )
+        IF ( ALLOCATED( OUTSPRO ) )  DEALLOCATE( OUTSPRO )
+        IF ( ALLOCATED( OUTSFAC ) )  DEALLOCATE( OUTSFAC )
 
-            DEALLOCATE( OUTSRC, OUTBIN )
+        ALLOCATE( OUTSRC( NOUTREC ), 
+     &            OUTBIN( NOUTREC ), 
+     &           OUTSPRO( NOUTREC ), 
+     &           OUTSFAC( NOUTREC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'OUTSRC,OUTSFAC', PROGNAME )
 
-            ALLOCATE( OUTSRC( NOUTREC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'OUTSRC', PROGNAME )
-            ALLOCATE( OUTBIN( NOUTREC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'OUTBIN', PROGNAME )
+C.........  Now create compressed list of sources, but leave INDEXA as is 
+C           for use by REPMRGGRD
+
+        IF( PSFLAG ) THEN
 
             J = 0            
             DO S = 1, NSRC
 
                 IF( INDEXA( S ) .EQ. 0 ) CYCLE
-                J = J + 1
 
-                IF( J .GT. NOUTREC ) THEN
-                    MESG = 'INTERNAL ERROR: Not enough memory '//
-     &                     'allocated for compressed source list.'
-                    CALL M3MSG2( MESG )
-                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-                END IF
-
-                OUTSRC( J ) = S
+                DO N = SPPNLO( S ), SPPNHI( S )
+                    J = J + 1
+                    OUTSRC(  J ) = S
+                    OUTSPRO( J ) = SPPROF( N )
+                    OUTSFAC( J ) = SPFRAC( N )
+                END DO
 
             END DO
+        
+        ELSE
 
+            J = 0            
+            DO S = 1, NSRC
+
+                IF( INDEXA( S ) .EQ. 0 ) CYCLE
+
+                J = J + 1
+                OUTSRC(  J ) = S
+                OUTSPRO( J ) = 'NA'
+                OUTSFAC( J ) = 1.0
+
+            END DO
+        
         END IF
 
         RETURN
