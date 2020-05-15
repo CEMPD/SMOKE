@@ -27,8 +27,9 @@ include Makeinclude
 
 # find source, object, and module files here:
 
-VPATH = ${OBJDIR}:${BASEDIR}/emmod:${BASEDIR}/lib:${BASEDIR}/biog:${BASEDIR}/filesetapi:\
-${BASEDIR}/cntlmat:${BASEDIR}/cntlmat:${BASEDIR}/emqa:${BASEDIR}/emutil:${BASEDIR}/grdmat:\
+VPATH = ${OBJDIR}:\
+${BASEDIR}/emmod:${BASEDIR}/lib:${BASEDIR}/filesetapi:${BASEDIR}/biog:\
+${BASEDIR}/cntlmat:${BASEDIR}/emqa:${BASEDIR}/emutil:${BASEDIR}/grdmat:\
 ${BASEDIR}/movesmrg:${BASEDIR}/point:${BASEDIR}/smkinven:${BASEDIR}/smkmerge:\
 ${BASEDIR}/spcmat:${BASEDIR}/temporal
 
@@ -158,7 +159,7 @@ RPTSRC = \
  rdgrps.f      rdrepin.f      rdrprts.f  \
  repmrggrd.f   repunits.f     scanrepc.f \
  selectsrc.f   smkreport.f    wrrephdr.f \
- wrrepout.f
+ wrrepout.f    rdssup.f
  
 RPTOBJ =  $(RPTSRC:.f=.o)
 
@@ -490,10 +491,11 @@ rdgrps.o      : $(MODREPRT) $(MODGRID)  $(MODSTCY)
 rdrepin.o     : $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODCNTRL) $(MODELEV)
 rdrepin.o     : $(MODLISTS) $(MODGRID)  $(MODINFO)  $(MODFILESET)
 rdrprts.o     : $(MODREPRT) $(MODINFO)
+rdssup.o      : $(MODREPRT) $(MODINFO)  $(MODSOURC) $(MODSPRO)
 repmrggrd.o   : $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODGRID)
 repunits.o    : $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO)
 scanrepc.o    : $(MODREPRT) $(MODINFO)
-selectsrc.o   : $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODELEV)  $(MODINFO)
+selectsrc.o   : $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODELEV)  $(MODINFO) $(MODSPRO)
 smkreport.o   : $(MODREPRT) $(MODREPBN) $(MODGRID)  $(MODINFO)
 wrrephdr.o    : $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODSTCY) $(MODGRID) $(MODINFO)
 wrrepout.o    : $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODSTCY) $(MODINFO)
