@@ -48,7 +48,7 @@ C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, CTRYNAM, CTRYCOD
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: DATPOS, TMPNAM
+        USE MODINFO, ONLY: DATPOS, TMPNAM, NPOLID
 
         IMPLICIT NONE
 
@@ -308,6 +308,7 @@ C.................  Parse the header line into the pollutant names
 
 C.................  Store the position in master list of each pollutant
 C.................  Write error if pollutant is not found.
+                NPOLID = NPOA    ! Store original no of pollutants
                 NFINAL = 0
                 DO V = 1, NPOA
 
@@ -348,7 +349,6 @@ C.....................  Variable found in SMOKE names
                     END IF
 
                 END DO
-
 C.................  Reset NPOA with final count that drops unkept variables
                 NPOA = NFINAL
 

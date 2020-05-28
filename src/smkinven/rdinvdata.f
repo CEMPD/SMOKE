@@ -642,10 +642,9 @@ C...........  Process line depending on file format and source category
                 END SELECT
 
             CASE( LNKFMT )
-                CALL RDDATAFF10LNK( LINE, READDATA, READPOL, INVYEAR,
+                CALL RDDATAFF10LNK( LINE, READDATA, READPOL, NPOLPERLN, INVYEAR,
      &                              DPID, DPLAT, DPLON, ARID, ARLAT, ARLON,
      &                              HT, DM, TK, FL, VL, HDRFLAG, EFLAG )
-                NPOLPERLN = 1
 
             CASE( MEDSFMT )
                 SELECT CASE( CATEGORY )
@@ -695,7 +694,7 @@ C...........  Check for header lines
 C.................  Reallocate emissions memory with
 C                   proper number of pollutants per line
               IF( ( CURFMT == MEDSFMT .OR.
-     &              CURFMT == ORLFIREFMT )
+     &              CURFMT == ORLFIREFMT .OR. CURFMT == LNKFMT )
      &              .AND. NPOLPERLN .NE. SAVNVAR ) THEN
                   DEALLOCATE( READDATA, READPOL )
                   ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
@@ -1308,7 +1307,6 @@ C.........................  Find code corresponding to current pollutant
 
 C.....................  Store data in unsorted order
                     SP = SP + 1
-
                     IF( SP <= NRAWBP ) THEN
 
                         INRECA  ( SP ) = CURSRC    ! map to sorted source number
@@ -1591,7 +1589,6 @@ C.........  Abort if there was an error
 C.........  Sort inventory data by source
         CALL M3MESG( 'Sorting inventory data by source ' //
      &               'and pollutant...' )
-
         CALL SORTI2( SP, INDEXA, INRECA, IPOSCODA )
 
         RETURN

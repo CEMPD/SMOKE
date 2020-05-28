@@ -125,6 +125,7 @@
         REAL, ALLOCATABLE, PUBLIC :: EACNV( : )     ! units conv factors
 
 !.........  Arrays for reading inventory file headers
+        INTEGER,                         PUBLIC :: NPOLID     ! POLID original no of pollutants
         CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: TMPNAM( : )! var names
         INTEGER,            ALLOCATABLE, PUBLIC :: DATPOS( : )! var positn
 

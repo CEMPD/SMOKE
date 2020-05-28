@@ -96,6 +96,7 @@ C.........  LOCAL PARAMETERS and their descriptions:
 C...........   Local arrays for per-source information
         INTEGER, ALLOCATABLE :: DAYBEGT( : )   ! daily start time for each source
         INTEGER, ALLOCATABLE :: DAYENDT( : )   ! daily end time for each source
+        INTEGER, ALLOCATABLE :: POLIDX ( : )   ! index for processing pollutants
         LOGICAL, ALLOCATABLE :: LDAYSAV( : )   ! true: src uses DST
         REAL,    ALLOCATABLE :: LFRAC ( : )       ! model layer fractions
         REAL,    ALLOCATABLE :: TERRAIN( : )      ! terrain ENDHGT (m)
@@ -138,7 +139,7 @@ C...........   Other local variables
         INTEGER      :: NWARN = 0           ! current number of warnings
         INTEGER         ROW, COL            ! grid cell row/col
         INTEGER         NLNK                ! location ID
-        INTEGER         NVARS               ! no. output variables
+        INTEGER         NVARS, NPOL         ! no. output variables, input pollutans
         INTEGER         SEGHOUR             ! segment processing hour
         INTEGER         SEGTIME             ! segment duration
         INTEGER         JDATE, JTIME, TDATE, TTIME, HTIME ! Processing date/time
@@ -266,10 +267,15 @@ C.........  Open NetCDF output files, open ASCII report files, and write headers
         CALL OPENMRGOUT
 
 C.........  Buid speciation matrices
+        ALLOCATE( POLIDX( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'POLIDX', PROGNAME )
         ALLOCATE( POLNAM( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'POLNAM', PROGNAME )
         ALLOCATE( POLVAL( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
+        POLIDX = 0
+        POLNAM = ''
+        POLVAL = 0.0
 
         NVARS = MNSMATV_L
         ALLOCATE( MSMATX_L( NMSRC, MNSMATV_L ), STAT=IOS )    ! mole speciation matrix
@@ -353,6 +359,31 @@ C.........  Reading individual hourly link inventory files
             READ( SGDEV, 93000, END=299 ) LINE
 
             IREC = IREC + 1
+
+C.............  Check the header line first
+            IF( IREC == 1 ) THEN
+                I = INDEX( LINE, 'FF10_LINK_HOURLY' )
+                IF( I < 1 ) THEN
+                    MESG = 'ERROR: Missing header "FF10_LINK_HOURLY": '//
+     &                  'Define the header of houlry link inventory file' 
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 0 )
+                END IF
+            END IF
+
+C.............   Store the list of inventory pollutatns
+            IF( LINE( 1:6 ) == '#POLID' ) THEN
+                L = LEN_TRIM( LINE )
+                CALL PARSLINE( LINE(7:L), MXSEG, SEGMENT )
+
+                NPOL = 0
+                DO I = 1, NIPPA
+                    IF( LEN_TRIM( SEGMENT( I ) ) < 1 ) CYCLE
+                    IF( INDEX1( SEGMENT( I ), NIPPA, EANAM ) < 1 ) CYCLE
+                    POLIDX( I ) = I
+                    NPOL = NPOL + 1
+                    POLNAM( NPOL ) = SEGMENT( I )
+                END DO
+            END IF
 
             IF( LINE( 1:1 ) == '#' ) CYCLE
 
@@ -461,16 +492,15 @@ C.............  Adjust starting/ending time modeling period
             END IF
 
 C.............  Store poll name and values and compute emission rate based on segment duration (se
-            POLNAM = ''
             POLVAL = 0.0
 
-            DO P = 1, NIPPA
-                POLNAM( P ) = TRIM( SEGMENT( 20 + 2*P ) )
-                IF( INDEX1( POLNAM( P ), NIPPA, EANAM ) < 1 ) CYCLE
-
 C..................  Compute the ratio of segment based on segment duration and modeling duration
+            P = 0
+            DO I = 1, NIPPA
+                IF( POLIDX( I ) < 1 ) CYCLE
+                P = P + 1
                 RATIO = 1.0 - ( FLOAT( DSTR + DLST ) / FLOAT( SEGHOUR ) )
-                POLVAL( P ) = RATIO * STR2REAL( SEGMENT(21 + 2*P) ) * 1000.
+                POLVAL( P ) = RATIO * STR2REAL( SEGMENT(21 + I) )
             END DO
 
 C.............  Skip when it is out of range of episode dates or non-matched link IDs
@@ -706,7 +736,7 @@ C.................  Loop over allocated layers by link
 C.....................  Apply speciation matrix and layer fractions to compute
 C                       gridded/speciated/hourly model specie emissions rate in output unit
                     DO T = STR, LST
-                    DO P = 1, NIPPA
+                    DO P = 1, NPOL
                     DO V = 1, NVARS
                         IF( POLNAM( P ) == EANAM( SIINDEX( V,1 ) ) ) THEN
                             TMPVAL = POLVAL( P ) * MSMATX_L( S, SPINDEX(V,1) ) * GRDFAC( SPINDEX(V,1) ) 

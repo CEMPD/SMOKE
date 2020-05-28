@@ -1,6 +1,6 @@
 
         SUBROUTINE RDSRCFF10LNK( LINE, CFIP, CLNK, TSCC, 
-     &                           NVARPERLN, HDRFLAG, EFLAG )
+     &                           NPOLPERLN, HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -38,13 +38,15 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: UCASNKEP, NUNIQCAS, UNIQCAS, MXIDAT, INVSTAT,
-     &                      INVDNAM, NINVTBL, ITCASA, ITNAMA
+        USE MODINFO, ONLY: TMPNAM
+
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS, ONLY: UCASNKEP, NUNIQCAS, UNIQCAS
 
         IMPLICIT NONE
 
 C...........   INCLUDES
-         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
@@ -59,7 +61,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
         CHARACTER(LNKLEN3), INTENT(OUT) :: CLNK      ! link ID
         CHARACTER(SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
-        INTEGER,            INTENT(OUT) :: NVARPERLN ! no. variables per line
+        INTEGER,            INTENT(OUT) :: NPOLPERLN ! no. variables per line
         LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
         LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
 
@@ -68,17 +70,16 @@ C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: NSEG = 30      ! number of segments in line
 
 C...........   Other local variables
-        INTEGER         I       ! counters and indices
+        INTEGER         I, J       ! counters and indices
 
         INTEGER, SAVE:: ICC     !  position of CNTRY in CTRYNAM
         INTEGER, SAVE:: INY     !  inventory year
         INTEGER         IOS     !  i/o status
-        INTEGER, SAVE:: NVAR    !  number of variables in file
+        INTEGER, SAVE:: NPOL    !  number of variables in fil
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE.  ! true: first time routine is called
  
         CHARACTER(128) SEGMENT( NSEG ) ! segments of line
-        CHARACTER(CASLEN3) TCAS            ! tmp cas number
         CHARACTER(300)     MESG            ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'RDSRCFF10LNK' ! Program name
@@ -88,8 +89,8 @@ C   begin body of subroutine RDSRCFF10MB
 
 C.........  Scan for header lines and check to ensure all are set 
 C           properly
-        CALL GETHDR( MXDATFIL, .NOT. USEEXPGEO(), .TRUE., .FALSE., 
-     &               LINE, ICC, INY, NVAR, IOS )
+        CALL GETHDR( MXDATFIL, .NOT. USEEXPGEO(), .TRUE., .TRUE., 
+     &               LINE, ICC, INY, NPOL, IOS )
 
 C.........  Interpret error status
         IF( IOS == 4 ) THEN
@@ -107,6 +108,13 @@ C.........  Interpret error status
 C.........  If a header line was encountered, set flag and return
         IF( IOS >= 0 ) THEN
             HDRFLAG = .TRUE.
+            IF( NPOL > 0 ) THEN
+                NPOLPERLN = NPOL
+                DO I = 1, NPOL
+                    J = FINDC( TMPNAM( I ), NUNIQCAS, UNIQCAS )
+                    IF( J > 1 ) NPOLPERLN = NPOLPERLN + UCASNKEP( J ) - 1
+                END DO
+            END IF
             RETURN
         ELSE
             HDRFLAG = .FALSE.
@@ -116,7 +124,7 @@ C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
 
 C......... Return if the first line is a header line
-        IF( SEGMENT( 18 ) == '' .OR. .NOT. CHKREAL( SEGMENT( 18 ) ) ) THEN
+        IF( .NOT. CHKREAL( SEGMENT( 17 ) ) ) THEN
             HDRFLAG = .TRUE.
             RETURN
         END IF
@@ -141,15 +149,6 @@ C.........  Replace blanks with zeros
 C.........  Processing activity data
         CLNK = ADJUSTL( SEGMENT( 4 ) )    ! link ID
         TSCC = ADJUSTL( SEGMENT( 5 ) )    ! scc code
-        TCAS = ADJUSTL( SEGMENT( 17 ) )    ! poll CAS number
-
-C.........  Determine no of poll for this line based on CAS number
-        I = FINDC( TCAS, NUNIQCAS, UNIQCAS )
-        IF( I < 1 ) THEN
-            NVARPERLN = 0
-        ELSE
-            NVARPERLN = UCASNKEP( I )
-        END IF
 
 C.........  Make sure routine knows it's been called already
         FIRSTIME = .FALSE.

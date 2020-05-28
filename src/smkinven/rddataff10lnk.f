@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDDATAFF10LNK( LINE, READDATA, READPOL, IYEAR,
+        SUBROUTINE RDDATAFF10LNK( LINE, READDATA, READPOL,NPOLPERLN, IYEAR,
      &                            DPID, DPLAT, DPLON, ARID, ARLAT, ARLON,
      &                            HT, DM, TK, FL, VL, HDRFLAG, EFLAG )
 
@@ -38,7 +38,8 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NEM, NDY, NEF, NCE, NRE, NC1, NC2, INV_MON
+        USE MODINFO, ONLY: NEM, NDY, NEF, NCE, NRE, NC1, NC2, INV_MON,
+     &                     TMPNAM, NPOLID, DATPOS
 
         IMPLICIT NONE
 
@@ -56,8 +57,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT  (IN) :: LINE                  ! input line
-        CHARACTER(*),       INTENT (OUT) :: READDATA( 1,NPTPPOL3 )! array of data values
-        CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! array of pollutant names
+        CHARACTER(*),       INTENT (OUT) :: READDATA( NPOLPERLN,NMBPPOL3 )! array of data values
+        CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( NPOLPERLN )          ! array of pollutant names
+        INTEGER,            INTENT (INOUT) :: NPOLPERLN             ! inventory year
         INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
         CHARACTER(LNKLEN3), INTENT (OUT) :: DPID                  ! link depart loc id  
         CHARACTER(LNKLEN3), INTENT (OUT) :: DPLAT                 ! link depart latitude 
@@ -78,7 +80,7 @@ C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: NSEG = 80      ! number of segments in line
 
 C...........   Other local variables
-        INTEGER         I, L, L1, LL       ! counters and indices
+        INTEGER         I, J, L, L1, LL       ! counters and indices
 
         INTEGER, SAVE:: ICC     !  position of CNTRY in CTRYNAM
         INTEGER, SAVE:: INY     !  inventory year
@@ -88,12 +90,11 @@ C...........   Other local variables
         INTEGER      :: MDAYS   !  days of modeling inventory month
 
 
-        LOGICAL, SAVE:: FIRSTIME = .TRUE.  ! true: first time routine is called
         LOGICAL      :: BLKFLAG  = .TRUE.  ! true when it is blank
+        LOGICAL, SAVE:: FIRSTDATA = .TRUE. ! true: first time data row in encountered
  
         CHARACTER(40)      TMPSEG          ! tmp segments of line
         CHARACTER(40)      SEGMENT( NSEG ) ! segments of line
-        CHARACTER(CASLEN3) TCAS            ! tmp cas number
         CHARACTER(300)     MESG            ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'RDDATAFF10LNK' ! Program name
@@ -103,7 +104,7 @@ C   begin body of subroutine RDDATAFF10LNK
 
 C.........  Scan for header lines and check to ensure all are set 
 C           properly
-        CALL GETHDR( MXPOLFIL, .TRUE., .TRUE., .FALSE., 
+        CALL GETHDR( MXPOLFIL, .TRUE., .TRUE., .TRUE., 
      &               LINE, ICC, INY, NPOL, IOS )
 
 C.........  Interpret error status
@@ -123,16 +124,32 @@ C.........  If a header line was encountered, set flag and return
         IF( IOS >= 0 ) THEN
             HDRFLAG = .TRUE.
             IYEAR = INY
+            IF( NPOL > 0 ) NPOLPERLN = NPOL
             RETURN
         ELSE
             HDRFLAG = .FALSE.
+        END IF
+
+C.........  Give error if #DATA line has not defined the pollutants that
+C           are contained in the day-specific data file. NOTE: This code
+C           will not be reached until after the last header line)
+        IF ( NPOL < 0 ) THEN
+            WRITE( MESG, 94010 ) 'First data line reached in FF10_LINK '//
+     &             'file with required #POLID header found.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+C.........  Otherwise, the READPOL array has been redfined and now can
+C           be populated with the TMPNAM array set by the GETHDR routine
+        ELSE IF ( FIRSTDATA ) THEN
+            FIRSTDATA = .FALSE.
+            READPOL( 1:NPOL ) = TMPNAM( 1:NPOL )
         END IF
 
 C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
 
 C......... Return if the first line is a header line
-        IF( SEGMENT( 18 ) == '' .OR. .NOT. CHKREAL( SEGMENT( 18 ) ) ) THEN
+        IF( .NOT. CHKREAL( SEGMENT( 16 ) ) ) THEN
             HDRFLAG = .TRUE.
             RETURN
         END IF 
@@ -150,13 +167,15 @@ C           the various data fields
         DPLON= SEGMENT( 14 )             ! link departure longitude
         ARLAT= SEGMENT( 15 )             ! link arrival latitude        
         ARLON= SEGMENT( 16 )             ! link arrival longitude
-        
-        READPOL ( 1     ) = SEGMENT( 17 )
-        READDATA( 1,NEM ) = SEGMENT( 18 )  ! annual emissions
-        READDATA( 1,NDY ) = ''             ! average-day emissions
 
-C.........  Make sure routine knows it's been called already
-        FIRSTIME = .FALSE.
+        J = 0
+        DO I = 1, NPOLID
+            IF( DATPOS( I ) > 0 ) THEN
+                J = J + 1
+                READDATA( J,NEM ) = SEGMENT( 16 + I )  ! annual emissions
+                READDATA( J,NDY ) = '0.0'    ! dummy average-day emissions
+            END IF
+        END DO
 
 C.........  Return from subroutine 
         RETURN

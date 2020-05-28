@@ -22,7 +22,7 @@
 #  Set executable format, makeing allownces for 64-bit archtecnture
 #  example: Linux2_x86_64ifort (Intel), Linux2_x86_64pg (Portland group), Linux2_x86_64gfort (gfortran)...
 #
-   setenv BIN    Linux2_x86_64ifort    # Intel Fortran 64-bit compiler
+   setenv BIN   Linux2_x86_64ifort18.2 # Linux2_x86_64ifort    # Intel Fortran 64-bit compiler
 
 ## I/O Naming roots
 #
