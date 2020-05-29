@@ -61,7 +61,7 @@ C.........  This module contains Smkreport-specific settings
      &                      SSFLAG, SLFLAG, TFLAG, LFLAG, NFLAG, PSFLAG,
      &                      GSFLAG, TSFLAG, UNITSET, MXRPTNVAR,
      &                      ELEVOUT3, PINGOUT3, NOELOUT3, FIL_ONAME,
-     &                      NIFLAG, NMFLAG, NNFLAG, NOFLAG, 
+     &                      NIFLAG, NMFLAG, NNFLAG, NOFLAG, SDFLAG,
      &                      LAB_IDX, LENLAB3,
      &                      DLFLAG, MATFLAG, NFDFLAG
 
@@ -503,6 +503,7 @@ C.........................  Reset report settings to defaults
                         RPT_%LAYFRAC   = .FALSE.
                         RPT_%NORMCELL  = .FALSE.
                         RPT_%NORMPOP   = .FALSE.
+                        RPT_%SPCNAM    = .FALSE.
                         RPT_%SICNAM    = .FALSE.
                         RPT_%SCCNAM    = .FALSE.
                         RPT_%SRCNAM    = .FALSE.
@@ -1187,6 +1188,13 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                         PSFLAG = .TRUE.
                         RPT_%BYSPC = .TRUE.
                         RPT_%SPCPOL = SEGMENT( 3 )
+                        IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
+                        IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                            RPT_%SPCPOL = SEGMENT( 4 )
+                            SDFLAG = .TRUE.                    ! read GSPRODESC input file
+                            RPT_%SPCNAM = .TRUE.
+                        END IF
+
                     END IF
 
                 CASE( 'SRGCODE' )

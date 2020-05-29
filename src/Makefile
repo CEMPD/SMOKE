@@ -78,7 +78,7 @@ LIBSRC = \
  getrfdsc.f     getsinfo.f      gettzone.f          \
  grd2cnty.f     grdfips.f       hdrmiss3.f          \
  ingrid.f       initem.f        ioapi_grd_size.f    \
-                multunit.f      nextime.f           \
+ rdsprofdsc.f   multunit.f      nextime.f           \
  normtpro.f     openphys.f      padnzero.f          \
  padzero.f      parscsrc.f      parsline.f          \
  pdsetup.f      polmesg.f       prclinrc.f          \
@@ -422,6 +422,7 @@ rdsccdsc.o    : $(MODLISTS)
 rdsccmap.o    : $(MODMOBIL)
 rdsconv.o     : $(MODLISTS) $(MODSPRO) $(MODINFO)
 rdsicdsc.o    : $(MODLISTS)
+rdsprofdsc.o  : $(MODSOURC)
 rdsmat.o      : $(MODFILESET)
 rdspdprof.o   : $(MODMOBIL)
 rdspdref.o    : $(MODXREF)

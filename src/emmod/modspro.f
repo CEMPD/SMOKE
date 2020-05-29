@@ -58,6 +58,7 @@
   
         ! unique list of each profile for searching
         CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: SPROFN( : )
+        CHARACTER(SDSLEN3), ALLOCATABLE, PUBLIC :: SPCDESC( : )
 
 !.........  Sorted speciation tables
         INTEGER,              PUBLIC :: MXSPFUL   ! Max no. in unprocessed table

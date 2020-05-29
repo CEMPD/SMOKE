@@ -103,6 +103,7 @@
         INTEGER, ALLOCATABLE, PUBLIC :: BINSNMIDX( : )   ! SCC name index
         INTEGER, ALLOCATABLE, PUBLIC :: BINSTKGRP( : )   ! stack group ID 
         INTEGER, ALLOCATABLE, PUBLIC :: BINSICIDX( : )   ! SIC name index
+        INTEGER, ALLOCATABLE, PUBLIC :: BINSPCIDX( : )   ! GSPRO name index
         INTEGER, ALLOCATABLE, PUBLIC :: BINMACIDX( : )   ! MACT name index
         INTEGER, ALLOCATABLE, PUBLIC :: BINNAIIDX( : )   ! NAICS name index
         INTEGER, ALLOCATABLE, PUBLIC :: BINORSIDX( : )   ! ORIS name index

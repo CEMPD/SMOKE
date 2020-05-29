@@ -98,6 +98,7 @@ C...........   File units and logical/physical names
         INTEGER :: NODEV = 0  !  ORIS descriptions
         INTEGER :: MODEV = 0  !  src mapping file
         INTEGER :: PDEV = 0   !  speciation supplemental file
+        INTEGER :: NPDEV = 0  !  GSPRO descriptions
         INTEGER :: RDEV(3) = ( / 0,0,0 / ) !  ASCII reports from Cntlmat program
         INTEGER :: SDEV = 0   !  ASCII inven input file
         INTEGER :: TDEV = 0   !  temporal supplemental files
@@ -167,7 +168,7 @@ C.........  Prompt for and open all other input files
         CALL OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME,
      &                  PRNAME, SLNAME, SSNAME, TNAME, RDEV,
      &                  SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV,
-     &                  NIDEV, ADEV, NMDEV, NNDEV, NODEV )
+     &                  NIDEV, NPDEV, ADEV, NMDEV, NNDEV, NODEV )
 
 C.........  Read and store all report instructions
         CALL RDRPRTS( CDEV )
@@ -198,7 +199,7 @@ C           so that arrays can be passed through subroutines).
 
 C.........  Read one-time input file data
         CALL RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV,
-     &                EDEV, YDEV, NDEV, NIDEV, NMDEV, NNDEV,
+     &                EDEV, YDEV, NDEV, NIDEV, NPDEV, NMDEV, NNDEV,
      &                NODEV, ADEV, ENAME, CUNAME, GNAME, LNAME,
      &                PRNAME, SLNAME, SSNAME, GMAT( 1 ),
      &                GMAT( NGRID+1 ), GMAT( NGRID+NMATX+1 ),

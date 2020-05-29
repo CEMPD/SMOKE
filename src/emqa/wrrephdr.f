@@ -66,7 +66,7 @@ C.........  This module contains Smkreport-specific settings
      &                      PYEAR, PRBYR, PRPYR, OUTUNIT, TITLES,
      &                      ALLRPT, LOC_BEGP, LOC_ENDP,
      &                      SICWIDTH, SIDSWIDTH, MACTWIDTH, MACDSWIDTH,
-     &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH,
+     &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH, SPDSWIDTH,
      &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
      &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
@@ -83,7 +83,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX, BINUNIT
+     &                      BINGEO1IDX, BINUNIT, BINSPCIDX
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
@@ -96,6 +96,10 @@ C.........  This module contains the global variables for the 3-d grid
 CC...........  This module contains the information about the source category
         USE MODINFO, ONLY: NCHARS, CATEGORY, CATDESC, BYEAR, INVPIDX,
      &                     EANAM, ATTRUNIT
+
+C.........  This module contsin the speciation variables
+        USE MODSPRO,  ONLY : NSPROF, SPROFN, SPCDESC
+
 
         IMPLICIT NONE
 
@@ -197,7 +201,8 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRNELON= 74
         INTEGER, PARAMETER :: IHDRSELAT= 75
         INTEGER, PARAMETER :: IHDRSELON= 76
-        INTEGER, PARAMETER :: NHEADER  = 76
+        INTEGER, PARAMETER :: IHDRFNAM = 77   ! GSPRO name
+        INTEGER, PARAMETER :: NHEADER  = 77
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -277,7 +282,8 @@ C...........   Local parameters
      &                              'NE Latitude      ',
      &                              'NE Longitude     ',
      &                              'SE Latitude      ',
-     &                              'SE Longitude     ' / )
+     &                              'SE Longitude     ',
+     &                              'GSPRO Description' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LGEO1USE ( NGEOLEV1 )
@@ -286,6 +292,7 @@ C...........   Local variables that depend on module variables
         LOGICAL    LCNTYUSE ( NCOUNTY )
         LOGICAL    LSCCUSE  ( NINVSCC )
         LOGICAL    LSICUSE  ( NINVSIC )
+        LOGICAL    LSPCUSE  ( NSPROF )
         LOGICAL    LMACTUSE ( NINVMACT )
         LOGICAL    LNAICSUSE( NINVNAICS )
         LOGICAL    LORISUSE ( NORIS )
@@ -322,6 +329,7 @@ C...........   Other local variables
         LOGICAL  :: STATMISS              ! true: >=1 missing state name
         LOGICAL  :: SCCMISS               ! true: >=1 missing SCC name
         LOGICAL  :: SICMISS               ! true: >=1 missing SIC name
+        LOGICAL  :: SPCMISS               ! true: >=1 missing GSPRO name
         LOGICAL  :: MACTMISS              ! true: >=1 missing MACT name
         LOGICAL  :: NAICSMISS             ! true: >=1 missing NAICS name
         LOGICAL  :: DYSTAT                ! true: write average day header
@@ -352,6 +360,7 @@ C.........  Initialize local variables for current report
         CNTYMISS = .FALSE.
         SCCMISS  = .FALSE.
         SICMISS  = .FALSE.
+        SPCMISS  = .FALSE.
         MACTMISS = .FALSE.
         NAICSMISS= .FALSE.
         ORISMISS = .FALSE.
@@ -362,6 +371,7 @@ C.........  Initialize local variables for current report
         LCNTYUSE = .FALSE.    ! array
         LSCCUSE  = .FALSE.    ! array
         LSICUSE  = .FALSE.    ! array
+        LSPCUSE  = .FALSE.    ! array
         LMACTUSE = .FALSE.    ! array
         LNAICSUSE= .FALSE.    ! array
         LORISUSE = .FALSE.    ! array
@@ -520,6 +530,12 @@ C.............  Include SIC description
             IF( RPT_%SICNAM ) THEN
                 J = BINSICIDX( I ) 
                 IF( J .GT. 0 ) LSICUSE( J ) = .TRUE.
+            END IF
+
+C.............  Include GSPRO description
+            IF( RPT_%SPCNAM ) THEN
+                J = BINSPCIDX( I )
+                IF( J .GT. 0 ) LSPCUSE( J ) = .TRUE.
             END IF
  
 C.............  Include MACT description
@@ -1600,6 +1616,33 @@ C.............  Set SIC name column width
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
             SIDSWIDTH = J + LV - 2       ! quotes in count for header print
+
+        END IF
+
+C.........  GSPRO names
+        IF( RPT_%SPCNAM ) THEN
+
+C.............  For GSPRO descriptions in the inventory, get max name
+C               width
+            NWIDTH = 0
+            DO I = 1, NSPROF
+                IF( LSPCUSE( I ) ) THEN
+                    NWIDTH = MAX( NWIDTH, LEN_TRIM( SPCDESC( I ) ) )
+                    IF ( NWIDTH .EQ. 0 ) SPCMISS = .TRUE.
+                END IF
+            END DO
+
+C.............  If any missing GSPRO desc names, check widths
+            IF( SPCMISS ) NWIDTH = MAX( NWIDTH, LEN_TRIM( MISSNAME ) )
+
+C.............  Set GSPRO desc name column width
+            J = LEN_TRIM( HEADERS( IHDRFNAM ) )
+            J = MAX( NWIDTH, J ) + 2     ! two for quotes
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRFNAM), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            SPDSWIDTH = J + LV - 2       ! quotes in count for header print
 
         END IF
 

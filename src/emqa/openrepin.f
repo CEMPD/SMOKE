@@ -2,7 +2,7 @@
         SUBROUTINE OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, 
      &                        PRNAME, SLNAME, SSNAME, TNAME, RDEV, 
      &                        SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV,
-     &                        NIDEV, ADEV, NMDEV, NNDEV, NODEV )
+     &                        NIDEV, NPDEV, ADEV, NMDEV, NNDEV, NODEV )
 
 C***********************************************************************
 C  subroutine OPENREPIN body starts at line
@@ -49,7 +49,7 @@ C.........  This module contains Smkreport-specific settings
      &                      LFLAG, EMLAYS, VFLAG, YFLAG, NFLAG,
      &                      ASCREC, ASCDATA, STIME, SDATE, ETIME,
      &                      EDATE, TZONE, NIFLAG, NMFLAG, NNFLAG,
-     &                      NOFLAG
+     &                      NOFLAG, SDFLAG
 
 C.........  This module contains the temporal profile tables
         USE MODTMPRL, ONLY: NTPDAT, TPNAME, TPUNIT, TPDESC
@@ -108,6 +108,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT(OUT) :: NDEV   ! unit no.: SCC descriptions
         INTEGER     , INTENT(OUT) :: NIDEV  ! unit no.: SIC descriptions
+        INTEGER     , INTENT(OUT) :: NPDEV  ! unit no.: GSPRO descriptions
         INTEGER     , INTENT(OUT) :: NMDEV  ! unit no.: MACT descriptions
         INTEGER     , INTENT(OUT) :: NNDEV  ! unit no.: NAICS descriptions
         INTEGER     , INTENT(OUT) :: NODEV  ! unit no.: ORIS descriptions
@@ -533,6 +534,14 @@ C.........  Get SIC descriptions, if needed
 
             MESG = 'Enter logical name for SIC DESCRIPTIONS'
             NIDEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'SICDESC',PROGNAME )
+
+        END IF
+
+C.........  Get GSPRO descriptions, if needed
+        IF( SDFLAG ) THEN
+
+            MESG = 'Enter logical name for GSPRO DESCRIPTIONS'
+            NPDEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'GSPRODESC',PROGNAME )
 
         END IF
 

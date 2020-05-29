@@ -48,7 +48,8 @@ C***********************************************************************
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CPDESC, CSOURC, STKHT, STKDM, STKTK, STKVE,
-     &                      XLOCA, YLOCA, FUGHGT, FUGWID, FUGLEN, FUGANG
+     &                      XLOCA, YLOCA, FUGHGT, FUGWID, FUGLEN,
+     &                      FUGANG
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY:  NCOLS, NROWS, XORIG, YORIG, XOFF, YOFF,
@@ -70,7 +71,7 @@ C.........  This module contains Smkreport-specific settings
      &                      MONWIDTH, WEKWIDTH, DOMWIDTH, MNDWIDTH,
      &                      TUEWIDTH, WEDWIDTH, THUWIDTH, FRIWIDTH,
      &                      SATWIDTH, SUNWIDTH, METWIDTH,
-     &                      CHARFMT, CHARWIDTH,
+     &                      CHARFMT, CHARWIDTH, SPDSWIDTH,
      &                      STKPFMT, STKPWIDTH, ELEVWIDTH,
      &                      PDSCWIDTH, SDSCWIDTH, SPCWIDTH, MINC,
      &                      LOC_BEGP, LOC_ENDP, OUTDNAM, OUTUNIT,
@@ -88,7 +89,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINCOIDX, BINSTIDX, BINCYIDX,
      &                      BINMONID, BINWEKID, BINDOMID, BINMNDID,
      &                      BINTUEID, BINWEDID, BINTHUID, BINFRIID,
-     &                      BINSATID, BINSUNID, BINMETID,
+     &                      BINSATID, BINSUNID, BINMETID, BINSPCIDX,
      &                      BINSRGID1, BINSRGID2, BINSPCID, BINRCL,
      &                      BINELEV, BINSNMIDX, BINBAD, BINSIC, 
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
@@ -102,6 +103,9 @@ C.........  This module contains the arrays for state and county summaries
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: MXCHRS, NCHARS, BYEAR
+
+C.........  This module contsin the speciation variables
+        USE MODSPRO, ONLY : NSPROF, SPROFN, SPCDESC
 
 C.........  MODULES for I/O API INTERFACEs, geo-transform codes:
         USE M3UTILIO 
@@ -929,6 +933,25 @@ C.....................  Write warning msg when the description is unavailable
                     N = INDEX( SICDESC( J ), 'Description unavailable' )
                     MESG = 'WARNING: Description of SIC ' // 
      &                      BINSIC( I ) // ' is not available'
+                    IF ( N .GT. 0 ) CALL M3MESG( MESG )
+
+                END IF
+
+C.............  Include GSPRO description
+C.............  This is knowingly including extra blanks before final quote
+                IF( RPT_%SPCNAM ) THEN
+                    J = BINSPCIDX( I )
+                    L = SPDSWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) //
+     &                       '"'// SPCDESC( J )( 1:L1 )// '"' // DELIM
+                    MXLE = MXLE + L + 2
+                    LE = MIN( MXLE, STRLEN )
+
+C.....................  Write warning msg when the description is unavailable
+                    N = INDEX( SPCDESC( J ), 'Description unavailable' )
+                    MESG = 'WARNING: Description of GSPRO ' //
+     &                      BINSPCID( I ) // ' is not available'
                     IF ( N .GT. 0 ) CALL M3MESG( MESG )
 
                 END IF

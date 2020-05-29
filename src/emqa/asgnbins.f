@@ -58,7 +58,7 @@ C............  MODINFO contains the information about the source category
      &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP,
      &                      XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE,
      &                      FUGHGT, FUGWID, FUGLEN, FUGANG,
-     &                      SPPNLO, SPPNHI
+     &                      SPPNLO, SPPNHI, NSPFRC, SPPROF
 
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
@@ -78,7 +78,7 @@ C............  MODINFO contains the information about the source category
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
      &                      BINNAICS, BINNAIIDX, BINSRCTYP, BINORIS,
      &                      BINORSIDX, BINSTKGRP, BININTGR, BINGEO1IDX,
-     &                      BINERPTYP, BINUNIT
+     &                      BINERPTYP, BINUNIT, BINSPCIDX
 
         USE MODGRID, ONLY: NCOLS
 
@@ -89,6 +89,8 @@ C............  MODINFO contains the information about the source category
      &                     NORIS, ORISLST, NGEOLEV1, GEOLEV1COD
 
         USE MODINFO, ONLY: CATEGORY
+
+        USE MODSPRO, ONLY: NSPROF, SPROFN
 
         IMPLICIT NONE
 
@@ -885,6 +887,11 @@ C.........  Allocate memory for bins
             ALLOCATE( BINSPCID ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSPCID', PROGNAME )
         ENDIF
+        IF( RPT_%SPCNAM   ) THEN
+            ALLOCATE( BINSPCIDX( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSPCIDX', PROGNAME )
+        ENDIF
+
         IF( RPT_%BYPLANT ) THEN
             ALLOCATE( BINPLANT ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINPLANT', PROGNAME )
@@ -1081,6 +1088,11 @@ C.................  index with CSCC maps to SCC from BUFFER properly)
             IF( RPT_%SCCNAM ) THEN
                 K = FINDC( CSCC( S ), NINVSCC, INVSCC )
                 BINSNMIDX( B ) = K
+            END IF
+
+            IF( RPT_%SPCNAM ) THEN
+                K = INDEX1( BINSPCID( B ), NSPROF, SPROFN )
+                BINSPCIDX( B ) = K
             END IF
 
             IF( RPT_%SICNAM ) THEN

@@ -164,6 +164,7 @@
             LOGICAL       :: AVEDAY        ! true: use average day data
             LOGICAL       :: SCCNAM        ! true: output SCC name
             LOGICAL       :: SICNAM        ! true: output SIC name
+            LOGICAL       :: SPCNAM        ! true: output GSPRO name
             LOGICAL       :: MACTNAM       ! true: output MACT name
             LOGICAL       :: NAICSNAM      ! true: output NAICS name
             LOGICAL       :: ORISNAM       ! true: output ORIS name  
@@ -217,6 +218,7 @@
         LOGICAL, PUBLIC :: GSFLAG = .FALSE. ! true: read gridding supplementary file
         LOGICAL, PUBLIC :: LFLAG  = .FALSE. ! true: read in layer fracs file
         LOGICAL, PUBLIC :: NFLAG  = .FALSE. ! true: read in SCC names file
+        LOGICAL, PUBLIC :: SDFLAG = .FALSE. ! true: read in GSPRO names file
         LOGICAL, PUBLIC :: NIFLAG = .FALSE. ! true: read in SIC names file
         LOGICAL, PUBLIC :: NMFLAG = .FALSE. ! true: read in MACT names file
         LOGICAL, PUBLIC :: NNFLAG = .FALSE. ! true: read in NAICS names file
@@ -320,6 +322,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: STYPWIDTH =0 ! width of source type code
         INTEGER      , PUBLIC :: STKGWIDTH =0 ! width of stack group ID code
         INTEGER      , PUBLIC :: SPCWIDTH  =0 ! width of speciation profile label
+        INTEGER      , PUBLIC :: SPDSWIDTH =0 ! width of speciation profile description
         INTEGER      , PUBLIC :: SRCWIDTH  =0 ! width of source IDs column
         INTEGER      , PUBLIC :: SRG1WIDTH =0 ! width of primary surg column
         INTEGER      , PUBLIC :: SRG2WIDTH =0 ! width of fallback surg column

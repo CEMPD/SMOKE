@@ -1,6 +1,6 @@
 
         SUBROUTINE RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV,
-     &                      EDEV, YDEV, NDEV, NIDEV, NMDEV, NNDEV, 
+     &                      EDEV, YDEV, NDEV, NIDEV, NPDEV, NMDEV, NNDEV, 
      &                      NODEV, ADEV, ENAME, CUNAME, GNAME, LNAME, 
      &                      PRNAME, SLNAME, SSNAME, NX, IX, CX, SSMAT, 
      &                      SLMAT )
@@ -57,7 +57,7 @@ C.........  This module contains Smkreport-specific settings
      &                      ASCREC, PRRPTFLG, PRFLAG, MINC,
      &                      NSPCPOL, SPCPOL, NMAJOR, NPING, ALLRPT,
      &                      STKX, STKY, LSPCPOL, NIFLAG, NMFLAG, NNFLAG,
-     &                      NOFLAG
+     &                      NOFLAG, SDFLAG
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NSVARS, SPCOUT
@@ -116,6 +116,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT (IN) :: NDEV   ! unit no.: SCC descriptions
         INTEGER     , INTENT (IN) :: NIDEV  ! unit no.: SIC descriptions
+        INTEGER     , INTENT (IN) :: NPDEV  ! unit no.: speciation GSPRO desc. 
         INTEGER     , INTENT (IN) :: NMDEV  ! unit no.: MACT descriptions
         INTEGER     , INTENT (IN) :: NNDEV  ! unit no.: NAICS descriptions
         INTEGER     , INTENT (IN) :: NODEV  ! unit no.: ORIS descriptions
@@ -695,7 +696,6 @@ C.............  Get file header for variable names
 C.........  If needed, read in speciation supplementation file
         IF( PSFLAG ) CALL RDSSUP( PDEV )
 
-
 C.........  If needed, read in temporal supplementation matrix
         IF( TSFLAG ) THEN
 
@@ -839,6 +839,9 @@ C.........  If needed, read in SCC descriptions file
         
 C.........  If needed, read in SIC descriptions file
         IF( NIFLAG ) CALL RDSICDSC( NIDEV )
+
+C.........  If needed, read in GSPRO descriptions file
+        IF( SDFLAG ) CALL RDSPROFDSC( NPDEV )
 
 C.........  If needed, read in MACT descriptions file
         IF( NMFLAG ) CALL RDMACTDSC( NMDEV )
