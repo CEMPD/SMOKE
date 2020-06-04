@@ -164,7 +164,7 @@
             LOGICAL       :: AVEDAY        ! true: use average day data
             LOGICAL       :: SCCNAM        ! true: output SCC name
             LOGICAL       :: SICNAM        ! true: output SIC name
-            LOGICAL       :: SPCNAM        ! true: output GSPRO name
+            LOGICAL       :: GSPRONAM      ! true: output GSPRO name
             LOGICAL       :: MACTNAM       ! true: output MACT name
             LOGICAL       :: NAICSNAM      ! true: output NAICS name
             LOGICAL       :: ORISNAM       ! true: output ORIS name  

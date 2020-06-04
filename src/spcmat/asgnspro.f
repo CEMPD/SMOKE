@@ -279,11 +279,10 @@ C.........  Find index in complete list of pollutants and set length of name
 C.............  If emissions are zero for this source, then skip it
           IF( LVALCHK .AND. LNOZERO .AND. EMISTMP( S ) <= 0 ) THEN
 
-C            WRITE( UDEV, '(A)' ) ' Drop'   ! assign "fake" speciation profile
-
+            CSRC  = CSOURC( S )
             WRITE( UDEV, '( 5X, 3A, 2X, A, I9 )' )
      &             QUOTE, TRIM( CSRC ), QUOTE, 'NFRAC=', 1
-            WRITE( UDEV, '( 5X, 3A, F10.7 )' ) QUOTE, '      Drop', QUOTE, 1.0
+            WRITE( UDEV, '( 5X, 3A, F10.7 )' ) QUOTE, '      Drop', QUOTE, 1.0  ! assign "fake" speciation profile
 
           ELSE      !  if emissions are not zero for this source
 
@@ -735,7 +734,6 @@ C                   1-SREFCNT:  SREF* subscript
                 END DO
                 USECOMBO = .FALSE.
                 USEFRACS = .TRUE.
-
             ELSE IF ( ADJUSTL( SPCODE ) .EQ. 'COMBO' ) THEN
                     USECOMBO = .TRUE.
                     USEFRACS = .FALSE.

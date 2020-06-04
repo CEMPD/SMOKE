@@ -43,7 +43,8 @@ C***********************************************************************
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: STKHT, STKDM, STKTK, STKVE, CPDESC, FUGHGT,
-     &                      FUGWID, FUGLEN, FUGANG
+     &                      FUGWID, FUGLEN, FUGANG, NGSPRO, GSPROID,
+     &                      GSPRDESC
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, SCCDESC, SCCDLEV, NINVSIC, SICDESC,
@@ -96,9 +97,6 @@ C.........  This module contains the global variables for the 3-d grid
 CC...........  This module contains the information about the source category
         USE MODINFO, ONLY: NCHARS, CATEGORY, CATDESC, BYEAR, INVPIDX,
      &                     EANAM, ATTRUNIT
-
-C.........  This module contsin the speciation variables
-        USE MODSPRO,  ONLY : NSPROF, SPROFN, SPCDESC
 
 
         IMPLICIT NONE
@@ -292,7 +290,7 @@ C...........   Local variables that depend on module variables
         LOGICAL    LCNTYUSE ( NCOUNTY )
         LOGICAL    LSCCUSE  ( NINVSCC )
         LOGICAL    LSICUSE  ( NINVSIC )
-        LOGICAL    LSPCUSE  ( NSPROF )
+        LOGICAL    LSPCUSE  ( NGSPRO )
         LOGICAL    LMACTUSE ( NINVMACT )
         LOGICAL    LNAICSUSE( NINVNAICS )
         LOGICAL    LORISUSE ( NORIS )
@@ -533,7 +531,7 @@ C.............  Include SIC description
             END IF
 
 C.............  Include GSPRO description
-            IF( RPT_%SPCNAM ) THEN
+            IF( RPT_%GSPRONAM ) THEN
                 J = BINSPCIDX( I )
                 IF( J .GT. 0 ) LSPCUSE( J ) = .TRUE.
             END IF
@@ -1620,14 +1618,15 @@ C.............  Set SIC name column width
         END IF
 
 C.........  GSPRO names
-        IF( RPT_%SPCNAM ) THEN
+        IF( RPT_%GSPRONAM ) THEN
 
 C.............  For GSPRO descriptions in the inventory, get max name
 C               width
             NWIDTH = 0
-            DO I = 1, NSPROF
+            DO I = 1, NGSPRO 
                 IF( LSPCUSE( I ) ) THEN
-                    NWIDTH = MAX( NWIDTH, LEN_TRIM( SPCDESC( I ) ) )
+                    L = LEN_TRIM( GSPRDESC( I ) )
+                    NWIDTH = MAX( NWIDTH, L )
                     IF ( NWIDTH .EQ. 0 ) SPCMISS = .TRUE.
                 END IF
             END DO

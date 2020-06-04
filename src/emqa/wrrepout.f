@@ -49,7 +49,7 @@ C.........  MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CPDESC, CSOURC, STKHT, STKDM, STKTK, STKVE,
      &                      XLOCA, YLOCA, FUGHGT, FUGWID, FUGLEN,
-     &                      FUGANG
+     &                      FUGANG, NGSPRO, GSPROID, GSPRDESC
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY:  NCOLS, NROWS, XORIG, YORIG, XOFF, YOFF,
@@ -76,7 +76,7 @@ C.........  This module contains Smkreport-specific settings
      &                      PDSCWIDTH, SDSCWIDTH, SPCWIDTH, MINC,
      &                      LOC_BEGP, LOC_ENDP, OUTDNAM, OUTUNIT,
      &                      ALLRPT, SICWIDTH, SIDSWIDTH, UNITWIDTH,
-     &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
+     &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH, LABELWIDTH,
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
@@ -103,9 +103,6 @@ C.........  This module contains the arrays for state and county summaries
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: MXCHRS, NCHARS, BYEAR
-
-C.........  This module contsin the speciation variables
-        USE MODSPRO, ONLY : NSPROF, SPROFN, SPCDESC
 
 C.........  MODULES for I/O API INTERFACEs, geo-transform codes:
         USE M3UTILIO 
@@ -234,8 +231,10 @@ c               is determined by the report settings.
 C..............  Include user-defined label in string
                 IF( RPT_%USELABEL ) THEN
 
-                    STRING = STRING( 1:LE )// TRIM( RPT_%LABEL )// DELIM
-                    MXLE = MXLE + LEN_TRIM( RPT_%LABEL ) + LX + LV
+                    L = LABELWIDTH
+                    L1 = L - LV 
+                    STRING = STRING( 1:LE )// RPT_%LABEL( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX + LV
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
 
@@ -939,17 +938,17 @@ C.....................  Write warning msg when the description is unavailable
 
 C.............  Include GSPRO description
 C.............  This is knowingly including extra blanks before final quote
-                IF( RPT_%SPCNAM ) THEN
+                IF( RPT_%GSPRONAM ) THEN
                     J = BINSPCIDX( I )
                     L = SPDSWIDTH
                     L1 = L - LV - 1                        ! 1 for space
                     STRING = STRING( 1:LE ) //
-     &                       '"'// SPCDESC( J )( 1:L1 )// '"' // DELIM
+     &                       '"'// GSPRDESC( J )( 1:L1 )// '"' // DELIM
                     MXLE = MXLE + L + 2
                     LE = MIN( MXLE, STRLEN )
 
 C.....................  Write warning msg when the description is unavailable
-                    N = INDEX( SPCDESC( J ), 'Description unavailable' )
+                    N = INDEX( GSPRDESC( J ), 'Description unavailable' )
                     MESG = 'WARNING: Description of GSPRO ' //
      &                      BINSPCID( I ) // ' is not available'
                     IF ( N .GT. 0 ) CALL M3MESG( MESG )

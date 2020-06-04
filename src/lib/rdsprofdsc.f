@@ -35,9 +35,9 @@ C Last updated: $Date$
 C
 C**************************************************************************
 
-C...........   Modules for public variables
+C.........   Modules for public variables
 C.........  This module contains the speciation-profiles matrix, among other things.
-        USE MODSPRO,  ONLY : NSPROF, SPROFN, SPCDESC
+        USE MODSOURC, ONLY : NGSPRO, GSPROID, GSPRDESC
 
         IMPLICIT NONE
 
@@ -49,8 +49,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        FINDC 
         INTEGER        GETFLINE
         LOGICAL        BLKORCMT
+        INTEGER        INDEX1
 
-        EXTERNAL       FINDC, GETFLINE, BLKORCMT
+        EXTERNAL       FINDC, GETFLINE, BLKORCMT, INDEX1
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: FDEV          ! file unit number
@@ -83,19 +84,15 @@ C   Begin body of subroutine RDSPROFDSC
         REWIND( FDEV )  ! In case of multiple calls
 
 C.........  Get the number of lines in the file
-        NSPROF = GETFLINE( FDEV, 'GSPRO Speciation Profile Descriptions' )
+        N = GETFLINE( FDEV, 'GSPRO Speciation Profile Descriptions' )
 
 C.........  Allocate memory for the GSPRO descriptions and initialize
-        ALLOCATE( SPROFN( NSPROF ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SPROFN', PROGNAME )
-        ALLOCATE( SPCDESC( NSPROF ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SPCDESC', PROGNAME )
-        SPROFN  = ''
-        SPCDESC = 'Description unavailable'          ! array
+        ALLOCATE( GSPRDESC( NGSPRO ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GSPRDESC', PROGNAME )
+        GSPRDESC = 'Description unavailable'          ! array
 
 C.........  Read the GSPRO descriptions, and store with GSPRO
-        NS = 0
-        DO N = 1, NSPROF
+        DO N = 1, N
 
             READ ( FDEV, 93000, END=998, IOSTAT=IOS ) LINE
             IREC = IREC + 1
@@ -118,11 +115,9 @@ C.............  Get GSPRODESC line
             CSPF = ADJUSTR( SEGMENT( 1 )( 1:SPNLEN3 ) )
 
 C.............  Look for matched GSPRO 
-            J = FINDC( CSPF, NSPROF, SPROFN )
-            IF ( J < 1 ) THEN
-                NS = NS + 1
-                SPROFN ( NS ) = CSPF
-                SPCDESC( NS ) = ADJUSTL( SEGMENT( 2 ) )
+            J = INDEX1( CSPF, NGSPRO, GSPROID )
+            IF ( J > 0 ) THEN
+                GSPRDESC( J ) = ADJUSTL( SEGMENT( 2 ) )
             END IF
 
         END DO

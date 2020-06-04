@@ -40,7 +40,8 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the speciation-profiles matrix, among other things.
-        USE MODSOURC, ONLY : NSPFRC, SPPNLO, SPPNHI, SPPROF, SPFRAC
+        USE MODSOURC, ONLY : NSPFRC, SPPNLO, SPPNHI, SPPROF, SPFRAC,
+     &                       NGSPRO, GSPROID
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CRL, NSRC, NIPPA
@@ -48,7 +49,6 @@ C.........  This module contains the information about the source category
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: RPT_, NSPCPOL, SPCPOL, LSPCPOL
 
-        USE MODSPRO, ONLY: MXSPEC
 
         IMPLICIT NONE
 
@@ -69,13 +69,20 @@ C.........  Local variables
         CHARACTER(512) ::   LINE
         CHARACTER(512) ::   MESG
 
+        CHARACTER(32) :: TPROF( 50 ), TFACS( 50 )
+
         INTEGER     IREC, PCNT
-        INTEGER     K, L, L1, L2, N, N1, N2, M, I, S, PV, V
+        INTEGER     I, J, K, L, L1, L2, N, N1, N2, NS, M, S, V
 
         CHARACTER(16), PARAMETER :: PNAME = 'RDSSUP' ! subroutine name
 
 C***********************************************************************
 C   begin body of subroutine RDSSUP
+
+C.........  Unique list of speciation profiles
+        ALLOCATE( GSPROID( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GSPROID', PNAME )
+        GSPROID = ''
 
 C.........  Open SSUP speciation supplemental file
         MESG = 'Supplemental speciation file'
@@ -83,6 +90,7 @@ C.........  Open SSUP speciation supplemental file
 
         IREC   = 0
         NSPFRC = 0
+        NGSPRO = 0
 
         DO  I = 1, N
 
@@ -120,6 +128,17 @@ C                   pollutant codes and store them by source
                 IF( N1 > 0 ) THEN
                     S = S + 1
                     NSPFRC = NSPFRC + PCNT
+
+                ELSE
+                    READ( LINE, * ) ( TPROF( K ), TFACS( K ), K = 1, PCNT )
+
+C.....................  Count the unique list of GSPRO
+                    DO K = 1, PCNT
+                        IF( INDEX1( TPROF( K ), NSRC, GSPROID ) < 1 ) THEN
+                            NGSPRO = NGSPRO + 1
+                            GSPROID( NGSPRO ) = TPROF( K )
+                        END IF
+                    END DO
                 END IF
 
                 IF( S .EQ. NSRC ) V = 0
@@ -129,13 +148,15 @@ C                   pollutant codes and store them by source
         END DO
 
         !!........  Allocate output arrays
-
+        DEALLOCATE( GSPROID )
         ALLOCATE( SPPNLO( NSRC ),
      &            SPPNHI( NSRC ),
      &            SPPROF( NSPFRC ),
-     &            SPFRAC( NSPFRC ), STAT = IOS )
+     &            SPFRAC( NSPFRC ),
+     &            GSPROID( NGSPRO ), STAT = IOS )
         CALL CHECKMEM( IOS, 'SPPNLO...SPFRAC', PNAME )
         SPFRAC = 1.0
+        GSPROID = ''
 
         !!........  Read/Build output arrays for fractions, fractional profiles
         REWIND( PDEV )
@@ -143,6 +164,7 @@ C                   pollutant codes and store them by source
         V    = 0
         M    = 0
         S    = 0
+        NS   = 0
         IREC = 0
 
         DO I = 1, N
@@ -189,6 +211,14 @@ C                   pollutant codes and store them by source
 
                 ELSE
                     READ( LINE, * ) ( SPPROF( K ), SPFRAC( K ), K = SPPNLO(S), SPPNHI(S) )
+
+C.....................  Develop the unique list of GSPRO
+                    DO K = SPPNLO(S), SPPNHI(S)
+                        IF( INDEX1( SPPROF( K ), NGSPRO, GSPROID ) < 1 ) THEN
+                            NS = NS + 1
+                            GSPROID( NS ) = SPPROF( K )
+                        END IF
+                    END DO
 
                 END IF
 

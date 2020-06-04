@@ -94,6 +94,9 @@
         CHARACTER(SHPLEN3), POINTER,     PUBLIC:: CSHAPE ( : ) ! area-source SHAPE_ID
 
         !!  <source,pollutant> :: speciation-profiles/fractions matrix, read by RDSSUP()
+        INTEGER           ,              PUBLIC:: NGSPRO       ! no of GSPROs
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: GSPROID( : ) ! unique list of spec prof codes (ngspro)
+        CHARACTER(SDSLEN3), ALLOCATABLE, PUBLIC:: GSPRDESC( : )! spec prof descrption (ngspro)
         INTEGER           ,              PUBLIC:: NSPFRC       ! total # of profiles&fractions
         INTEGER           , ALLOCATABLE, PUBLIC:: SPPNLO( : )  ! spec prof counts    (nsrc)
         INTEGER           , ALLOCATABLE, PUBLIC:: SPPNHI( : )  ! spec prof counts    (nsrc)

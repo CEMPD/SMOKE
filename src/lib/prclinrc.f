@@ -503,7 +503,7 @@ C.........................  Reset report settings to defaults
                         RPT_%LAYFRAC   = .FALSE.
                         RPT_%NORMCELL  = .FALSE.
                         RPT_%NORMPOP   = .FALSE.
-                        RPT_%SPCNAM    = .FALSE.
+                        RPT_%GSPRONAM  = .FALSE.
                         RPT_%SICNAM    = .FALSE.
                         RPT_%SCCNAM    = .FALSE.
                         RPT_%SRCNAM    = .FALSE.
@@ -1192,7 +1192,7 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                             RPT_%SPCPOL = SEGMENT( 4 )
                             SDFLAG = .TRUE.                    ! read GSPRODESC input file
-                            RPT_%SPCNAM = .TRUE.
+                            RPT_%GSPRONAM = .TRUE.
                         END IF
 
                     END IF

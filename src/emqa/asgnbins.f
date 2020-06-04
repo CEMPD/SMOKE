@@ -58,7 +58,7 @@ C............  MODINFO contains the information about the source category
      &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP,
      &                      XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE,
      &                      FUGHGT, FUGWID, FUGLEN, FUGANG,
-     &                      SPPNLO, SPPNHI, NSPFRC, SPPROF
+     &                      SPPNLO, SPPNHI, NSPFRC, SPPROF, NGSPRO, GSPROID
 
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
@@ -734,6 +734,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINSUNID  ) ) DEALLOCATE( BINSUNID )
         IF( ALLOCATED( BINMETID  ) ) DEALLOCATE( BINMETID )
         IF( ALLOCATED( BINSPCID  ) ) DEALLOCATE( BINSPCID )
+        IF( ALLOCATED( BINSPCIDX ) ) DEALLOCATE( BINSPCIDX )
         IF( ALLOCATED( BINPLANT  ) ) DEALLOCATE( BINPLANT )
         IF( ALLOCATED( BINUNIT   ) ) DEALLOCATE( BINUNIT  )
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
@@ -887,7 +888,7 @@ C.........  Allocate memory for bins
             ALLOCATE( BINSPCID ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSPCID', PROGNAME )
         ENDIF
-        IF( RPT_%SPCNAM   ) THEN
+        IF( RPT_%GSPRONAM   ) THEN
             ALLOCATE( BINSPCIDX( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSPCIDX', PROGNAME )
         ENDIF
@@ -1090,8 +1091,8 @@ C.................  index with CSCC maps to SCC from BUFFER properly)
                 BINSNMIDX( B ) = K
             END IF
 
-            IF( RPT_%SPCNAM ) THEN
-                K = INDEX1( BINSPCID( B ), NSPROF, SPROFN )
+            IF( RPT_%GSPRONAM ) THEN
+                K = INDEX1( BINSPCID( B ), NGSPRO, GSPROID )
                 BINSPCIDX( B ) = K
             END IF
 
