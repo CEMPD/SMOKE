@@ -333,20 +333,15 @@ C.........................  Record  flag for state-specific entry
 C.........................  Store entry for current FIPs, pollutant, period
                         CMBNP( F ) = NP
 
-C.........................  If on a new state (not just looping over all counties)
-                        IF( CSTA .NE. PSTA ) THEN
+C.........................  Convert fractions from strings to reals
+                        DO N = 1,  NP
+                            CWEIGHT( N ) = STR2REAL(SEGMENT(4+N*2))
+                        END DO
 
-C.............................  Convert fractions from strings to reals
-                            DO N = 1,  NP
-                                CWEIGHT( N ) = STR2REAL(SEGMENT(4+N*2))
-                            END DO
-
-C.............................  Check if profile fractions meet the +/- 0.001 criterion
-C                               and renormalize if needed. Provide a warning if need  
-C                               to renormalize.
-                            CALL CHECK_AND_SET_FRACS
-
-                        END IF
+C.........................  Check if profile fractions meet the +/- 0.001 criterion
+C                           and renormalize if needed. Provide a warning if need  
+C                           to renormalize.
+                        CALL CHECK_AND_SET_FRACS
 
                         DO N = 1, NP
 
