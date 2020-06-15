@@ -31,12 +31,12 @@ export PHOUR11=$INVOPD/phour_cmv_12_nov_2016fh_16j.ncf
 export PHOUR12=$INVOPD/phour_cmv_12_dec_2016fh_16j.ncf
 
 # location of intermediate source list created by cmv.pl
-export CMV_SRC_LIST=$OUTPUT_DIR/temporal/CMV_source_list.csv
+export CMV_SRC_LIST=$OUTPUT_DIR/temporal/CMV_12_source_list.csv
 
 export PROMPTFLAG=N
 
 # remove any existing files
-rm -f $OUTPUT_DIR/temporal/CMVU_*_hourly.csv
-rm -f $OUTPUT_DIR/temporal/CMVP_*_hourly.csv
+rm -f $OUTPUT_DIR/temporal/CMVU_12_*_hourly.csv
+rm -f $OUTPUT_DIR/temporal/CMVP_12_*_hourly.csv
 
 $SCRIPTS/aermod/cmv_output_hourly

@@ -246,7 +246,7 @@ while (my $line = <$in_fh>) {
       push @output, $sw_lon;
       push @output, $sw_lat;
       
-      my $file = "$output_dir/locations/${run_group}_locations.csv";
+      my $file = "$output_dir/locations/${run_group}_${run_group_suffix}_locations.csv";
       unless (exists $handles{$file}) {
         my $fh = open_output($file);
         print $fh "run_group,state,met_cell,src_id,utmx,utmy,utm_zone,lon,lat\n";
@@ -293,7 +293,7 @@ while (my $line = <$in_fh>) {
       push @output, $se_lon;
       push @output, $se_lat;
       
-      $file = "$output_dir/parameters/${run_group}_area_parameters.csv";
+      $file = "$output_dir/parameters/${run_group}_${run_group_suffix}_area_parameters.csv";
       unless (exists $handles{$file}) {
         my $fh = open_output($file);
         write_parameter_header($fh);
@@ -333,7 +333,7 @@ while (my $line = <$in_fh>) {
         push @output, $lon;
         push @output, $lat;
         
-        my $file = "$output_dir/parameters/${run_group}_area_parameters.csv";
+        my $file = "$output_dir/parameters/${run_group}_${run_group_suffix}_area_parameters.csv";
         unless (exists $handles{$file}) {
           my $fh = open_output($file);
           print $fh "state,facid,src_id,src_type,area,rel_ht,verts,sz,utmx,utmy,lon,lat\n";
@@ -405,7 +405,7 @@ foreach my $facility_id (sort keys %port_cell_emissions) {
     push @output, $vertex_lon;
     push @output, $vertex_lat;
   
-    my $file = "$output_dir/locations/${run_group}_locations.csv";
+    my $file = "$output_dir/locations/${run_group}_${run_group_suffix}_locations.csv";
     unless (exists $handles{$file}) {
       my $fh = open_output($file);
       print $fh "state,region,facid,src_id,src_type,col,row,utmx,utmy,utm_zone,lon,lat\n";
@@ -417,7 +417,7 @@ foreach my $facility_id (sort keys %port_cell_emissions) {
 }
 
 # prepare source list output
-my $file = "$output_dir/temporal/CMV_source_list.csv";
+my $file = "$output_dir/temporal/CMV_${run_group_suffix}_source_list.csv";
 my $src_fh = open_output($file);
 print $src_fh "state,file_prefix,run_group,facid,src_id,poll,annual_emis,smoke_ids\n";
 
@@ -428,7 +428,7 @@ foreach my $facility_id (sort keys %emissions) {
   
     my @output;
     push @output, sprintf("%02d", substr($sources{$facility_id}{$group_type}{'region'}, 0, 2));
-    push @output, $run_group;
+    push @output, $run_group . '_' . $run_group_suffix;
     push @output, $run_group . $run_group_suffix;
   
     if ($run_group eq $UW_GROUP) {
@@ -468,7 +468,7 @@ foreach my $facility_id (sort keys %emissions) {
     my $run_group = $sources{$facility_id}{$group_type}{'run_group'};
     my $source_group = $sources{$facility_id}{$group_type}{'source_group'};
   
-    my $file = "$output_dir/emis/${run_group}_emis.csv";
+    my $file = "$output_dir/emis/${run_group}_${run_group_suffix}_emis.csv";
     unless (exists $handles{$file}) {
       my $fh = open_output($file);
       if ($run_group eq $UW_GROUP) {
