@@ -1188,6 +1188,13 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                         PSFLAG = .TRUE.
                         RPT_%BYSPC = .TRUE.
                         RPT_%SPCPOL = SEGMENT( 3 )
+                        IF( GFLAG .OR. RPT_%USEGMAT ) THEN
+                            MESG = 'CRITICAL: GRIDDING command is not '
+     &                          // 'allowed in BY SPCCODE report'
+                            CALL M3MSG2( MESG)
+                            GFLAG      = .FALSE.
+                            RPT_%USEGMAT  = .FALSE.
+                        END IF
                         IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                             RPT_%SPCPOL = SEGMENT( 4 )
