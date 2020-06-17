@@ -79,7 +79,7 @@ C...........   EXTERNAL FUNCTIONS
 C.........  LOCAL PARAMETERS and their descriptions:
 
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name: SMOKEv4.7_Oct2019$' ! CVS release tag
+     &  CVSW = '$Name: SMOKEv4.8_Jun2020$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 

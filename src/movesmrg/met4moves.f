@@ -102,7 +102,7 @@ C...........   INCLUDES:
      &               FINDCFIRST, STR2INT, BLKORCMT, ENVYN
         
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv4.7_Oct2019$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv4.8_Jun2020$' ! CVS release tag
         INTEGER, PARAMETER :: MXVAR = 20
 
 C...........   LOCAL VARIABLES and their descriptions:

@@ -76,7 +76,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER ::
-     &  CVSW = '$Name SMOKEv4.7_Oct2019$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv4.8_Jun2020$' ! CVS release tag
 
 C...........   Gridding Matrix
         INTEGER, ALLOCATABLE :: GMAT( : ) ! Contiguous gridding matrix

@@ -61,7 +61,7 @@ C.......  EXTERNAL FUNCTIONS and their descriptions:
 
 C.......  LOCAL PARAMETERS
       CHARACTER(50), PARAMETER :: 
-     & CVSW = '$Name SMOKEv4.7_Oct2019$'  ! CVS release tag
+     & CVSW = '$Name SMOKEv4.8_Jun2020$'  ! CVS release tag
       INTEGER, PARAMETER :: MXSEG = 15    ! number of segments in line
       INTEGER, PARAMETER :: MXOUT = 11    ! number of output values
       REAL,    PARAMETER :: MTON2STON = 1.10231131  ! conversion factor for metric to short tons
