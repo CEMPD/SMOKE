@@ -55,7 +55,7 @@ C.........  LOCAL PARAMETERS and their descriptions:
         INTEGER,       PARAMETER :: SRTLEN3  = FIPLEN3+SCCLEN3+PLTLEN3+CHRLEN3+24
 
         CHARACTER(1) , PARAMETER :: BLANK    = ' '
-        CHARACTER(16), PARAMETER :: PROGNAME = 'REGROUP' ! program name
+        CHARACTER(16), PARAMETER :: PROGNAME = 'SAREGROUP' ! program name
         CHARACTER(64), PARAMETER ::
      &  BAR = '-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-'
         CHARACTER(50), PARAMETER ::
@@ -457,6 +457,13 @@ C.........  Compute the input-vector :: output-group mapping
 
         END DO
 
+C.........  No group is not allowed for point sources.
+        IF( CATEGORY == 'P' ) THEN
+            L = NVECSSRC
+            VECCNT = 1
+            VECDEX = INDXIN
+        END IF
+
         NVECOUT = L
 
 
@@ -650,6 +657,8 @@ C.........  Write the OUT_EMIS
             !!  "Select first available data" for NONAGGVARS variables
 
             IF ( INDEX1( VNAME, 7, NONAGGVARS ) .GT. 0 ) THEN
+
+                IF( VNAME == 'IGROUP  ' ) IBUF = GRPOUT
 
                 K = 1
                 DO N = 1, NVECOUT
