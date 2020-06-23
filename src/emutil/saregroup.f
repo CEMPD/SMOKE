@@ -287,40 +287,27 @@ C.........  Process input REPORT file:
 
             IF ( BLKORCMT( LINE ) )  CYCLE
 
-            CALL PARSLINE( LINE, 6, SEGMENT )
-            M = STR2INT( SEGMENT( 1 ) )
-            IF ( ( M .LT. 1 ) .OR. ( M .GT. NRPTLINE ) ) THEN
-                WRITE( MESG, '(A,I10)' ) 'Bad line-number in "IN_REPORT" at line', L
-                CALL M3MESG( MESG )
-                EFLAG = .TRUE.
-                CYCLE
-            END IF
-
             SELECT CASE ( CATEGORY )
                 CASE( 'A' )
-                    CFIPIN( M ) = ADJUSTL( SEGMENT( 2 ) )
-                    CSCCIN( M ) = ADJUSTL( SEGMENT( 3 ) )
+                    READ( LINE, '(I8,1X,A12,1X,A20,1X,I8)')
+     &                  M, CFIPIN(M), CSCCIN(M), IGROUP(M)
                     CPLTIN( M ) = BLANK
                     CPNTIN( M ) = BLANK
-                    IGROUP( M ) = STR2INT( SEGMENT( 4 ) )
                 CASE( 'B' )
-                    CFIPIN( M ) = ADJUSTL( SEGMENT( 2 ) )
+                    READ( LINE, '(A12,1X,I8)')
+     &                  CFIPIN(M), IGROUP(M)
+                        M = L
                     CSCCIN( M ) = BLANK
                     CPLTIN( M ) = BLANK
                     CPNTIN( M ) = BLANK
-                    IGROUP( M ) = STR2INT( SEGMENT( 4 ) )
                 CASE( 'M' )
-                    CFIPIN( M ) = ADJUSTL( SEGMENT( 2 ) )
-                    CSCCIN( M ) = ADJUSTL( SEGMENT( 3 ) )
+                    READ( LINE, '(I8,1X,A12,1X,A20,1X,I8)')
+     &                  M, CFIPIN(M), CSCCIN(M), IGROUP(M)
                     CPLTIN( M ) = BLANK
                     CPNTIN( M ) = BLANK
-                    IGROUP( M ) = STR2INT( SEGMENT( 4 ) )
                 CASE( 'P' )
-                    CFIPIN( M ) = ADJUSTL( SEGMENT( 2 ) )
-                    CSCCIN( M ) = ADJUSTL( SEGMENT( 3 ) )
-                    CPLTIN( M ) = ADJUSTL( SEGMENT( 4 ) )
-                    CPNTIN( M ) = ADJUSTL( SEGMENT( 5 ) )
-                    IGROUP( M ) = STR2INT( SEGMENT( 6 ) )
+                    READ( LINE, '(I8,1X,A12,1X,A20,1X,A20,1X,A20,1X,I8)')
+     &                  M, CFIPIN(M), CSCCIN(M), CPLTIN(M), CPNTIN(M), IGROUP(M)
             END SELECT
 
             SGROUP( M ) = IGROUP( M )
@@ -611,7 +598,7 @@ C.........  Write the OUT_EMIS
             ELSE IF ( CATEGORY .EQ. 'B' ) THEN
 
                 DO I = 1, NSRCALL
-                    WRITE( RDEV, '(I8, A,1X,I8,1X,I8)' ) I, CFIPIN(I), IGROUP(I), SGROUP(I)
+                    WRITE( RDEV, '(A,1X,I8,1X,I8)' ) CFIPIN(I), IGROUP(I), SGROUP(I)
                 END DO
 
             ELSE IF ( CATEGORY .EQ. 'P' ) THEN
