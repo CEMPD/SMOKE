@@ -5,6 +5,7 @@ use warnings;
 
 use Text::CSV ();
 use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
+use Date::Simple qw(ymd);
 
 require 'aermod.subs';
 require 'aermod_np.subs';
@@ -17,10 +18,12 @@ my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 my $rwc_run_group;
 
 # check environment variables
-foreach my $envvar (qw(REPORT SOURCE_GROUPS GROUP_PARAMS 
+foreach my $envvar (qw(REPORT SOURCE_GROUPS GROUP_PARAMS YEAR
                        ATPRO_MONTHLY ATPRO_DAILY ATPRO_WEEKLY ATPRO_HOURLY OUTPUT_DIR)) {
   die "Environment variable '$envvar' must be set" unless $ENV{$envvar};
 }
+
+my $year = $ENV{'YEAR'};
 
 # open report file
 my $in_fh = open_input($ENV{'REPORT'});
@@ -268,7 +271,8 @@ while (my $line = <$in_fh>) {
     
     my @factors;
     my $month = 1;
-    my $day_of_week = 2;  # Jan. 1, 2014 was a Wednesday
+    # determine starting day of the week (convert from 0 = Sunday to 0 = Monday for temporal profiles)
+    my $day_of_week = (ymd($year, $month, 1)->day_of_week - 1) % 7;
     foreach my $month_factor (@monthly_factors) {
       # note: factors average to 1 rather than summing to 1, so adjust when fractions are needed
       if ($dom_prof) {
@@ -308,7 +312,7 @@ for my $region (sort keys %county_emissions) {
   my @common;
   push @common, $rwc_run_group . $run_group_suffix;
   push @common, $region;
-  push @common, '14';
+  push @common, substr($year, -2);
   
   my $index = 0;
   for (my $month = 1; $month <= 12; $month++) {

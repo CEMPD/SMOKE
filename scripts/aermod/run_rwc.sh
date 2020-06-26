@@ -16,4 +16,6 @@ export ATPRO_HOURLY=$GE_DAT/amptpro_general_2011platform_tpro_hourly_13nov2014_v
 # directory where output files should be created
 export OUTPUT_DIR=$OUTPUT/aermod
 
+export YEAR=2014
+
 $SCRIPTS/aermod/rwc.pl
