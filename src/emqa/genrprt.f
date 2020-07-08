@@ -534,7 +534,7 @@ C.........................  Sum non-gridded output records into temporary bins
 
 !$OMP                       PARALLEL DO
 !$OMP&                       DEFAULT( NONE ),
-!$OMP&                        SHARED( NOUTBINS, NBINS, ISRCB,
+!$OMP&                        SHARED( NOUTBINS, NBINS, ISRCB, OUTSFAC.
 !$OMP&                                POLVAL, LFRAC1L, PRMAT, ACUMATX,
 !$OMP&                                BINDATA, BINPOPDIV, J, KP, KM, ID, IE ),
 !$OMP&                       PRIVATE( N, BSUM, M, S, P )
@@ -543,10 +543,12 @@ C.........................  Sum non-gridded output records into temporary bins
                                 BSUM = 0.0D0
                                 DO M = NBINS( N-1 )+1, NBINS( N )
                                     S = ISRCB( M )
+                                    P = ISPRO( M )
                                     BSUM = BSUM + POLVAL ( S,J ) *
      &                                            LFRAC1L( S )   *
      &                                            PRMAT  ( S,KP) *
-     &                                            ACUMATX( S,KM)
+     &                                            ACUMATX( S,KM) *
+     &                                            OUTSFAC( P )
                                     IF( RPT_%SRCMAP ) THEN
                                         CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
      &                                                 LOC_ENDP, LF, NC, CHARS )
