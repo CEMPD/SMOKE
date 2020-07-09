@@ -14,7 +14,7 @@ my $sector = $ENV{'SECTOR'} || 'ptegu';
 my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 
 # check environment variables
-foreach my $envvar (qw(REPORT REP_XWALK PHOUR_OUT YEAR 
+foreach my $envvar (qw(REPORT REP_XWALK YEAR
                        PTPRO_MONTHLY PTPRO_DAILY PTPRO_WEEKLY PTPRO_HOURLY_WINTER PTPRO_HOURLY_SUMMER OUTPUT_DIR)) {
   die "Environment variable '$envvar' must be set" unless $ENV{$envvar};
 }
@@ -29,31 +29,33 @@ if (leap_year($year)) {
 my $in_fh = open_input($ENV{'REPORT'});
 my $inx_fh = open_input($ENV{'REP_XWALK'});
 
-# load hourly factors file
-print "Reading hourly factors...\n";
-my $hour_fh = open_input($ENV{'PHOUR_OUT'});
-
+# load hourly factors file if provided
 my %hourly;
-while (my $line = <$hour_fh>) {
-  chomp $line;
-  next unless $line;
+if (defined $ENV{'PHOUR_OUT'}) {
+  print "Reading hourly factors...\n";
+  my $hour_fh = open_input($ENV{'PHOUR_OUT'});
+
+  while (my $line = <$hour_fh>) {
+    chomp $line;
+    next unless $line;
   
-  my @data = split(/,/, $line);
-  my $id = shift @data;
-  my $data_year = shift @data;
-  die "PHOUR_OUT year ($data_year) doesn't match YEAR setting ($year)" unless $data_year eq $year;
+    my @data = split(/,/, $line);
+    my $id = shift @data;
+    my $data_year = shift @data;
+    die "PHOUR_OUT year ($data_year) doesn't match YEAR setting ($year)" unless $data_year eq $year;
   
-  # adjust factors so they sum to 1
-  my $sum = sum(@data);
-  unless ($sum == 0) {
-    @data = map { $_ / $sum } @data;
+    # adjust factors so they sum to 1
+    my $sum = sum(@data);
+    unless ($sum == 0) {
+      @data = map { $_ / $sum } @data;
+    }
+  
+    $id =~ s/^\s+//;
+    $id =~ s/\s+$//;
+    $hourly{$id} = \@data;
   }
-  
-  $id =~ s/^\s+//;
-  $id =~ s/\s+$//;
-  $hourly{$id} = \@data;
+  close $hour_fh;
 }
-close $hour_fh;
 
 # load temporal profiles
 print "Reading temporal profiles...\n";
