@@ -203,7 +203,7 @@ sub parse_header() {
 sub open_input() {
   my ($name) = @_;
   
-  open (my $fh, '<', $name) or die "Could not open file '$input' $!";
+  open (my $fh, '<', $name) or die "Could not open file '$name' $!";
   return $fh;
 }
 
