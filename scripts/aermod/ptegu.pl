@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Date::Simple qw(leap_year);
+use Date::Simple qw(leap_year ymd);
 use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 
 require 'aermod.subs';
@@ -266,7 +266,8 @@ while (my $line = <$in_fh>) {
 
     my @factors;
     my $month = 1;
-    my $day_of_week = 2;  # Jan. 1, 2014 was a Wednesday
+    # determine starting day of the week (convert from 0 = Sunday to 0 = Monday for temporal profiles)
+    my $day_of_week = (ymd($year, $month, 1)->day_of_week - 1) % 7;
     foreach my $month_factor (@monthly_factors) {
       # use summer factors for May through Sep
       my @hourly_factors = @hourly_winter_factors;
