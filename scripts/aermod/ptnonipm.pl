@@ -11,13 +11,14 @@ require 'aermod_pt.subs';
 my $sector = $ENV{'SECTOR'} || 'ptnonipm';
 
 # check environment variables
-foreach my $envvar (qw(REPORT REP_XWALK PTPRO_MONTHLY PTPRO_WEEKLY PTPRO_HOURLY OUTPUT_DIR)) {
+foreach my $envvar (qw(REPORT REP_XWALK REP_SRC PTPRO_MONTHLY PTPRO_WEEKLY PTPRO_HOURLY OUTPUT_DIR)) {
   die "Environment variable '$envvar' must be set" unless $ENV{$envvar};
 }
 
-# open report file
+# open report files
 my $in_fh = open_input($ENV{'REPORT'});
 my $inx_fh = open_input($ENV{'REP_XWALK'});
+my $ins_fh = open_input($ENV{'REP_SRC'});
 
 # load temporal profiles
 print "Reading temporal profiles...\n";
@@ -46,11 +47,8 @@ write_fug_srcparam_header($ar_fh);
 my $tmp_fh = open_output("$output_dir/temporal/${sector}_temporal.csv");
 write_temporal_header($tmp_fh);
 
-my $x_fh = open_output("$output_dir/xwalk/${sector}_srcid_emis.csv");
+my $x_fh = open_output("$output_dir/xwalk/${sector}_process_releasept_emis.csv");
 write_crosswalk_header($x_fh);
-
-my $src_fh = open_output("$output_dir/xwalk/${sector}_srcid_xwalk.csv");
-write_source_header($src_fh);
 
 my %rep_xwalk;
 
@@ -64,6 +62,25 @@ while (my $line = <$inx_fh>) {
 
   my @data = split(/\s+/, $line);
   push @{$rep_xwalk{$data[0]}}, \@data;
+}
+
+my %src_headers;
+my @src_pollutants;
+my %rep_src;
+print "Reading inventory source report...\n";
+while (my $line = <$ins_fh>) {
+  chomp $line;
+  next if skip_line($line);
+  
+  my ($is_header, @data) = parse_report_line($line);
+  
+  if ($is_header) {
+    parse_header(\@data, \%src_headers, \@src_pollutants, 'Char 3');
+    next;
+  }
+  
+  my $smoke_id = $data[$src_headers{'Source ID'}];
+  $rep_src{$smoke_id} = \@data;
 }
 
 my %headers;
@@ -182,30 +199,28 @@ while (my $line = <$in_fh>) {
   print $tmp_fh join(',', @output) . "\n";
   
   # prepare crosswalk output
-  foreach my $poll (@pollutants) {
-    next if $data[$headers{$poll}] == 0.0;
+  foreach my $xwalk_arrayref (@{$rep_xwalk{$line_num}}) {
+    my @xwalk_data = @{$xwalk_arrayref};
+    my $xstate = substr($xwalk_data[2], 7, 2);
+    die "Report and crosswalk mismatch at data line $line_num" unless $xstate eq $state && $xwalk_data[3] eq $plant_id;
     
-    @output = $state;
-    push @output, @common;
-    splice @output, 3, 0, $data[$headers{'Source type'}];
-    push @output, $poll;
-    push @output, $data[$headers{$poll}];
-    print $x_fh join(',', @output) . "\n";
-  }
-  
-  # prepare inventory source output
-  foreach my $src_data (@{$rep_xwalk{$line_num}}) {
-    my $xstate = substr(@{$src_data}[2], 7, 2);
-    die "Report and crosswalk mismatch at data line $line_num" unless $xstate eq $state && @{$src_data}[3] eq $plant_id;
-  
-    @output = $state;
-    push @output, $plant_id;
-    push @output, '"' . $data[$headers{'Plt Name'}] . '"';
-    push @output, @{$src_data}[4]; # unit ID
-    push @output, @{$src_data}[6]; # process ID
-    push @output, @{$src_data}[5]; # release point
-    push @output, $src_id;
-    print $src_fh join(',', @output) . "\n";
+    my $smoke_id = $xwalk_data[1];
+    die "Missing data for Source ID: $smoke_id in REP_SRC" unless exists $rep_src{$smoke_id};
+    my @src_data = @{$rep_src{$smoke_id}};
+    
+    foreach my $poll (@src_pollutants) {
+      @output = $state;
+      push @output, $plant_id;
+      push @output, '"' . $data[$headers{'Plt Name'}] . '"';
+      push @output, $data[$headers{'Source type'}];
+      push @output, $src_id;
+      push @output, $xwalk_data[4]; # unit ID
+      push @output, $xwalk_data[6]; # process ID
+      push @output, $xwalk_data[5]; # release point
+      push @output, $poll;
+      push @output, $src_data[$src_headers{$poll}];
+      print $x_fh join(',', @output) . "\n";
+    }
   }
 }
 
@@ -219,11 +234,11 @@ foreach my $out_ref (@locations) {
 
 close $in_fh;
 close $inx_fh;
+close $ins_fh;
 close $loc_fh;
 close $pt_fh;
 close $ar_fh;
 close $tmp_fh;
 close $x_fh;
-close $src_fh;
 
 print "Done.\n";

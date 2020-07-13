@@ -14,9 +14,10 @@ export PHOUR10=$INVOPD/phour.ptegu.oct.2011ek.ncf
 export PHOUR11=$INVOPD/phour.ptegu.nov.2011ek.ncf
 export PHOUR12=$INVOPD/phour.ptegu.dec.2011ek.ncf
 
-# location of AERMOD-source report created by Smkreport
+# location of AERMOD-source reports created by Smkreport
 export REPORT=$REPSCEN/pointgt.aermod.ptegu.12US2.2011ek.2011001.rpt
 export REP_XWALK=$REPSCEN/pointgt.aermod.ptegu.12US2.2011ek.2011001.rpt_src_crosswalk.txt
+export REP_SRC=$REPSCEN/point.aermod.ptegu.2011ek.rpt
 
 # locations of temporal profile files
 export PTPRO_MONTHLY=$GE_DAT/noncem_2014_tpro_monthly_csv_19jul2016_v0

@@ -35,7 +35,7 @@ sub write_temporal_header() {
 sub write_crosswalk_header() {
   my ($fh) = @_;
   
-  print $fh "state,facility_id,facility_name,fac_source_type,src_id,smoke_name,ann_value\n";
+  print $fh "state,facility_id,facility_name,fac_source_type,src_id,unit_id,process_id,rel_point_id,smoke_name,ann_value\n";
 }
 
 sub write_source_header() {
