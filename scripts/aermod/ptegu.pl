@@ -15,7 +15,7 @@ my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
 
 # check environment variables
 foreach my $envvar (qw(REPORT REP_XWALK REP_SRC YEAR
-                       PTPRO_MONTHLY PTPRO_DAILY PTPRO_WEEKLY PTPRO_HOURLY_WINTER PTPRO_HOURLY_SUMMER OUTPUT_DIR)) {
+                       PTPRO_MONTHLY PTPRO_DAILY PTPRO_HOURLY_WINTER PTPRO_HOURLY_SUMMER OUTPUT_DIR)) {
   die "Environment variable '$envvar' must be set" unless $ENV{$envvar};
 }
 
@@ -66,8 +66,11 @@ my %monthly = read_profiles($prof_file, 12);
 $prof_file = $ENV{'PTPRO_DAILY'};
 my %dayofmonth = read_dom_profiles($prof_file, 31, \@days_in_month);
 
-$prof_file = $ENV{'PTPRO_WEEKLY'};
-my %weekly = read_profiles($prof_file, 7);
+my %weekly;
+if (defined $ENV{'PTPRO_WEEKLY'}) {
+  $prof_file = $ENV{'PTPRO_WEEKLY'};
+  %weekly = read_profiles($prof_file, 7);
+}
 
 $prof_file = $ENV{'PTPRO_HOURLY_WINTER'};
 my %daily_winter = read_profiles($prof_file, 24);
