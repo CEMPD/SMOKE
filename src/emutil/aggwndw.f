@@ -82,9 +82,10 @@ C.........  EXTERNAL FUNCTIONS
         INTEGER         PROMPTFFILE
         CHARACTER(16)   PROMPTMFILE
         LOGICAL         SETENVVAR
+        LOGICAL         ENVYN
 
         EXTERNAL        CRLF, DBLERR, DSCM3GRD, PROMPTFFILE, 
-     &                  PROMPTMFILE, SETENVVAR
+     &                  PROMPTMFILE, SETENVVAR, ENVYN
 
 C.........  LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: 
@@ -118,6 +119,7 @@ C.........  Other local variables
         INTEGER     NSTEPS                      ! number of time steps in input
         INTEGER     POLLWIDTH                   ! width of pollutant names
         INTEGER     UNITWIDTH                   ! width of emissions units
+        INTEGER     IDIVSR                      ! No of aggregating cells (divisor)
 
         REAL(8)     DDX, DDY                    ! inverse of grid cell size
         REAL(8)     X0, Y0                      ! shifted origin
@@ -127,10 +129,11 @@ C.........  Other local variables
         REAL(8)     CHK_X                       ! check subgrid even with grid in x
         REAL(8)     CHK_Y                       ! check subgrid even with grid in y
         
-        REAL        INTOTAL                     ! input emissions total for reporting
-        REAL        OUTTOTAL                    ! output emissions total for reporting
-        REAL        PCTDIFF                     ! percent difference in totals
+        DOUBLE PRECISION  INTOTAL               ! input emissions total for reporting
+        DOUBLE PRECISION  OUTTOTAL              ! output emissions total for reporting
+        DOUBLE PRECISION  PCTDIFF               ! percent difference in totals
 
+        LOGICAL     EMISFLAG                    ! true: aggregating mass emissions across grid cells
         LOGICAL ::  EFLAG = .FALSE.             ! true: error found
 
         CHARACTER(80)    GDESC                  ! grid description
@@ -152,8 +155,12 @@ C           and prompt to continue running the program
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Open input emissions file
-        MESG = 'Enter logical name for INPUT EMISSIONS DATA file'
+        MESG = 'Enter logical name for INPUT DATA file'
         INAME = PROMPTMFILE( MESG, FSREAD3, 'INFILE', PROGNAME )
+
+C.........  Aggregating emission mass or not
+        MESG = 'Aggregating gridded emissions or not?'
+        EMISFLAG = ENVYN( 'AGGREGATE_EMIS_YN', MESG, .TRUE., IOS )
 
 C.........  Get name of output grid and read grid parameters
         IF( .NOT. DSCM3GRD( GRDNM, GDESC, COORD, GDTYP, COORUNIT,
@@ -190,7 +197,9 @@ C.........  Check that output grid cell size is a multiple of input cell size
         IF( .NOT. EFLAG ) THEN
             CHK_X = XCELL / XCELL3D
             CHK_Y = YCELL / YCELL3D
-        
+
+            IDIVSR = INT( CHK_X * CHK_X )
+   
             IF ( DBLERR( CHK_X, DNINT( CHK_X ) ) .OR.
      &           DBLERR( CHK_Y, DNINT( CHK_Y ) )      ) THEN
                 EFLAG = .TRUE.
@@ -396,7 +405,7 @@ C.........  Loop through time steps of emissions data
             DO L = 1, NVARS3D    ! Loop over variables
 
 C.................  Initialize output data array
-                VDATA_OUT = 0.
+                VDATA_OUT = 0.00000
 
                 DO K = 1, NLAYS3D
 
@@ -428,7 +437,7 @@ C.....................  Loop over grid cells
                     END DO
 
 C.....................  Calculate report information
-                    INTOTAL = 0.
+                    INTOTAL = 0.00000
                     DO J = 1, NROWS_IN
                         DO I = 1, NCOLS_IN
                             IF( OUTROW( I,J ) == 0 .OR.
@@ -438,7 +447,7 @@ C.....................  Calculate report information
                         END DO
                     END DO
                     
-                    OUTTOTAL = 0.
+                    OUTTOTAL = 0.00000
                     DO J = 1, NROWS
                         DO I = 1, NCOLS
                             OUTTOTAL = OUTTOTAL + VDATA_OUT( I,J,K )
@@ -466,7 +475,17 @@ C                       a guess here (0.01%)
                             CALL M3MESG( MESG )
                         END IF
                     END IF
-                    
+
+C.....................   Aggregate non-mass values like percentage or ratio
+                    IF( .NOT. EMISFLAG ) THEN
+                        DO J = 1, NROWS
+                            DO I = 1, NCOLS
+                               VDATA_OUT( I,J,K) = VDATA_OUT( I,J,K )/
+     &                                             FLOAT( IDIVSR )
+                            END DO
+                        END DO
+                    END IF
+
                 END DO  ! End loop over layers
 
 C.................  Output variable to new emissions file
