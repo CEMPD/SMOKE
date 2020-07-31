@@ -1,6 +1,6 @@
 
         SUBROUTINE FIRE_POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF, ZZF, TA,
-     &                           ZH, ACRES, SFRACT, LTOP, LFRAC )
+     &                           ZH, ACRES, FPB1FLAG, LTOP, LFRAC )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -61,14 +61,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: EMLAYS           ! no. emissions layers
         INTEGER, INTENT (IN) :: S                ! source ID
-        REAL   , INTENT (IN) :: ZBOT             ! plume bottom elevation (m)
+        REAL   , INTENT(INOUT)::ZBOT             ! plume bottom elevation (m)
         REAL   , INTENT (IN) :: ZTOP             ! plume top elevation (m)
         REAL   , INTENT (IN) :: PRESF( 0:EMLAYS )! pressure at full-levels (mb)
         REAL   , INTENT (IN) :: ZZF  ( 0:EMLAYS )! elevation at full-levels (m)
         REAL   , INTENT (IN) :: TA   ( 1:EMLAYS )! temperature at half-levels (K)
         REAL   , INTENT (IN) :: ZH   ( 1:EMLAYS )! layer center  height (m)
         REAL   , INTENT (IN) :: ACRES            ! number of acres burned
-        REAL   , INTENT(OUT) :: SFRACT           ! smouldering fraction
+        LOGICAL, INTENT (IN) :: FPB1FLAG         ! true: set fire plume bottom to layer 1
         INTEGER, INTENT(OUT) :: LTOP             ! plume top layer
         REAL   , INTENT(OUT) :: LFRAC( EMLAYS )  ! layer fractions for source
 
@@ -84,7 +84,7 @@ C...........   Local variables
         REAL          PBOT, PTOP
         REAL          TEMP
         REAL          ZMAX, ZMIN
-        REAL          AFRACT
+        REAL          AFRACT, SFRACT
         REAL          SUM, BESIZE
 
         CHARACTER(300) MESG
@@ -104,6 +104,8 @@ C...........   Check if area is zero or missing
             RETURN
         END IF
 
+C...........   Set fire plume bottom to layer 1
+        IF( FPB1FLAG ) ZBOT = 1.0
 
 C...........   Compute LBOT, LTOP so that
 C...........   ZZF( LBOT-1 ) <= ZBOT < ZZF( LBOT ) and
@@ -230,35 +232,40 @@ C.............  Calculate top using hydrostatic assumption
  
         END IF          !  if ztop in same layer as zbot, or not
 
-C.........  For fire smouldering effects, include fractions below LBOT
-        IF (ACRES .EQ. 0.0) THEN
-            BESIZE = 0.0
-        ELSE
-            BESIZE = 0.0703 * LOG( ACRES ) + 0.3
-        ENDIF
+C.........  If fire plume bottome is NOT set to layer 1
+        IF( .NOT. FPB1FLAG ) THEN
 
-C......... Reset BESIZE to 1 when it is greater than 1 (a very large fire)
-C          then we must set to 1 to avoid negative sfract
-        IF (BESIZE .gt. 1.0) BESIZE = 1.0
+C.............  For fire smouldering effects, include fractions below LBOT
+            IF (ACRES .EQ. 0.0) THEN
+                BESIZE = 0.0
+            ELSE
+                BESIZE = 0.0703 * LOG( ACRES ) + 0.3
+            ENDIF
 
-        SFRACT = 1.0D0 - DBLE( BESIZE )
+C............. Reset BESIZE to 1 when it is greater than 1 (a very large fire)
+C              then we must set to 1 to avoid negative sfract
+            IF (BESIZE .gt. 1.0) BESIZE = 1.0
+
+            SFRACT = 1.0D0 - DBLE( BESIZE )
         
-        PDIFF = DBLE( PRESF( 0 ) ) - DBLE( PBOT )
-        DDP   = 1.0D0 / PDIFF
+            PDIFF = DBLE( PRESF( 0 ) ) - DBLE( PBOT )
+            DDP   = 1.0D0 / PDIFF
         
-        DO L = 1, LBOT-1
-            LFRAC( L ) = DDP * 
-     &          ( DBLE( PRESF( L-1 ) ) - DBLE( PRESF( L ) ) ) * SFRACT
-        END DO
+            DO L = 1, LBOT-1
+                LFRAC( L ) = DDP * 
+     &              ( DBLE( PRESF( L-1 ) ) - DBLE( PRESF( L ) ) ) * SFRACT
+            END DO
       
-        DO L = LBOT, LBOT
-            LFRAC( L ) = LFRAC( L ) * ( 1 - SFRACT ) + DDP *
-     &          ( DBLE( PRESF( LBOT-1 ) ) - DBLE( PBOT ) ) * SFRACT
-        END DO
+            DO L = LBOT, LBOT
+                LFRAC( L ) = LFRAC( L ) * ( 1 - SFRACT ) + DDP *
+     &             ( DBLE( PRESF( LBOT-1 ) ) - DBLE( PBOT ) ) * SFRACT
+            END DO
       
-        DO L = LBOT+1, LTOP
-            LFRAC( L ) = LFRAC( L ) * ( 1 - SFRACT )
-        END DO
+            DO L = LBOT+1, LTOP
+                LFRAC( L ) = LFRAC( L ) * ( 1 - SFRACT )
+            END DO
+
+        END IF
 
         RETURN
 

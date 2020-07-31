@@ -264,7 +264,6 @@ C...........   Other local variables
         REAL             USTMP     !  tmp storage for ustar (m/s)
         REAL             TMPBFLX   !  tmp Briggs bouyancy (m^4/s^4)
         REAL             TMPACRE   !  tmp area burned (acres)
-        REAL             SFRACT    !  smouldering fraction
         REAL             ALTITUDE  !  aircraft altitude (m)
 
         REAL(8)          METXORIG  ! cross grid X-coord origin of met grid
@@ -292,6 +291,7 @@ C...........   Other local variables
         LOGICAL          LFG( 9 )         ! true: source characteristic is valid
         LOGICAL       :: AIRFLAG = .FALSE.! true: calculate plumes for aircraft/EDMS data
         LOGICAL       :: FIREFLAG =.FALSE.! true: calculate plumes for fire data
+        LOGICAL       :: FPB1FLAG =.FALSE.! true: set fire plume bottom to layer 1
         LOGICAL       :: HOURFIRE =.FALSE.! true: use hourly fire data
         LOGICAL, SAVE :: WILDFLAG =.TRUE. ! true: calculate plumes for fire data (NO BLUESKY USE)
 
@@ -338,6 +338,9 @@ C.........   Get setting from environment variables
 
         MESG = 'Ground temperature'
         CALL ENVSTR( 'PLUME_GTEMP_NAME', MESG, 'TEMP2', TGNAM, IOS )
+
+        MESG = 'Set the fire plume bottom to layer 1'
+        FPB1FLAG = ENVYN( 'FIRE_BOTTOM_LAYER_1_YN', MESG, .TRUE., IOS )
 
         MESG = 'Use aircraft inventory data'
         AIRFLAG = ENVYN( 'USE_EDMS_DATA_YN', MESG, .FALSE., IOS )
@@ -1564,7 +1567,7 @@ C.................  Allocate plume to layers
 
                     CALL FIRE_POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF,
      &                                 LFULLHT, TEMPS, LHALFHT, TMPACRE,
-     &                                 SFRACT, LTOP, TFRAC )
+     &                                 FPB1FLAG, LTOP, TFRAC )
 
 C.....................  Calculate layer fraction for fire
 C                       First, layer fractions for LAY1F under PBL
