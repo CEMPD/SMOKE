@@ -235,16 +235,31 @@ while (my $line = <$in_fh>) {
       my $outzone = $zone;
       $outzone =~ s/\D//g; # strip latitude band designation from UTM zone
       
+      # calculate center of grid cell
+      my $ne_lat = $data[$headers{'NE Latitude'}];
+      my $ne_lon = $data[$headers{'NE Longitude'}];
+      my ($tmpzone, $utm_x_end, $utm_y_end) = latlon_to_utm_force_zone(23, $zone, $ne_lat, $ne_lon);
+      
+      my $x_diff = $utm_x_end - $utm_x;
+      my $utm_x_mid = $utm_x + $x_diff / 2;
+      my $y_diff = $utm_y_end - $utm_y;
+      my $utm_y_mid = $utm_y + $y_diff / 2;
+      
+      $x_diff = $ne_lon - $sw_lon;
+      my $mid_lon = $sw_lon + $x_diff / 2;
+      $y_diff = $ne_lat - $sw_lat;
+      my $mid_lat = $sw_lat + $y_diff / 2;
+      
       @output = ();
       push @output, $run_group . $run_group_suffix;
       push @output, sprintf("%02d", $state);
       push @output, $facility_id;
       push @output, $source_id;
-      push @output, $utm_x;
-      push @output, $utm_y;
+      push @output, $utm_x_mid;
+      push @output, $utm_y_mid;
       push @output, $outzone;
-      push @output, $sw_lon;
-      push @output, $sw_lat;
+      push @output, $mid_lon;
+      push @output, $mid_lat;
       
       my $file = "$output_dir/locations/${run_group}_${run_group_suffix}_locations.csv";
       unless (exists $handles{$file}) {
@@ -272,11 +287,8 @@ while (my $line = <$in_fh>) {
       push @output, $utm_x;
       push @output, $utm_y;
 
-      my $ne_lat = $data[$headers{'NE Latitude'}];
-      my $ne_lon = $data[$headers{'NE Longitude'}];
-      ($zone, $utm_x, $utm_y) = latlon_to_utm_force_zone(23, $zone, $ne_lat, $ne_lon);
-      push @output, $utm_x;
-      push @output, $utm_y;
+      push @output, $utm_x_end;
+      push @output, $utm_y_end;
 
       my $se_lat = $data[$headers{'SE Latitude'}];
       my $se_lon = $data[$headers{'SE Longitude'}];
