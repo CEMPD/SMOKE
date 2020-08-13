@@ -430,13 +430,7 @@ foreach my $facility_id (sort keys %emissions) {
     push @output, sprintf("%02d", substr($sources{$facility_id}{$group_type}{'region'}, 0, 2));
     push @output, $run_group . '_' . $run_group_suffix;
     push @output, $run_group . $run_group_suffix;
-  
-    if ($run_group eq $UW_GROUP) {
-      push @output, $facility_id;
-    } else {
-      push @output, $sources{$facility_id}{$group_type}{'max_cell'};
-    }
-  
+    push @output, $facility_id;
     push @output, $source_id;
     push @output, $hourly_poll;
   
