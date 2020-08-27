@@ -209,6 +209,7 @@ while (my $line = <$in_fh>) {
     my @src_data = @{$rep_src{$smoke_id}};
     
     foreach my $poll (@src_pollutants) {
+      next if $src_data[$src_headers{$poll}] == 0.0;
       @output = $state;
       push @output, $plant_id;
       push @output, '"' . $data[$headers{'Plt Name'}] . '"';
