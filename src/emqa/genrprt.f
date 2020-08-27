@@ -534,7 +534,7 @@ C.........................  Sum non-gridded output records into temporary bins
 
 !$OMP                       PARALLEL DO
 !$OMP&                       DEFAULT( NONE ),
-!$OMP&                        SHARED( NOUTBINS, NBINS, ISRCB, OUTSFAC.
+!$OMP&                        SHARED( NOUTBINS, NBINS, ISRCB, OUTSFAC,
 !$OMP&                                POLVAL, LFRAC1L, PRMAT, ACUMATX,
 !$OMP&                                BINDATA, BINPOPDIV, J, KP, KM, ID, IE ),
 !$OMP&                       PRIVATE( N, BSUM, M, S, P )
