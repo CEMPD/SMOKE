@@ -134,7 +134,7 @@ BIOSRC = \
  normbeis3.f   normbeis314.f normbeis361.f       \
  prebmet.f     rdb3fac.f     rdb4fac.f           \
  rdb4fac_csv.f rdbpro.f      tmpbeis3.f          \
- tmpbeis314.f  tmpbeis361.f
+ tmpbeis314.f  tmpbeis361.f  normbeis370.f
  
 BIOOBJ =  $(BIOSRC:.f=.o)
 
@@ -460,6 +460,7 @@ writeset.o    : $(MODFILESET)
 
 normbeis314.o : $(MODBEIS3) $(MODGRDLIB)
 normbeis361.o : $(MODBEIS3) $(MODGRDLIB)
+normbeis370.o : $(MODBEIS3) $(MODGRDLIB)
 tmpbeis314.o  : $(MODSPRO) $(MODBEIS3)
 tmpbeis361.o  : $(MODSPRO) $(MODBEIS3)
 
@@ -677,7 +678,7 @@ tmpbeis3:  czangle.o getpar.o getparb.o hrbeis_361.o hrbeis3.o prebmet.o rdbpro.
  tmpbeis3.o tmpbeis314.o tmpbeis361.o hrno.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 
-normbeis3: normbeis3.o rdb3fac.o rdb4fac.o rdb4fac_csv.o normbeis314.o normbeis361.o
+normbeis3: normbeis3.o rdb3fac.o rdb4fac.o rdb4fac_csv.o normbeis314.o normbeis361.o normbeis370.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 
 cntlmat: $(CTLOBJ)

@@ -81,16 +81,18 @@ C           to continue running the program.
 
 C.........  Get the BEIS3 model version to use
         MESG = 'Version of BEIS3 to use'
-        CALL ENVSTR( 'BEIS_VERSION', MESG, '3.61', BEISVER, IOS )
+        CALL ENVSTR( 'BEIS_VERSION', MESG, '3.7', BEISVER, IOS )
         
         SELECT CASE( BEISVER )
+        CASE( '3.7' )
+            CALL TMPBEIS360( CVSW )
         CASE( '3.61' )
             CALL TMPBEIS360( CVSW )
         CASE( '3.14' )
             CALL TMPBEIS314( CVSW )
         CASE DEFAULT
             MESG = 'ERROR: Unrecognized BEIS_VERSION setting; valid ' //
-     &             'settings are 3.14 and 3.61'
+     &             'settings are 3.14, 3.61 and 3.7'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END SELECT
 

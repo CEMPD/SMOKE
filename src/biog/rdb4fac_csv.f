@@ -1,7 +1,6 @@
 
-        SUBROUTINE RDB4FAC_CSV( NLINES, NSEF, FDEV, NVEG, VGLIST,
-     &                      BIOTYPES,LINDX,
-     &                      LFAC, WNTF, LWGT, FACS  ) 
+        SUBROUTINE RDB4FAC_CSV( BEISV, NLINES, NSEF, FDEV, NVEG, VGLIST,
+     &                      BIOTYPES,LINDX, LFAC, WNTF, LWGT, FACS  ) 
 
 C***********************************************************************
 C  subroutine body starts at line XX 
@@ -32,6 +31,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
 
 
+        CHARACTER(11),INTENT (IN):: BEISV   !  version of BEIS
         INTEGER, INTENT (IN)  :: NSEF    !  no. biogenic emission factors
         INTEGER, INTENT (IN)  :: FDEV    !  unit number input file 
         INTEGER, INTENT (IN)  :: NVEG  !  no. veg types
@@ -44,7 +44,8 @@ C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
         REAL, INTENT (OUT)           :: WNTF( NVEG )       ! winter factor
         REAL, INTENT (OUT)           :: LWGT( NVEG )       ! specific leaf wgt
         REAL, INTENT (OUT)           :: FACS( NVEG, NSEF ) ! emis facs
- 
+
+        LOGICAL,SAVE :: CHKHDR= .FALSE.   ! check the header BEISFAC4BELD5 
         LOGICAL      :: EFLAG = .FALSE.  !  error flag
         INTEGER      :: MXSEG            ! # of potential line segments
 
@@ -70,22 +71,32 @@ C.........  Set number of potential line segments
         CALL CHECKMEM( ISTAT, 'SEGMENT', PROGNAME )
 
 C.......... Read in emissions factors for each veg id
-     
-
-     
         DO I = 1, NLINES
 
-
-          
           READ( FDEV, 93030, IOSTAT=ISTAT )  LINE
 
-     
           IF ( ISTAT .NE. 0 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 )
      &              'Error', ISTAT,
      &              'reading EMISSION FACTOR file at line', I
                CALL M3MESG( MESG )
+          END IF
+
+C............   Check the header
+          IF( BEISV == 'NORMBEIS360' ) THEN   ! BEIS v3.6 does not need a header from B360FAC file
+              CHKHDR = .TRUE.
+          ELSE
+              IF( LINE( 2:14 ) == 'BEISFAC4BELD5' ) THEN
+                  CHKHDR = .TRUE.
+                  CYCLE
+              END IF
+          END IF
+
+          IF( I > 1 .AND. .NOT. CHKHDR ) THEN
+              MESG = 'ERROR: #BEISFAC4BELD5 header is missing ' //
+     &               'from BEISFAC input file'
+              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
           END IF
 
 C.............  Separate the line of data into each part
@@ -95,9 +106,6 @@ C.............  Separate the line of data into each part
 	  VTYP = SEGMENT( 2 )
 	  UNIT = SEGMENT( 3 )
 	  VALU = STR2REAL( SEGMENT ( 4 )) 
-	  
-
-
 	  
 	  INDEX = 0
 	  DO J = 1, NVEG
@@ -112,7 +120,6 @@ C.............  Separate the line of data into each part
                CALL M3MESG( MESG )
 	       CYCLE	     
 	  ENDIF
-
 
           SELECT CASE (TRIM(VTYP))
 
@@ -149,16 +156,7 @@ C.............  Separate the line of data into each part
 				
 	  END SELECT  
 
-
-
-		
-			   
-
- 
         ENDDO
-
-
-	
 
         IF( EFLAG ) THEN
             MESG = 'Problem reading biogenic emissions factors file.'

@@ -1,5 +1,5 @@
 
-        SUBROUTINE NORMBEIS360( CVSW )
+        SUBROUTINE NORMBEIS370( CVSW )
 
 C***********************************************************************
 C
@@ -12,6 +12,7 @@ C  REVISION  HISTORY: 4/00 Prototype, Jeff Vukovich
 C                     1/03 changes to NO, George Pouliot
 C                     4/12 update to BELD4 using comma delmited emission factor file
 C                     8/2012  update for BELD4 and soil NOx for irrigated crop lands
+C                     8/2020  update for BELD5 and BEISFAC for BEISv3.7
 C
 C***********************************************************************
 C
@@ -84,26 +85,18 @@ C.........  LOCAL VARIABLES and their descriptions
         INTEGER         NROWS   ! no. of grid rows
         INTEGER         NCDOT   ! no. of columns in dot file
         INTEGER         NRDOT   ! no. of rows in dot file
-	
-	
 
-	INTEGER         NVARS4  ! total number of variables in input file > 120
-	
+        INTEGER         NVARS4  ! total number of variables in input file > 120
         INTEGER         IFOUND  ! used for checking land use vs. emis facs
-	
         INTEGER         IUSDEC  ! USGS decid forest
         INTEGER         IUSBRD  ! USGS evbrdleaf
         INTEGER         IUSCON  ! USGS coniferfor
         INTEGER         IUSMIX  ! USGS mixed forest                         
         INTEGER         IUSSHR  ! USGS shrubland
-	
-	
         INTEGER         IUSCGS  ! USGS Cropgrass
         INTEGER         IUSCWD  ! USGS Cropwoodland
         INTEGER         IUSCDY  ! USGS Drycrop
         INTEGER         IUSCIR  ! USGS Irrcrop
-	
-	
         INTEGER         IALFAL  ! Alfalfa
         INTEGER         IBARLE  ! Barley
         INTEGER         ICORNG   ! Corn
@@ -120,9 +113,9 @@ C.........  LOCAL VARIABLES and their descriptions
         INTEGER         ISORGHG  ! Sorghum
         INTEGER         ISORGHS  ! Sorghum	
         INTEGER         ISOYBE  ! Soybeans
-	INTEGER         IBEANSED ! Edible Benas
-	INTEGER         IBEANS  ! Beans
-	INTEGER         ICANOLA ! Canola
+        INTEGER         IBEANSED ! Edible Benas
+        INTEGER         IBEANS  ! Beans
+        INTEGER         ICANOLA ! Canola
         INTEGER         IWHEATW  ! Wheat
         INTEGER         IWHEATS  ! Wheat
 
@@ -143,24 +136,21 @@ C.........  LOCAL VARIABLES and their descriptions
         INTEGER         ISORGHG_IR  ! Sorghum
         INTEGER         ISORGHS_IR  ! Sorghum
         INTEGER         ISOYBE_IR  ! Soybeans
-	INTEGER         IBEANSED_IR ! Edible Benas
-	INTEGER         IBEANS_IR  ! Beans
-	INTEGER         ICANOLA_IR ! Canola
+        INTEGER         IBEANSED_IR ! Edible Benas
+        INTEGER         IBEANS_IR  ! Beans
+        INTEGER         ICANOLA_IR ! Canola
         INTEGER         IWHEATS_IR  ! Wheat Spring Irrigated
         INTEGER         IWHEATW_IR  ! Wheat Winter Irrigated	
-	
 
         INTEGER         NLCD82  ! Cultivated Crops	
-	INTEGER         NLCD81  ! Pasture Hay Grass	
+        INTEGER         NLCD81  ! Pasture Hay Grass	
 
         
-	INTEGER         MODIS14  ! modis mosaic 1/3 (grass + mxforest + drycrop)
-	INTEGER         MODIS12  ! irrigated crops
-	
-	
-	INTEGER     ::    LAI_SAVE_INDEX(3)
-        INTEGER :: NLINES	
-	LOGICAL :: IS_AG, IS_TAG
+        INTEGER         MODIS14  ! modis mosaic 1/3 (grass + mxforest + drycrop)
+        INTEGER         MODIS12  ! irrigated crops
+        INTEGER     ::    LAI_SAVE_INDEX(3)
+        INTEGER :: NLINES
+        LOGICAL :: IS_BG, IS_MAG
 
         REAL, ALLOCATABLE    :: XVALS ( :, : )     ! x values for grid cell boundaries
         REAL, ALLOCATABLE    :: YVALS ( :, : )     ! y values for grid cell boundaries
@@ -185,10 +175,10 @@ C.........  LOCAL VARIABLES and their descriptions
         LOGICAL         VFLAG                      ! variable grid flag
         LOGICAL       :: EFLAG = .FALSE.           ! Error flag
 
-        CHARACTER(16) :: PROGNAME = 'NORMBEIS360'  ! Program name
+        CHARACTER(16) :: PROGNAME = 'NORMBEIS370'  ! Program name
 
 C***********************************************************************
-C   begin body of subroutine NORMBEIS360
+C   begin body of subroutine NORMBEIS370
 
 C.........  Check for variable grid data
         VFLAG = ENVYN( 'USE_VARIABLE_GRID',
@@ -198,20 +188,19 @@ C.........  Check for variable grid data
 C.........  Get file name; open emission factors file
         FDEV = PROMPTFFILE( 
      &           'Enter logical name for EMISSION FACTORS file',
-     &           .TRUE., .TRUE., 'B360FAC', PROGNAME )
+     &           .TRUE., .TRUE., 'BEISFAC', PROGNAME )
 
 C.........  Open gridded landuse files 
         GNAMET = PROMPTMFILE(
      &           'Enter logical name for GRIDDED LANDUSE totals file',
-     &           FSREAD3, 'BELD4', PROGNAME )
+     &           FSREAD3, 'BELD5', PROGNAME )
 
         IF ( .NOT. DESC3( GNAMET ) ) THEN
             MESG = 'Could not get description of file "' //
      &             TRIM( GNAMET ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-	NVARS4 = NVARS3D
-	
+        NVARS4 = NVARS3D
 
 C.........  Initialize grid definition
         CALL CHKGRID( GNAMET, 'GRID' , 0, EFLAG )
@@ -288,10 +277,6 @@ C.............  Calculate cell size for each cell and conversion factor
             PRCNT2KM2( 1, 1 ) = XCELL3D * YCELL3D * 1E-08
         END IF
 
-
-
-
-
 C.........  Store landuse variable names from first file
         ALLOCATE( LUNAM( NVARS4 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LUNAM', PROGNAME )
@@ -300,7 +285,7 @@ C.........  Store landuse variable names from first file
         CALL CHECKMEM( IOS, 'VGLIST', PROGNAME )
 
 
-	NVEG = NVARS4 
+        NVEG = NVARS4 
 
 C.........  Allocate memory for emission factor variables   
         ALLOCATE( VEGID ( NVEG ), STAT=IOS )
@@ -308,19 +293,13 @@ C.........  Allocate memory for emission factor variables
 
         DO I = 1, NVARS4
             LUNAM ( I ) =TRIM(VNAME3D ( I ) )
-        END DO	 	 		
+        END DO
         DO I = 1, NVARS4
            VGLIST ( I ) = TRIM(VNAME3D ( I ) )
         END DO
         DO I = 1, NVARS4
-	    VEGID ( I ) = VGLIST ( I )
+           VEGID ( I ) = VGLIST ( I )
         END DO
-	 
-
-
-
-
-
 
 C.........  Set up header variables for output file B3GRD
         NROWS3D = NROWS
@@ -342,7 +321,7 @@ C.........  Set up header variables for output file B3GRD
         FDESC3D( 1 ) = 'BEIS3 normalized emissions values.'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
-        FDESC3D( 4 ) = '/LANDUSE/ SMOKE TOOL '
+        FDESC3D( 4 ) = '/LANDUSE/ BELD5 '                 ! BELD5 only works with BEISv3.7 or later
 
         I = 0
 
@@ -410,10 +389,8 @@ C.........  Open output file
 
 C.........  Get length of BFAC file
         NLINES = GETFLINE( FDEV, 'Emissions factor file' )
-	
 
 !	NVEG = NVARS4 + 2
-
 C.........  Allocate memory for emission factor variables   
 !        ALLOCATE( VEGID ( NVEG ), STAT=IOS )
 !        CALL CHECKMEM( IOS, 'VEGID', PROGNAME )
@@ -434,10 +411,10 @@ C.........  Allocate memory for emission factor variables
         CALL CHECKMEM( IOS, 'LFBIO', PROGNAME )
 
         EMFAC(1:NVEG,1:NSEF) = -99.0
-	LAI(1:NVEG) = -99
-	SLW(1:NVEG) = -99.0
-	WFAC(1:NVEG) = -99.0
-	LFBIO(1:NVEG) = -99.0
+        LAI(1:NVEG) = -99
+        SLW(1:NVEG) = -99.0
+        WFAC(1:NVEG) = -99.0
+        LFBIO(1:NVEG) = -99.0
 
 C.........  Read emissions factor file
         MESG = 'Reading emissions factor file...'
@@ -454,50 +431,45 @@ C.........  This routine reads in emission factors
 C.........  This routine reads in emission factors 
         CALL RDB4FAC_CSV( PROGNAME, NLINES, NSEF, FDEV, NVARS4,  VGLIST,
      &                BIOTYPES, LAI, LFBIO, WFAC, SLW, EMFAC) 
-
-	
      
         DO I = 1, NVEG
-	   IF (LAI(I) .eq. -99) THEN
+           IF (LAI(I) .eq. -99) THEN
               MESG = 'ERROR: MISSING LAI FOR VEG TYPE: '//VGLIST(I)
-              CALL M3MSG2( MESG )	      	                      
+              CALL M3MSG2( MESG )
 !              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )      
            ENDIF
 
-	   IF (SLW(I) .eq. -99.0) THEN
+           IF (SLW(I) .eq. -99.0) THEN
               MESG = 'ERROR: MISSING SLW FOR VEG TYPE: '//VGLIST(I)
-              CALL M3MSG2( MESG )	      	                      
+              CALL M3MSG2( MESG )
 !              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )      
            ENDIF
 
-	   IF (WFAC(I) .eq. -99.0) THEN
+           IF (WFAC(I) .eq. -99.0) THEN
               MESG = 'ERROR: MISSING WINTER FAC FOR VEG TYPE: 
      &        '//VGLIST(I)
-              CALL M3MSG2( MESG )	      	                      
+              CALL M3MSG2( MESG )
 !              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )      
            ENDIF
 
-	   IF (LFBIO(I) .eq. -99.0) THEN
-              MESG = 'ERROR: MISSING LFBIO FOR VEG TYPE: '//VGLIST(I)	
-             CALL M3MSG2( MESG )	                            
+           IF (LFBIO(I) .eq. -99.0) THEN
+              MESG = 'ERROR: MISSING LFBIO FOR VEG TYPE: '//VGLIST(I)
+             CALL M3MSG2( MESG )
 !              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )      
            ENDIF
         ENDDO
-	   DO J = 1, NSEF
-	     DO I = 1, NVEG
-	      IF (EMFAC(I,J) .eq. -99.0 ) THEN
-	         MESG = 
+           DO J = 1, NSEF
+             DO I = 1, NVEG
+              IF (EMFAC(I,J) .eq. -99.0 ) THEN
+                 MESG = 
      &            'ERROR: MISSING EMISSION FACTOR FOR VEG TYPE:'
      &            //VGLIST(I)//
      &            'AND SPECIES: '//BIOTYPES(J)
                  CALL M3MSG2( MESG )     
 !                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )  
               ENDIF
-	     ENDDO
-	   ENDDO
-	   
-
-	      
+             ENDDO
+           ENDDO
 
         ALLOCATE( LUINDX ( NVARS4 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LUINDX', PROGNAME )
@@ -528,8 +500,6 @@ C.........  Check to see if there are emissions factors for all landuse types
 !                IF ( VEGID( J ) .EQ. 'USGS_coniferfor ' ) IUSCON = J
 !                IF ( VEGID( J ) .EQ. 'USGS_mxforest   ' ) IUSMIX = J
 !                IF ( VEGID( J ) .EQ. 'USGS_shrubland  ' ) IUSSHR = J
-		
-		
 !
 !!!!!! ag areas begins here
 !
@@ -537,51 +507,49 @@ C.........  Check to see if there are emissions factors for all landuse types
                 IF ( VEGID( J ) .EQ. 'NLCD_82         ' ) NLCD82 = J
                 IF ( VEGID( J ) .EQ. 'MODIS_12        ' ) MODIS12 = J
                 IF ( VEGID( J ) .EQ. 'MODIS_47        ' ) MODIS14 = J
-		
 
                 IF ( VEGID( J ) .EQ. 'Alfalfa         ' ) IALFAL   = J
-                IF ( VEGID( J ) .EQ. 'Alfalfa_ir      ' ) IALFAL_IR = J				
+                IF ( VEGID( J ) .EQ. 'Alfalfa_ir      ' ) IALFAL_IR = J
                 IF ( VEGID( J ) .EQ. 'Barley          ' ) IBARLE   = J
-                IF ( VEGID( J ) .EQ. 'Barley_ir       ' ) IBARLE_IR = J		
+                IF ( VEGID( J ) .EQ. 'Barley_ir       ' ) IBARLE_IR = J
                 IF ( VEGID( J ) .EQ. 'CornGrain       ' ) ICORNG     = J
-                IF ( VEGID( J ) .EQ. 'CornGrain_ir    ' ) ICORNG_IR  = J	
+                IF ( VEGID( J ) .EQ. 'CornGrain_ir    ' ) ICORNG_IR  = J
                 IF ( VEGID( J ) .EQ. 'CornSilage      ' ) ICORNS     = J
-                IF ( VEGID( J ) .EQ. 'CornSilage_ir   ' ) ICORNS_IR  = J			
+                IF ( VEGID( J ) .EQ. 'CornSilage_ir   ' ) ICORNS_IR  = J
                 IF ( VEGID( J ) .EQ. 'Cotton          ' ) ICOTTO    = J
-                IF ( VEGID( J ) .EQ. 'Cotton_ir       ' ) ICOTTO_IR = J		
+                IF ( VEGID( J ) .EQ. 'Cotton_ir       ' ) ICOTTO_IR = J
                 IF ( VEGID( J ) .EQ. 'Other_Grass     ' ) IGRASS = J
-                IF ( VEGID( J ) .EQ. 'Other_Grass_ir  ' ) IGRASS_IR = J		
+                IF ( VEGID( J ) .EQ. 'Other_Grass_ir  ' ) IGRASS_IR = J
                 IF ( VEGID( J ) .EQ. 'Hay             ' ) IHAY      = J
                 IF ( VEGID( J ) .EQ. 'Hay_ir          ' ) IHAY_IR   = J
                 IF ( VEGID( J ) .EQ. 'Other_crop      ' ) IMISCC = J
                 IF ( VEGID( J ) .EQ. 'Other_crop_ir   ' ) IMISCC_IR = J
                 IF ( VEGID( J ) .EQ. 'Oats            ' ) IOATS  = J
-                IF ( VEGID( J ) .EQ. 'Oats_ir         ' ) IOATS_IR  = J			
+                IF ( VEGID( J ) .EQ. 'Oats_ir         ' ) IOATS_IR  = J
                 IF ( VEGID( J ) .EQ. 'Peanuts         ' ) IPEANU    = J
-                IF ( VEGID( J ) .EQ. 'Peanuts_ir      ' ) IPEANU_IR = J	
+                IF ( VEGID( J ) .EQ. 'Peanuts_ir      ' ) IPEANU_IR = J
                 IF ( VEGID( J ) .EQ. 'Potatotes       ' ) IPOTAT    = J
-                IF ( VEGID( J ) .EQ. 'Potatotes_ir    ' ) IPOTAT_IR = J	
+                IF ( VEGID( J ) .EQ. 'Potatotes_ir    ' ) IPOTAT_IR = J
                 IF ( VEGID( J ) .EQ. 'Rice            ' ) IRICE     = J
-                IF ( VEGID( J ) .EQ. 'Rice_ir         ' ) IRICE_IR  = J	
+                IF ( VEGID( J ) .EQ. 'Rice_ir         ' ) IRICE_IR  = J
                 IF ( VEGID( J ) .EQ. 'Rye             ' ) IRYE      = J
-                IF ( VEGID( J ) .EQ. 'Rye_ir          ' ) IRYE_IR   = J	
+                IF ( VEGID( J ) .EQ. 'Rye_ir          ' ) IRYE_IR   = J
                 IF ( VEGID( J ) .EQ. 'SorghumGrain    ' ) ISORGHG    = J
                 IF ( VEGID( J ) .EQ. 'SorghumGrain_ir ' ) ISORGHG_IR = J
                 IF ( VEGID( J ) .EQ. 'SorghumSilage   ' ) ISORGHS    = J
-                IF ( VEGID( J ) .EQ. 'SorghumSilage_ir' ) ISORGHS_IR = J						
+                IF ( VEGID( J ) .EQ. 'SorghumSilage_ir' ) ISORGHS_IR = J
                 IF ( VEGID( J ) .EQ. 'Soybeans        ' ) ISOYBE = J
                 IF ( VEGID( J ) .EQ. 'Soybeans_ir     ' ) ISOYBE_IR = J
                 IF ( VEGID( J ) .EQ. 'Beans           ' ) IBEANS = J
-                IF ( VEGID( J ) .EQ. 'Beans_ir        ' ) IBEANS_IR = J		
+                IF ( VEGID( J ) .EQ. 'Beans_ir        ' ) IBEANS_IR = J
                 IF ( VEGID( J ) .EQ. 'BeansEdible     ' ) IBEANSED = J
-                IF ( VEGID( J ) .EQ. 'BeansEdible_ir  ' ) IBEANSED_IR =J		
+                IF ( VEGID( J ) .EQ. 'BeansEdible_ir  ' ) IBEANSED_IR =J
                 IF ( VEGID( J ) .EQ. 'Canola          ' ) ICANOLA = J
-                IF ( VEGID( J ) .EQ. 'Canola_ir       ' ) ICANOLA_IR = J		
+                IF ( VEGID( J ) .EQ. 'Canola_ir       ' ) ICANOLA_IR = J
                 IF ( VEGID( J ) .EQ. 'Wheat_Spring    ' ) IWHEATS    = J
                 IF ( VEGID( J ) .EQ. 'Wheat_Spring_ir ' ) IWHEATS_IR = J
                 IF ( VEGID( J ) .EQ. 'Wheat_Winter    ' ) IWHEATW    = J
-                IF ( VEGID( J ) .EQ. 'Wheat_Winter_ir ' ) IWHEATW_IR = J						
-		
+                IF ( VEGID( J ) .EQ. 'Wheat_Winter_ir ' ) IWHEATW_IR = J
 
             END DO 
             IF( IFOUND .EQ. 0 ) THEN
@@ -613,7 +581,6 @@ C.........  Read the gridded landuse from the landuse files
                 END IF
             END IF
 
-	    
         END DO
         
 
@@ -651,7 +618,7 @@ C.........  Calculate normalized fluxes
 !        DO I = 1, NCOLS
 !            DO J = 1, NROWS
          DO J = 1, NROWS
-	    DO I = 1, NCOLS
+            DO I = 1, NCOLS
 
 
 C.................  Initialize variables
@@ -685,7 +652,7 @@ C.........................  Special handling for NO emissions
                                 
 
 
-                                IF (IS_AG( M, MODIS12 , MODIS14, NLCD81,
+                                IF (IS_BG( M, MODIS12 , MODIS14, NLCD81,
      &                                 NLCD82,IALFAL  , IBARLE,  ICORNG,
      &                                 ICORNS,
      &                                 ICOTTO  , IGRASS,  IHAY  ,
@@ -711,7 +678,7 @@ C.........................  Special handling for NO emissions
 
 C.....................................  Compute NO emissions for agriculture regions 
 C                                      during growing season
-                                    IF( IS_TAG (M,MODIS14) ) THEN
+                                    IF( IS_MAG (M,MODIS14) ) THEN
                                         NOEM( 1 ) = NOEM( 1 ) 
      &                                      + VEGAREA * EMFAC(M,N)*0.333333
  
@@ -735,17 +702,11 @@ C.....................................  Compute NO emissions for Non-Agriculture
 
                                 END IF
 
-
-				    
-
-
                             END IF
 
                         ELSE
 
                             EFTMP = EMFAC( M, N )
-                            
-			    
 
                             IF ( VEGAREA > 0. ) THEN
 
@@ -761,8 +722,7 @@ C.................................  Compute winter emissions
 C.............................  Compute LAI on ISOP and MBO and METH
 
                             IF ( TRIM( BTMP ) == 'ISOP') THEN
-			        LAI_SAVE_INDEX(1) = N
-
+                               LAI_SAVE_INDEX(1) = N
                                 SUMLAI( 1 ) = SUMLAI( 1 ) + VEGAREA
      &                                * LAI( M ) * EFTMP
                                 SUMLAIW( 1 ) = SUMLAIW( 1 ) + VEGAREA
@@ -770,36 +730,26 @@ C.............................  Compute LAI on ISOP and MBO and METH
                             END IF
 
                             IF ( TRIM( BTMP ) == 'MBO' ) THEN
-			        LAI_SAVE_INDEX(2) = N
+                                LAI_SAVE_INDEX(2) = N
                                 SUMLAI( 2) = SUMLAI( 2 ) + VEGAREA
      &                                * LAI( M ) * EFTMP
-     
-
-     
-     
      
                                 SUMLAIW( 2 ) = SUMLAIW( 2 ) + VEGAREA
      &                                * LAI( M ) * EFTMP * WFAC( M )
                             END IF
 
                             IF ( TRIM( BTMP ) == 'METH' ) THEN
-			        LAI_SAVE_INDEX(3) = N
+                                LAI_SAVE_INDEX(3) = N
                                 SUMLAI( 3 ) = SUMLAI( 3 ) + VEGAREA
      &                                * LAI( M ) * EFTMP
-                                SUMLAIW( 3 ) = SUMLAIW( 3 ) + VEGAREA				
+                                SUMLAIW( 3 ) = SUMLAIW( 3 ) + VEGAREA
      &                                * LAI( M ) * EFTMP * WFAC( M )
 
-
-
-
                             END IF
-			    			    			    
-			    
                             
                         END IF  ! check if NO emissions
                     END DO  ! end of emis fac loop
                 END DO  ! end of veg land use loop2
-		
 
 
                 DO K = 1, NLAI
@@ -824,9 +774,6 @@ C.............................  Compute LAI on ISOP and MBO and METH
 
                 END DO
 
-
-				
-
                 DO N = 1, NSEF
 
                     BTMP = BIOTYPES( N ) 
@@ -842,18 +789,8 @@ C.....................  Check for NO emissions
                     END IF
 
                 END DO  ! end loop over emission factors
-		
-
-		
-		
-		
             END DO  ! end loop over rows
         END DO  ! end loop over columns
-	
-
-
-	
-	
 
 C.........  Write output file
         I = 0
@@ -934,8 +871,9 @@ C.............  This internal function checks for "one-third" agricultural areas
 
 C-----------------------------------------------------------------------------
         
-        END SUBROUTINE NORMBEIS360
-            LOGICAL FUNCTION IS_TAG( M,MODIS14 )
+        END SUBROUTINE NORMBEIS370
+
+            LOGICAL FUNCTION IS_MAG( M,MODIS14 )
 
             IMPLICIT NONE
             
@@ -946,19 +884,19 @@ C.............  Function arguments
 
 C-----------------------------------------------------------------------------
 
-            IS_TAG = .FALSE.
+            IS_MAG = .FALSE.
 
-            IF( M == MODIS14 ) IS_TAG = .TRUE.
+            IF( M == MODIS14 ) IS_MAG = .TRUE.
 
 
             RETURN
             
-            END FUNCTION IS_TAG
+            END FUNCTION IS_MAG
 
 C-----------------------------------------------------------------------------
 
 C.............  This internal function checks for agricultural areas
-            LOGICAL FUNCTION IS_AG( M, MODIS12 , MODIS14, NLCD81,
+            LOGICAL FUNCTION IS_BG( M, MODIS12 , MODIS14, NLCD81,
      &          NLCD82, IALFAL  , IBARLE,  ICORNG, ICORNS,
      &          ICOTTO  , IGRASS,  IHAY  , IMISCC,
      &          IOATS   , IPEANU, IPOTAT , IRICE ,
@@ -974,13 +912,11 @@ C.............  This internal function checks for agricultural areas
             IMPLICIT NONE
             
 C.............  Function arguments  
-            INTEGER, INTENT(IN) :: M
-            INTEGER, INTENT(IN) :: MODIS12
-            INTEGER, INTENT(IN) :: MODIS14
-            INTEGER, INTENT(IN) :: NLCD81
-            INTEGER, INTENT(IN) :: NLCD82
-
-
+        INTEGER, INTENT(IN) :: M
+        INTEGER, INTENT(IN) :: MODIS12
+        INTEGER, INTENT(IN) :: MODIS14
+        INTEGER, INTENT(IN) :: NLCD81
+        INTEGER, INTENT(IN) :: NLCD82
 
         INTEGER, INTENT(IN) ::         IALFAL  ! Alfalfa
         INTEGER, INTENT(IN) ::         IBARLE  ! Barley
@@ -998,9 +934,9 @@ C.............  Function arguments
         INTEGER, INTENT(IN) ::         ISORGHG  ! Sorghum
         INTEGER, INTENT(IN) ::         ISORGHS  ! Sorghum	
         INTEGER, INTENT(IN) ::         ISOYBE  ! Soybeans
-	INTEGER, INTENT(IN) ::         IBEANSED ! Edible Benas
-	INTEGER, INTENT(IN) ::         IBEANS  ! Beans
-	INTEGER, INTENT(IN) ::         ICANOLA ! Canola
+        INTEGER, INTENT(IN) ::         IBEANSED ! Edible Benas
+        INTEGER, INTENT(IN) ::         IBEANS  ! Beans
+        INTEGER, INTENT(IN) ::         ICANOLA ! Canola
         INTEGER, INTENT(IN) ::         IWHEATW  ! Wheat
         INTEGER, INTENT(IN) ::         IWHEATS  ! Wheat
 
@@ -1021,66 +957,61 @@ C.............  Function arguments
         INTEGER, INTENT(IN) ::         ISORGHG_IR  ! Sorghum
         INTEGER, INTENT(IN) ::         ISORGHS_IR  ! Sorghum
         INTEGER, INTENT(IN) ::         ISOYBE_IR  ! Soybeans
-	INTEGER, INTENT(IN) ::         IBEANSED_IR ! Edible Benas
-	INTEGER, INTENT(IN) ::         IBEANS_IR  ! Beans
-	INTEGER, INTENT(IN) ::         ICANOLA_IR ! Canola
+        INTEGER, INTENT(IN) ::         IBEANSED_IR ! Edible Benas
+        INTEGER, INTENT(IN) ::         IBEANS_IR  ! Beans
+        INTEGER, INTENT(IN) ::         ICANOLA_IR ! Canola
         INTEGER, INTENT(IN) ::         IWHEATS_IR  ! Wheat Spring Irrigated
         INTEGER, INTENT(IN) ::         IWHEATW_IR  ! Wheat Winter Irrigated	
-	
 C-----------------------------------------------------------------------------
 
-            IS_AG = .FALSE.
+            IS_BG = .FALSE.
 
-            IF( M == MODIS12 ) IS_AG = .TRUE.
-            IF( M == MODIS14 ) IS_AG = .TRUE.
-            IF( M == NLCD81  ) IS_AG = .TRUE.
-            IF( M == NLCD82  ) IS_AG = .TRUE.
-	    
-            IF( M == IALFAL  ) IS_AG = .TRUE.
-            IF( M == IBARLE  ) IS_AG = .TRUE.
-            IF( M == ICORNG  ) IS_AG = .TRUE.
-            IF( M == ICORNS  ) IS_AG = .TRUE.	    
-            IF( M == ICOTTO ) IS_AG = .TRUE.
-            IF( M == IGRASS ) IS_AG = .TRUE.
-            IF( M == IHAY   ) IS_AG = .TRUE.
-            IF( M == IMISCC ) IS_AG = .TRUE.
-            IF( M == IOATS  ) IS_AG = .TRUE.
-            IF( M == IPEANU ) IS_AG = .TRUE.
-            IF( M == IPOTAT ) IS_AG = .TRUE.
-            IF( M == IRICE  ) IS_AG = .TRUE.
-            IF( M == IRYE   ) IS_AG = .TRUE.
-            IF( M == ISORGHG ) IS_AG = .TRUE.
-            IF( M == ISORGHS ) IS_AG = .TRUE.	    
-            IF( M == ISOYBE ) IS_AG = .TRUE.
-            IF( M == IBEANS ) IS_AG = .TRUE.
-            IF( M == IBEANSED ) IS_AG = .TRUE.	    	    
-            IF( M == ICANOLA ) IS_AG = .TRUE.
-            IF( M == IWHEATS ) IS_AG = .TRUE.
-            IF( M == IWHEATW ) IS_AG = .TRUE.
-	    
-            IF( M == IALFAL_IR  ) IS_AG = .TRUE.
-            IF( M == IBARLE_IR  ) IS_AG = .TRUE.
-            IF( M == ICORNG_IR  ) IS_AG = .TRUE.
-            IF( M == ICORNS_IR  ) IS_AG = .TRUE.	    
-            IF( M == ICOTTO_IR ) IS_AG = .TRUE.
-            IF( M == IGRASS_IR ) IS_AG = .TRUE.
-            IF( M == IHAY_IR   ) IS_AG = .TRUE.
-            IF( M == IMISCC_IR ) IS_AG = .TRUE.
-            IF( M == IOATS_IR  ) IS_AG = .TRUE.
-            IF( M == IPEANU_IR ) IS_AG = .TRUE.
-            IF( M == IPOTAT_IR ) IS_AG = .TRUE.
-            IF( M == IRICE_IR  ) IS_AG = .TRUE.
-            IF( M == IRYE_IR   ) IS_AG = .TRUE.
-            IF( M == ISORGHG_IR ) IS_AG = .TRUE.
-            IF( M == ISORGHS_IR ) IS_AG = .TRUE.	    
-            IF( M == ISOYBE_IR ) IS_AG = .TRUE.
-            IF( M == IBEANS_IR ) IS_AG = .TRUE.
-            IF( M == IBEANSED_IR ) IS_AG = .TRUE.	    	    
-            IF( M == ICANOLA_IR ) IS_AG = .TRUE.
-            IF( M == IWHEATS_IR ) IS_AG = .TRUE.
-            IF( M == IWHEATW_IR ) IS_AG = .TRUE.	    
-	    
-	    
+            IF( M == MODIS12 ) IS_BG = .TRUE.
+            IF( M == MODIS14 ) IS_BG = .TRUE.
+            IF( M == NLCD81  ) IS_BG = .TRUE.
+            IF( M == NLCD82  ) IS_BG = .TRUE.
+            IF( M == IALFAL  ) IS_BG = .TRUE.
+            IF( M == IBARLE  ) IS_BG = .TRUE.
+            IF( M == ICORNG  ) IS_BG = .TRUE.
+            IF( M == ICORNS  ) IS_BG = .TRUE.    
+            IF( M == ICOTTO ) IS_BG = .TRUE.
+            IF( M == IGRASS ) IS_BG = .TRUE.
+            IF( M == IHAY   ) IS_BG = .TRUE.
+            IF( M == IMISCC ) IS_BG = .TRUE.
+            IF( M == IOATS  ) IS_BG = .TRUE.
+            IF( M == IPEANU ) IS_BG = .TRUE.
+            IF( M == IPOTAT ) IS_BG = .TRUE.
+            IF( M == IRICE  ) IS_BG = .TRUE.
+            IF( M == IRYE   ) IS_BG = .TRUE.
+            IF( M == ISORGHG ) IS_BG = .TRUE.
+            IF( M == ISORGHS ) IS_BG = .TRUE.    
+            IF( M == ISOYBE ) IS_BG = .TRUE.
+            IF( M == IBEANS ) IS_BG = .TRUE.
+            IF( M == IBEANSED ) IS_BG = .TRUE.    
+            IF( M == ICANOLA ) IS_BG = .TRUE.
+            IF( M == IWHEATS ) IS_BG = .TRUE.
+            IF( M == IWHEATW ) IS_BG = .TRUE.
+            IF( M == IALFAL_IR  ) IS_BG = .TRUE.
+            IF( M == IBARLE_IR  ) IS_BG = .TRUE.
+            IF( M == ICORNG_IR  ) IS_BG = .TRUE.
+            IF( M == ICORNS_IR  ) IS_BG = .TRUE.    
+            IF( M == ICOTTO_IR ) IS_BG = .TRUE.
+            IF( M == IGRASS_IR ) IS_BG = .TRUE.
+            IF( M == IHAY_IR   ) IS_BG = .TRUE.
+            IF( M == IMISCC_IR ) IS_BG = .TRUE.
+            IF( M == IOATS_IR  ) IS_BG = .TRUE.
+            IF( M == IPEANU_IR ) IS_BG = .TRUE.
+            IF( M == IPOTAT_IR ) IS_BG = .TRUE.
+            IF( M == IRICE_IR  ) IS_BG = .TRUE.
+            IF( M == IRYE_IR   ) IS_BG = .TRUE.
+            IF( M == ISORGHG_IR ) IS_BG = .TRUE.
+            IF( M == ISORGHS_IR ) IS_BG = .TRUE.    
+            IF( M == ISOYBE_IR ) IS_BG = .TRUE.
+            IF( M == IBEANS_IR ) IS_BG = .TRUE.
+            IF( M == IBEANSED_IR ) IS_BG = .TRUE.    
+            IF( M == ICANOLA_IR ) IS_BG = .TRUE.
+            IF( M == IWHEATS_IR ) IS_BG = .TRUE.
+            IF( M == IWHEATW_IR ) IS_BG = .TRUE.    
             RETURN
             
-            END FUNCTION IS_AG
+            END FUNCTION IS_BG
