@@ -1461,7 +1461,7 @@ C.................  Recompute velocity if that option has been set
                     FUGHGT( CURSRC ) = MAX( 0.0, FT2M * STR2REAL( FUGHT ) )
                     FUGWID( CURSRC ) = MAX( 0.0, FT2M * STR2REAL( FUGWD ) )
                     FUGLEN( CURSRC ) = MAX( 0.0, FT2M * STR2REAL( FUGLN ) )
-                    FUGANG( CURSRC ) = MAX( 0.0, FT2M * STR2REAL( FUGAN ) )
+                    FUGANG( CURSRC ) = MAX( 0.0, STR2REAL( FUGAN ) )
 
                 ELSE IF ( CURFMT == ORLFMT  ) THEN
                     FUGSCR = FT2M * SQRT( MAX( 0.0, STR2REAL( FUGAR ) ) )
