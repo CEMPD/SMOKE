@@ -29,6 +29,9 @@ my $ptnon_ar_fh = open_input("$output_dir/parameters/ptnonipm_fug_srcparam.csv")
 my $ptegu_x_fh = open_input("$output_dir/xwalk/ptegu_process_releasept_emis.csv");
 my $ptnon_x_fh = open_input("$output_dir/xwalk/ptnonipm_process_releasept_emis.csv");
 
+my $ptegu_src_fh = open_input("$output_dir/xwalk/ptegu_srcid_xwalk.csv");
+my $ptnon_src_fh = open_input("$output_dir/xwalk/ptnonipm_srcid_xwalk.csv");
+
 # open combined output files
 print "Creating output files...\n";
 my $loc_fh = open_output("$output_dir/locations/point_location.csv");
@@ -42,6 +45,9 @@ write_fug_srcparam_header($ar_fh);
 
 my $x_fh = open_output("$output_dir/xwalk/point_combined_process_releasept_emis.csv");
 write_crosswalk_header($x_fh);
+
+my $src_fh = open_output("$output_dir/xwalk/point_srcid_xwalk.csv");
+write_source_header($src_fh);
 
 # read ptegu data
 my $csv_parser = Text::CSV->new();
@@ -130,6 +136,16 @@ while (my $line = <$ptnon_x_fh>) {
   print $x_fh $line;
 }
 
+while (my $line = <$ptegu_src_fh>) {
+  next if $line =~ /^state/; # skip header line
+  print $src_fh $line;
+}
+
+while (my $line = <$ptnon_src_fh>) {
+  next if $line =~ /^state/; # skip header line
+  print $src_fh $line;
+}
+
 close $ptegu_loc_fh;
 close $ptnon_loc_fh;
 close $ptegu_pt_fh;
@@ -138,9 +154,12 @@ close $ptegu_ar_fh;
 close $ptnon_ar_fh;
 close $ptegu_x_fh;
 close $ptnon_x_fh;
+close $ptegu_src_fh;
+close $ptnon_src_fh;
 close $loc_fh;
 close $pt_fh;
 close $ar_fh;
 close $x_fh;
+close $src_fh;
 
 print "Done.\n";

@@ -89,6 +89,7 @@ The Perl script ptnonipm.pl reads the Smkreport files and temporal profile files
     parameters/ptnonipm_point_srcparam.csv
     temporal/ptnonipm_temporal.csv
     xwalk/ptnonipm_process_releasept_emis.csv
+    xwalk/ptnonipm_srcid_xwalk.csv
 
 The script uses environment variables to locate the input files ($REPORT, $REP\_XWALK, $REP\_SRC, $PTPRO\_MONTHLY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY) and the directory where the outputs will be written ($OUTPUT\_DIR). The shell script run_ptnonipm.sh sets up the environment variables and runs ptnonipm.pl.
 
@@ -98,6 +99,7 @@ After processing both the ptnonipm and ptegu sectors, the outputs need to be com
     parameters/point_point_srcparam.csv
     parameters/point_fug_srcparam.csv
     xwalk/point_combined_process_releasept_emis.csv
+    xwalk/point_srcid_xwalk.csv
 
 The shell script run_combine_point.sh sets up the $OUTPUT_DIR environment variable and runs combine_point.pl.
 
@@ -136,6 +138,7 @@ The Perl script ptegu.pl reads the Smkreport files, temporal profile files, and 
     parameters/ptegu_point_srcparam.csv
     temporal/<facility_id>_<state_code>_hourly.csv
     xwalk/ptegu_process_releasept_emis.csv
+    xwalk/ptegu_srcid_xwalk.csv
 
 The shell script run_ptegu.sh runs both convert\_phour and ptegu.pl. convert\_phour uses the environment variables $PHOUR, $PHOUR\_OUT, and $YEAR. ptegu.pl uses $REPORT, $REP\_XWALK, $REP\_SRC, $PHOUR\_OUT, $YEAR, $PTPRO\_MONTHLY, $PTPRO\_DAILY, $PTPRO\_WEEKLY, $PTPRO\_HOURLY\_WINTER, $PTPRO\_HOURLY\_SUMMER, and $OUTPUT\_DIR.
 

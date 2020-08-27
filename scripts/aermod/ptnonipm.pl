@@ -50,6 +50,9 @@ write_temporal_header($tmp_fh);
 my $x_fh = open_output("$output_dir/xwalk/${sector}_process_releasept_emis.csv");
 write_crosswalk_header($x_fh);
 
+my $src_fh = open_output("$output_dir/xwalk/${sector}_srcid_xwalk.csv");
+write_source_header($src_fh);
+
 my %rep_xwalk;
 
 print "Reading AERMOD-to-inventory source info...\n";
@@ -208,6 +211,16 @@ while (my $line = <$in_fh>) {
     die "Missing data for Source ID: $smoke_id in REP_SRC" unless exists $rep_src{$smoke_id};
     my @src_data = @{$rep_src{$smoke_id}};
     
+    # output inventory source file for QA
+    @output = $state;
+    push @output, $plant_id;
+    push @output, '"' . $data[$headers{'Plt Name'}] . '"';
+    push @output, $xwalk_data[4]; # unit ID
+    push @output, $xwalk_data[6]; # process ID
+    push @output, $xwalk_data[5]; # release point
+    push @output, $src_id;
+    print $src_fh join(',', @output) . "\n";
+    
     foreach my $poll (@src_pollutants) {
       next if $src_data[$src_headers{$poll}] == 0.0;
       @output = $state;
@@ -241,5 +254,6 @@ close $pt_fh;
 close $ar_fh;
 close $tmp_fh;
 close $x_fh;
+close $src_fh;
 
 print "Done.\n";
