@@ -4,7 +4,7 @@
 export REPORT=$REPSCEN/pointgt.aermod.ptairport.12US2.2011ek.2011001.rpt
 
 # location of runways data file
-export RUNWAYS=$SCRIPTS/aermod/Final_2014_Runway_Source_Airports_Endpoints_4.csv
+export RUNWAYS=$SCRIPTS/aermod/runway_source_airports_endpoints_2017_02dec2019_v0.csv
 
 # locations of temporal profile files
 export PTPRO_MONTHLY=$GE_DAT/amptpro_general_2011platform_tpro_monthly_20nov2015_v2

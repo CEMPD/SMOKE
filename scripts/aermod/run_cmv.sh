@@ -7,8 +7,8 @@ export OUTPUT_DIR=$OUTPUT/aermod
 export REPORT=$REPSCEN/rep_cmv_12_2016fh_16j_aermod.txt
 
 # locations of source groups data files
-export GROUP_PARAMS=$SCRIPTS/aermod/nonpoint_rungroup_parameters.csv
-export SOURCE_GROUPS=$SCRIPTS/aermod/aermod_groups_2014_25jan2018.csv
+export GROUP_PARAMS=$SCRIPTS/aermod/nonpoint_rungroup_stack_parameters_11jun2020_v4.csv
+export SOURCE_GROUPS=$SCRIPTS/aermod/hem_aermod_groups_2017_11jun2020_nf_v2.csv
 export PORT_POLYGONS=$SCRIPTS/aermod/cmv_ports_v2_040718_fornata_12may20_02jun2020_v0.csv
 
 export YEAR=2017

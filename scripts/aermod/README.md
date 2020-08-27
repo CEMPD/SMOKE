@@ -193,7 +193,7 @@ The shell script run_ptairport.sh sets up the environment variables needed by pt
 
 ### Runway data file
 
-The runway data file lists start and end coordinates and widths for runways corresponding to each airport facility. A default file [Final_2014_Runway_Source_Airports_Endpoints_4.csv](https://raw.githubusercontent.com/CEMPD/SMOKE/master/scripts/aermod/Final_2014_Runway_Source_Airports_Endpoints_4.csv) is provided.
+The runway data file lists start and end coordinates and widths for runways corresponding to each airport facility. A default file [runway_source_airports_endpoints_2017_02dec2019_v0.csv](https://raw.githubusercontent.com/CEMPD/SMOKE/master/scripts/aermod/runway_source_airports_endpoints_2017_02dec2019_v0.csv) is provided.
 
 ### Quality assurance
 
@@ -244,9 +244,9 @@ The shell script run_nonpt.sh sets up the environment variables needed by nonpt.
 
 ### Run group configuration files
 
-The source groups file assigns each SCC to a source group and a run group. A default file [aermod_groups_2014_25jan2018](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/aermod_groups_2014_25jan2018.csv) is provided.
+The source groups file assigns each SCC to a source group and a run group. A default file [hem_aermod_groups_2017_11jun2020_nf_v2.csv](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/hem_aermod_groups_2017_11jun2020_nf_v2.csv) is provided.
 
-The group parameters file provides the release height and initial vertical dispersion (sigma z) values for each run group. Both values are in meters. A default file [nonpoint_rungroup_parameters.csv](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/nonpoint_rungroup_parameters.csv) is provided.
+The group parameters file provides the release height and initial vertical dispersion (sigma z) values for each run group. Both values are in meters. A default file [nonpoint_rungroup_stack_parameters_11jun2020_v4.csv](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/nonpoint_rungroup_stack_parameters_11jun2020_v4.csv) is provided.
 
 ## nonroad sector
 
