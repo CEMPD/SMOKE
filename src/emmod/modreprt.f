@@ -117,7 +117,6 @@
             LOGICAL       :: BYCYNAM       ! true: by county name
             LOGICAL       :: BYDATE        ! true: by date
             LOGICAL       :: BYELEV        ! true: by elev status
-            LOGICAL       :: BYUNIT        ! true: by point unit type
             LOGICAL       :: BYERPTYP      ! true: by emissions release point type
             LOGICAL       :: ELVSTKGRP     ! true: stack gourp ID by elev status
             LOGICAL       :: BYGEO1        ! true: by geocode 1
@@ -297,7 +296,6 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: CYWIDTH   =0 ! width of county name column
         INTEGER      , PUBLIC :: DATEWIDTH =0 ! width of date column
         INTEGER      , PUBLIC :: ELEVWIDTH =0 ! width of elevated srcs flag col
-        INTEGER      , PUBLIC :: POINTWIDTH=0 ! width of point unit type col
         INTEGER      , PUBLIC :: ERTYPWIDTH=0 ! width of emissions release point type col
         INTEGER      , PUBLIC :: GEO1WIDTH =0 ! width of geo level 1 name column
         INTEGER      , PUBLIC :: HOURWIDTH =0 ! width of hour column

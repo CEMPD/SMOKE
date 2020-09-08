@@ -62,7 +62,7 @@ C.........  This module contains Smkreport-specific settings
      &                      THUWIDTH, FRIWIDTH, SATWIDTH, SUNWIDTH,
      &                      METWIDTH,
      &                      CHARFMT, CHARWIDTH, STKPFMT, STKPWIDTH,
-     &                      SPCWIDTH, ELEVWIDTH, SDSCWIDTH, UNITWIDTH,
+     &                      SPCWIDTH, ELEVWIDTH, SDSCWIDTH,
      &                      MINC, LENELV3, SDATE, STIME, EDATE, ETIME,
      &                      PYEAR, PRBYR, PRPYR, OUTUNIT, TITLES,
      &                      ALLRPT, LOC_BEGP, LOC_ENDP,
@@ -72,7 +72,7 @@ C.........  This module contains Smkreport-specific settings
      &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
      &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
-     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH, POINTWIDTH
+     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH, UNITWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -84,7 +84,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX, BINUNIT, BINSPCIDX
+     &                      BINGEO1IDX, BINERPTYP, BINSPCIDX
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
@@ -262,8 +262,8 @@ C...........   Local parameters
      &                              'Geo Regn Level 4 ',
      &                              'T,Yr,Mon,Jday,Dow',
      &                              'Basin,Dist,Cnty  ',
-     &                              'Point Unit Type  ',
      &                              'Emis Release Type',
+     &                              'Point Unit Type  ',
      &                              'Fug Ht           ',
      &                              'Fug Wdt          ',
      &                              'Fug Len          ',
@@ -1244,24 +1244,6 @@ C.........  Plant ID
 
         END IF
 
-C.........  Point Unit ID
-        IF( RPT_%BYUNIT ) THEN
-            NWIDTH = 0
-            DO I = 1, NOUTBINS
-                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINUNIT( I ) ) )
-            END DO
-
-            J  = LEN_TRIM( CHRHDRS( 3 ) )
-            W1 = MAX( NWIDTH, J )
-
-            CALL ADD_TO_HEADER( W1, CHRHDRS( 3 ), LH, HDRBUF )
-            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
-
-            WRITE( CHARFMT, 94645 ) W1, RPT_%DELIM
-            CHARWIDTH = W1 + LV
-
-        END IF
-
 C.........  ORIS ID
         IF( RPT_%BYORIS ) THEN
             NWIDTH = 0
@@ -1502,17 +1484,6 @@ C.........  Stack group IDs when BY ELEVSTAT (RPT_%BYELEV)
 
             WRITE( STKGFMT, 94625 ) W1, RPT_%DELIM
             STKGWIDTH = W1 + LV
-        END IF
-
-C.........  Point unit type column
-        IF( RPT_%BYUNIT ) THEN
-            J = LEN_TRIM( HEADERS( IHDPOINT ) )
-            J = MAX( CHRLEN3, J )
-
-            CALL ADD_TO_HEADER( J, HEADERS(IHDPOINT), LH, HDRBUF )
-            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
-
-            POINTWIDTH = J + LV
         END IF
 
 C.........  Emissions release point type column
