@@ -509,9 +509,6 @@ C.............  Get number of inventory sources for this ORIS/boiler
 
             ALLZERO = .FALSE.
 
-C.............  Check if NOx emissions are valid
-            IF( CEMEMIS( NOXIDX ) <= 0. ) CEMEMIS( NOXIDX ) = 0.0 
-
 C.............  Compute factor for calculate hourly emissions; check that
 C               hourly value is valid
             IF( ANNHEAT( MASOBPOS ) > 0. .AND. HTINPUT > 0. ) THEN
@@ -521,7 +518,7 @@ C               hourly value is valid
             ELSE IF( ANNGLOAD( MASOBPOS ) > 0. .AND. GLOAD > 0. ) THEN
                 ANNFAC = GLOAD / ANNGLOAD( MASOBPOS )
             ELSE
-                IF( EMEMIS( NOXIDX ) <= 0. .AND. EMEMIS( SO2IDX ) <= 0. ) THEN
+                IF( CEMEMIS( NOXIDX ) <= 0. .AND. CEMEMIS( SO2IDX ) <= 0. ) THEN
                     ALLZERO = .TRUE.
                     WRITE( MESG,94010 ) 
      &              'WARNING: All emissions set to 0. for ORIS: ' //
