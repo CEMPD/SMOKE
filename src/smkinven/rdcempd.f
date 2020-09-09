@@ -510,7 +510,7 @@ C.............  Get number of inventory sources for this ORIS/boiler
             ALLZERO = .FALSE.
 
 C.............  Check if NOx emissions are valid
-C           IF( CEMEMIS( NOXIDX ) <= 0. ) CEMEMIS( NOXIDX ) = 0.0 
+            IF( CEMEMIS( NOXIDX ) <= 0. ) CEMEMIS( NOXIDX ) = 0.0 
 
 C.............  Compute factor for calculate hourly emissions; check that
 C               hourly value is valid
@@ -521,14 +521,16 @@ C               hourly value is valid
             ELSE IF( ANNGLOAD( MASOBPOS ) > 0. .AND. GLOAD > 0. ) THEN
                 ANNFAC = GLOAD / ANNGLOAD( MASOBPOS )
             ELSE
-                ALLZERO = .TRUE.
-                WRITE( MESG,94010 ) 
-     &          'WARNING: All emissions set to 0. for ORIS: ' //
-     &          CORS // ' Boiler: ' // BLID // CRLF() // BLANK10 //
-     &          'for date: ', YYMMDD, 'and hour: ', HH,
-     &          'since hourly heat input,' // CRLF() // BLANK10 //
-     &          'gross load, and steam load are missing'
-                CALL M3MESG( MESG )
+                IF( EMEMIS( NOXIDX ) <= 0. .AND. EMEMIS( SO2IDX ) <= 0. ) THEN
+                    ALLZERO = .TRUE.
+                    WRITE( MESG,94010 ) 
+     &              'WARNING: All emissions set to 0. for ORIS: ' //
+     &              CORS // ' Boiler: ' // BLID // CRLF() // BLANK10 //
+     &              'for date: ', YYMMDD, 'and hour: ', HH,
+     &              'since hourly heat input,' // CRLF() // BLANK10 //
+     &              'gross load, and steam load are missing'
+                    CALL M3MESG( MESG )
+                END IF
             END IF
 
             IF( ALLZERO ) THEN
