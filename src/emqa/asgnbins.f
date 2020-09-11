@@ -117,7 +117,7 @@ C...........   Local parameters:
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
-     &                                     + ERPLEN3 + 26 + 65 + 64
+     &                                     + ERPLEN3 + CHRLEN3 + 26 + 65 + 64
         INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) = (/ 1, 3, 6,  8, 9 /)
         INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) = (/ 2, 4, 7, 10, 9 /)
 
