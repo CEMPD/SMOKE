@@ -102,7 +102,7 @@ C...........   Local parameters
         INTEGER      , PARAMETER :: NSEG   = 70       ! maximum no of segments
         
 C...........   Local arrays
-        CHARACTER(SRCLEN3),ALLOCATABLE :: TMPCSOURC( : )   ! source information from inventory file(s)
+        CHARACTER(ALLLEN3+OBRLEN3),ALLOCATABLE :: TMPCSOURC( : )   ! source information from inventory file(s)
         INTEGER,           ALLOCATABLE :: TCSRCIDX ( : )   ! index for sorting source info
         INTEGER,           ALLOCATABLE :: FRSNUMS  ( :,: ) ! triplets of file, record, and source number
         CHARACTER(SRCLEN3) SCSEGMENT( NSCSEG )   ! segments from scratch file
@@ -139,6 +139,7 @@ C...........   Other local variables
         INTEGER         RWT          !  roadway type
         INTEGER      :: TOTSRCS = 0  !  total number of sources
         INTEGER      :: TOTRECS = 0  !  total number of records
+        INTEGER      :: NORSID = 0   !  no of Oris IDs under same EIS unit
         
         LOGICAL      :: EFLAG   = .FALSE. ! true: error occured
         LOGICAL      :: HDRFLAG           ! true: current line is part of header
@@ -153,14 +154,18 @@ C...........   Other local variables
         CHARACTER(RWTLEN3+VTPLEN3) CRVC    ! tmp roadway // vehicle type
         
         CHARACTER(PLTLEN3) FCID    ! facility/plant ID
-        CHARACTER(CHRLEN3) PTID    ! point ID
+        CHARACTER(CHRLEN3) PTID, NPTID    ! point ID
         CHARACTER(CHRLEN3) SKID    ! stack ID
         CHARACTER(CHRLEN3) SGID    ! segment ID
         CHARACTER(CHRLEN3) DVID    ! device ID
         CHARACTER(CHRLEN3) PRID    ! process ID
-        
+
+        CHARACTER(ORSLEN3) :: CORS = ' '  ! DOE plant ID
+        CHARACTER(BLRLEN3) :: BLID = ' '  ! boiler ID
+
         CHARACTER(SCCLEN3) TSCC    ! scc code
         CHARACTER(ALLLEN3) TCSOURC ! concatenated src (minus pollutant)
+        CHARACTER(ALLLEN3+OBRLEN3) FCSOURC ! concatenated src (minus pollutant)
 
         CHARACTER(10)      CREC    ! record number
         CHARACTER(4)       CFIL    ! file number
@@ -502,7 +507,7 @@ C...............  Process line depending on file format and source category
      &                                   NPOLPERLN, HDRFLAG, EFLAG )
                     CASE( 'POINT' )
                         CALL RDSRCFF10PT( LINE, CFIP, FCID, PTID, SKID,
-     &                                   SGID, TSCC, NPOLPERLN,
+     &                                   SGID, TSCC, CORS, BLID, NPOLPERLN,
      &                                   HDRFLAG, EFLAG )
                     END SELECT
 
@@ -518,7 +523,7 @@ C...............  Process line depending on file format and source category
      &                                   NPOLPERLN, HDRFLAG, EFLAG )
                     CASE( 'POINT' )
                         CALL RDSRCORLPT( LINE, CFIP, FCID, PTID, SKID,
-     &                                   SGID, TSCC, NPOLPERLN,
+     &                                   SGID, TSCC, CORS, BLID, NPOLPERLN,
      &                                   HDRFLAG, EFLAG )
                     END SELECT
 
@@ -715,19 +720,22 @@ C.................  Build concatenated source information
                 
                 CSRC_LEN = LEN_TRIM( TCSOURC )
 
+C.................  Append DOE plant ORIS and Boiler IDs to define src
+                FCSOURC = TCSOURC // CORS // BLID
+
 C.................  Store source info on first time through
                 IF( S == 0 ) THEN
                     S = S + 1
                     TCSRCIDX ( S ) = S
-                    TMPCSOURC( S ) = TCSOURC
+                    TMPCSOURC( S ) = FCSOURC
                 END IF
 
 C.................  On subsequent passes, only store source info 
 C                   if it does not match previous source
-                IF( TCSOURC /= TMPCSOURC( S ) ) THEN
+                IF( FCSOURC /= TMPCSOURC( S ) ) THEN
                     S = S + 1
                     TCSRCIDX ( S ) = S
-                    TMPCSOURC( S ) = TCSOURC
+                    TMPCSOURC( S ) = FCSOURC
                 END IF
 
 C.................  Store current source number for this record
@@ -758,24 +766,65 @@ C.............  Sort source info
 
 C.............  Write source info and record numbers to file
             DO I = 1, S
+
                 J = TCSRCIDX( I )
 
 C.................  On first time through, set up first line and counter
                 IF( I == 1 ) THEN
                     OUTLINE = TMPCSOURC( J )( 1:CSRC_LEN )
-                    TCSOURC = TMPCSOURC( J )
+                    TCSOURC = TMPCSOURC( J )( 1:CSRC_LEN )
+                    FCSOURC = TMPCSOURC( J )
+                    NORSID = 0
                     NRECPERLN = 0
                     TOTSRCS = TOTSRCS + 1
                 END IF
-                
+
 C.................  If current source does not match previous, write old output line
 C                   and start new line
-                IF( TMPCSOURC( J ) /= TCSOURC ) THEN
+                IF( TMPCSOURC( J )( 1:CSRC_LEN ) /= FCSOURC( 1:CSRC_LEN) ) THEN
                     WRITE( CDEV, '(A)' ) TRIM( OUTLINE )
                     OUTLINE = TMPCSOURC( J )( 1:CSRC_LEN )
-                    TCSOURC = TMPCSOURC( J )   ! store source info for next comparison
+                    TCSOURC = TMPCSOURC( J )( 1:CSRC_LEN )
+                    FCSOURC = TMPCSOURC( J )
+                    NORSID = 0                 ! reset number of oris/boiler IDs
                     NRECPERLN = 0              ! reset number of read records
                     TOTSRCS = TOTSRCS + 1      ! increment total number of sources
+
+                ELSE
+C.....................  Added new source when there are more than one
+C                       ORIS and Boilers under samee plant ID
+                    IF( TMPCSOURC( J ) /= FCSOURC ) THEN 
+                        NORSID = NORSID + 1
+                        CFIP = TMPCSOURC( J )( PTBEGL3( 1 ):PTENDL3( 1 ) )
+                        FCID = TMPCSOURC( J )( PTBEGL3( 2 ):PTENDL3( 2 ) )
+                        PTID = TMPCSOURC( J )( PTBEGL3( 3 ):PTENDL3( 3 ) )
+                        SKID = TMPCSOURC( J )( PTBEGL3( 4 ):PTENDL3( 4 ) )
+                        SGID = TMPCSOURC( J )( PTBEGL3( 5 ):PTENDL3( 5 ) )
+                        TSCC = TMPCSOURC( J )( PTBEGL3( 6 ):PTENDL3( 6 ) )
+
+C.........................  Update Unit ID with ## when multiple oris IDs
+                        PTID = ADJUSTL( PTID )
+                        L1 = LEN_TRIM( PTID )
+                        IF( L1 > CHRLEN3-3 ) L1 = CHRLEN3 - 3
+                        WRITE( NPTID, '( A,A,I2.2)' ) PTID( 1:L1 ),'_',NORSID
+
+                        MESG = 'WARNING: Multiple ORIS IDs under same '//
+     &                         'Unit ID: "' // TRIM(PTID) //'"'// CRLF() //BLANK10 //
+     &                         'Renamed original Unit ID "'//TRIM(PTID)//'" to "'// TRIM(NPTID) //'"'
+                        CALL M3MSG2( MESG )
+
+                        CALL BLDCSRC( CFIP, FCID, NPTID, SKID, SGID,
+     &                                TSCC, CHRBLNK3, CHRBLNK3,
+     &                                TCSOURC )
+
+                        WRITE( CDEV, '(A)' ) TRIM( OUTLINE )
+                        OUTLINE = TCSOURC( 1:CSRC_LEN )
+                        FCSOURC = TMPCSOURC( J )   ! preserve FCSOURC before it gest updated/modified
+                        TMPCSOURC( J ) = TCSOURC
+                        NRECPERLN = 0              ! reset number of read records
+                        TOTSRCS = TOTSRCS + 1      ! increment total number of sources
+                    END IF
+
                 END IF
 
 C.................  Find source number in records array               
@@ -801,7 +850,7 @@ C                           character and start new line
                         IF( NRECPERLN == NSCSEG-1 ) THEN
                             OUTLINE = TRIM( OUTLINE ) // ' \'
                             WRITE( CDEV, '(A)' ) TRIM( OUTLINE )
-                            OUTLINE = TRIM( TMPCSOURC( J ) )
+                            OUTLINE = TRIM( TMPCSOURC( J )( 1:CSRC_LEN ) )
                             NRECPERLN = 0
                         END IF
                             

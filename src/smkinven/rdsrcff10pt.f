@@ -1,6 +1,6 @@
 
         SUBROUTINE RDSRCFF10PT( LINE, CFIP, FCID, PTID, SKID, SGID, TSCC,
-     &                          NPOLPERLN, HDRFLAG, EFLAG )
+     &                          CORS, BLID, NPOLPERLN, HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -63,6 +63,8 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(CHRLEN3), INTENT(OUT) :: SKID      ! stack ID
         CHARACTER(CHRLEN3), INTENT(OUT) :: SGID      ! segment ID
         CHARACTER(SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
+        CHARACTER(ORSLEN3), INTENT(OUT) :: CORS      ! ORIS code
+        CHARACTER(BLRLEN3), INTENT(OUT) :: BLID      ! boiler ID
         INTEGER,            INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
         LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
         LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
@@ -160,6 +162,8 @@ C.........  Replace blanks with zeros
         PTID = ADJUSTL( SEGMENT( 5 ) ) ! point ID
         SKID = ADJUSTL( SEGMENT( 6 ) ) ! stack ID
         SGID = ADJUSTL( SEGMENT( 7 ) ) ! segment ID
+        CORS = ADJUSTL( SEGMENT( 42 ) )  ! DOE plant ID
+        BLID = ADJUSTL( SEGMENT( 43 ) )  ! boiler ID
 
 C.........  Determine number of pollutants for this line based on CAS number
         IF( FF10INVFLAG ) THEN
