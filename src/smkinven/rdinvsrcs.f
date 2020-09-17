@@ -83,9 +83,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         SETENVVAR
         INTEGER*4       GETPID   
         LOGICAL         USEEXPGEO
+        LOGICAL         ENVYN
 
         EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR, 
-     &                  JUNIT, FIND1, FIND1FIRST, FINDC,
+     &                  JUNIT, FIND1, FIND1FIRST, FINDC, ENVYN,
      &                  CHKINT, STR2INT, INDEX1, BLKORCMT, SETENVVAR,
      &                  USEEXPGEO
 
@@ -141,6 +142,7 @@ C...........   Other local variables
         INTEGER      :: TOTRECS = 0  !  total number of records
         INTEGER      :: NORSID = 0   !  no of Oris IDs under same EIS unit
         
+        LOGICAL      :: ORSFLAG = .FALSE. ! true: process multiple ORIS units under the same EIS unit
         LOGICAL      :: EFLAG   = .FALSE. ! true: error occured
         LOGICAL      :: HDRFLAG           ! true: current line is part of header
         LOGICAL      :: LSTTIME = .FALSE. ! true: last time through 
@@ -203,7 +205,11 @@ C.........  Allocate tmp arrays for storing source information
 
 C.........  Get maximum number of warnings
         MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
-        
+
+C.........  Handle multiple ORIS units under same EIS Unit
+        MESG = 'Process multiple ORIS/Boiler units under the same source unit'
+        ORSFLAG = ENVYN( 'PROCESS_MULT_ORIS_UNITS_YN', MESG, .FALSE., IOS )
+
 C.........  Get temporary directory location
         MESG = 'Path where temporary import file will be written'
         CALL ENVSTR( 'SMK_TMPDIR', MESG, '.', PATHNM, IOS )
@@ -793,6 +799,7 @@ C                   and start new line
                 ELSE
 C.....................  Added new source when there are more than one
 C                       ORIS and Boilers under samee plant ID
+                    IF( ORSFLAG ) THEN
                     IF( TMPCSOURC( J ) /= FCSOURC ) THEN 
                         NORSID = NORSID + 1
                         CFIP = TMPCSOURC( J )( PTBEGL3( 1 ):PTENDL3( 1 ) )
@@ -823,6 +830,7 @@ C.........................  Update Unit ID with ## when multiple oris IDs
                         TMPCSOURC( J ) = TCSOURC
                         NRECPERLN = 0              ! reset number of read records
                         TOTSRCS = TOTSRCS + 1      ! increment total number of sources
+                    END IF
                     END IF
 
                 END IF
