@@ -211,7 +211,6 @@ C.........  Open gridded landuse files
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 	NVARS4 = NVARS3D
-	
 
 C.........  Initialize grid definition
         CALL CHKGRID( GNAMET, 'GRID' , 0, EFLAG )
@@ -288,10 +287,6 @@ C.............  Calculate cell size for each cell and conversion factor
             PRCNT2KM2( 1, 1 ) = XCELL3D * YCELL3D * 1E-08
         END IF
 
-
-
-
-
 C.........  Store landuse variable names from first file
         ALLOCATE( LUNAM( NVARS4 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LUNAM', PROGNAME )
@@ -315,12 +310,6 @@ C.........  Allocate memory for emission factor variables
         DO I = 1, NVARS4
 	    VEGID ( I ) = VGLIST ( I )
         END DO
-	 
-
-
-
-
-
 
 C.........  Set up header variables for output file B3GRD
         NROWS3D = NROWS
@@ -410,14 +399,8 @@ C.........  Open output file
 
 C.........  Get length of BFAC file
         NLINES = GETFLINE( FDEV, 'Emissions factor file' )
-	
-
-!	NVEG = NVARS4 + 2
 
 C.........  Allocate memory for emission factor variables   
-!        ALLOCATE( VEGID ( NVEG ), STAT=IOS )
-!        CALL CHECKMEM( IOS, 'VEGID', PROGNAME )
-
         ALLOCATE( EMFAC ( NVEG, NSEF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMFAC', PROGNAME )
 
@@ -448,56 +431,53 @@ C.........  Read emissions factor file
         CALL M3MSG2( MESG )
 
 C.........  This routine reads in emission factors 
-!        CALL RDB4FAC(  NSEF, FDEV, NVEG, VEGID, LAI, LFBIO,
-!     &                WFAC, SLW, EMFAC ) 
-
-C.........  This routine reads in emission factors 
         CALL RDB4FAC_CSV( PROGNAME, NLINES, NSEF, FDEV, NVARS4,  VGLIST,
      &                BIOTYPES, LAI, LFBIO, WFAC, SLW, EMFAC) 
 
-	
-     
         DO I = 1, NVEG
 	   IF (LAI(I) .eq. -99) THEN
               MESG = 'ERROR: MISSING LAI FOR VEG TYPE: '//VGLIST(I)
-              CALL M3MSG2( MESG )	      	                      
-!              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )      
+              CALL M3MSG2( MESG )
+              EFLAG = .TRUE.
            ENDIF
 
 	   IF (SLW(I) .eq. -99.0) THEN
               MESG = 'ERROR: MISSING SLW FOR VEG TYPE: '//VGLIST(I)
-              CALL M3MSG2( MESG )	      	                      
-!              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )      
+              CALL M3MSG2( MESG )
+              EFLAG = .TRUE.
            ENDIF
 
 	   IF (WFAC(I) .eq. -99.0) THEN
               MESG = 'ERROR: MISSING WINTER FAC FOR VEG TYPE: 
      &        '//VGLIST(I)
-              CALL M3MSG2( MESG )	      	                      
-!              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )      
+              CALL M3MSG2( MESG )
+              EFLAG = .TRUE.
            ENDIF
 
 	   IF (LFBIO(I) .eq. -99.0) THEN
               MESG = 'ERROR: MISSING LFBIO FOR VEG TYPE: '//VGLIST(I)	
-             CALL M3MSG2( MESG )	                            
-!              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )      
+              CALL M3MSG2( MESG )
+              EFLAG = .TRUE.
            ENDIF
         ENDDO
-	   DO J = 1, NSEF
-	     DO I = 1, NVEG
+
+	DO J = 1, NSEF
+	   DO I = 1, NVEG
 	      IF (EMFAC(I,J) .eq. -99.0 ) THEN
 	         MESG = 
      &            'ERROR: MISSING EMISSION FACTOR FOR VEG TYPE:'
      &            //VGLIST(I)//
      &            'AND SPECIES: '//BIOTYPES(J)
-                 CALL M3MSG2( MESG )     
-!                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )  
+                 CALL M3MSG2( MESG )
+                 EFLAG = .TRUE.
               ENDIF
-	     ENDDO
 	   ENDDO
+	ENDDO
 	   
-
-	      
+        IF( EFLAG ) THEN
+            MESG = 'ERRORs are occurred above. Check the messages!'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )  
+        END IF
 
         ALLOCATE( LUINDX ( NVARS4 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LUINDX', PROGNAME )

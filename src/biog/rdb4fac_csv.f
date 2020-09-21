@@ -85,6 +85,11 @@ C.......... Read in emissions factors for each veg id
 
 C............   Check the header
           IF( BEISV == 'NORMBEIS360' ) THEN   ! BEIS v3.6 does not need a header from B360FAC file
+              IF( LINE( 2:14 ) == 'BEISFAC4BELD5' ) THEN
+                  MESG = 'Error: B360FAC emission factors input file '//
+     &                   'is not compatible for BEIS v3.61 but for v3.7.'
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              END IF
               CHKHDR = .TRUE.
           ELSE
               IF( LINE( 2:14 ) == 'BEISFAC4BELD5' ) THEN
@@ -95,7 +100,7 @@ C............   Check the header
 
           IF( I > 1 .AND. .NOT. CHKHDR ) THEN
               MESG = 'ERROR: #BEISFAC4BELD5 header is missing ' //
-     &               'from BEISFAC input file'
+     &               'from BEISFAC input file for BEIS v3.7'
               CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
           END IF
 
@@ -116,7 +121,7 @@ C.............  Separate the line of data into each part
 	  ENDDO
 	  IF (INDEX .eq. 0) THEN
                 MESG = 'WARNING: VEGETATION NAME: '//TRIM(VGID)//
-     &          'found in emission factor file but not in land use file'		
+     &          ' found in emission factor file but not in land use file'		
                CALL M3MESG( MESG )
 	       CYCLE	     
 	  ENDIF
