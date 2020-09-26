@@ -813,11 +813,14 @@ C.........................  Update Unit ID with ## when multiple oris IDs
                         PTID = ADJUSTL( PTID )
                         L1 = LEN_TRIM( PTID )
                         IF( L1 > CHRLEN3-3 ) L1 = CHRLEN3 - 3
-                        WRITE( NPTID, '( A,A,I2.2)' ) PTID( 1:L1 ),'_',NORSID
+                        WRITE( NPTID, '( A,I2.2)' ) PTID( 1:L1 )//'_',NORSID
 
-                        MESG = 'WARNING: Multiple ORIS IDs under same '//
-     &                         'Unit ID: "' // TRIM(PTID) //'"'// CRLF() //BLANK10 //
-     &                         'Renamed original Unit ID "'//TRIM(PTID)//'" to "'// TRIM(NPTID) //'"'
+C.........................  Warning msg for duplicate sources
+                        CALL FMTCSRC( TCSOURC, 7, BUFFER, L2 )
+                        MESG = 'WARNING: Multiple ORIS/Boiler IDs under same point source'//
+     &                         CRLF() //BLANK10// BUFFER( 1:L2 ) //
+     &                         CRLF() //BLANK10// 'Renamed Release Point ID "'//TRIM(PTID) //
+     &                         '" to "'// TRIM(NPTID)//'"'
                         CALL M3MSG2( MESG )
 
                         CALL BLDCSRC( CFIP, FCID, NPTID, SKID, SGID,
@@ -827,7 +830,6 @@ C.........................  Update Unit ID with ## when multiple oris IDs
                         WRITE( CDEV, '(A)' ) TRIM( OUTLINE )
                         OUTLINE = TCSOURC( 1:CSRC_LEN )
                         FCSOURC = TMPCSOURC( J )   ! preserve FCSOURC before it gest updated/modified
-                        TMPCSOURC( J ) = TCSOURC
                         NRECPERLN = 0              ! reset number of read records
                         TOTSRCS = TOTSRCS + 1      ! increment total number of sources
                     END IF
@@ -858,7 +860,7 @@ C                           character and start new line
                         IF( NRECPERLN == NSCSEG-1 ) THEN
                             OUTLINE = TRIM( OUTLINE ) // ' \'
                             WRITE( CDEV, '(A)' ) TRIM( OUTLINE )
-                            OUTLINE = TRIM( TMPCSOURC( J )( 1:CSRC_LEN ) )
+                            OUTLINE = TCSOURC( 1:CSRC_LEN )
                             NRECPERLN = 0
                         END IF
                             
