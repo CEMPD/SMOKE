@@ -17,7 +17,7 @@ The Perl dependencies are included in the Git repository:
 
 # Design Documents
 
-* [CMV_PORT_UNDERWAY_AERMOD_INPUT_FILES.pdf](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/docs/CMV_PORT_UNDERWAY_AERMOD_INPUT_FILES.pdf)
+* [CMV_PORT_UNDERWAY_AERMOD_INPUT_FILES.pdf](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/docs/CMV_AERMOD_HELPER_DESIGN_2017.pdf)
 * [NONPOINT_ONROAD_AERMOD_INPUT_FILE.pdf](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/docs/NONPOINT_ONROAD_AERMOD_INPUT_FILE.pdf)
 * [POINT_AIRPORT_AERMOD_INPUT_FILE.pdf](https://github.com/CEMPD/SMOKE/blob/master/scripts/aermod/docs/POINT_AIRPORT_AERMOD_HELPER_DESIGN_forgithub_2017.pdf)
 
