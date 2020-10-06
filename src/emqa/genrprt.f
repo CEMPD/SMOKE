@@ -406,7 +406,7 @@ C.............................  Gridding factor has normalization by cell area
                                             CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
      &                                                     LOC_ENDP, LF, NC, CHARS )
                                             IF( FIRSTOUT ) THEN
-                                                WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC-1 )
+                                                WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC )
                                             END IF
                                         END IF
 
@@ -452,7 +452,7 @@ C.............................  Sum non-gridded output records into tmp bins
                                             CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
      &                                                     LOC_ENDP, LF, NC, CHARS )
                                             IF( FIRSTOUT ) THEN
-                                                WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC-1 )
+                                                WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC )
                                             END IF
                                         END IF
 
@@ -515,7 +515,7 @@ C..........................  Gridding factor has normalization by cell area
                                         CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
      &                                                 LOC_ENDP, LF, NC, CHARS )
                                         IF( FIRSTOUT ) THEN
-                                            WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC-1 )
+                                            WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC )
                                         END IF
                                     END IF
                                 END DO
@@ -553,7 +553,7 @@ C.........................  Sum non-gridded output records into temporary bins
                                         CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
      &                                                 LOC_ENDP, LF, NC, CHARS )
                                         IF( FIRSTOUT ) THEN
-                                            WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC-1 )
+                                            WRITE( MDEV,94020 ) N, S, ( TRIM(CHARS(K)) ,K=1,NC )
                                         END IF
                                     END IF
 
