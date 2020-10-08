@@ -21,7 +21,7 @@ setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb05_soa.us12-nc
 setenv SMK_SOURCE    B          # source category to process
 setenv MRG_SOURCE    B          # source category to merge
 
-setenv BEIS_VERSION  3.61       # version of BEIS3 to use (currently 3.14 or 3.60)
+setenv BEIS_VERSION  3.7        # version of BEIS3 to use (currently 3.14, 3.61 or 3.7)
 
 ## Set programs to run...
 
