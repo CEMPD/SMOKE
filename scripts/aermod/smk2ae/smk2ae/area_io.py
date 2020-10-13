@@ -18,6 +18,11 @@ def proc_area(df, grid_info, temp, params):
             write_daily_prof(df, temp)
         else:
             write_no_daily_prof(df, temp)
+    else:
+        run_group = df['run_group'].values[0]
+        fips_map = get_fips_map(df[['run_group','region_cd','met_cell','src_id',
+          'ann_value']])
+        write_county_xwalk(fips_map, run_group)
 
 def calc_cell_corner(df, grid_info, utm):
     '''
@@ -67,9 +72,12 @@ def write_parameters(df, grid_info, utm, params):
     # The polygons are grid cells
     df = calc_polygons(df, grid_info, utm)
     df = pd.merge(df, params, on='run_group', how='left')
-    if len(df[df['rh'].isnull()]) > 0:
+    for col in ['rh','release_height']:
+        if col in list(df.columns) and 'rel_ht' not in list(df.columns):
+            df.rename(columns={col: 'rel_ht'}, inplace=True)
+    if len(df[df['rel_ht'].isnull()]) > 0:
         print('Unmatched run groups in GROUP PARAMS file')
-        print(df.loc[df['rh'].isnull(), 'run_group'].drop_duplicates())
+        print(df.loc[df['rel_ht'].isnull(), 'run_group'].drop_duplicates())
         raise ValueError('Unmatched run group parameters')
     df['verts'] = 4
     out_cols = ['run_group','met_cell','src_id','rel_ht','verts','sz','utmx','utmy','x2','y2',
@@ -87,7 +95,7 @@ def write_daily_prof(df, temp):
     cols = ['region_cd','scc','run_group','met_cell','ann_value','src_id']
     hierarchy = [['region_cd','scc'],['region_cd',]]
     df = df[cols].copy().sort_values('ann_value').drop_duplicates(['run_group','region_cd','met_cell'], 
-      take_last=True)
+      keep='last')
     temp.profs.fillna(0, inplace=True)
     value_cols = ['month','day','hour','factor']
     run_group = df['run_group'].values[0]
@@ -150,6 +158,7 @@ def write_no_daily_prof(df, temp):
     run_group = df['run_group'].values[0]
     df.sort_values('src_id', inplace=True)
     states = list(df['region_cd'].str[:2].drop_duplicates())
+    print(run_group)
     if run_group[:3] in ('LDO','HDO','HOT'):
         fips_map = get_fips_map(df[['run_group','region_cd','met_cell','src_id',
           'ann_value']].copy())
@@ -175,7 +184,7 @@ def get_fips_map(df):
     '''
     Map county and cell by sum of emissions
     '''
-    df.sort_values('ann_value', inplace=True)
+    df = df.copy().sort_values('ann_value')
     df.drop_duplicates(['run_group','met_cell','src_id'], keep='last', inplace=True)
     df.drop('ann_value', axis=1, inplace=True)
     return df

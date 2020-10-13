@@ -159,7 +159,7 @@ def get_sw_corner(df, met_grid):
     df['met_swcorner_lon'] = met_grid.colrow_to_ll(df['met_col'].astype('f'), 
       df['met_row'].astype('f'))['lon'].astype('f')
     df['met_cell'] = 'G' + df['met_col'].astype(str).str.zfill(3) + 'R' + df['met_row'].astype(str).str.zfill(3)
-    return df
+    return df.drop_duplicates('met_cell')
 
 def proc_area_sector(inv_list, grid_name, grid_desc, state_fips):
     '''
@@ -197,7 +197,7 @@ def proc_area_sector(inv_list, grid_name, grid_desc, state_fips):
         run_emis = match_surrogate(inv.emis[inv.emis['run_group'] == run_group], surg.xref)
         if grid_name.startswith('12'):
             # Grid at 4 km for HDON LDON HDOFF LDOFF HOTEL and OILGAS
-            if run_group[:3] in ('HDO','LDO','HOT','OIL'):
+            if run_group[:4] in ('HDON','LDON','HOTE','OILG'):
                 cell_grid = Grid('4%s' %grid_name[2:], grid_desc)
             else:
                 cell_grid = met_grid
@@ -269,6 +269,9 @@ def write_aermod_emis(inv, cell_size, run_emis, xref):
     key_cols = ['run_group','region_cd','met_cell','src_id','source_group','smoke_name']
     out_cols = key_cols + ['ann_value',]
     group_sccs = list(run_emis['scc'].drop_duplicates())
+    run_frac = run_emis[['region_cd','scc','frac']].groupby(['region_cd','scc'], as_index=False).sum()
+    run_emis = pd.merge(run_emis, run_frac, on=['region_cd','scc'], how='left', suffixes=['','_sum'])
+    run_emis['frac'] = run_emis['frac'] / run_emis['frac_sum']
     # Merge in the pollutants
     group_df = pd.merge(run_emis, inv.emis, on=['region_cd','scc'], how='left')
     group_df['ann_value'] = group_df['ann_value'] * group_df['frac']
