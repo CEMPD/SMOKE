@@ -71,7 +71,7 @@ C.........  EXTERNAL FUNCTIONS
      &                JUNIT, PROMPTFFILE, SECSDIFF, SEC2TIME
 
 C.........  LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv4.8_Jun2020$'  ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv4.8_Oct2020$'  ! CVS release tag
         INTEGER,       PARAMETER :: MXPING = 300        ! final number of PinG sources
 
 C.........  LOCAL VARIABLES

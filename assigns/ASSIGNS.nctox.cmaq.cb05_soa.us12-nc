@@ -125,11 +125,13 @@ endif
 ## Biogenic input files
 if ( $SMK_SOURCE == 'B' ) then
    setenv B3FAC     $GE_DAT/b3fac.beis3_efac_v0.98.txt                       # BEIS3.14 emission factors input file
-   setenv B360FAC   $GE_DAT/b360fac_beld4_csv_nlcd2006.txt                   # BEIS3.6 emission factors input file
-   setenv BELD4     $INVDIR/biog/beld4.${IOAPI_GRIDNAME_1}.ncf               # BEIS3.6 BELD4 land-use input file
+   setenv B360FAC   $GE_DAT/b360fac_beld4_csv_nlcd2006.txt                   # BEIS3.61 emission factors input file
+   setenv BELD4     $INVDIR/biog/beld4.${IOAPI_GRIDNAME_1}.ncf               # BEIS3.61 BELD4 land-use input file
    setenv BELD3_TOT $INVDIR/biog/beld3.${IOAPI_GRIDNAME_1}.output_tot.ncf    # BELD3 for BEIS3.14
    setenv BELD3_A   $INVDIR/biog/beld3.${IOAPI_GRIDNAME_1}.output_a.ncf      # BELD3 for BEIS3.14
    setenv BELD3_B   $INVDIR/biog/beld3.${IOAPI_GRIDNAME_1}.output_b.ncf      # BELD3 for BEIS3.14
+   setenv BEISFAC   $GE_DAT/beisfacs_beld5_BEISv37.21Apr2020.csv             # BEIS v3.7 or later emission factors input file
+   setenv BELD5     $INVDIR/biog/BELD5.${IOAPI_GRIDNAME_1}.ncf               # BEIS v3.7 or later BELD5 land-use input file
    setenv SOILINP   $STATIC/soil.beis312.$GRID.$SPC.ncf                      # NO soil input file
    setenv GSPRO     $GE_DAT/gspro.$SPC.txt                                   # Speciation profiles
 endif

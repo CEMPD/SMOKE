@@ -5,7 +5,7 @@
 set errfile = $SCRIPTS/install/.err
 set errstat = 0
 
-set repdir = $SMKROOT/doc/checkdemo/reports
+set repdir = $SCRIPTS/install/reports
 set ncrepdir = $REPORTS/nctox/scenario
 
 # Check stationary area sources
@@ -79,7 +79,7 @@ set num_success = `grep 'Normal Completion' * | wc -l`
 cd $sav_dir
 
 if ( $errstat != 0 ) then
-   mv $errfile $SMKROOT/doc/install_diffs.txt
+   mv $errfile $SCRIPTS/install/install_diffs.txt
    echo ' '
    echo 'Differences between your installation and correct answers exist\!'
    echo 'Please refer to file $SMKROOT/doc/install_diffs.txt for details.'

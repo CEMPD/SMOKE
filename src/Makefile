@@ -95,7 +95,7 @@ LIBSRC = \
  rdspdprof.f    rdspdref.f      rdsprof.f           \
  rdsrcgrps.f    rdsref.f        rdsrg.f             \
  rdsrgdesc.f    rdsrghdr.f      rdstcy.f            \
- rdtref.f       rdtzone.f       rdumat.f            \
+ rdtzone.f      rdumat.f                            \
  rdxclude.f     readwr3.f       rmcommnt.f          \
  setscctype.f   setsrcdy.f      srcgrpcnt.f         \
  tagtable.f                     unitfac.f           \
