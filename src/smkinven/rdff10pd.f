@@ -316,6 +316,7 @@ C           the second section, determine the number of records per time
 C           step. In the third section, read and store the data.  When storing
 C           data, time step index is computed from the start date/time instead
 C           of the reference date/time so that the indexing will work properly.
+        LFIP = ''
         IREC = 0
         TDAT = 0.0   !  array
         DO         !  Head of period-specific file read loop
