@@ -40,7 +40,7 @@ C...........   MODULES for public variables
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: TFLAG, PRRPTFLG, NREPORT, SLFLAG, SSFLAG,
      &                      MXOUTDAT, MXINDAT, OUTDNAM, RPT_, ALLRPT,
-     &                      INDNAM
+     &                      INDNAM, SPCPOL, NSPCPOL
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NSVARS, LV1, LV2, LV3, TODOUT, ETPNAM,
@@ -103,6 +103,8 @@ C...........   Other local variables
         LOGICAL       :: SFLAG   = .FALSE. !  true: speciation
 
         CHARACTER(300)   MESG              !  message buffer
+
+        CHARACTER(IOVLEN3)  POLNAM, INVNAM     !  tmp pol name
 
         CHARACTER(LV1)      ABUF       !  tmp activity
         CHARACTER(LV2)      EBUF       !  tmp emission type
@@ -563,7 +565,42 @@ C.................  If species is same as pollutant, then add prefix
 C.............  Otherwise, set output data values as input data values
             ELSE
 
-                OUTDNAM( 1:NDATA,N ) = INDNAM( 1:NDATA,N )
+                IF( RPT_%BYSPC ) THEN   ! BY SPCCODE poll+ add associated species....
+
+                    POLNAM = 'I-'// INDNAM( 1,N )
+                    INVNAM = TRIM( POLNAM ) // '_INV'    ! check VOC_INV availability
+
+                    NDATA = 1      ! add default firt pol name
+                    DO V = 1, NSVARS
+                        IF( POLNAM == SUMPOLNAM( V ) ) NDATA = NDATA + 1
+                        IF( INVNAM == SUMPOLNAM( V ) ) NDATA = NDATA + 1
+                    END DO
+                    NSPCPOL = NDATA
+
+                    DEALLOCATE( OUTDNAM, SPCPOL )
+                    ALLOCATE( OUTDNAM( NDATA, NREPORT ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'OUTDNAM', PROGNAME )
+                    ALLOCATE( SPCPOL( NDATA ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'SPCPOL', PROGNAME )
+
+                    L = 1
+                    OUTDNAM( 1,N ) = INDNAM( 1,N )
+                    DO V = 1, NSVARS
+                        IF( POLNAM == SUMPOLNAM( V ) .OR. 
+     &                      INVNAM == SUMPOLNAM( V )      ) THEN
+                            L = L + 1
+                            OUTDNAM( L,N ) = SPCNAM( V ) 
+                        END IF
+                    END DO
+                    SPCPOL = OUTDNAM( :,N )
+                    ALLRPT( N )%NUMDATA = NDATA
+                    ALLRPT( N )%SPCPOL  = OUTDNAM( 1,N ) 
+
+                ELSE
+
+                    OUTDNAM( 1:NDATA,N ) = INDNAM( 1:NDATA,N )
+
+                END IF
 
             END IF
 

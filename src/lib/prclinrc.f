@@ -1176,6 +1176,8 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                 CASE( 'SPCCODE' )
                     IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         PSFLAG = .TRUE.
+                        SSFLAG = .TRUE.    ! open SMAT intermed files
+                        RPT_%USESSMAT  = .TRUE.  ! use SMAT intermed files
                         RPT_%BYSPC = .TRUE.
                         RPT_%SPCPOL = SEGMENT( 3 )
                         IF( GFLAG .OR. RPT_%USEGMAT ) THEN
