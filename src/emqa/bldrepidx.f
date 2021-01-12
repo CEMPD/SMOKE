@@ -104,7 +104,7 @@ C...........   Other local variables
 
         CHARACTER(300)   MESG              !  message buffer
 
-        CHARACTER(IOVLEN3)  POLNAM, INVNAM     !  tmp pol name
+        CHARACTER(IOVLEN3)  POLNAM     !  tmp pol name
 
         CHARACTER(LV1)      ABUF       !  tmp activity
         CHARACTER(LV2)      EBUF       !  tmp emission type
@@ -568,12 +568,9 @@ C.............  Otherwise, set output data values as input data values
                 IF( RPT_%BYSPC ) THEN   ! BY SPCCODE poll+ add associated species....
 
                     POLNAM = 'I-'// INDNAM( 1,N )
-                    INVNAM = TRIM( POLNAM ) // '_INV'    ! check VOC_INV availability
-
                     NDATA = 1      ! add default firt pol name
                     DO V = 1, NSVARS
                         IF( POLNAM == SUMPOLNAM( V ) ) NDATA = NDATA + 1
-                        IF( INVNAM == SUMPOLNAM( V ) ) NDATA = NDATA + 1
                     END DO
                     NSPCPOL = NDATA
 
@@ -584,17 +581,16 @@ C.............  Otherwise, set output data values as input data values
                     CALL CHECKMEM( IOS, 'SPCPOL', PROGNAME )
 
                     L = 1
-                    OUTDNAM( 1,N ) = INDNAM( 1,N )
+                    OUTDNAM( 1,N )     = INDNAM( 1,N )
+                    ALLRPT( N )%SPCPOL = INDNAM( 1,N )
                     DO V = 1, NSVARS
-                        IF( POLNAM == SUMPOLNAM( V ) .OR. 
-     &                      INVNAM == SUMPOLNAM( V )      ) THEN
+                        IF( POLNAM == SUMPOLNAM( V ) ) THEN
                             L = L + 1
                             OUTDNAM( L,N ) = SPCNAM( V ) 
                         END IF
                     END DO
                     SPCPOL = OUTDNAM( :,N )
                     ALLRPT( N )%NUMDATA = NDATA
-                    ALLRPT( N )%SPCPOL  = OUTDNAM( 1,N ) 
 
                 ELSE
 
