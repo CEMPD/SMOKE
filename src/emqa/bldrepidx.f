@@ -104,7 +104,7 @@ C...........   Other local variables
 
         CHARACTER(300)   MESG              !  message buffer
 
-        CHARACTER(IOVLEN3)  POLNAM     !  tmp pol name
+        CHARACTER(IOVLEN3), ALLOCATABLE :: POLNAM( : )     !  tmp pol name
 
         CHARACTER(LV1)      ABUF       !  tmp activity
         CHARACTER(LV2)      EBUF       !  tmp emission type
@@ -165,6 +165,8 @@ C.........  Speciation variable arrays
         CALL CHECKMEM( IOS, 'TOSOUT', PROGNAME )
         ALLOCATE( SPCNAM( NSVARS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCNAM', PROGNAME )
+        ALLOCATE( POLNAM( NSVARS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'POLNAM', PROGNAME )
         ALLOCATE( ETPSPCNAM( NSVARS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ETPSPCNAM', PROGNAME )
         ALLOCATE( PRCSPCNAM( NSVARS ), STAT=IOS )
@@ -196,6 +198,7 @@ C.........  Speciation variable arrays
         TOSOUT%SUMSPC = 0       ! array
         TOSOUT%AGG    = 0       ! array
         SPCNAM        = ' '     ! array
+        POLNAM        = ' '     ! array
         ETPSPCNAM     = ' '     ! array
         PRCSPCNAM     = ' '     ! array
         SUMETPNAM     = ' '     ! array
@@ -443,6 +446,7 @@ C.................  No emission type
                 END IF
 
                 SRTIDX( V ) = V
+                POLNAM( V ) = EBUF
 
 C.................  Count unique species.  Look for this species in previous 
 C                   list and add one to count of not found.
@@ -567,30 +571,30 @@ C.............  Otherwise, set output data values as input data values
 
                 IF( RPT_%BYSPC ) THEN   ! BY SPCCODE poll+ add associated species....
 
-                    POLNAM = 'I-'// INDNAM( 1,N )
                     NDATA = 1      ! add default firt pol name
                     DO V = 1, NSVARS
-                        IF( POLNAM == SUMPOLNAM( V ) ) NDATA = NDATA + 1
+                        IF( INDNAM( 1,N ) == POLNAM( V ) ) NDATA = NDATA + 1
                     END DO
-                    NSPCPOL = NDATA
+C                    NSPCPOL = NDATA
+                    ALLRPT( N )%NUMDATA = NDATA
 
-                    DEALLOCATE( OUTDNAM, SPCPOL )
+C                    DEALLOCATE( OUTDNAM, SPCPOL )
+                    DEALLOCATE( OUTDNAM )
                     ALLOCATE( OUTDNAM( NDATA, NREPORT ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'OUTDNAM', PROGNAME )
-                    ALLOCATE( SPCPOL( NDATA ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'SPCPOL', PROGNAME )
+C                    ALLOCATE( SPCPOL( NDATA ), STAT=IOS )
+C                    CALL CHECKMEM( IOS, 'SPCPOL', PROGNAME )
 
                     L = 1
                     OUTDNAM( 1,N )     = INDNAM( 1,N )
                     ALLRPT( N )%SPCPOL = INDNAM( 1,N )
                     DO V = 1, NSVARS
-                        IF( POLNAM == SUMPOLNAM( V ) ) THEN
+                        IF( INDNAM( 1,N ) == POLNAM( V ) ) THEN
                             L = L + 1
                             OUTDNAM( L,N ) = SPCNAM( V ) 
                         END IF
                     END DO
-                    SPCPOL = OUTDNAM( :,N )
-                    ALLRPT( N )%NUMDATA = NDATA
+C                    SPCPOL = OUTDNAM( :,N )
 
                 ELSE
 

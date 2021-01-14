@@ -217,6 +217,7 @@ C.........  Loop through entries for all bins for current date and hour
 C.............  Check for zero emissions if flag is not set
                 IF( .NOT. ZEROFLAG ) THEN
                     ECHECK = SUM( BINDATA( I,1:NDATA ) )
+                    IF ( RPT_%BYSPC ) ECHECK = BINDATA( I,1 )
                     IF ( ECHECK .EQ. 0. ) CYCLE
                 END IF
 

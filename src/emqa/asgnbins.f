@@ -54,11 +54,11 @@ C............  MODINFO contains the information about the source category
 
         USE MODSOURC, ONLY: CSOURC, CIFIP, CSCC, IRCLAS, SRGID, CMON,
      &                      CWEK, CDOM, CMND, CTUE, CWED, CTHU, CFRI,
-     &                      CSAT, CSUN, CMET, SPPROF, CISIC, CMACT,
+     &                      CSAT, CSUN, CMET, CISIC, CMACT,
      &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP,
      &                      XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE,
      &                      FUGHGT, FUGWID, FUGLEN, FUGANG,
-     &                      SPPNLO, SPPNHI, NSPFRC, SPPROF, NGSPRO, GSPROID
+     &                      NGSPRO, GSPROID
 
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
