@@ -46,7 +46,7 @@ C.........  This module contains the major data structure and control flags
      &          MGNAME, MNGMAT,
      &          PDEV, CDEV, TZONE, SDATE, 
      &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
-     &          VARFLAG, SRCGRPFLAG, SGDEV
+     &          VARFLAG, SRCGRPFLAG, SGDEV, SUBSECFLAG
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, RPHFLAG, ONIFLAG, RPSFLAG,
@@ -410,6 +410,13 @@ C.........  Open source groups file if needed
             MESG = 'Enter logical name for SOURCE GROUPS file'
             SGDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 
      &                           'SOURCE_GROUPS', PROGNAME )
+        END IF
+
+C.........  Open sub-sector source groups file if needed
+        IF( SUBSECFLAG ) THEN
+            MESG = 'Enter logical name for SUB-SECTOR SOURCE GROUPS file'
+            SGDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
+     &                           'SUB_SEC_SOURCES', PROGNAME )
         END IF
 
 C.........  Get emission processes file name

@@ -58,7 +58,7 @@ C.........  This module contains the major data structure and control flags
      &          PSVUNIT, PUFLAG, PUNAME, PNUMATV, PUVNAMS, PRFLAG,
      &          PRNAME, PNRMATV, PNSREAC, PRVDESC, PRNMSPC, LFLAG,
      &          PLNAME, EXPLFLAG, PHNAME, EMLAYS, PINGFLAG,
-     &          INLINEFLAG, SRCGRPFLAG, SGDEV, EDEV,
+     &          INLINEFLAG, SRCGRPFLAG, SGDEV, EDEV, SUBSECFLAG,
      &          PVNAME, PVSDATE, PVSTIME, PDEV, CDEV, TZONE, SDATE, 
      &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
      &          BSVDESC, BFLAG, VARFLAG, PFACFLAG
@@ -964,6 +964,13 @@ C.........  Open source groups file if needed
             MESG = 'Enter logical name for SOURCE GROUPS file'
             SGDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 
      &                           'SOURCE_GROUPS', PROGNAME )
+        END IF
+
+C.........  Open sub-sector source groups file if needed
+        IF( SUBSECFLAG ) THEN
+            MESG = 'Enter logical name for SUB-SECTOR SOURCE GROUPS file'
+            SGDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
+     &                           'SUB_SEC_SOURCES', PROGNAME )
         END IF
 
 C.........  If there were any errors inputing files or while comparing

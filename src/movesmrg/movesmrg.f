@@ -61,7 +61,8 @@ C.........  This module contains the major data structure and control flags
      &          CFDEV,                             ! control factor file
      &          SRCGRPFLAG, SGDEV, ISRCGRP,        ! source groups
      &          EMGGRD, EMGGRDSPC, EMGGRDSPCT,     ! emissions by source group
-     &          SGINLNNAME, NSGOUTPUT              ! source group emissions output file
+     &          SGINLNNAME, NSGOUTPUT,             ! source group emissions output file
+     &          SUBOUTNAME, NGRPS, SUBSECFLAG      ! sub-sector group emissions output files
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, ONIFLAG, RPVFLAG, RPPFLAG,
@@ -153,7 +154,7 @@ C...........   Logical names and unit numbers (not in MODMERGE)
      
 C...........   Other local variables
     
-        INTEGER          I, J, K, L1, L2, M, N, NG, V, NV, S, T ! counters and indices
+        INTEGER          I, IS, J, K, L1, L2, M, N, NG, V, NV, S, T ! counters and indices
 
         INTEGER          BIN1, BIN2, IBIN  ! speed bins for current source
         INTEGER          CELL          ! current grid cell
@@ -167,7 +168,7 @@ C...........   Other local variables
         INTEGER          IDX1, IDX2    ! temperature indexes for current cell
         INTEGER          IOS           ! tmp I/O status
         INTEGER          PDATE         ! Julian date (YYYYDDD) for RPP mode
-	INTEGER          DDATE,DTIME   ! local date and time
+        INTEGER          DDATE,DTIME   ! local date and time
         INTEGER          JDATE         ! Julian date (YYYYDDD)
         INTEGER          JTIME         ! time (HHMMSS)
         INTEGER          RDATE         ! last reporting Julian date (YYYYDDD)
@@ -384,7 +385,7 @@ C.........  Intialize state/county summed emissions to zero
         CALL INITSTCY
 
 C.........  Read source group cross-reference file and assign sources to groups
-        IF ( SRCGRPFLAG ) THEN
+        IF ( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
             CALL RDSRCGRPS( SGDEV, .TRUE., .NOT. MOPTIMIZE )
 
             IF ( MOPTIMIZE ) THEN
@@ -455,7 +456,7 @@ C.............  Loop through output time steps
 
                 IF ( MOPTIMIZE ) THEN
                     EMGRD = 0.  ! array
-                    IF ( SRCGRPFLAG ) THEN
+                    IF ( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                         EMGGRDSPC = 0.  ! array
                     END IF
                 END IF
@@ -1171,7 +1172,7 @@ C.............................  Set units conversion factor
                                     EMGRD( CELL,SPIDX ) = 
      &                                  EMGRD( CELL,SPIDX ) + EMVALSPC
      
-                                    IF( SRCGRPFLAG ) THEN
+                                    IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                                         GIDX = ISRCGRP( SRC )
                                         EMGGRDSPC( CELL,GIDX,SPIDX ) =
      &                                     EMGGRDSPC( CELL,GIDX,SPIDX ) + EMVALSPC
@@ -1182,7 +1183,7 @@ C...................................  If not use memory optimize
                                     TEMGRD( CELL,SPIDX,T ) =
      &                                TEMGRD( CELL,SPIDX,T ) + EMVALSPC
      
-                                    IF ( SRCGRPFLAG ) THEN
+                                    IF ( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                                         GIDX = ISRCGRP( SRC )
                                         EMGGRDSPCT( CELL,GIDX,SPIDX,T ) =
      &                                    EMGGRDSPCT( CELL,GIDX,SPIDX,T ) + EMVALSPC
@@ -1269,7 +1270,33 @@ C.........................  sum old county data with new county
                             END IF
                         END IF
                         
-                        IF( SRCGRPFLAG ) THEN
+
+                        IF( SUBSECFLAG ) THEN
+                            DO IS = 1, NGRPS
+                                EMGGRD( :,V ) = EMGGRDSPC( :,IS,V )
+                                IF( I > 1 ) THEN
+                                    IF( .NOT. READSET( SUBOUTNAME(IS), CSPC, ALLFILES,
+     &                                        JDATE, JTIME, TMPEMGGRD ) ) THEN
+                                         MESG = 'Could not read "' // CSPC // '"' //
+     &                                          'from file "' // SUBOUTNAME(IS) // '"'
+                                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                                    END IF
+
+                                    EMGGRD( :,V ) = EMGGRD( :,V ) + TMPEMGGRD( : )
+
+                                END IF
+
+                                IF( LGRDOUT ) THEN
+                                    IF( .NOT. WRITESET( SUBOUTNAME(IS), CSPC, ALLFILES,
+     &                                        JDATE, JTIME, EMGGRD( 1,V ) ) ) THEN
+                                         MESG = 'Could not write "' // CSPC // '"' //
+     &                                          'to file "' // SUBOUTNAME(IS) // '"'
+                                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                                    END IF
+                                END IF
+                            END DO
+
+                        ELSE IF( SRCGRPFLAG ) THEN
                             EMGGRD( :,: ) = EMGGRDSPC( :,:,V )
                             IF( I > 1 ) THEN
                                 TMPEMGGRD = 0.  ! array
@@ -1284,6 +1311,7 @@ C.........................  sum old county data with new county
                             ELSE
                                 CALL WRSRCGRPS( CSPC, JDATE, JTIME, .FALSE., 0 )
                             END IF
+
                         END IF
                     END DO
                 END IF   ! end memory optimize
@@ -1346,10 +1374,24 @@ C.....................  Write out gridded data
                             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                         END IF
                     END IF
-                    
-                    IF( SRCGRPFLAG ) THEN
+
+                    IF( SUBSECFLAG ) THEN
+                        DO I = 1, NGRPS
+                            EMGGRD( :,V ) = EMGGRDSPCT( :,I,V,T )
+                            IF( LGRDOUT ) THEN
+                                IF( .NOT. WRITESET( SUBOUTNAME(I), CSPC, ALLFILES,
+     &                                JDATE, JTIME, EMGGRD( 1,V ) ) ) THEN
+                                    MESG = 'Could not write "' // CSPC //'" '//
+     &                                     'to file "' // SUBOUTNAME(I) // '"'
+                                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                                END IF
+                            END IF
+                        END DO
+
+                    ELSE IF( SRCGRPFLAG ) THEN
                         EMGGRD( :,: ) = EMGGRDSPCT( :,:,V,T )
                         CALL WRSRCGRPS( CSPC, JDATE, JTIME, .FALSE., 0 )
+
                     END IF
 
                 END DO
@@ -1368,11 +1410,11 @@ C.........  Close output file
 
         DEALLOCATE( DAYBEGT, DAYENDT, LDAYSAV )
 
-        IF ( MOPTIMIZE ) THEN
-            DEALLOCATE( EMGRD, TMPEMGRD, MGMATX, TMPEMGGRD )
-        ELSE
-            DEALLOCATE( TEMGRD, TMPEMGRD, MGMATX )
-        END IF
+C        IF ( MOPTIMIZE ) THEN
+C            DEALLOCATE( EMGRD, TMPEMGRD, MGMATX, TMPEMGGRD )
+C        ELSE
+C            DEALLOCATE( TEMGRD, TMPEMGRD, MGMATX )
+C        END IF
 
 C.........  Successful completion of program
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )

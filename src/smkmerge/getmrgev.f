@@ -45,7 +45,8 @@ C.........  This module contains the major data structure and control flags
      &                      PINGFLAG, ELEVFLAG, EXPLFLAG, VARFLAG,
      &                      LMETCHK, LMKTPON, LGRDOUT, LREPCNY,
      &                      LREPSTA, LREPINV, LREPSPC, LREPCTL, 
-     &                      LREPANY, LAVEDAY, INLINEFLAG, SRCGRPFLAG
+     &                      LREPANY, LAVEDAY, INLINEFLAG, SRCGRPFLAG,
+     &                      SUBSECFLAG
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY:   INVPIDX
@@ -180,6 +181,17 @@ C.........  Check if source grouping should be used
         IF( SRCGRPFLAG .AND. XFLAG ) THEN
             MESG = 'Source grouping cannot be used with multiple ' //
      &             'source categories.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Check if source sub-grouping should be used
+        SUBSECFLAG = ENVYN( 'SMK_SUB_SECTOR_OUTPUT_YN', 'Use sub-sector ' //
+     &                      'source grouping', .FALSE., IOS )
+
+C.........  Error if both source group apportinment and sub-sector options
+        IF( SRCGRPFLAG .AND. SUBSECFLAG ) THEN
+            MESG = 'ERROR: Can NOT process both SMK_SRCGROUP_OUTPUT_YN ' //
+     &             ' & SMK_SUB_SECTOR_OUTPUT_YN flags at the same time'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 

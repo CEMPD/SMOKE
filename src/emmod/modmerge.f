@@ -81,6 +81,7 @@
         LOGICAL, PUBLIC :: ELEVFLAG! create ASCII elevated sources file
         LOGICAL, PUBLIC :: EXPLFLAG! use PHOUR file to get explicit plume rise
         LOGICAL, PUBLIC :: SMATCHK ! use SMAT int output file for model species calc (Movesmrg only)
+        LOGICAL, PUBLIC :: SUBSECFLAG ! use sub-sectorgrouping
         LOGICAL, PUBLIC :: SRCGRPFLAG ! use source grouping
         LOGICAL, PUBLIC :: VARFLAG ! use variable grid definition
         LOGICAL, PUBLIC :: LMETCHK ! compare met information in headers
@@ -470,6 +471,8 @@
 
 !.........  Source apportionment storage
         INTEGER,              PUBLIC :: NSRCGRP       ! total number of source groups
+        INTEGER,              PUBLIC :: NGRPS         ! total number of groups
+        INTEGER, ALLOCATABLE, PUBLIC :: IGRPIDX( : )  ! Uniqe list of source group numbers, dim: nsrcgrp
         INTEGER, ALLOCATABLE, PUBLIC :: IGRPNUM( : )  ! list of source group numbers, dim: nsrcgrp
         INTEGER, ALLOCATABLE, PUBLIC :: ISRCGRP( : )  ! source group idx for each source
         REAL,    ALLOCATABLE, PUBLIC :: EMGGRD( :,: ) ! emissions by grid cell and source group
@@ -479,5 +482,6 @@
         INTEGER, ALLOCATABLE, PUBLIC :: GRPCNT( :,: ) ! num srcs matching grid cell and group
         CHARACTER(16),        PUBLIC :: SRCGRPNAME    ! source group output file name (stack groups)
         CHARACTER(16),        PUBLIC :: SGINLNNAME    ! in-line src grp emissions file name
+        CHARACTER(16), ALLOCATABLE, PUBLIC :: SUBOUTNAME( : )    ! sub-sector emissions output 
 
         END MODULE MODMERGE

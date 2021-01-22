@@ -52,6 +52,7 @@ C.........  This module contains the major data structure and control flags
      &          TFLAG, SFLAG, LFLAG,                            ! use temporal, spec, layers
      &          PINGFLAG, ELEVFLAG, EXPLFLAG,                   ! ping, elevated, expl. plume
      &          INLINEFLAG, SRCGRPFLAG, SGDEV,                  ! inline, source groups
+     &          SUBSECFLAG, NGRPS, SUBOUTNAME,                  ! sub-sector source groups
      &          LMKTPON, LREPANY,                               ! mkt penetration, any reports
      &          CDEV, EDEV, GDEV,                               ! costcy, elev/ping, grid surg
      &          AENAME, ATNAME, AGNAME, ASNAME, ARNAME, AUNAME, ! area files
@@ -121,6 +122,7 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -231,7 +233,7 @@ C.........  Open input files and retrieve episode information
 
 C.........  Do setup for biogenic state and county reporting or source
 C           apportionment
-        IF( BFLAG .AND. ( LREPANY .OR. SRCGRPFLAG ) ) THEN
+        IF( BFLAG .AND. ( LREPANY .OR. SRCGRPFLAG .OR. SUBSECFLAG ) ) THEN
 
 C.............  Read gridding surrogates
             CALL RDSRG( .FALSE., GDEV, SRGFMT, SRGNROWS, SRGNCOLS )
@@ -436,7 +438,7 @@ C.........  Intialize state/county summed emissions to zero
 
 C.........  Read source group cross-reference file and assign sources to groups
 
-        IF( SRCGRPFLAG ) THEN
+        IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
             CALL RDSRCGRPS( SGDEV, .FALSE., .FALSE. )
         END IF
 
@@ -842,7 +844,7 @@ C                       add to totals and store
 C.............................  Update country, state, & county totals
 C.............................  Also convert the units from the gridded output
 C                               units to the totals output units
-                            IF( LREPANY .OR. SRCGRPFLAG ) THEN
+                            IF( LREPANY .OR. SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                                 FB = BIOTFAC / BIOGFAC
                                 CALL GRD2CNTY( 0, KB, NCOUNTY,
      &                                         FB, BEMGRD, BEBCNY,
@@ -959,6 +961,17 @@ C.........................  Write out ASCII elevated sources file
 
                         IF( SRCGRPFLAG ) THEN
                             CALL WRSRCGRPS( SBUF, JDATE,JTIME,.FALSE.,0)
+
+                        ELSE IF( SUBSECFLAG ) THEN
+                            DO K = 1, NGRPS
+                                IF( .NOT. WRITESET( SUBOUTNAME( K ), SBUF, ALLFILES,
+     &                                               JDATE, JTIME, EMGGRD(1,K) ) ) THEN
+                                    MESG = 'Could not write "' // SBUF // '" ' //
+     &                                      'to file "' // SUBOUTNAME(K) // '"'
+                                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                                END IF
+                            END DO
+
                         END IF
 
 C.........................  Initialize gridded arrays

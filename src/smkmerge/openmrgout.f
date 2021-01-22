@@ -51,7 +51,8 @@ C.........  This module contains the major data structure and control flags
      &          AREPNAME, BREPNAME, MREPNAME, PREPNAME, TREPNAME,
      &          ARDEV, BRDEV, MRDEV, PRDEV, TRDEV,
      &          VGRPCNT, SIINDEX, SPINDEX, GRDUNIT, VARFLAG,
-     &          SRCGRPFLAG, NSGOUTPUT, SRCGRPNAME, SGINLNNAME
+     &          SRCGRPFLAG, NSGOUTPUT, SRCGRPNAME, SGINLNNAME,
+     &          SUBSECFLAG, NGRPS, SUBOUTNAME
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NGROUP, SGFIREFLAG
@@ -191,7 +192,15 @@ C.............  Prompt for and gridded open file(s)
 C.................  Open by logical name or physical name
                 FILEDESC = 'AREA-SOURCE GRIDDED OUTPUT file'
                 CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',AONAME,I ) 
-        
+
+C.................  Open by sub-sector output files
+                IF( SUBSECFLAG ) THEN
+                    FILEDESC = 'Sub-sector groups gridded output file'
+                    DO I = 1, NGRPS
+                        CALL OPEN_LNAME_OR_PNAME( FILEDESC, 'NETCDF', SUBOUTNAME(I), K )
+                    END DO
+                END IF
+
             END IF 
 
             IF( BFLAG ) THEN

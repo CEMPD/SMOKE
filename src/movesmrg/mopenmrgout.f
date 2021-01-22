@@ -42,7 +42,8 @@ C.........  This module contains the major data structure and control flags
      &          LGRDOUT, NMSRC, NIPPA, EANAM, NMSPC, EMNAM, NSMATV, 
      &          MONAME, LREPSTA, LREPCNY, LREPSCC, LREPSRC, MREPNAME,
      &          MRDEV, SIINDEX, SPINDEX, GRDUNIT, VARFLAG,
-     &          SRCGRPFLAG, NSGOUTPUT, SRCGRPNAME, SGINLNNAME, MTMPNAME
+     &          SRCGRPFLAG, NSGOUTPUT, SRCGRPNAME, SGINLNNAME, MTMPNAME,
+     &          SUBSECFLAG, NGRPS, SUBOUTNAME
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, P_ALP, P_BET, P_GAM, 
@@ -177,7 +178,15 @@ C.............  Prompt for and gridded open file(s)
 
 C.............  Open by logical name or physical name
             FILEDESC = 'MOBILE-SOURCE GRIDDED OUTPUT file'
-            CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',MONAME,I ) 
+            CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',MONAME,I )
+
+C.............  Open by sub-sector output files
+            IF( SUBSECFLAG ) THEN
+                FILEDESC = 'Sub-sector groups gridded output file'
+                DO I = 1, NGRPS
+                    CALL OPEN_LNAME_OR_PNAME( FILEDESC, 'NETCDF', SUBOUTNAME(I), K )
+                END DO
+            END IF
 
         END IF  ! End of gridded output
 

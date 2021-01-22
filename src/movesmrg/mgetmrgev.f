@@ -44,7 +44,7 @@ C.........  This module contains the major data structure and control flags
      &                      MFLAG_BD, VARFLAG, LREPANY,
      &                      LMETCHK, LGRDOUT, LREPCNY,
      &                      LREPSTA, LREPSCC, LREPSRC,
-     &                      SRCGRPFLAG, SMATCHK
+     &                      SRCGRPFLAG, SUBSECFLAG, SMATCHK
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, ONIFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
@@ -159,6 +159,17 @@ C.........  Check for variable grid
 C.........  Check if source grouping should be used
         SRCGRPFLAG = ENVYN( 'SMK_SRCGROUP_OUTPUT_YN', 'Use source ' //
      &                      'grouping', .FALSE., IOS )
+
+C.........  Check if source sub-grouping should be used
+        SUBSECFLAG = ENVYN( 'SMK_SUB_SECTOR_OUTPUT_YN', 'Use sub-sector ' //
+     &                      'source grouping', .FALSE., IOS )
+
+C.........  Error if both source group apportinment and sub-sector options
+        IF( SRCGRPFLAG .AND. SUBSECFLAG ) THEN
+            MESG = 'ERROR: Can NOT process both SMK_SRCGROUP_OUTPUT_YN ' //
+     &             ' & SMK_SUB_SECTOR_OUTPUT_YN flags at the same time'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile processing
         RPDFLAG = ENVYN( 'RPD_MODE', 'Calculate rate-per-distance ' //

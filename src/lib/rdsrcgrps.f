@@ -41,7 +41,7 @@ C**************************************************************************
 C.........  MODULES for public variables
         USE MODMERGE, ONLY: NSRCGRP, IGRPNUM, ISRCGRP,
      &                      EMGGRD, EMGGRDSPC, EMGGRDSPCT, NSGOUTPUT,
-     &                      GRPCNT,
+     &                      GRPCNT, NGRPS, IGRPIDX,
      &                      AFLAG, BFLAG, MFLAG, PFLAG,
      &                      NASRC, NMSRC, NPSRC,
      &                      ANGMAT, AGMATX, MNGMAT, MGMATX, PGMATX,
@@ -105,7 +105,7 @@ C...........   Local allocatable arrays
         CHARACTER(16),      ALLOCATABLE :: COMBOGRPS(: ) ! combo groups by source
 
 C...........   Other local variables
-        INTEGER         I, J, K, N, INDX, C, F, GIDX, CNT   !  counters and indices
+        INTEGER         I, J, K, N, INDX, C, F, GIDX, CNT, IGRP, PGRP   !  counters and indices
         INTEGER         MXERR   !  max no. errors of each type
         INTEGER         MXWARN  !  max no. warnings of each type
         INTEGER         NLINES  !  number of lines
@@ -408,6 +408,34 @@ C.............  Check for duplicate group info
             
             PREVCSRC = CSRC
 
+        END DO
+
+C.........  Unique list of groups
+        NGRPS = 0
+        PGRP = -1
+        DO I = 1, N
+            J = INDEXA( I )
+            IGRP = IGRPNUMA( J )
+            IF( PGRP .NE. IGRP ) THEN
+                NGRPS = NGRPS + 1
+            END IF
+            PGRP = IGRP
+        END DO
+
+        ALLOCATE( IGRPIDX( NGRPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IGRPIDX', PROGNAME )
+        IGRPIDX = 0
+
+        NGRPS = 0
+        PGRP = -1
+        DO I = 1, N
+            J = INDEXA( I )
+            IGRP = IGRPNUMA( J )
+            IF( PGRP .NE. IGRP ) THEN
+                NGRPS = NGRPS + 1
+                IGRPIDX( NGRPS ) = IGRP
+            END IF
+            PGRP = IGRP
         END DO
 
 C.........  Check for sorting errors

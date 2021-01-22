@@ -44,7 +44,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NPSRC, ELEVFLAG, ELEVADJ, LFRAC, PINGFLAG,
-     &       INLINEFLAG, SRCGRPFLAG, ISRCGRP, EMGGRD
+     &       INLINEFLAG, SRCGRPFLAG, ISRCGRP, EMGGRD, SUBSECFLAG
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: ELEVFLTR
@@ -151,7 +151,7 @@ C............. If multiplicative controls & speciation
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
                         
-                        IF( SRCGRPFLAG ) THEN
+                        IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                             GIDX = ISRCGRP( S )
                             EMGGRD( C,GIDX ) = 
      &                          EMGGRD( C,GIDX ) + VAL * FG0
@@ -191,7 +191,7 @@ C............. If multiplicative controls only
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
                         
-                        IF( SRCGRPFLAG ) THEN
+                        IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                             GIDX = ISRCGRP( S )
                             EMGGRD( C,GIDX ) = 
      &                          EMGGRD( C,GIDX ) + VAL * FG0
@@ -232,7 +232,7 @@ C.............  If speciation only
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
                         
-                        IF( SRCGRPFLAG ) THEN
+                        IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                             GIDX = ISRCGRP( S )
                             EMGGRD( C,GIDX ) = 
      &                          EMGGRD( C,GIDX ) + VAL * FG0
@@ -267,7 +267,7 @@ C.............  If inventory pollutant only
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
                         
-                        IF( SRCGRPFLAG ) THEN
+                        IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                             GIDX = ISRCGRP( S )
                             EMGGRD( C,GIDX ) = 
      &                          EMGGRD( C,GIDX ) + VAL * FG0

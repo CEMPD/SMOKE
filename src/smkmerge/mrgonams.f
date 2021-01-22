@@ -42,9 +42,9 @@ C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: ARFLAG, MRFLAG, PRFLAG,
      &                      AUFLAG, MUFLAG, PUFLAG,
      &                      TFLAG, SFLAG, LFLAG,
-     &                      LREPSPC, LREPCTL, 
+     &                      LREPSPC, LREPCTL, SUBOUTNAME,
      &                      AREPNAME, BREPNAME, MREPNAME, PREPNAME, 
-     &                      TREPNAME,
+     &                      TREPNAME, NGRPS, IGRPIDX, SUBSECFLAG,
      &                      AONAME, BONAME, MONAME, PONAME, TONAME,
      &                      PINGNAME, INLINENAME, PELVNAME, 
      &                      SGINLNNAME, NUNITS, GRDUNIT
@@ -56,7 +56,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         
         EXTERNAL        ENVYN
 
-        INTEGER         I, J    ! indices and counters
+        INTEGER         I, J, N, K    ! indices and counters
 
         INTEGER         IOS           ! tmp I/O status
  
@@ -78,8 +78,15 @@ C.........  Set default output file name(s) depending on inputs.  Set both
 C           report file(s) and gridded file(s)...
 
 C.........  Initialize - everything will be gridded
+        N = 1
+        IF( SUBSECFLAG ) N = NGRPS
+        ALLOCATE( SUBOUTNAME( N ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SUBOUTNAME', PROGNAME )
+        SUBOUTNAME = 'SUBOUT'
 
-        IF( KFLAG ) THEN
+        DO K = 1, N
+
+          IF( KFLAG ) THEN
 
             AREPNAME = 'REPAG'
             BREPNAME = 'REPBG'
@@ -97,6 +104,7 @@ C.........  Initialize - everything will be gridded
             PELVNAME = 'ELEV'
             INLINENAME = 'INLN'
             SGINLNNAME = 'SGINLN'
+            IF( SUBSECFLAG ) WRITE( SUBOUTNAME( K ), '(A,I2.2)' ) 'SUBOUT', IGRPIDX( K )
 
         ELSE
 
@@ -116,7 +124,8 @@ C.........  Initialize - everything will be gridded
             INLINENAME = 'INLN'
             PELVNAME = 'ELEV'
             SGINLNNAME = 'SGINLN'
-    
+            IF( SUBSECFLAG ) WRITE( SUBOUTNAME( K ), '(A,I2.2)' ) 'SUBOUT', IGRPIDX( K )
+ 
             IF( TFLAG ) THEN
     
                 CALL TRIM_AND_CONCAT( AREPNAME, 'T' )
@@ -133,6 +142,7 @@ C.........  Initialize - everything will be gridded
                 CALL TRIM_AND_CONCAT( INLINENAME, 'T' )
                 CALL TRIM_AND_CONCAT( PELVNAME, 'T' )
                 CALL TRIM_AND_CONCAT( SGINLNNAME, 'T' )
+                CALL TRIM_AND_CONCAT( SUBOUTNAME( K ), 'T' )
     
             END IF
     
@@ -154,6 +164,7 @@ C.........  Initialize - everything will be gridded
                 CALL TRIM_AND_CONCAT( INLINENAME, 'S' )                
                 CALL TRIM_AND_CONCAT( PELVNAME, 'S' )
                 CALL TRIM_AND_CONCAT( SGINLNNAME, 'S' )
+                CALL TRIM_AND_CONCAT( SUBOUTNAME( K ), 'S' )
     
             END IF
     
@@ -188,6 +199,7 @@ C.........  Initialize - everything will be gridded
                 CALL TRIM_AND_CONCAT( INLINENAME, 'C' )
                 CALL TRIM_AND_CONCAT( PELVNAME, 'C' )
                 CALL TRIM_AND_CONCAT( SGINLNNAME, 'C' )
+                CALL TRIM_AND_CONCAT( SUBOUTNAME( K ), 'C' )
     
             END IF
     
@@ -242,6 +254,7 @@ C.................  Get output file names depending on if there are moles in uni
                     CALL TRIM_AND_CONCAT( INLINENAME, '_L' )
                     CALL TRIM_AND_CONCAT( PELVNAME, '_L' )
                     CALL TRIM_AND_CONCAT( SGINLNNAME, '_L' )
+                    CALL TRIM_AND_CONCAT( SUBOUTNAME( K ), '_L' )
     
                 ELSE 
     
@@ -260,12 +273,15 @@ C.................  Get output file names depending on if there are moles in uni
                     CALL TRIM_AND_CONCAT( INLINENAME, '_S' )
                     CALL TRIM_AND_CONCAT( PELVNAME, '_S' )
                     CALL TRIM_AND_CONCAT( SGINLNNAME, '_S' )
+                    CALL TRIM_AND_CONCAT( SUBOUTNAME( K ), '_S' )
     
                 END IF
     
             END IF
 
-        END IF
+          END IF
+
+        END DO
     
         RETURN
 
