@@ -48,8 +48,13 @@ C.........  This module is for cross reference tables
      &      XDUPCHK
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NIPPA, EANAM, LSCCEND
+        USE MODINFO,  ONLY: CATEGORY, NIPPA, EANAM, LSCCEND
 
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP
+
+        USE MODMBSET, ONLY: NREFC, MCREFIDX, NINVC, MCREFSORT 
+
+C.........  This module contains the information about the source category
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -65,9 +70,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
         INTEGER         STR2INT
         REAL            STR2REAL
+        INTEGER         PROMPTFFILE
 
         EXTERNAL  BLKORCMT, CRLF, ENVYN, FIND1, FINDC, GETFLINE, INDEX1,
-     &            STR2INT, STR2REAL
+     &            STR2INT, STR2REAL, PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.
@@ -91,7 +97,7 @@ C...........   Array for parsing list-formatted inputs
         CHARACTER(50)          SEGMENT( MXCOL )
 
 C...........   Other local variables
-        INTEGER         I, J, J1, J2, K, L, N    !  counters and indices
+        INTEGER         I, J, J1, J2, K, L, M, NN, N    !  counters and indices
 
         INTEGER         IDUM    !  dummy integer
         INTEGER         IOS     !  i/o status
@@ -100,12 +106,15 @@ C...........   Other local variables
         INTEGER         JSPC    !  tmp index to master pollutant/etype list
         INTEGER         LPCK    !  length of point definition packet
         INTEGER         NCP     !  input point source header parm
+        INTEGER         XDEV    !  unit no. of for cross-refrence county file (MCXREF)
+        INTEGER         NCNTY   !  no of inv counties per ref county
         INTEGER         NLINES  !  number of lines
         INTEGER         NXREF   !  number of valid x-ref entries
         INTEGER         NCOMBO, NFRACS      !  numbers of "COMBO" and fractional-profile entries
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
         LOGICAL      :: PFLAG = .FALSE.   !  true: tmp pol-spec rec skipped
+        LOGICAL      :: REFLAG = .FALSE.  !  true: use of inv-ref county mapping 
         LOGICAL      :: SKIPPOL = .FALSE. !  true: pol-spec rec skipped in x-ref
         LOGICAL         SKIPREC           !  true: record skipped in x-ref file
         LOGICAL         DUPCHECK          !  true: duplicate-check in XREFTBL
@@ -163,16 +172,73 @@ C.........  Write status message
 C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'Speciation cross reference file' )
 
-C.........  Allocate memory for unsorted data used in all source categories
+C.........  Use reference to inventory county mapping file
+        MESG   = 'Use the county cross-reference mapping file'
+        REFLAG = ENVYN( 'USE_REF_COUNTY_MAP_YN', MESG, .FALSE., IOS )
+        IF( REFLAG ) THEN
 
-        ALLOCATE( CSPRNA( NLINES ),
-     &             ISPTA( NLINES ),
-     &            CSCCTA( NLINES ),
-     &            CSRCTA( NLINES ),
-     &            CMACTA( NLINES ),
-     &            CISICA( NLINES ),
-     &            INDXTA( NLINES ),
-     &            SFRACA( NLINES ), STAT=IOS )
+C.............  Read and store ref-inv counties mapping
+            XDEV = PROMPTFFILE(
+     &           'Enter logical name for county x-reference file',
+     &           .TRUE., .TRUE., 'MCXREF', PROGNAME )
+            CALL RDMXREF( XDEV, NINVIFIP, INVCFIP ) 
+
+            IREC   = 0
+            NCNTY = NLINES
+            DO I = 1, NLINES
+
+                READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
+
+                IF ( IOS .NE. 0 ) THEN
+                    WRITE( MESG,94010 ) 'I/O error', IOS,
+     &              'reading speciation x-ref file at line', IREC
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
+                END IF
+
+C.................  Skip blank lines or comments
+                IF( BLKORCMT( LINE ) ) CYCLE
+
+C.................  Read point source header information
+                J = INDEX( LINE, PDEFPCKT ) ! can be in middle of file
+                IF( J .GT. 0 ) CYCLE
+
+                CALL PARSLINE( LINE, MXCOL, SEGMENT )
+                CFIP   = SEGMENT( 4 )
+                IF( LEN_TRIM( CFIP ) > 0 ) CALL  PADZERO( CFIP )
+
+C.................  Increase no of entries by no of inv per ref county
+                K = FINDC( CFIP, NREFC, MCREFIDX( :,1 ) ) 
+                IF( K > 0 ) THEN
+                    NN = 0
+                    DO M = 1, NINVC
+                        IF( CFIP == MCREFSORT( M,2 ) ) NN = NN + 1
+                    END DO
+                    NCNTY = NCNTY + NN
+                ELSE IF( LEN_TRIM( CFIP ) > 0 ) THEN
+                    WRITE( MESG,94010 ) 'WARNING: ' // TRIM(CFIP) //
+     &              ' county is not a reference counties at line', IREC
+                    CALL M3MESG( MESG )
+                    CYCLE
+                END IF
+
+            END DO
+
+        ELSE
+
+            NCNTY = NLINES   ! default NLINES from GSREF input file
+
+        END IF 
+
+C.........  Allocate memory for unsorted data used in all source categories
+        ALLOCATE( CSPRNA( NCNTY ),
+     &             ISPTA( NCNTY ),
+     &            CSCCTA( NCNTY ),
+     &            CSRCTA( NCNTY ),
+     &            CMACTA( NCNTY ),
+     &            CISICA( NCNTY ),
+     &            INDXTA( NCNTY ),
+     &            SFRACA( NCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSPRNA:SPRFACA', PROGNAME )
         SFRACA(:) = -9999.0
 
@@ -218,41 +284,61 @@ C.............  Skip blank lines or comments
 C.............  Read point source header information
             IF( J .GT. 0 ) THEN
 
-                IF( L .GT. LPCK ) THEN
-                    READ( LINE( LPCK:L ), * ) NCP, JS
+              IF( L .GT. LPCK ) THEN
+                  READ( LINE( LPCK:L ), * ) NCP, JS
 
-                ELSE
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: Incomplete point '//
-     &                     'source definition packet at line', IREC
-                    CALL M3MSG2( MESG )
+              ELSE
+                  EFLAG = .TRUE.
+                  WRITE( MESG,94010 ) 'ERROR: Incomplete point '//
+     &                   'source definition packet at line', IREC
+                  CALL M3MSG2( MESG )
 
-                END IF
+              END IF
 
-C.................  Adjust for FIPS code and Plant ID, which are always there
-                NCP = NCP + 2
-                IF( JS .GT. 0 ) JS = JS + 2
+C...............  Adjust for FIPS code and Plant ID, which are always there
+              NCP = NCP + 2
+              IF( JS .GT. 0 ) JS = JS + 2
 
-                CYCLE
+              CYCLE
 
-C.............  If not a header line, then it's a regular line.  The records
-C               that don't apply to this source category or to the current
-C               inventory will be filtered out by FLTRXREF
+C...........  If not a header line, then it's a regular line.  The records
+C             that don't apply to this source category or to the current
+C             inventory will be filtered out by FLTRXREF
             ELSE
 
-C.................  Compare point source definition from header to inventory
-                IF( CATEGORY .EQ. 'POINT' ) CALL CHKPTDEF( NCP, JS )
+C...............  Compare point source definition from header to inventory
+              IF( CATEGORY .EQ. 'POINT' ) CALL CHKPTDEF( NCP, JS )
 
-                CALL PARSLINE( LINE, MXCOL, SEGMENT )
+              CALL PARSLINE( LINE, MXCOL, SEGMENT )
 
-                TSCC   = SEGMENT( 1 )
-                SPCODE = SEGMENT( 2 )
-                CPOA   = SEGMENT( 3 )
-                CFIP   = SEGMENT( 4 )
-                CMCT   = SEGMENT( 5 )
-                CSIC   = SEGMENT( 6 )
-                PLT    = SEGMENT( 7 )
-                CHARS( 1:5 ) = SEGMENT( 8:12 )
+              TSCC   = SEGMENT( 1 )
+              SPCODE = SEGMENT( 2 )
+              CPOA   = SEGMENT( 3 )
+              CFIP   = SEGMENT( 4 )
+              CMCT   = SEGMENT( 5 )
+              CSIC   = SEGMENT( 6 )
+              PLT    = SEGMENT( 7 )
+              CHARS( 1:5 ) = SEGMENT( 8:12 )
+
+C...............  Increase no of entries by no of inv per ref county
+              K = 0
+              NCNTY = 1    ! default value for no ref-inv county mapping
+              IF( REFLAG ) THEN
+                IF( LEN_TRIM( CFIP ) > 0 ) CALL PADZERO( CFIP )
+                K = FINDC( CFIP, NREFC, MCREFIDX( :,1 ) )
+                IF( K > 0 ) THEN
+                    NN = 0
+                    DO M = 1, NINVC
+                        IF( CFIP == MCREFSORT( M,2 ) ) NN = NN + 1
+                    END DO
+                    NCNTY = NCNTY + NN - 1  ! count no of inv per ref
+                END IF
+              END IF
+
+              DO M = 1, NCNTY
+
+C.................  Update ref to inv county
+                IF( K > 0 )  CFIP = MCREFSORT( K+M-1,1 )   ! mapped inventory county
 
 C.................  Adjust these for proper sorting and matching with profiles
 C                   file.
@@ -368,7 +454,9 @@ C.................  Store case-indpendent fields from cross-reference
                 
                 IF ( ADJUSTL( SPCODE ) .EQ. 'COMBO' ) NCOMBO = NCOMBO + 1
 
-            END IF  !  This line matches source category of interest
+            END DO  ! End of loop on no of mapped inv-ref counties 
+
+          END IF    !  This line matches source category of interest
 
         END DO      ! End of loop on I for reading in speciation x-ref file
 

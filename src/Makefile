@@ -95,7 +95,7 @@ LIBSRC = \
  rdspdprof.f    rdspdref.f      rdsprof.f           \
  rdsrcgrps.f    rdsref.f        rdsrg.f             \
  rdsrgdesc.f    rdsrghdr.f      rdstcy.f            \
- rdtzone.f      rdumat.f                            \
+ rdtzone.f      rdumat.f        rdmxref.f           \
  rdxclude.f     readwr3.f       rmcommnt.f          \
  setscctype.f   setsrcdy.f      srcgrpcnt.f         \
  tagtable.f                     unitfac.f           \
@@ -193,10 +193,10 @@ MOVSRC = \
  minitstcy.f      mmrgonams.f       mmrgunits.f   \
  mmrgvnams.f      mopenmrgin.f      mopenmrgout.f \
  movesmrg.f       mwrmrgrep.f       rdcfpro.f     \
- rdfmref.f        rdmrclist.f       rdmxref.f     \
+ rdfmref.f        rdmrclist.f       rdspdist.f    \
  rdrpdemfacs.f    rdrphemfacs.f     rdrppemfacs.f \
  rdrpvemfacs.f    rdspdpro.f        setrefcnty.f  \
- wrtemprof.f      rdspdist.f
+ wrtemprof.f      
  
 MOVOBJ =  $(MOVSRC:.f=.o)
 
