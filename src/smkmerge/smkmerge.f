@@ -89,7 +89,7 @@ C.........  This module contains the major data structure and control flags
      &          AERCNY, MERCNY, PERCNY,                         ! cnty total reac control emis
      &          AECCNY, MECCNY, PECCNY,                         ! cnty total all-control emis
      &          LFRAC, EANAM, TONAMES,                          ! layer frac, pol/act names
-     &          ISRCGRP, EMGGRD                                 ! emis by grid cell and src group
+     &          ISRCGRP, EMGGRD                        ! emis by grid cell and src group
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: ACRIDX, ACRREPEM, ACRPRJFC, ACRMKTPN,
@@ -844,7 +844,7 @@ C                       add to totals and store
 C.............................  Update country, state, & county totals
 C.............................  Also convert the units from the gridded output
 C                               units to the totals output units
-                            IF( LREPANY .OR. SRCGRPFLAG .OR. SUBSECFLAG ) THEN
+                            IF( LREPANY .OR. SRCGRPFLAG ) THEN
                                 FB = BIOTFAC / BIOGFAC
                                 CALL GRD2CNTY( 0, KB, NCOUNTY,
      &                                         FB, BEMGRD, BEBCNY,
@@ -989,7 +989,7 @@ C.........................  Initialize gridded arrays
 
                         TEMGRD = 0.      ! array
 
-                        IF( SRCGRPFLAG ) THEN
+                        IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                             EMGGRD = 0.  ! array
                         END IF
                     END IF

@@ -41,7 +41,7 @@ C**************************************************************************
 C.........  MODULES for public variables
         USE MODMERGE, ONLY: NSRCGRP, IGRPNUM, ISRCGRP,
      &                      EMGGRD, EMGGRDSPC, EMGGRDSPCT, NSGOUTPUT,
-     &                      GRPCNT, NGRPS, IGRPIDX,
+     &                      GRPCNT, NGRPS, IGRPIDX, SUBSECFLAG,
      &                      AFLAG, BFLAG, MFLAG, PFLAG,
      &                      NASRC, NMSRC, NPSRC,
      &                      ANGMAT, AGMATX, MNGMAT, MGMATX, PGMATX,
@@ -700,6 +700,9 @@ C.............  Increment number of output records to account
 C               for elevated sources
             NSGOUTPUT = NSGOUTPUT + NELEVGRPS
         END IF
+
+C.........  Upate no of srcgrp when SUBSECFLAG output is set to Y
+        IF( SUBSECFLAG ) NSRCGRP = NGRPS
 
 C.........  Allocate memory for emissions data
         ALLOCATE( EMGGRD( NGRID, NSRCGRP ), STAT=IOS )

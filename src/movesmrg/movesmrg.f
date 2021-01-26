@@ -61,7 +61,7 @@ C.........  This module contains the major data structure and control flags
      &          CFDEV,                             ! control factor file
      &          SRCGRPFLAG, SGDEV, ISRCGRP,        ! source groups
      &          EMGGRD, EMGGRDSPC, EMGGRDSPCT,     ! emissions by source group
-     &          SGINLNNAME, NSGOUTPUT,             ! source group emissions output file
+     &          SGINLNNAME, NSGOUTPUT, IGRPNUM,    ! source group emissions output file
      &          SUBOUTNAME, NGRPS, SUBSECFLAG      ! sub-sector group emissions output files
 
 C.........  This module contains data structures and flags specific to Movesmrg
@@ -386,11 +386,17 @@ C.........  Intialize state/county summed emissions to zero
 
 C.........  Read source group cross-reference file and assign sources to groups
         IF ( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
+
             CALL RDSRCGRPS( SGDEV, .TRUE., .NOT. MOPTIMIZE )
 
             IF ( MOPTIMIZE ) THEN
-                ALLOCATE( TMPEMGGRD( NSGOUTPUT ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'TMPEMGGRD', PROGNAME )
+                IF( SRCGRPFLAG ) THEN
+                    ALLOCATE( TMPEMGGRD( NSGOUTPUT ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'TMPEMGGRD', PROGNAME )
+                ELSE IF( SUBSECFLAG ) THEN
+                    ALLOCATE( TMPEMGGRD( NGRID ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'TMPEMGGRD', PROGNAME )
+                END IF 
             END IF
         END IF
 
@@ -1174,6 +1180,7 @@ C.............................  Set units conversion factor
      
                                     IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                                         GIDX = ISRCGRP( SRC )
+                                        IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( SRC ) )
                                         EMGGRDSPC( CELL,GIDX,SPIDX ) =
      &                                     EMGGRDSPC( CELL,GIDX,SPIDX ) + EMVALSPC
                                     END IF
@@ -1185,6 +1192,7 @@ C...................................  If not use memory optimize
      
                                     IF ( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                                         GIDX = ISRCGRP( SRC )
+                                        IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( SRC ) )
                                         EMGGRDSPCT( CELL,GIDX,SPIDX,T ) =
      &                                    EMGGRDSPCT( CELL,GIDX,SPIDX,T ) + EMVALSPC
                                     END IF
@@ -1273,8 +1281,9 @@ C.........................  sum old county data with new county
 
                         IF( SUBSECFLAG ) THEN
                             DO IS = 1, NGRPS
-                                EMGGRD( :,V ) = EMGGRDSPC( :,IS,V )
+                                EMGGRD( :,IS ) = EMGGRDSPC( :,IS,V )
                                 IF( I > 1 ) THEN
+                                    TMPEMGGRD = 0.  ! array
                                     IF( .NOT. READSET( SUBOUTNAME(IS), CSPC, ALLFILES,
      &                                        JDATE, JTIME, TMPEMGGRD ) ) THEN
                                          MESG = 'Could not read "' // CSPC // '"' //
@@ -1282,13 +1291,13 @@ C.........................  sum old county data with new county
                                          CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                                     END IF
 
-                                    EMGGRD( :,V ) = EMGGRD( :,V ) + TMPEMGGRD( : )
+                                    EMGGRD( :,IS ) = EMGGRD( :,IS ) + TMPEMGGRD( : )
 
                                 END IF
 
                                 IF( LGRDOUT ) THEN
                                     IF( .NOT. WRITESET( SUBOUTNAME(IS), CSPC, ALLFILES,
-     &                                        JDATE, JTIME, EMGGRD( 1,V ) ) ) THEN
+     &                                        JDATE, JTIME, EMGGRD( 1,IS ) ) ) THEN
                                          MESG = 'Could not write "' // CSPC // '"' //
      &                                          'to file "' // SUBOUTNAME(IS) // '"'
                                          CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
@@ -1376,15 +1385,13 @@ C.....................  Write out gridded data
                     END IF
 
                     IF( SUBSECFLAG ) THEN
-                        DO I = 1, NGRPS
-                            EMGGRD( :,V ) = EMGGRDSPCT( :,I,V,T )
-                            IF( LGRDOUT ) THEN
-                                IF( .NOT. WRITESET( SUBOUTNAME(I), CSPC, ALLFILES,
-     &                                JDATE, JTIME, EMGGRD( 1,V ) ) ) THEN
-                                    MESG = 'Could not write "' // CSPC //'" '//
-     &                                     'to file "' // SUBOUTNAME(I) // '"'
-                                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                                END IF
+                        DO IS = 1, NGRPS
+                            EMGGRD( :,IS ) = EMGGRDSPCT( :,IS,V,T )
+                            IF( .NOT. WRITESET( SUBOUTNAME(IS), CSPC, ALLFILES,
+     &                            JDATE, JTIME, EMGGRD( 1,IS ) ) ) THEN
+                                MESG = 'Could not write "' // CSPC //'" '//
+     &                                 'to file "' // SUBOUTNAME(IS) // '"'
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                             END IF
                         END DO
 

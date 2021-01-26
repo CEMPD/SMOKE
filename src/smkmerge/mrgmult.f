@@ -44,7 +44,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NPSRC, ELEVFLAG, ELEVADJ, LFRAC, PINGFLAG,
-     &       INLINEFLAG, SRCGRPFLAG, ISRCGRP, EMGGRD, SUBSECFLAG
+     &       INLINEFLAG, SRCGRPFLAG, ISRCGRP, EMGGRD, SUBSECFLAG, IGRPNUM
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: ELEVFLTR
@@ -153,6 +153,7 @@ C............. If multiplicative controls & speciation
                         
                         IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                             GIDX = ISRCGRP( S )
+                            IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( S ) )
                             EMGGRD( C,GIDX ) = 
      &                          EMGGRD( C,GIDX ) + VAL * FG0
                         END IF
@@ -193,6 +194,7 @@ C............. If multiplicative controls only
                         
                         IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                             GIDX = ISRCGRP( S )
+                            IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( S ) )
                             EMGGRD( C,GIDX ) = 
      &                          EMGGRD( C,GIDX ) + VAL * FG0
                         END IF
@@ -234,6 +236,7 @@ C.............  If speciation only
                         
                         IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                             GIDX = ISRCGRP( S )
+                            IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( S ) )
                             EMGGRD( C,GIDX ) = 
      &                          EMGGRD( C,GIDX ) + VAL * FG0
                         END IF
@@ -269,6 +272,7 @@ C.............  If inventory pollutant only
                         
                         IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                             GIDX = ISRCGRP( S )
+                            IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( S ) )
                             EMGGRD( C,GIDX ) = 
      &                          EMGGRD( C,GIDX ) + VAL * FG0
                         END IF
