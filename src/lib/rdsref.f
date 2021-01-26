@@ -170,7 +170,7 @@ C.........  Write status message
         CALL M3MSG2( MESG )
 
 C.........  Get the number of lines in the file
-        NLINES = GETFLINE( FDEV, 'Speciation cross reference file' )
+        NN = GETFLINE( FDEV, 'Speciation cross reference file' )
 
 C.........  Use reference to inventory county mapping file
         MESG   = 'Use the county cross-reference mapping file'
@@ -184,8 +184,8 @@ C.............  Read and store ref-inv counties mapping
             CALL RDMXREF( XDEV, NINVIFIP, INVCFIP ) 
 
             IREC   = 0
-            NCNTY = NLINES
-            DO I = 1, NLINES
+            NLINES = NN
+            DO I = 1, NN
 
                 READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
                 IREC = IREC + 1
@@ -210,11 +210,11 @@ C.................  Read point source header information
 C.................  Increase no of entries by no of inv per ref county
                 K = FINDC( CFIP, NREFC, MCREFIDX( :,1 ) ) 
                 IF( K > 0 ) THEN
-                    NN = 0
+                    L = 0
                     DO M = 1, NINVC
-                        IF( CFIP == MCREFSORT( M,2 ) ) NN = NN + 1
+                        IF( CFIP == MCREFSORT( M,2 ) ) L = L + 1
                     END DO
-                    NCNTY = NCNTY + NN
+                    NLINES = NLINES + L
                 ELSE IF( LEN_TRIM( CFIP ) > 0 ) THEN
                     WRITE( MESG,94010 ) 'WARNING: ' // TRIM(CFIP) //
      &              ' county is not a reference counties at line', IREC
@@ -226,19 +226,19 @@ C.................  Increase no of entries by no of inv per ref county
 
         ELSE
 
-            NCNTY = NLINES   ! default NLINES from GSREF input file
+            NLINES = NN   ! default NLINES from GSREF input file
 
         END IF 
 
 C.........  Allocate memory for unsorted data used in all source categories
-        ALLOCATE( CSPRNA( NCNTY ),
-     &             ISPTA( NCNTY ),
-     &            CSCCTA( NCNTY ),
-     &            CSRCTA( NCNTY ),
-     &            CMACTA( NCNTY ),
-     &            CISICA( NCNTY ),
-     &            INDXTA( NCNTY ),
-     &            SFRACA( NCNTY ), STAT=IOS )
+        ALLOCATE( CSPRNA( NLINES ),
+     &             ISPTA( NLINES ),
+     &            CSCCTA( NLINES ),
+     &            CSRCTA( NLINES ),
+     &            CMACTA( NLINES ),
+     &            CISICA( NLINES ),
+     &            INDXTA( NLINES ),
+     &            SFRACA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSPRNA:SPRFACA', PROGNAME )
         SFRACA(:) = -9999.0
 
@@ -261,7 +261,7 @@ C           interest
         N      = 0
         NCP    = 6        ! ORL and IDA default (4+2)
         JS     = 6        ! ORL and IDA default (4+2)
-        DO I = 1, NLINES
+        DO I = 1, NN
 
             READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
             IREC = IREC + 1
@@ -327,11 +327,11 @@ C...............  Increase no of entries by no of inv per ref county
                 IF( LEN_TRIM( CFIP ) > 0 ) CALL PADZERO( CFIP )
                 K = FINDC( CFIP, NREFC, MCREFIDX( :,1 ) )
                 IF( K > 0 ) THEN
-                    NN = 0
+                    L = 0
                     DO M = 1, NINVC
-                        IF( CFIP == MCREFSORT( M,2 ) ) NN = NN + 1
+                        IF( CFIP == MCREFSORT( M,2 ) ) L = L + 1
                     END DO
-                    NCNTY = NCNTY + NN - 1  ! count no of inv per ref
+                    NCNTY = NCNTY + L - 1  ! count no of inv per ref
                 END IF
               END IF
 
