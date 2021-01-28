@@ -410,6 +410,9 @@ C.............  Check for duplicate group info
 
         END DO
 
+C.........  Sort source groups by group ID
+        CALL SORTI1( N, INDEXA, IGRPNUMA )
+
 C.........  Unique list of groups
         NGRPS = 0
         PGRP = -1
