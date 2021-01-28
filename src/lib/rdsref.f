@@ -322,7 +322,7 @@ C...............  Compare point source definition from header to inventory
 
 C...............  Increase no of entries by no of inv per ref county
               K = 0
-              NCNTY = 1    ! default value for no ref-inv county mapping
+              NCNTY = 0    ! default value for no ref-inv county mapping
               IF( REFLAG ) THEN
                 IF( LEN_TRIM( CFIP ) > 0 ) CALL PADZERO( CFIP )
                 K = FINDC( CFIP, NREFC, MCREFIDX( :,1 ) )
@@ -331,14 +331,19 @@ C...............  Increase no of entries by no of inv per ref county
                     DO M = 1, NINVC
                         IF( CFIP == MCREFSORT( M,2 ) ) L = L + 1
                     END DO
-                    NCNTY = NCNTY + L - 1  ! count no of inv per ref
+                    NCNTY = NCNTY + L  ! count no of inv per ref
                 END IF
               END IF
+
+              IF( NCNTY == 0 ) NCNTY = 1   ! default value = 1
 
               DO M = 1, NCNTY
 
 C.................  Update ref to inv county
-                IF( K > 0 )  CFIP = MCREFSORT( K+M-1,1 )   ! mapped inventory county
+                IF( K > 0 )  THEN
+                    J1 = STR2INT( MCREFIDX( K,2 ) ) + M - 1
+                    CFIP = MCREFSORT( J1,1 )   ! mapped inventory county
+                END IF
 
 C.................  Adjust these for proper sorting and matching with profiles
 C                   file.
