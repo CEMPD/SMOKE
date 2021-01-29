@@ -65,7 +65,7 @@ C...........   PARAMETERS and their descriptions:
 C...........   LOCAL PARAMETERS
 
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv4.8_Oct2020$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv4.8.1_Jan2021$' ! CVS release tag
         REAL,          PARAMETER :: TOHECT = 0.0001  ! factor to convert to hectares
         CHARACTER,     PARAMETER :: AQUT = "'"  
         INTEGER,       PARAMETER :: IZERO = 0

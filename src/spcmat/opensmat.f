@@ -84,7 +84,7 @@ C.........  SUBROUTINE ARGUMENTS
       
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv4.8_Oct2020  $'  ! CVS revision tag
+     &  CVSW = '$Name SMOKEv4.8.1_Jan2021  $'  ! CVS revision tag
 
 C.........  Count of species per inventory pollutant/emission type
         INTEGER    NSPEC( NIPPA )
