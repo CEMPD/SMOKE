@@ -18,7 +18,6 @@ C
 C  REVISION  HISTORY:
 C     Created 7/2000 by M Houyoux
 C     Revised 7/2003 by A. Holland
-C
 C***********************************************************************
 C  
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -242,7 +241,7 @@ C...........   Local parameters
      &                              'Longitude        ',
      &                              'Elevstat         ',
      &                              'Stack Groups     ',
-     &                              'Plt Name         ',
+     &                              'Fac Name         ',
      &                              'SCC Description  ',
      &                              'SIC Description  ',
      &                              'MACT Description ',
@@ -295,7 +294,7 @@ C...........   Local variables that depend on module variables
         LOGICAL    LNAICSUSE( NINVNAICS )
         LOGICAL    LORISUSE ( NORIS )
 
-        CHARACTER(10) CHRHDRS( NCHARS )  ! Source characteristics headers
+        CHARACTER(12) CHRHDRS( NCHARS )  ! Source characteristics headers
 
 C...........   Other local arrays
         INTEGER       PWIDTH( 8 )
@@ -408,17 +407,17 @@ C.........  NOTE that (1) will not be used and none will be for area sources
             CHRHDRS( 5 ) = 'SCC'
 
         CASE( 'POINT' )
-            CHRHDRS( 2 ) = 'Plant ID'
+            CHRHDRS( 2 ) = 'Facility ID'
             IF ( NCHARS .GE. 3 ) THEN
                 IF( .NOT. AFLAG ) THEN
-                    CHRHDRS( 3 ) = 'Char 1'
+                    CHRHDRS( 3 ) = 'Unit ID '
                 ELSE
                     CHRHDRS( 3 ) = 'Stack ID'
                 END IF
             END IF
-            IF ( NCHARS .GE. 4 ) CHRHDRS( 4 ) = 'Char 2'
-            IF ( NCHARS .GE. 5 ) CHRHDRS( 5 ) = 'Char 3'
-            IF ( NCHARS .GE. 6 ) CHRHDRS( 6 ) = 'Char 4'
+            IF ( NCHARS .GE. 4 ) CHRHDRS( 4 ) = 'Rel Point ID'
+            IF ( NCHARS .GE. 5 ) CHRHDRS( 5 ) = 'Process ID'
+            IF ( NCHARS .GE. 6 ) CHRHDRS( 6 ) = 'Char 4 SCC'
             IF ( NCHARS .GE. 7 ) CHRHDRS( 7 ) = 'Char 5'
 
         END SELECT
