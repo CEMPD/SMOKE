@@ -166,6 +166,7 @@ C...........   Local variables
         CHARACTER(ORSLEN3) ORIS         ! tmp ORIS
         CHARACTER(STPLEN3) SRCTYP       ! tmp SRCTYP
         CHARACTER(PLTLEN3) PLANT        ! tmp plant ID
+        CHARACTER(PLTLEN3) FACILITY     ! tmp Facility ID
         CHARACTER(PLTLEN3) PREVPLT      ! previous plant ID
         CHARACTER(FIPLEN3) CFIP         ! tmp country/state/county
         CHARACTER(FIPLEN3) CCNTRY       ! tmp country
@@ -531,18 +532,18 @@ C.................  code, so for now save space for the SRCID.
 
             DO I = 1, NOUTREC
                 S     = OUTSRC( I )
-                PLANT = CSOURC( S ) (LOC_BEGP(2):LOC_ENDP(2))
+                FACILITY = CSOURC( S ) (LOC_BEGP(2):LOC_ENDP(2))
                 IF ( CIFIP( S ) .EQ. PREVFIP .AND.
-     &               PLANT      .EQ. PREVPLT       ) THEN
+     &               FACILITY   .EQ. PREVPLT       ) THEN
                     SRCID = PREVSRCID
                     WRITE( SORTBUF( I )( IS:IS+7 ), '( I8.8 )' ) PREVSRCID
                 ELSE
                     SRCID     = S
                     PREVFIP   = CIFIP( S )
-                    PREVPLT   = PLANT
+                    PREVPLT   = FACILITY
                     PREVSRCID = S
                 END IF
-                SORTBUF( I )( II:IJ ) = PLANT
+                SORTBUF( I )( II:IJ ) = FACILITY
             END DO
             II = IJ + 1
 
@@ -774,10 +775,10 @@ C.........  Allocate memory for bins
             ALLOCATE( BINSMKID ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSMKID', PROGNAME )
         ENDIF
-        IF( RPT_%BYSRC .OR. RPT_%BYFACILITY ) THEN
+        IF( RPT_%BYFACILITY ) THEN
             ALLOCATE( BINSMKID ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSMKID', PROGNAME )
-        ENDIF  
+        ENDIF
         IF( RPT_%BYSCC   ) THEN
             ALLOCATE( BINSCC   ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSCC', PROGNAME )
