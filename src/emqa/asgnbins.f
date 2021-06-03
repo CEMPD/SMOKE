@@ -78,7 +78,7 @@ C............  MODINFO contains the information about the source category
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
      &                      BINNAICS, BINNAIIDX, BINSRCTYP, BINORIS,
      &                      BINORSIDX, BINSTKGRP, BININTGR, BINGEO1IDX,
-     &                      BINERPTYP, BINSPCIDX
+     &                      BINERPTYP, BINSPCIDX, BINFACILITY
 
         USE MODGRID, ONLY: NCOLS
 
@@ -343,6 +343,14 @@ C.................  code, so for now save space for the SRCID.
                     II = IJ + 1
                 END IF
 
+                IF( RPT_%BYFACILITY ) THEN
+                    IJ = II + 7
+                    SRCID = OUTSRC( I )
+                    WRITE( SORTBUF( I )( II:IJ ), '( I8.8 )' ) SRCID
+                    II = IJ + 1
+                END IF                
+
+
                 IF( RPT_%BYCNTY ) THEN
                     IJ = II + FIPLEN3 - 1
                     CFIP  = CIFIP( OUTSRC( I ) )
@@ -514,6 +522,32 @@ C.................  code, so for now save space for the SRCID.
 
         END IF          !!  if report-by-plant
 
+        IF( RPT_%BYFACILITY ) THEN
+
+            PREVPLT   = '????????'
+            PREVFIP   = '????????'
+            PREVSRCID = -9999
+            IJ = II + PLTLEN3 - 1
+
+            DO I = 1, NOUTREC
+                S     = OUTSRC( I )
+                PLANT = CSOURC( S ) (LOC_BEGP(2):LOC_ENDP(2))
+                IF ( CIFIP( S ) .EQ. PREVFIP .AND.
+     &               PLANT      .EQ. PREVPLT       ) THEN
+                    SRCID = PREVSRCID
+                    WRITE( SORTBUF( I )( IS:IS+7 ), '( I8.8 )' ) PREVSRCID
+                ELSE
+                    SRCID     = S
+                    PREVFIP   = CIFIP( S )
+                    PREVPLT   = PLANT
+                    PREVSRCID = S
+                END IF
+                SORTBUF( I )( II:IJ ) = PLANT
+            END DO
+            II = IJ + 1
+
+        END IF          !!  if report-by-facility
+        
         IS = II
 
 !$OMP   PARALLEL DO DEFAULT( SHARED ),
@@ -702,6 +736,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINSPCID  ) ) DEALLOCATE( BINSPCID )
         IF( ALLOCATED( BINSPCIDX ) ) DEALLOCATE( BINSPCIDX )
         IF( ALLOCATED( BINPLANT  ) ) DEALLOCATE( BINPLANT )
+        IF( ALLOCATED( BINFACILITY ) ) DEALLOCATE( BINFACILITY )
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
         IF( ALLOCATED( BINY      ) ) DEALLOCATE( BINY )
         IF( ALLOCATED( BINELEV   ) ) DEALLOCATE( BINELEV )
@@ -739,6 +774,10 @@ C.........  Allocate memory for bins
             ALLOCATE( BINSMKID ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSMKID', PROGNAME )
         ENDIF
+        IF( RPT_%BYSRC .OR. RPT_%BYFACILITY ) THEN
+            ALLOCATE( BINSMKID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSMKID', PROGNAME )
+        ENDIF  
         IF( RPT_%BYSCC   ) THEN
             ALLOCATE( BINSCC   ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSCC', PROGNAME )
@@ -861,6 +900,12 @@ C.........  Allocate memory for bins
             ALLOCATE( BINPLANT ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINPLANT', PROGNAME )
         ENDIF
+        
+        IF( RPT_%BYFACILITY ) THEN
+            ALLOCATE( BINFACILITY ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINFACILITY', PROGNAME )
+        ENDIF
+        
         IF( RPT_%BYRCL   ) THEN
             ALLOCATE( BINRCL   ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINRCL', PROGNAME )
@@ -1079,6 +1124,12 @@ C.................  index with CSCC maps to SCC from BUFFER properly)
 C.................  Store plant ID code
             IF( RPT_%BYPLANT ) THEN
                 BINPLANT( B ) = CSOURC( S )( LOC_BEGP(2) : LOC_ENDP(2) )
+                BINSMKID( B ) = S           !! Needed for plant names
+            END IF
+
+C.................  Store plant ID code for the BY FACILITY instruction
+            IF( RPT_%BYFACILITY ) THEN
+                BINFACILITY( B ) = CSOURC( S )( LOC_BEGP(2) : LOC_ENDP(2) )
                 BINSMKID( B ) = S           !! Needed for plant names
             END IF
 

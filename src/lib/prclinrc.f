@@ -474,6 +474,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYSUN     = .FALSE.
                         RPT_%BYMET     = .FALSE.
                         RPT_%BYPLANT   = .FALSE.
+                        RPT_%BYFACILITY = .FALSE.
                         RPT_%BYRCL     = .FALSE.
                         RPT_%BYSIC     = .FALSE.
                         RPT_%BYSCC     = .FALSE.
@@ -833,6 +834,7 @@ C.............  AERMOD support report
                     RPT_%SRCMAP    = .TRUE.      ! output source mapping output file
 
                     RPT_%BYPLANT   = .TRUE.      ! By Plant ID
+                    RPT_%BYFACILITY = .TRUE.     !By Facility ID
                     RPT_%SRCNAM    = .TRUE.      ! By Plant Name
 
                     TSFLAG         = .TRUE.      ! By TSUP file
@@ -1020,6 +1022,12 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                         RPT_%SRCNAM = .TRUE.
                     END IF
 
+                CASE( 'FACILITY' )
+                    RPT_%BYFACILITY = .TRUE.
+                    IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                        RPT_%SRCNAM = .TRUE.
+                    END IF
+
                 CASE( 'ROADCLASS' )
                     IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         IF( CATEGORY .EQ. 'MOBILE' ) THEN
@@ -1133,6 +1141,7 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                         
                 CASE( 'SOURCE' )
                     RPT_%BYSRC   = .TRUE.
+                    RPT_%BYFACILITY = .FALSE. ! would be a duplicate
                     RPT_%BYPLANT = .FALSE.  ! would be a duplicate
                     RPT_%BYCNTY  = .TRUE.
                     IF( .NOT. AFLAG ) THEN
@@ -1215,6 +1224,7 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                 CASE( 'STACK' )
                     RPT_%BYSTACK = .TRUE.
                     RPT_%BYPLANT = .TRUE.
+                    RPT_%BYFACILITY = .TRUE.
                     IF( SEGMENT( 3 ) .EQ. 'STACKPARM' .OR.
      &                  SEGMENT( 4 ) .EQ. 'STACKPARM'      )
      &                  RPT_%STKPARM = .TRUE.

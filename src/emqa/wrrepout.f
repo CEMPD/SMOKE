@@ -95,7 +95,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX, BINERPTYP
+     &                      BINGEO1IDX, BINERPTYP, BINFACILITY
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC,
@@ -674,6 +674,18 @@ C.............  Include plant ID
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
                 END IF
+
+C.............  Include Facility ID
+                IF( RPT_%BYFACILITY ) THEN
+                    L = CHARWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) //
+     &                       BINFACILITY( I )( 1:L1 ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
 
 C.............  Include road class code
                 IF( RPT_%BYRCL ) THEN
