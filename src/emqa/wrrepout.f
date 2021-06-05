@@ -95,7 +95,8 @@ C.........  This module contains report arrays for each output bin
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX, BINERPTYP, BINFACILITY
+     &                      BINGEO1IDX, BINERPTYP, BINFACILITY,
+     &                      BINBOILER
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC,
@@ -725,6 +726,17 @@ C.............  Include ORIS code in string
                     L1 = L - LV - 1                        ! 1 for space
                     STRING = STRING( 1:LE ) // 
      &                       BINORIS( I )( 1:MIN(L1,ORSLEN3) ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include Boiler code in string
+                IF( RPT_%BYBOILER ) THEN
+                    L = ORSWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) //
+     &                       BINBOILER( I )( 1:MIN(L1,ORSLEN3) ) // DELIM
                     MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0

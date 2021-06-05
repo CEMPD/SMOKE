@@ -143,6 +143,7 @@
             LOGICAL       :: BYMACT        ! true: by MACT
             LOGICAL       :: BYNAICS       ! true: by NAICS
             LOGICAL       :: BYORIS        ! true: by ORIS 
+            LOGICAL       :: BYBOILER      ! true: by boiler
             LOGICAL       :: BYSRCTYP      ! true: by source type
             LOGICAL       :: BYSPC         ! true: by speciation codes 
             LOGICAL       :: BYSRC         ! true: by source 

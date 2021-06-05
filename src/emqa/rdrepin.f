@@ -209,6 +209,7 @@ C.........  Set local variables for determining input inventory variables
      &                  ANY_TRUE( NREPORT, ALLRPT%BYPLANT ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYFACILITY ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYORIS ) .OR.
+     &                  ANY_TRUE( NREPORT, ALLRPT%BYBOILER ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYSPC ) .OR.
      &                  ANY_CVAL( NREPORT, ALLRPT%REGNNAM ) .OR. YFLAG )
 
@@ -260,6 +261,12 @@ C.........  ORIS code
             IF( ANY_TRUE( NREPORT, ALLRPT%BYORIS ) ) THEN
                 NINVARR = NINVARR + 1
                 IVARNAMS( NINVARR ) = 'CORIS'
+            END IF
+
+C.........  Boiler code
+            IF( ANY_TRUE( NREPORT, ALLRPT%BYBOILER ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'CBLRID'
             END IF
 
 C.........  Source type code

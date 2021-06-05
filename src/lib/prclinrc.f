@@ -486,6 +486,7 @@ C.........................  Reset report settings to defaults
                         RPT_%MACTNAM   = .FALSE.
                         RPT_%NAICSNAM  = .FALSE.
                         RPT_%ORISNAM   = .FALSE.
+                        RPT_%BYBOILER  = .FALSE.
                         RPT_%BYSPC     = .FALSE.
                         RPT_%BYSRC     = .FALSE.
                         RPT_%BYSRG     = .FALSE.
@@ -834,7 +835,6 @@ C.............  AERMOD support report
                     RPT_%SRCMAP    = .TRUE.      ! output source mapping output file
 
                     RPT_%BYPLANT   = .TRUE.      ! By Plant ID
-                    RPT_%BYFACILITY = .TRUE.     !By Facility ID
                     RPT_%SRCNAM    = .TRUE.      ! By Plant Name
 
                     TSFLAG         = .TRUE.      ! By TSUP file
@@ -1010,6 +1010,15 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                 CASE( 'ORIS' )
                     IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         RPT_%BYORIS = .TRUE.
+                        IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                            NOFLAG = .TRUE.
+                            RPT_%ORISNAM = .TRUE.
+                        END IF
+                    END IF
+
+                 CASE( 'BOILER' )
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
+                        RPT_%BYBOILER = .TRUE.
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                             NOFLAG = .TRUE.
                             RPT_%ORISNAM = .TRUE.

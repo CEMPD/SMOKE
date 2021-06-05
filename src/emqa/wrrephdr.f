@@ -84,7 +84,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
      &                      BINGEO1IDX, BINERPTYP, BINSPCIDX,
-     &                      BINFACILITY
+     &                      BINFACILITY, BINBOILER
    
 
 C.........  This module contains the arrays for state and county summaries
@@ -201,7 +201,8 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRSELAT= 75
         INTEGER, PARAMETER :: IHDRSELON= 76
         INTEGER, PARAMETER :: IHDRFNAM = 77   ! GSPRO name
-        INTEGER, PARAMETER :: NHEADER  = 77
+        INTEGER, PARAMETER :: IHDRBLR = 78 ! Boiler
+        INTEGER, PARAMETER :: NHEADER = 78
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -282,7 +283,8 @@ C...........   Local parameters
      &                              'NE Longitude     ',
      &                              'SE Latitude      ',
      &                              'SE Longitude     ',
-     &                              'GSPRO Description' / )
+     &                              'GSPRO Description',
+     &                              'Boiler' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LGEO1USE ( NGEOLEV1 )
@@ -1281,6 +1283,24 @@ C.........  ORIS ID
             ORSWIDTH = J + LV
 
         END IF
+
+C.........  Boiler ID
+        IF( RPT_%BYBOILER ) THEN
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINBOILER( I ) ) )
+            END DO
+
+            J = LEN_TRIM( HEADERS( IHDRBLR ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS( IHDRBLR ), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            ORSWIDTH = J + LV
+
+        END IF
+
 
 C.........  Stack parameters.  +3 for decimal and 2 significant figures
         IF( RPT_%STKPARM ) THEN
