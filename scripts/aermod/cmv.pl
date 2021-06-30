@@ -198,7 +198,7 @@ while (my $line = <$in_fh>) {
     $facility_id = $cell;
     $source_id = "${src_prefix}_${grid_prefix}1";
   } else {
-    my $shape_id = $data[$headers{'Char 2'}];
+    my $shape_id = $data[$headers{'Rel Point ID'}];
     $facility_id = "P" . sprintf("%05d", $shape_id) .
                    "F" . sprintf("%05d", $region);
     $source_id = "P" . sprintf("%05d", $shape_id) . $port_suffix;

@@ -50,7 +50,6 @@ class GridSurg(object):
         df['region_cd'] = df['region_cd'].apply(self._fix_fips) 
         df.ix[df['scc'].str.startswith('00'), 'scc'] = df.ix[df['scc'].str.startswith('00'), 
           'scc'].str[2:]
-        df.loc[df['scc'] != '', 'scc'] = df.loc[df['scc'] != '', 'scc'].astype(int).astype(str)
         df['code'] = df['code'].str.split('!').str[0].str.strip()
         return df[df['scc'].isin(scc_list)].copy()
 
@@ -144,7 +143,7 @@ def match_surrogate(df, xref):
             break
     # Notify that there was an unmatched source
     if not df.empty:
-        print(df[['region_cd','scc','code']])
+        print(df.head())
         raise ValueError('Unmatched sources for gridding')
     return matched_df
 
@@ -165,7 +164,6 @@ def grid_sources(emis, surg, grid_info):
         except KeyError:
             raise KeyError('Missing surrogate for code %s' %code)
         if src_surg.cell != grid_info.XCELL:
-            print(src_surg.cell, grid_info.XCELL)
             raise ValueError('Gridding surrogate cell size does not match grid cell size')
         code_emis = pd.merge(code_emis, src_surg.table, on='region_cd', how='left')
         # Identify sources the cross reference successfully to a surrogate but are either missing a fraction
