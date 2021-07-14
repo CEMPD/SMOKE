@@ -73,7 +73,7 @@ write_temporal_header($area_tmp_fh);
 
 # emissions crosswalk file
 my $x_fh = open_output("$output_dir/xwalk/${sector}_srcid_emis.csv");
-print $x_fh "state,facility_id,facility_name,smoke_name,ann_value\n";
+print $x_fh "state,facility_id,facility_name,fac_source_type,smoke_name,ann_value\n";
 
 my %headers;
 my @pollutants;
@@ -87,7 +87,7 @@ while (my $line = <$in_fh>) {
   my ($is_header, @data) = parse_report_line($line);
 
   if ($is_header) {
-    parse_header(\@data, \%headers, \@pollutants, 'Plt Name');
+    parse_header(\@data, \%headers, \@pollutants, 'Fac Name');
     next;
   }
   
@@ -101,7 +101,7 @@ while (my $line = <$in_fh>) {
   next if $all_zero;
   
   my $state = substr($data[$headers{'Region'}], 7, 2);
-  my $plant_id = $data[$headers{'Plant ID'}];
+  my $plant_id = $data[$headers{'Facility ID'}];
   
   # store all the records by plant ID
   push @{$records{$state}{$plant_id}}, \@data;
@@ -162,7 +162,7 @@ for my $state (sort keys %records) {
 
     my @common;
     push @common, $plant_id;
-    push @common, '"' . $data[$headers{'Plt Name'}] . '"';
+    push @common, '"' . $data[$headers{'Fac Name'}] . '"';
     push @common, $src_id unless $is_runway;
 
     # prepare location output
