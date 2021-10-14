@@ -106,7 +106,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: MXCHRS, NCHARS, BYEAR
 
 C.........  MODULES for I/O API INTERFACEs, geo-transform codes:
-        USE M3UTILIO 
+        USE M3UTILIO, M3U_INITSPHERES => INITSPHERES 
         USE MODGCTP
 
         IMPLICIT NONE
