@@ -18,7 +18,6 @@ C
 C  REVISION  HISTORY:
 C     Created 7/2000 by M Houyoux
 C     Revised 7/2003 by A. Holland
-C
 C***********************************************************************
 C  
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -84,7 +83,9 @@ C.........  This module contains report arrays for each output bin
      &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX, BINERPTYP, BINSPCIDX
+     &                      BINGEO1IDX, BINERPTYP, BINSPCIDX,
+     &                      BINFACILITY, BINBOILER
+   
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
@@ -200,7 +201,8 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRSELAT= 75
         INTEGER, PARAMETER :: IHDRSELON= 76
         INTEGER, PARAMETER :: IHDRFNAM = 77   ! GSPRO name
-        INTEGER, PARAMETER :: NHEADER  = 77
+        INTEGER, PARAMETER :: IHDRBLR = 78 ! Boiler
+        INTEGER, PARAMETER :: NHEADER = 78
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -242,7 +244,7 @@ C...........   Local parameters
      &                              'Longitude        ',
      &                              'Elevstat         ',
      &                              'Stack Groups     ',
-     &                              'Plt Name         ',
+     &                              'Fac Name         ',
      &                              'SCC Description  ',
      &                              'SIC Description  ',
      &                              'MACT Description ',
@@ -281,7 +283,8 @@ C...........   Local parameters
      &                              'NE Longitude     ',
      &                              'SE Latitude      ',
      &                              'SE Longitude     ',
-     &                              'GSPRO Description' / )
+     &                              'GSPRO Description',
+     &                              'Boiler' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LGEO1USE ( NGEOLEV1 )
@@ -295,7 +298,7 @@ C...........   Local variables that depend on module variables
         LOGICAL    LNAICSUSE( NINVNAICS )
         LOGICAL    LORISUSE ( NORIS )
 
-        CHARACTER(10) CHRHDRS( NCHARS )  ! Source characteristics headers
+        CHARACTER(12) CHRHDRS( NCHARS )  ! Source characteristics headers
 
 C...........   Other local arrays
         INTEGER       PWIDTH( 8 )
@@ -408,17 +411,17 @@ C.........  NOTE that (1) will not be used and none will be for area sources
             CHRHDRS( 5 ) = 'SCC'
 
         CASE( 'POINT' )
-            CHRHDRS( 2 ) = 'Plant ID'
+            CHRHDRS( 2 ) = 'Facility ID'
             IF ( NCHARS .GE. 3 ) THEN
                 IF( .NOT. AFLAG ) THEN
-                    CHRHDRS( 3 ) = 'Char 1'
+                    CHRHDRS( 3 ) = 'Unit ID '
                 ELSE
                     CHRHDRS( 3 ) = 'Stack ID'
                 END IF
             END IF
-            IF ( NCHARS .GE. 4 ) CHRHDRS( 4 ) = 'Char 2'
-            IF ( NCHARS .GE. 5 ) CHRHDRS( 5 ) = 'Char 3'
-            IF ( NCHARS .GE. 6 ) CHRHDRS( 6 ) = 'Char 4'
+            IF ( NCHARS .GE. 4 ) CHRHDRS( 4 ) = 'Rel Point ID'
+            IF ( NCHARS .GE. 5 ) CHRHDRS( 5 ) = 'Process ID'
+            IF ( NCHARS .GE. 6 ) CHRHDRS( 6 ) = 'Char 4 SCC'
             IF ( NCHARS .GE. 7 ) CHRHDRS( 7 ) = 'Char 5'
 
         END SELECT
@@ -1244,6 +1247,26 @@ C.........  Plant ID
 
         END IF
 
+
+
+C.........  Facility ID
+        IF( RPT_%BYFACILITY ) THEN
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINFACILITY( I ) ) )
+            END DO
+
+            J  = LEN_TRIM( CHRHDRS( 2 ) )
+            W1 = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( W1, CHRHDRS( 2 ), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( CHARFMT, 94645 ) W1, RPT_%DELIM
+            CHARWIDTH = W1 + LV
+
+        END IF
+
 C.........  ORIS ID
         IF( RPT_%BYORIS ) THEN
             NWIDTH = 0
@@ -1260,6 +1283,24 @@ C.........  ORIS ID
             ORSWIDTH = J + LV
 
         END IF
+
+C.........  Boiler ID
+        IF( RPT_%BYBOILER ) THEN
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINBOILER( I ) ) )
+            END DO
+
+            J = LEN_TRIM( HEADERS( IHDRBLR ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS( IHDRBLR ), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            ORSWIDTH = J + LV
+
+        END IF
+
 
 C.........  Stack parameters.  +3 for decimal and 2 significant figures
         IF( RPT_%STKPARM ) THEN

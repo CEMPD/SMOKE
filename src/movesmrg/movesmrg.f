@@ -1092,8 +1092,11 @@ C.............................  Check pol names to be NOx/NO/NO2/HONO for NOX hu
                             IF( NOXADJFLAG ) THEN
                                 IF( MVSPOLNAMS( POLIDX ) == 'NOX' .OR.
      &                              MVSPOLNAMS( POLIDX ) == 'NO'  .OR.
+     &                              MVSPOLNAMS( POLIDX ) == 'NO_INV'  .OR.
      &                              MVSPOLNAMS( POLIDX ) == 'NO2' .OR.
-     &                              MVSPOLNAMS( POLIDX ) == 'HONO' ) NOXFLAG = .TRUE.
+     &                              MVSPOLNAMS( POLIDX ) == 'NO2_INV' .OR.
+     &                              MVSPOLNAMS( POLIDX ) == 'HONO' .OR.
+     &                              MVSPOLNAMS( POLIDX ) == 'HONO_INV' ) NOXFLAG = .TRUE.
                             END IF
 
 C.............................  Calculate interpolated emission factor if process/pollutant has changed

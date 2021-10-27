@@ -58,7 +58,7 @@ C............  MODINFO contains the information about the source category
      &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP,
      &                      XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE,
      &                      FUGHGT, FUGWID, FUGLEN, FUGANG,
-     &                      NGSPRO, GSPROID
+     &                      NGSPRO, GSPROID, CBLRID
 
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
@@ -78,7 +78,7 @@ C............  MODINFO contains the information about the source category
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
      &                      BINNAICS, BINNAIIDX, BINSRCTYP, BINORIS,
      &                      BINORSIDX, BINSTKGRP, BININTGR, BINGEO1IDX,
-     &                      BINERPTYP, BINSPCIDX
+     &                      BINERPTYP, BINSPCIDX, BINFACILITY, BINBOILER
 
         USE MODGRID, ONLY: NCOLS
 
@@ -164,8 +164,10 @@ C...........   Local variables
         CHARACTER(MACLEN3) MACT         ! tmp MACT
         CHARACTER(NAILEN3) NAICS        ! tmp NAICS
         CHARACTER(ORSLEN3) ORIS         ! tmp ORIS
+        CHARACTER(BLRLEN3) BLRID        ! tmp boiler ID
         CHARACTER(STPLEN3) SRCTYP       ! tmp SRCTYP
         CHARACTER(PLTLEN3) PLANT        ! tmp plant ID
+        CHARACTER(PLTLEN3) FACILITY     ! tmp Facility ID
         CHARACTER(PLTLEN3) PREVPLT      ! previous plant ID
         CHARACTER(FIPLEN3) CFIP         ! tmp country/state/county
         CHARACTER(FIPLEN3) CCNTRY       ! tmp country
@@ -209,6 +211,14 @@ C.........  Consistency checking:  inventory vs report
                 CALL M3MSG2( MESG )
                 EFLAG = .TRUE.
         END IF
+
+        IF ( RPT_%BYBOILER .AND. .NOT. ALLOCATED( CBLRID ) ) THEN
+            MESG = 'ERROR: BY BOILER is requested, but ' //
+     &             'BOILER is not present in ASCII inventory file'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+        END IF
+
 
         IF( RPT_%BYMACT .AND. .NOT. ASSOCIATED( CMACT ) ) THEN
             MESG = 'ERROR: BY MACT is requested, but ' //
@@ -342,6 +352,14 @@ C.................  code, so for now save space for the SRCID.
                     WRITE( SORTBUF( I )( II:IJ ), '( I8.8 )' ) SRCID
                     II = IJ + 1
                 END IF
+
+                IF( RPT_%BYFACILITY ) THEN
+                    IJ = II + 7
+                    SRCID = OUTSRC( I )
+                    WRITE( SORTBUF( I )( II:IJ ), '( I8.8 )' ) SRCID
+                    II = IJ + 1
+                END IF                
+
 
                 IF( RPT_%BYCNTY ) THEN
                     IJ = II + FIPLEN3 - 1
@@ -514,6 +532,32 @@ C.................  code, so for now save space for the SRCID.
 
         END IF          !!  if report-by-plant
 
+        IF( RPT_%BYFACILITY ) THEN
+
+            PREVPLT   = '????????'
+            PREVFIP   = '????????'
+            PREVSRCID = -9999
+            IJ = II + PLTLEN3 - 1
+
+            DO I = 1, NOUTREC
+                S     = OUTSRC( I )
+                FACILITY = CSOURC( S ) (LOC_BEGP(2):LOC_ENDP(2))
+                IF ( CIFIP( S ) .EQ. PREVFIP .AND.
+     &               FACILITY   .EQ. PREVPLT       ) THEN
+                    SRCID = PREVSRCID
+                    WRITE( SORTBUF( I )( IS:IS+7 ), '( I8.8 )' ) PREVSRCID
+                ELSE
+                    SRCID     = S
+                    PREVFIP   = CIFIP( S )
+                    PREVPLT   = FACILITY
+                    PREVSRCID = S
+                END IF
+                SORTBUF( I )( II:IJ ) = FACILITY
+            END DO
+            II = IJ + 1
+
+        END IF          !!  if report-by-facility
+        
         IS = II
 
 !$OMP   PARALLEL DO DEFAULT( SHARED ),
@@ -530,7 +574,12 @@ C.................  code, so for now save space for the SRCID.
                 II = IJ + 1
             END IF          !!  if report-by-oris
 
-
+            IF ( RPT_%BYBOILER ) THEN
+                IJ = II + BLRLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CBLRID( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !!  if report-by-oris
+          
             IF( RPT_%BYRCL ) THEN
                 IJ = II + 7
                 WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) IRCLAS( OUTSRC( I ) )
@@ -682,6 +731,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINNAICS  ) ) DEALLOCATE( BINNAICS )
         IF( ALLOCATED( BINNAIIDX ) ) DEALLOCATE( BINNAIIDX )
         IF( ALLOCATED( BINORIS   ) ) DEALLOCATE( BINORIS )
+        IF( ALLOCATED( BINBOILER ) ) DEALLOCATE( BINBOILER )
         IF( ALLOCATED( BINORSIDX ) ) DEALLOCATE( BINORSIDX )
         IF( ALLOCATED( BINSRCTYP ) ) DEALLOCATE( BINSRCTYP )
         IF( ALLOCATED( BINSRGID1 ) ) DEALLOCATE( BINSRGID1 )
@@ -702,6 +752,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINSPCID  ) ) DEALLOCATE( BINSPCID )
         IF( ALLOCATED( BINSPCIDX ) ) DEALLOCATE( BINSPCIDX )
         IF( ALLOCATED( BINPLANT  ) ) DEALLOCATE( BINPLANT )
+        IF( ALLOCATED( BINFACILITY ) ) DEALLOCATE( BINFACILITY )
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
         IF( ALLOCATED( BINY      ) ) DEALLOCATE( BINY )
         IF( ALLOCATED( BINELEV   ) ) DEALLOCATE( BINELEV )
@@ -736,6 +787,10 @@ C.........  Allocate memory for bins
             CALL CHECKMEM( IOS, 'BINREGN', PROGNAME )
         ENDIF
         IF( RPT_%BYSRC .OR. RPT_%BYPLANT ) THEN
+            ALLOCATE( BINSMKID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSMKID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYFACILITY ) THEN
             ALLOCATE( BINSMKID ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSMKID', PROGNAME )
         ENDIF
@@ -790,7 +845,12 @@ C.........  Allocate memory for bins
             ALLOCATE( BINORSIDX( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINORSIDX', PROGNAME )
         ENDIF
-
+         
+        IF( RPT_%BYBOILER   ) THEN
+            ALLOCATE( BINBOILER( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINBOILER', PROGNAME )
+        ENDIF  
+ 
         IF( RPT_%BYSRCTYP   ) THEN
             ALLOCATE( BINSRCTYP   ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSRCTYP', PROGNAME )
@@ -861,6 +921,12 @@ C.........  Allocate memory for bins
             ALLOCATE( BINPLANT ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINPLANT', PROGNAME )
         ENDIF
+        
+        IF( RPT_%BYFACILITY ) THEN
+            ALLOCATE( BINFACILITY ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINFACILITY', PROGNAME )
+        ENDIF
+        
         IF( RPT_%BYRCL   ) THEN
             ALLOCATE( BINRCL   ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINRCL', PROGNAME )
@@ -920,6 +986,7 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( RPT_%BYMACT  )    BINMACT( B )  =   CMACT( S )
             IF( RPT_%BYNAICS )   BINNAICS( B )  =  CNAICS( S )
             IF( RPT_%BYORIS  )    BINORIS( B )  =   CORIS( S )
+            IF( RPT_%BYBOILER )   BINBOILER( B )  =   CBLRID( S )
             IF( RPT_%BYSRCTYP ) BINSRCTYP( B )  = CSRCTYP( S )
             IF( RPT_%BYMON )     BINMONID( B )  =    CMON( S )
             IF( RPT_%BYWEK )     BINWEKID( B )  =    CWEK( S )
@@ -1079,6 +1146,12 @@ C.................  index with CSCC maps to SCC from BUFFER properly)
 C.................  Store plant ID code
             IF( RPT_%BYPLANT ) THEN
                 BINPLANT( B ) = CSOURC( S )( LOC_BEGP(2) : LOC_ENDP(2) )
+                BINSMKID( B ) = S           !! Needed for plant names
+            END IF
+
+C.................  Store plant ID code for the BY FACILITY instruction
+            IF( RPT_%BYFACILITY ) THEN
+                BINFACILITY( B ) = CSOURC( S )( LOC_BEGP(2) : LOC_ENDP(2) )
                 BINSMKID( B ) = S           !! Needed for plant names
             END IF
 

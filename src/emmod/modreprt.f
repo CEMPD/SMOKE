@@ -136,12 +136,14 @@
             LOGICAL       :: BYSUN         ! true: by Sunday diurnal temporal code
             LOGICAL       :: BYMET         ! true: by Met-based hourly temporal code
             LOGICAL       :: BYPLANT       ! true: by plant 
+            LOGICAL       :: BYFACILITY    ! true: by Facility
             LOGICAL       :: BYSCC         ! true: by SCC 
             LOGICAL       :: BYSIC         ! true: by SIC 
             LOGICAL       :: BYINTGR       ! true: by INTEGRATE 
             LOGICAL       :: BYMACT        ! true: by MACT
             LOGICAL       :: BYNAICS       ! true: by NAICS
             LOGICAL       :: BYORIS        ! true: by ORIS 
+            LOGICAL       :: BYBOILER      ! true: by boiler
             LOGICAL       :: BYSRCTYP      ! true: by source type
             LOGICAL       :: BYSPC         ! true: by speciation codes 
             LOGICAL       :: BYSRC         ! true: by source 

@@ -474,6 +474,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYSUN     = .FALSE.
                         RPT_%BYMET     = .FALSE.
                         RPT_%BYPLANT   = .FALSE.
+                        RPT_%BYFACILITY = .FALSE.
                         RPT_%BYRCL     = .FALSE.
                         RPT_%BYSIC     = .FALSE.
                         RPT_%BYSCC     = .FALSE.
@@ -485,6 +486,7 @@ C.........................  Reset report settings to defaults
                         RPT_%MACTNAM   = .FALSE.
                         RPT_%NAICSNAM  = .FALSE.
                         RPT_%ORISNAM   = .FALSE.
+                        RPT_%BYBOILER  = .FALSE.
                         RPT_%BYSPC     = .FALSE.
                         RPT_%BYSRC     = .FALSE.
                         RPT_%BYSRG     = .FALSE.
@@ -1014,8 +1016,23 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                         END IF
                     END IF
 
+                 CASE( 'BOILER' )
+                    IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
+                        RPT_%BYBOILER = .TRUE.
+                        IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                            NOFLAG = .TRUE.
+                            RPT_%ORISNAM = .TRUE.
+                        END IF
+                    END IF
+
                 CASE( 'PLANT' )
                     RPT_%BYPLANT = .TRUE.
+                    IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                        RPT_%SRCNAM = .TRUE.
+                    END IF
+
+                CASE( 'FACILITY' )
+                    RPT_%BYFACILITY = .TRUE.
                     IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                         RPT_%SRCNAM = .TRUE.
                     END IF
@@ -1133,6 +1150,7 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                         
                 CASE( 'SOURCE' )
                     RPT_%BYSRC   = .TRUE.
+                    RPT_%BYFACILITY = .FALSE. ! would be a duplicate
                     RPT_%BYPLANT = .FALSE.  ! would be a duplicate
                     RPT_%BYCNTY  = .TRUE.
                     IF( .NOT. AFLAG ) THEN
@@ -1215,6 +1233,7 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                 CASE( 'STACK' )
                     RPT_%BYSTACK = .TRUE.
                     RPT_%BYPLANT = .TRUE.
+                    RPT_%BYFACILITY = .TRUE.
                     IF( SEGMENT( 3 ) .EQ. 'STACKPARM' .OR.
      &                  SEGMENT( 4 ) .EQ. 'STACKPARM'      )
      &                  RPT_%STKPARM = .TRUE.
