@@ -1102,7 +1102,7 @@ C.........         and then adjust by (-1) to skip element 0
         DO N = 1, SUNCOUNT
             SUNPDEX( N ) = FINDC( SUNIDS( N ), NHRL+1, HRLIDP ) - 1
             IF ( SUNPDEX( N ) .LE. 0 ) THEN
-                MESG = 'No profile for Sunday hour-of-day XREF profile-ID '// SATIDS( N )
+                MESG = 'No profile for Sunday hour-of-day XREF profile-ID '// SUNIDS( N )
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
             END IF
