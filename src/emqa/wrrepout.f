@@ -179,7 +179,6 @@ C   begin body of subroutine WRREPOUT
 
         IF ( FIRSTIME ) THEN
             IF ( INITSPHERES() ) THEN
-                FIRSTIME = .FALSE.
             ELSE
                 CALL M3EXIT( 'MODGRDLIB/CONVRTLL', 0,0,
      &                       'Failure in INITSPHERES()', 2 )
