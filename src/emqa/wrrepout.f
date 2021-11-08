@@ -106,9 +106,9 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: MXCHRS, NCHARS, BYEAR
 
 C.........  MODULES for I/O API INTERFACEs, geo-transform codes:
-        USE M3UTILIO, M3U_INITSPHERES => INITSPHERES 
+        USE M3UTILIO, M3U_INITSPHERES => INITSPHERES
         USE MODGCTP
-
+        
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -176,6 +176,16 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine WRREPOUT
+
+        IF ( FIRSTIME ) THEN
+            IF ( INITSPHERES() ) THEN
+                FIRSTIME = .FALSE.
+            ELSE
+                CALL M3EXIT( 'MODGRDLIB/CONVRTLL', 0,0,
+     &                       'Failure in INITSPHERES()', 2 )
+            END IF
+        END IF
+
 
 C.........  Create hour for output
         OUTHOUR = JTIME / 10000 + 1
