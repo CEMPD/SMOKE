@@ -284,7 +284,7 @@ C...........   Local parameters
      &                              'SE Latitude      ',
      &                              'SE Longitude     ',
      &                              'GSPRO Description',
-     &                              'Boiler' / )
+     &                              'Boiler           ' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LGEO1USE ( NGEOLEV1 )
