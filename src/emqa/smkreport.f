@@ -54,7 +54,6 @@ C.........  This module contains the global variables for the 3-d grid
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, INVPIDX, NCHARS, JSCC
-  
 
         IMPLICIT NONE
 

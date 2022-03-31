@@ -1175,7 +1175,7 @@ C.............................  Set units conversion factor
                                     EMVALSPC = EMVAL * MSMATX_L( SRC,V ) * F1
                                 ELSE
                                     EMVALSPC = EMVAL * F1
-                                END IF
+                                ENDIF
 
                                 IF( MOPTIMIZE ) THEN
                                     EMGRD( CELL,SPIDX ) = 
@@ -1193,22 +1193,14 @@ C...................................  If not use memory optimize
                                     TEMGRD( CELL,SPIDX,T ) =
      &                                TEMGRD( CELL,SPIDX,T ) + EMVALSPC
      
-                                    IF( SRCGRPFLAG ) THEN
+                                    IF ( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
                                         GIDX = ISRCGRP( SRC )
+                                        IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( SRC ) )
+                                        EMGGRDSPCT( CELL,GIDX,SPIDX,T ) =
+     &                                    EMGGRDSPCT( CELL,GIDX,SPIDX,T ) + EMVALSPC
                                     END IF
 
-                                    IF( SUBSECFLAG ) THEN 
-                                        GIDX = IGRPNUM( ISRCGRP( SRC ) )    
-                                    END IF
-
-#                                    IF ( EMGGRDSPCT( CELL,GIDX,SPIDX,T ) > 0) THEN
-                                     IF ( EMVALSPC > 0 ) THEN 
-                                         EMGGRDSPCT( CELL,GIDX,SPIDX,T ) =
-     &                                    EMGGRDSPCT( CELL,GIDX,SPIDX,T) + EMVALSPC
-                                    END IF
-                                        
-                                      
-                                 END IF
+                                END IF
 
                             END IF
 
@@ -1397,8 +1389,6 @@ C.....................  Write out gridded data
 
                     IF( SUBSECFLAG ) THEN
                         DO IS = 1, NGRPS
-
-                         IF ( SUM(EMGGRDSPCT( :,IS,V,T )) >0 ) THEN
                             EMGGRD( :,IS ) = EMGGRDSPCT( :,IS,V,T )
                             IF( .NOT. WRITESET( SUBOUTNAME(IS), CSPC, ALLFILES,
      &                            JDATE, JTIME, EMGGRD( 1,IS ) ) ) THEN
@@ -1406,7 +1396,6 @@ C.....................  Write out gridded data
      &                                 'to file "' // SUBOUTNAME(IS) // '"'
                                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                             END IF
-                         END IF
                         END DO
 
                     ELSE IF( SRCGRPFLAG ) THEN
