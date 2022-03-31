@@ -44,7 +44,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NPSRC, ELEVFLAG, ELEVADJ, LFRAC, PINGFLAG,
-     &       INLINEFLAG, SRCGRPFLAG, ISRCGRP, EMGGRD, SUBSECFLAG, IGRPNUM
+     &       INLINEFLAG, SRCGRPFLAG, ISRCGRP, EMGGRD, SUBSECFLAG, IGRPNUM, IUGRPIDX
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: ELEVFLTR
@@ -85,6 +85,7 @@ C.........  Other local variables
         INTEGER         C, J, K, L, S   ! counters and indicies
         INTEGER         IDX             ! index to list of counties in grid 
         INTEGER         GIDX            ! index to source group
+        INTEGER         GRPNUM          ! source group number
         REAL            GFAC            ! tmp gridding factor
         REAL            FG0             ! gridding conv fac div. totals conv fac
         REAL(8)         SUM1            ! sum for GOUT1   
@@ -152,10 +153,20 @@ C............. If multiplicative controls & speciation
                         SUM2 = SUM2 + VAL * FG0
                         
                         IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
-                            GIDX = ISRCGRP( S )
-                            IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( S ) )
-                            EMGGRD( C,GIDX ) = 
-     &                          EMGGRD( C,GIDX ) + VAL * FG0
+                            GIDX = 0
+                            IF( SRCGRPFLAG ) THEN
+                                GIDX = ISRCGRP( S )
+                            END IF
+                            IF( SUBSECFLAG ) THEN
+                                GRPNUM = IGRPNUM( ISRCGRP( S ) )
+                                IF( GRPNUM .NE. 0 ) THEN
+                                    GIDX = IUGRPIDX( GRPNUM )
+                                END IF
+                            END IF
+                            IF( GIDX .NE. 0 ) THEN
+                                EMGGRD( C,GIDX ) = 
+     &                              EMGGRD( C,GIDX ) + VAL * FG0
+                            END IF
                         END IF
                     END DO
 
@@ -193,10 +204,20 @@ C............. If multiplicative controls only
                         SUM2 = SUM2 + VAL * FG0
                         
                         IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
-                            GIDX = ISRCGRP( S )
-                            IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( S ) )
-                            EMGGRD( C,GIDX ) = 
-     &                          EMGGRD( C,GIDX ) + VAL * FG0
+                            GIDX = 0
+                            IF( SRCGRPFLAG ) THEN
+                                GIDX = ISRCGRP( S )
+                            END IF
+                            IF( SUBSECFLAG ) THEN
+                                GRPNUM = IGRPNUM( ISRCGRP( S ) )
+                                IF( GRPNUM .NE. 0 ) THEN
+                                    GIDX = IUGRPIDX( GRPNUM )
+                                END IF
+                            END IF
+                            IF( GIDX .NE. 0 ) THEN
+                                EMGGRD( C,GIDX ) = 
+     &                              EMGGRD( C,GIDX ) + VAL * FG0
+                            END IF
                         END IF
                     END DO
 
@@ -235,10 +256,20 @@ C.............  If speciation only
                         SUM2 = SUM2 + VAL * FG0
                         
                         IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
-                            GIDX = ISRCGRP( S )
-                            IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( S ) )
-                            EMGGRD( C,GIDX ) = 
-     &                          EMGGRD( C,GIDX ) + VAL * FG0
+                            GIDX = 0
+                            IF( SRCGRPFLAG ) THEN
+                                GIDX = ISRCGRP( S )
+                            END IF
+                            IF( SUBSECFLAG ) THEN
+                                GRPNUM = IGRPNUM( ISRCGRP( S ) )
+                                IF( GRPNUM .NE. 0 ) THEN
+                                    GIDX = IUGRPIDX( GRPNUM )
+                                END IF
+                            END IF
+                            IF( GIDX .NE. 0 ) THEN
+                                EMGGRD( C,GIDX ) = 
+     &                              EMGGRD( C,GIDX ) + VAL * FG0
+                            END IF
                         END IF
                     END DO
 
@@ -271,10 +302,20 @@ C.............  If inventory pollutant only
                         SUM2 = SUM2 + VAL * FG0
                         
                         IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
-                            GIDX = ISRCGRP( S )
-                            IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( S ) )
-                            EMGGRD( C,GIDX ) = 
-     &                          EMGGRD( C,GIDX ) + VAL * FG0
+                            GIDX = 0
+                            IF( SRCGRPFLAG ) THEN
+                                GIDX = ISRCGRP( S )
+                            END IF
+                            IF( SUBSECFLAG ) THEN
+                                GRPNUM = IGRPNUM( ISRCGRP( S ) )
+                                IF( GRPNUM .NE. 0 ) THEN
+                                    GIDX = IUGRPIDX( GRPNUM )
+                                END IF
+                            END IF
+                            IF( GIDX .NE. 0 ) THEN
+                                EMGGRD( C,GIDX ) = 
+     &                              EMGGRD( C,GIDX ) + VAL * FG0
+                            END IF
                         END IF
                     END DO
 

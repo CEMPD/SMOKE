@@ -41,7 +41,7 @@ C**************************************************************************
 C.........  MODULES for public variables
         USE MODMERGE, ONLY: NSRCGRP, IGRPNUM, ISRCGRP,
      &                      EMGGRD, EMGGRDSPC, EMGGRDSPCT, NSGOUTPUT,
-     &                      GRPCNT, NGRPS, IGRPIDX, SUBSECFLAG,
+     &                      GRPCNT, NGRPS, IUGRPNUM, IUGRPIDX, SUBSECFLAG,
      &                      AFLAG, BFLAG, MFLAG, PFLAG,
      &                      NASRC, NMSRC, NPSRC,
      &                      ANGMAT, AGMATX, MNGMAT, MGMATX, PGMATX,
@@ -116,6 +116,7 @@ C...........   Other local variables
         INTEGER         NINVARR !  number inventory variables to read
         INTEGER         RDEV    !  report output file
         INTEGER         GRPNUM  !  group number for report
+        INTEGER         MXGRPNUM ! maximum group number
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
 
@@ -424,10 +425,14 @@ C.........  Unique list of groups
             END IF
             PGRP = IGRP
         END DO
+        MXGRPNUM = PGRP
 
-        ALLOCATE( IGRPIDX( NGRPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IGRPIDX', PROGNAME )
-        IGRPIDX = 0
+        ALLOCATE( IUGRPNUM( NGRPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IUGRPNUM', PROGNAME )
+        ALLOCATE( IUGRPIDX( MXGRPNUM ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IUGRPIDX', PROGNAME )
+        IUGRPNUM = 0
+        IUGRPIDX = 0
 
         NGRPS = 0
         PGRP = -1
@@ -436,7 +441,8 @@ C.........  Unique list of groups
             IGRP = IGRPNUMA( J )
             IF( PGRP .NE. IGRP ) THEN
                 NGRPS = NGRPS + 1
-                IGRPIDX( NGRPS ) = IGRP
+                IUGRPNUM( NGRPS ) = IGRP
+                IUGRPIDX( IGRP ) = NGRPS
             END IF
             PGRP = IGRP
         END DO

@@ -44,7 +44,7 @@ C.........  This module contains the major data structure and control flags
      &                      TFLAG, SFLAG, LFLAG,
      &                      LREPSPC, LREPCTL, SUBOUTNAME,
      &                      AREPNAME, BREPNAME, MREPNAME, PREPNAME, 
-     &                      TREPNAME, NGRPS, IGRPIDX, SUBSECFLAG,
+     &                      TREPNAME, NGRPS, IUGRPNUM, SUBSECFLAG,
      &                      AONAME, BONAME, MONAME, PONAME, TONAME,
      &                      PINGNAME, INLINENAME, PELVNAME, 
      &                      SGINLNNAME, NUNITS, GRDUNIT
@@ -104,7 +104,7 @@ C.........  Initialize - everything will be gridded
             PELVNAME = 'ELEV'
             INLINENAME = 'INLN'
             SGINLNNAME = 'SGINLN'
-            IF( SUBSECFLAG ) WRITE( SUBOUTNAME( K ), '(A,I2.2)' ) 'SUBOUT', IGRPIDX( K )
+            IF( SUBSECFLAG ) WRITE( SUBOUTNAME( K ), '(A,I2.2)' ) 'SUBOUT', IUGRPNUM( K )
 
         ELSE
 
@@ -124,7 +124,7 @@ C.........  Initialize - everything will be gridded
             INLINENAME = 'INLN'
             PELVNAME = 'ELEV'
             SGINLNNAME = 'SGINLN'
-            IF( SUBSECFLAG ) WRITE( SUBOUTNAME( K ), '(A,I2.2)' ) 'SUBOUT', IGRPIDX( K )
+            IF( SUBSECFLAG ) WRITE( SUBOUTNAME( K ), '(A,I2.2)' ) 'SUBOUT', IUGRPNUM( K )
  
             IF( TFLAG ) THEN
     

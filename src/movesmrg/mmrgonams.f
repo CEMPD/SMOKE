@@ -40,7 +40,7 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: MREPNAME, MONAME, SGINLNNAME, SUBOUTNAME,
-     &                      NUNITS, GRDUNIT, NGRPS, IGRPIDX, SUBSECFLAG
+     &                      NUNITS, GRDUNIT, NGRPS, IUGRPNUM, SUBSECFLAG
 
         IMPLICIT NONE
 
@@ -84,14 +84,14 @@ C.........  Initialize - everything will be gridded
             MREPNAME = 'REPMG'
             MONAME = 'MOUT'
             SGINLNNAME = 'SGINLN'
-            IF( SUBSECFLAG ) WRITE( SUBOUTNAME( K ), '(A,I2.2)' ) 'SUBOUT', IGRPIDX( K )
+            IF( SUBSECFLAG ) WRITE( SUBOUTNAME( K ), '(A,I2.2)' ) 'SUBOUT', IUGRPNUM( K )
 
           ELSE
 
             MREPNAME = 'REPMG'
             MONAME = 'MG'
             SGINLNNAME = 'SGINLN'
-            IF( SUBSECFLAG ) WRITE( SUBOUTNAME( K ), '(A,I2.2)' ) 'SUBOUT', IGRPIDX( K ) 
+            IF( SUBSECFLAG ) WRITE( SUBOUTNAME( K ), '(A,I2.2)' ) 'SUBOUT', IUGRPNUM( K )
     
             CALL TRIM_AND_CONCAT( MREPNAME, 'T' )
             CALL TRIM_AND_CONCAT( MONAME, 'T' )

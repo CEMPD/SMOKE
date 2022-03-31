@@ -60,8 +60,9 @@ C.........  This module contains the major data structure and control flags
      &          EANAM, NIPPA, MTMPNAME,            ! pol/act names
      &          CFDEV,                             ! control factor file
      &          SRCGRPFLAG, SGDEV, ISRCGRP,        ! source groups
+     &          IGRPNUM, IUGRPIDX,
      &          EMGGRD, EMGGRDSPC, EMGGRDSPCT,     ! emissions by source group
-     &          SGINLNNAME, NSGOUTPUT, IGRPNUM,    ! source group emissions output file
+     &          SGINLNNAME, NSGOUTPUT,             ! source group emissions output file
      &          SUBOUTNAME, NGRPS, SUBSECFLAG      ! sub-sector group emissions output files
 
 C.........  This module contains data structures and flags specific to Movesmrg
@@ -192,6 +193,7 @@ C...........   Other local variables
         INTEGER          MXWARN        !  maximum number of warnings
         INTEGER       :: NWARN = 0     !  current number of warnings
         INTEGER          GIDX          ! index to source group
+        INTEGER          GRPNUM        ! source group number
 
         REAL             F1, F2        ! tmp conversion
         REAL             GFRAC         ! grid cell fraction
@@ -1182,10 +1184,20 @@ C.............................  Set units conversion factor
      &                                  EMGRD( CELL,SPIDX ) + EMVALSPC
      
                                     IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
-                                        GIDX = ISRCGRP( SRC )
-                                        IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( SRC ) )
-                                        EMGGRDSPC( CELL,GIDX,SPIDX ) =
-     &                                     EMGGRDSPC( CELL,GIDX,SPIDX ) + EMVALSPC
+                                        GIDX = 0
+                                        IF( SRCGRPFLAG ) THEN
+                                            GIDX = ISRCGRP( SRC )
+                                        END IF
+                                        IF( SUBSECFLAG ) THEN
+                                            GRPNUM = IGRPNUM( ISRCGRP( SRC ) )
+                                            IF( GRPNUM .NE. 0 ) THEN
+                                                GIDX = IUGRPIDX( GRPNUM )
+                                            END IF
+                                        END IF
+                                        IF( GIDX .NE. 0 ) THEN
+                                            EMGGRDSPC( CELL,GIDX,SPIDX ) =
+     &                                         EMGGRDSPC( CELL,GIDX,SPIDX ) + EMVALSPC
+                                        END IF
                                     END IF
 
 C...................................  If not use memory optimize
@@ -1193,11 +1205,21 @@ C...................................  If not use memory optimize
                                     TEMGRD( CELL,SPIDX,T ) =
      &                                TEMGRD( CELL,SPIDX,T ) + EMVALSPC
      
-                                    IF ( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
-                                        GIDX = ISRCGRP( SRC )
-                                        IF( SUBSECFLAG ) GIDX = IGRPNUM( ISRCGRP( SRC ) )
-                                        EMGGRDSPCT( CELL,GIDX,SPIDX,T ) =
-     &                                    EMGGRDSPCT( CELL,GIDX,SPIDX,T ) + EMVALSPC
+                                    IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
+                                        GIDX = 0
+                                        IF( SRCGRPFLAG ) THEN
+                                            GIDX = ISRCGRP( SRC )
+                                        END IF
+                                        IF( SUBSECFLAG ) THEN
+                                            GRPNUM = IGRPNUM( ISRCGRP( SRC ) )
+                                            IF( GRPNUM .NE. 0 ) THEN
+                                                GIDX = IUGRPIDX( GRPNUM )
+                                            END IF
+                                        END IF
+                                        IF( GIDX .NE. 0 ) THEN
+                                            EMGGRDSPCT( CELL,GIDX,SPIDX,T ) =
+     &                                        EMGGRDSPCT( CELL,GIDX,SPIDX,T ) + EMVALSPC
+                                        END IF
                                     END IF
 
                                 END IF
@@ -1365,7 +1387,7 @@ C.........  Output optional hourly emissions for inventory pollutants for Tempor
 
         END IF
 
-C.........  Output gridded houlry emissions 
+C.........  Output gridded hourly emissions
         IF( .NOT. MOPTIMIZE ) THEN
             JDATE  = SDATE
             JTIME  = STIME

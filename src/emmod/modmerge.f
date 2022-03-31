@@ -470,9 +470,10 @@
         REAL   , ALLOCATABLE, PUBLIC :: PEBSTC( :,:,: ) !  point, dim nsta, nscc, ndim
 
 !.........  Source apportionment storage
-        INTEGER,              PUBLIC :: NSRCGRP       ! total number of source groups
+        INTEGER,              PUBLIC :: NSRCGRP       ! total number of source group criteria
         INTEGER,              PUBLIC :: NGRPS         ! total number of groups
-        INTEGER, ALLOCATABLE, PUBLIC :: IGRPIDX( : )  ! Uniqe list of source group numbers, dim: nsrcgrp
+        INTEGER, ALLOCATABLE, PUBLIC :: IUGRPNUM( : ) ! list of unique source group numbers, dim: ngrps
+        INTEGER, ALLOCATABLE, PUBLIC :: IUGRPIDX( : ) ! idx for each unique source group, dim: max group num
         INTEGER, ALLOCATABLE, PUBLIC :: IGRPNUM( : )  ! list of source group numbers, dim: nsrcgrp
         INTEGER, ALLOCATABLE, PUBLIC :: ISRCGRP( : )  ! source group idx for each source
         REAL,    ALLOCATABLE, PUBLIC :: EMGGRD( :,: ) ! emissions by grid cell and source group
