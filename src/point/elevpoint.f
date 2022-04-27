@@ -1034,6 +1034,10 @@ C.................  Store the rest of the group settings in output arrays
                     GRPHT ( G ) = STKHT ( S )
                     GRPTK ( G ) = STKTK ( S )
                     GRPVE ( G ) = STKVE ( S )
+                    DM   = STKDM  ( S )
+                    VE   = STKVE  ( S )
+                    DMVAL = DM
+                    VEVAL = VE
                     IF( GRPDM( G ) == BADVAL3 ) DMVAL = 0.0
                     IF( GRPVE( G ) == BADVAL3 ) VEVAL = 0.0
                     GRPFL ( G ) = 0.25 * PI * DMVAL * DMVAL * VEVAL
