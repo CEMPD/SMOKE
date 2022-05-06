@@ -13,6 +13,8 @@ C                     1/03 changes to NO, George Pouliot
 C                     4/12 update to BELD4 using comma delmited emission factor file
 C                     8/2012  update for BELD4 and soil NOx for irrigated crop lands
 C                     8/2020  update for BELD5 and BEISFAC for BEISv3.7
+C                     3/2022  fix bugs for landuse names (MODIS_14,
+C                     Potatoes and Other_Crops), Vukovich
 C
 C***********************************************************************
 C
@@ -504,7 +506,8 @@ C.........  Check to see if there are emissions factors for all landuse types
                 IF ( VEGID( J ) .EQ. 'NLCD_81         ' ) NLCD81 = J
                 IF ( VEGID( J ) .EQ. 'NLCD_82         ' ) NLCD82 = J
                 IF ( VEGID( J ) .EQ. 'MODIS_12        ' ) MODIS12 = J
-                IF ( VEGID( J ) .EQ. 'MODIS_47        ' ) MODIS14 = J
+C 3/2022 was MODIS_47 before corrected here
+                IF ( VEGID( J ) .EQ. 'MODIS_14        ' ) MODIS14 = J
 
                 IF ( VEGID( J ) .EQ. 'Alfalfa         ' ) IALFAL   = J
                 IF ( VEGID( J ) .EQ. 'Alfalfa_ir      ' ) IALFAL_IR = J
@@ -520,14 +523,16 @@ C.........  Check to see if there are emissions factors for all landuse types
                 IF ( VEGID( J ) .EQ. 'Other_Grass_ir  ' ) IGRASS_IR = J
                 IF ( VEGID( J ) .EQ. 'Hay             ' ) IHAY      = J
                 IF ( VEGID( J ) .EQ. 'Hay_ir          ' ) IHAY_IR   = J
-                IF ( VEGID( J ) .EQ. 'Other_crop      ' ) IMISCC = J
-                IF ( VEGID( J ) .EQ. 'Other_crop_ir   ' ) IMISCC_IR = J
+C 3/2022 Other_crop should have been Other_Crop was Other_crop
+                IF ( VEGID( J ) .EQ. 'Other_Crop      ' ) IMISCC = J
+                IF ( VEGID( J ) .EQ. 'Other_Crop_ir   ' ) IMISCC_IR = J
                 IF ( VEGID( J ) .EQ. 'Oats            ' ) IOATS  = J
                 IF ( VEGID( J ) .EQ. 'Oats_ir         ' ) IOATS_IR  = J
                 IF ( VEGID( J ) .EQ. 'Peanuts         ' ) IPEANU    = J
                 IF ( VEGID( J ) .EQ. 'Peanuts_ir      ' ) IPEANU_IR = J
-                IF ( VEGID( J ) .EQ. 'Potatotes       ' ) IPOTAT    = J
-                IF ( VEGID( J ) .EQ. 'Potatotes_ir    ' ) IPOTAT_IR = J
+C 3/2022 Potatoes misspelled in earlier versions
+                IF ( VEGID( J ) .EQ. 'Potatoes       ' ) IPOTAT    = J
+                IF ( VEGID( J ) .EQ. 'Potatoes_ir    ' ) IPOTAT_IR = J
                 IF ( VEGID( J ) .EQ. 'Rice            ' ) IRICE     = J
                 IF ( VEGID( J ) .EQ. 'Rice_ir         ' ) IRICE_IR  = J
                 IF ( VEGID( J ) .EQ. 'Rye             ' ) IRYE      = J
@@ -673,24 +678,30 @@ C.........................  Special handling for NO emissions
      &                                 IWHEATS_IR)) THEN  
      
           
+C............... Mosaics of small-scale cultivation 40-60% with
+C................natural tree, shrub, or herbaceous vegetation.
+C................(from latest MODIS doc for MODIS_14 at
+C   https://lpdaac.usgs.gov/documents/101/MCD12_User_Guide_V6.pdf
+C................ using 50% below
 
 C.....................................  Compute NO emissions for agriculture regions 
 C                                      during growing season
                                     IF( IS_MAG (M,MODIS14) ) THEN
-                                        NOEM( 1 ) = NOEM( 1 ) 
-     &                                      + VEGAREA * EMFAC(M,N)*0.333333
- 
-                                        NOEM( 3 ) = NOEM( 3 ) 
-     &                                      + VEGAREA * EMFAC(M,N)*0.333333
+                                        NOEM( 1 ) = NOEM( 1 )
+     &                                      + VEGAREA * EMFAC(M,N)*0.500
+                                        NOEM( 2 ) = NOEM( 2 )
+     &                                      + VEGAREA * EMFAC(IGRASS,N)*
+     &                                    0.500
+                                        NOEM( 3 ) = NOEM( 3 )
+     &                                      + VEGAREA * EMFAC(M,N)*0.500
                                     ELSE
                                         NOEM( 1 ) = NOEM( 1 )
      &                                      + VEGAREA * EMFAC(M,N)
-                                    END IF
-
 C.....................................  Compute NO emissions for agriculture regions 
 C                                       outside growing season
-                                    NOEM( 2 ) = NOEM( 2 )
-     &                                  + VEGAREA * EMFAC(IGRASS,N) 
+                                        NOEM( 2 ) = NOEM( 2 )
+     &                                      + VEGAREA * EMFAC(IGRASS,N) 
+                                    ENDIF
 
                                 ELSE
                                 

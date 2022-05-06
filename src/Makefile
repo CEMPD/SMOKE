@@ -130,11 +130,11 @@ FIL  = $(FILSRC:.f=.mod)
 
 BIOSRC = \
  czangle.f     getpar.f      getparb.f           \
- hrbeis3.f     hrbeis_361.f  hrno.f              \
- normbeis3.f   normbeis314.f normbeis361.f       \
- prebmet.f     rdb3fac.f     rdb4fac.f           \
+ hrbeis3.f     hrbeis_361.f  hrbeis4.f   hrno.f  hrno_beis4.f  \
+ normbeis3.f   normbeis314.f normbeis361.f  normbeis4.f      \
+ prebmet.f     rdb3fac.f     rdb4fac.f   rdnormbeis4_efs.f        \
  rdb4fac_csv.f rdbpro.f      tmpbeis3.f          \
- tmpbeis314.f  tmpbeis361.f  normbeis370.f
+ tmpbeis314.f  tmpbeis361.f  tmpbeis4.f  normbeis370.f
  
 BIOOBJ =  $(BIOSRC:.f=.o)
 
@@ -283,7 +283,7 @@ UTIL  = aggwndw     beld3to2    bluesky2inv cemscan     extractida  \
         smk2emis    surgtool    uam2ncf     gentpro     gcntl4carb  \
         layalloc    inlineto2d  saregroup
 
-EXE   = normbeis3   tmpbeis3    cntlmat     smkreport   grdmat      \
+EXE   = normbeis3   normbeis4 tmpbeis3 tmpbeis4    cntlmat     smkreport   grdmat      \
         movesmrg    met4moves   laypoint    elevpoint   smkinven    \
         grwinven    smkmerge    mrggrid     mrgelev     spcmat      \
         temporal    mrgpt                                           \
@@ -305,7 +305,7 @@ emmod:  ${MOD} ${MLIB}
 
 smklib: ${SLIB}
 
-biog:   normbeis3   tmpbeis3
+biog:   normbeis3 normbeis4 tmpbeis3 tmpbeis4
 
 cntl:   cntlmat
 
@@ -461,8 +461,11 @@ writeset.o    : $(MODFILESET)
 normbeis314.o : $(MODBEIS3) $(MODGRDLIB)
 normbeis361.o : $(MODBEIS3) $(MODGRDLIB)
 normbeis370.o : $(MODBEIS3) $(MODGRDLIB)
+normbeis4.o   : $(MODBEIS3) $(MODGRDLIB)
+
 tmpbeis314.o  : $(MODSPRO) $(MODBEIS3)
 tmpbeis361.o  : $(MODSPRO) $(MODBEIS3)
+tmpbeis4.o    : $(MODSPRO) $(MODBEIS3)
 
 alocpkts.o    : $(MODCNTRL)
 asgncntl.o    : $(MODSOURC) $(MODXREF)
@@ -678,7 +681,13 @@ tmpbeis3:  czangle.o getpar.o getparb.o hrbeis_361.o hrbeis3.o prebmet.o rdbpro.
  tmpbeis3.o tmpbeis314.o tmpbeis361.o hrno.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 
+tmpbeis4: czangle.o getparb.o hrbeis4.o  prebmet.o rdbpro.o tmpbeis4.o hrno_beis4.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
 normbeis3: normbeis3.o rdb3fac.o rdb4fac.o rdb4fac_csv.o normbeis314.o normbeis361.o normbeis370.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+normbeis4: normbeis4.o rdnormbeis4_efs.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 
 cntlmat: $(CTLOBJ)
