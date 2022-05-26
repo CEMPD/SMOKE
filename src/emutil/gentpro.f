@@ -164,6 +164,7 @@ C...........   integer arrays
         INTEGER, ALLOCATABLE :: SRGSTA  ( : )      ! list of state in surrogates
         INTEGER, ALLOCATABLE :: INDXREF ( : )      ! Index of matched xref entries 
         INTEGER, ALLOCATABLE :: MATCHED ( :,: )    ! FIPS/SCC/POL matched source
+        INTEGER, ALLOCATABLE :: ISRGFIPS( : )      ! FIPS as integers
 
 C...........  character arrays
         CHARACTER(16)                      SEGMENT( MXSEG )
@@ -1779,12 +1780,18 @@ C.............  Open new file
 
             JDATE = SDATE
             JTIME = STIME
+            
+            ALLOCATE( ISRGFIPS( NSRGFIPS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ISRGFIPS', PROGNAME )
+            DO I = 1, NSRGFIPS
+                ISRGFIPS( I ) = STR2INT( SRGFIPS( I ) )
+            END DO
 
             DO T = 1, NSTEPS
 
 C.................  Write county codes to file
                 IF( .NOT. WRITE3( HNAME, 'COUNTIES', JDATE, JTIME,
-     &                    SRGFIPS ) ) THEN
+     &                    ISRGFIPS ) ) THEN
                      MESG = 'Could not write county codes to "' //
      &                      TRIM( HNAME ) // '".'
                      CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
