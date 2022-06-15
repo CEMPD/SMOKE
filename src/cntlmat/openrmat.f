@@ -64,7 +64,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   LOCAL PARAMETERS
         INTEGER      , PARAMETER :: NBASVAR = 4
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv4.8.1_Jan2021$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv4.9_Jun2022$' ! CVS release tag
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME      ! emissions inven logical name

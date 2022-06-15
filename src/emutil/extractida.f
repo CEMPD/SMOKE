@@ -56,7 +56,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv4.8.1_Jan2021' ! CVS release tag
+     &  CVSW = '$Name SMOKEv4.9_Jun2022' ! CVS release tag
 
 C............   Allocatable arrays
         INTEGER,               ALLOCATABLE :: INDEXA  ( : ) ! sorting index

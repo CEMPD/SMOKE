@@ -125,7 +125,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &               YR2DAY, ENVYN, STR2REAL, FINDC
 
 C.....  Define temporal profile type constants for enumeration
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv4.8.1_Jan2021$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv4.9_Jun2022$' ! CVS release tag
 
         INTEGER, PARAMETER :: MXVAR  = 100
         INTEGER, PARAMETER :: MXSEG  = 16

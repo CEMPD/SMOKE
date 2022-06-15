@@ -81,7 +81,7 @@ C.........  LOCAL PARAMETERS and their descriptions:
         CHARACTER(1 ), PARAMETER :: QUOTE = "'"
 
         CHARACTER(50), PARAMETER ::
-     &  CVSW = '$Name SMOKEv4.8.1_Jan2021$'  ! CVS revision tag
+     &  CVSW = '$Name SMOKEv4.9_Jun2022$'  ! CVS revision tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
