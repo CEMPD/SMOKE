@@ -309,6 +309,14 @@ C.........  Open plume-in-grid output
 C.............  Get variable names for I/O API file
             CALL SETUP_VARIABLES( PNIPOL, PNMSPC, PEINAM, PEMNAM )
 
+C............. Manual correction for HFLUX units for fires
+
+            DO V = 1, NVARSET
+                IF (VNAMESET(V) == 'HFLUX') THEN
+                    VUNITSET(V) = 'BTU/hr'
+                END IF
+            END DO
+
 C.............  Override gridded file settings
             NCOLS3D = 1
             NROWS3D = NGROUP
