@@ -264,14 +264,14 @@ C.....................  First, set all pollutants for pollutant independent part
                     CALL BLDCSRC( CFIP,  TSCC,  BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC07 )
                     CALL BLDCSRC( CFIPL, TSCC,  BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC09 )
                     CALL BLDCSRC( CFIPZ, TSCC,  BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC11 )
+                    CALL BLDCSRC( CFIP,  TSCCZ, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC13 )
+                    CALL BLDCSRC( CFIPL, TSCCZ, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC14 )
                     CALL BLDCSRC( CFIPZ, TSCCZ, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC15 )    !  ultimate fallback
 
                     IF ( .NOT.FULLSCC .AND. .NOT.CHKEXPSCC( TSCC ) ) THEN
                         CALL BLDCSRC( CFIP,  TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC08 )
                         CALL BLDCSRC( CFIPL, TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC10 )
                         CALL BLDCSRC( CFIPZ, TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC12 )
-                        CALL BLDCSRC( CFIP,  TSCCZ, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC13 )
-                        CALL BLDCSRC( CFIPL, TSCCZ, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC14 )
                     END IF
 
 C.....................  Find month-of-year profile:
@@ -520,14 +520,14 @@ C.....................  First, set all pollutants for pollutant independent part
                     CALL BLDCSRC( CFIP,  TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC10 )
                     CALL BLDCSRC( CFIPL, TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC13 )
                     CALL BLDCSRC( CFIPZ, TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC15 )
+                    CALL BLDCSRC( CFIP,  TSCCZ, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC19 )
+                    CALL BLDCSRC( CFIPL, TSCCZ, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC20 )
                     CALL BLDCSRC( CFIPZ, TSCCZ, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC21 )    !  ultimate fallback
 
                     IF ( .NOT. FULLSCC .AND. .NOT.CHKEXPSCC( TSCC ) ) THEN
                         CALL BLDCSRC( CFIP,  TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC11 )
                         CALL BLDCSRC( CFIPL, TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC14 )
                         CALL BLDCSRC( CFIPZ, TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC16 )
-                        CALL BLDCSRC( CFIP,  TSCCZ, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC19 )
-                        CALL BLDCSRC( CFIPL, TSCCZ, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC20 )
                     END IF
 
 C.....................  Find month-of-year profile:
@@ -790,16 +790,14 @@ C.....................  pollutant-independent search targets:
                     CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC15 )
                     CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC17 )
                     CALL BLDCSRC( CFIPZ, BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC19 )
+                    CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC21 )
+                    CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC22 )
                     CALL BLDCSRC( CFIPZ, BLNKPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC23 )    !  ultimate fallback
 
                     IF ( .NOT. FULLSCC .AND. .NOT.CHKEXPSCC( TSCC ) ) THEN
-
                         CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC16 )
                         CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC18 )
                         CALL BLDCSRC( CFIPZ, BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC20 )
-                        CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC21 )
-                        CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC22 )
-
                     END IF
 
 C.....................  Note that pollutant dependent and pollutant independent
