@@ -51,11 +51,12 @@ C.......... Same include file for BEIS3 can be use for BEIS4
         INCLUDE 'B3V14DIMS3.EXT'     ! BEIS3-related and BEIS4 declarations
   
 C.........  EXTERNAL FUNCTIONS and their descriptions
+        LOGICAL         ENVYN
         INTEGER         GETFLINE
         INTEGER         PROMPTFFILE
         CHARACTER(16)   PROMPTMFILE
 
-        EXTERNAL        GETFLINE, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL        ENVYN, GETFLINE, PROMPTFFILE, PROMPTMFILE
 
 C.........  LOCAL VARIABLES and their descriptions
         INTEGER         B, C, R, I, J, K, L, M, N ! loop counters and subscripts
@@ -69,6 +70,7 @@ C.........  LOCAL VARIABLES and their descriptions
         CHARACTER(16)   GRDNM   !  grid name
         CHARACTER(16), ALLOCATABLE  :: VGLIST( : )  ! land use type names	
         CHARACTER(16), ALLOCATABLE  :: BIOM_ID( : )  ! biomass veg names 
+        CHARACTER(16), ALLOCATABLE  :: BUNITS( : )  ! biomass veg names        
         LOGICAL, ALLOCATABLE  :: VAG_YN ( : )   ! ag veg type or not
 
         CHARACTER(16)   LUNAME  !  logical name for gridded land use totals file
@@ -102,10 +104,11 @@ C.........  CVS release tag
         REAL  VEGAREA                              ! Veg. area tmp
         REAL  VEGBIOM                              ! Veg biomass tmp 
         REAL  EFTMP                                ! Emission factors
- 
+        REAL  SVEGA 
         DOUBLE PRECISION PRCNT2KM2     ! Prcnt to km**2
         DOUBLE PRECISION BIOMASS2GM    ! factor to assist getting grams 
-
+        LOGICAL CHK_SUM_LUSE
+ 
         LOGICAL       :: EFLAG = .FALSE.           ! Error flag
         CHARACTER(16) :: PROGNAME = 'NORMBEIS4'  ! Program name
 
@@ -166,6 +169,13 @@ C.........  Store landuse variable names from first file
         CALL CHECKMEM( IOS, 'VGLIST', PROGNAME )
 
         NVEG = NBELD
+
+        ALLOCATE( BUNITS( NBELD ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BUNITS', PROGNAME )
+        
+        DO I = 1, NBELD
+           BUNITS ( I ) = TRIM( UNITS3D ( I ) )
+        END DO
 
 C.........  Allocate memory for emission factor variables   
 
@@ -240,6 +250,43 @@ C............  Ensure variable names the same in BELD and BIOMASS file
            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
  
+C.. Add check for units of Landuse and Biomass files to avoid using the same
+        EFLAG = .FALSE.
+        DO I = 1, NBELD
+                IFOUND=0
+                IF ( UNITS3D( I ) .NE. "g m-2           " ) IFOUND =1
+                        IF ( IFOUND .EQ. 1 ) THEN
+                MESG = VEGID ( I ) // 'Biomass file has incorrect units'
+                CALL M3MESG( MESG )
+                EFLAG = .TRUE.
+                ENDIF
+        ENDDO   
+        
+        IF ( EFLAG ) THEN
+           MESG = "'ERROR: Incorrect Biomass File',
+     &            'BELD files.'"
+           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        ENDIF
+
+C.. Add check for units of Landuse and Biomass files to avoid using the same
+        EFLAG = .FALSE.
+        DO I = 1, NBIOM
+                IFOUND=0
+                IF ( BUNITS( I ) .NE. "percent         " ) IFOUND =1
+                        IF ( IFOUND .EQ. 1 ) THEN
+                MESG = VEGID ( I ) // 'Landuse file has incorrect units'
+                CALL M3MESG( MESG )
+                EFLAG = .TRUE.
+                ENDIF
+        ENDDO
+
+        IF ( EFLAG ) THEN
+           MESG = "'ERROR: Incorrect Landuse File',
+     &            'BELD files.'"
+           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        ENDIF
+
+
 C.........  Set up header variables for output file BEIS_NORM_EMIS
         NROWS3D = NROWS
         NCOLS3D = NCOLS
@@ -458,6 +505,39 @@ C.........  Allocate memory for output normalized fluxes
         AVGLAI  = 0.000  !  array
         NOEMIS  = 0.000  !  array
         LAI_SAVE_INDEX(1:3) = 0
+
+        MESG = 'Check sum of landuse?'
+        CHK_SUM_LUSE = ENVYN ( 'CHECK_LUSE', MESG, .TRUE., IOS )
+
+        IF ( CHK_SUM_LUSE ) THEN
+
+         MESG = 'Checking landuse sums...'
+         CALL M3MESG( MESG )
+
+         EFLAG = .FALSE. 
+         DO J = 1, NROWS
+          DO I = 1, NCOLS
+            SVEGA = SUM( LUSE( I, J, : ) )
+            IFOUND=0
+            IF ( SVEGA  < 99.99  ) IFOUND =1
+            IF ( SVEGA  > 100.01 ) IFOUND =1
+            IF ( IFOUND .EQ. 1 ) THEN
+              WRITE( MESG,94020 ) 'Incorrect BELD sums at ncol',
+     &           I, ' and nrow ', J, ' sum= ', SVEGA
+              CALL M3MESG( MESG )
+              EFLAG = .TRUE.
+            ENDIF
+ 
+          ENDDO
+         ENDDO
+
+         IF ( EFLAG ) THEN
+           MESG = 'BELD landuse did not sum to 100%'
+           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+         ENDIF
+
+        ENDIF
+
 C.........  Calculate normalized fluxes 
         DO J = 1, NROWS
            DO I = 1, NCOLS
@@ -567,6 +647,7 @@ C.............................  Compute LAI on ISOP and MBO and METH
                     END DO  ! end of emis fac loop
                 END DO  ! end of veg land use loop2
 
+
                 DO K = 1, NLAI
 
                     IF ( SUMLAI( K ) <= 1E-06 ) THEN
@@ -604,8 +685,10 @@ C.....................  Check for NO emissions
                     END IF
 
                 END DO  ! end loop over emission factors
-            END DO  ! end loop over rows
+                END DO  ! end loop over rows
         END DO  ! end loop over columns
+
+
 
 C.........  Write output file
         I = 0
@@ -681,6 +764,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
+94020   FORMAT( 2 ( A, :, I5, :, 2X ), A, F10.5 )
 
 C-----------------------------------------------------------------------------
         
