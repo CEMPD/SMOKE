@@ -81,7 +81,7 @@ C.........  This module contains Smkreport-specific settings
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
      &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
-     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH
+     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH, UNITIDWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -96,7 +96,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
      &                      BINGEO1IDX, BINERPTYP, BINFACILITY,
-     &                      BINBOILER
+     &                      BINBOILER, BINUNITID
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC,
@@ -696,6 +696,16 @@ C.............  Include Facility ID
                     LX = 0
                 END IF
 
+C.............  Include Unit ID
+                IF( RPT_%BYUNIT ) THEN
+                    L = UNITIDWIDTH 
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) //
+     &                       BINUNITID( I )( 1:L1 ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include road class code
                 IF( RPT_%BYRCL ) THEN

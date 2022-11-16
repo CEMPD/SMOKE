@@ -12,7 +12,7 @@ C       record in a report.
 C
 C  PRECONDITIONS REQUIRED:
 C
-C  SUBROUTINES AND FUNCTIONS CALLED:
+C  SUBROUTINES AND FUNCTIONS CALLED: 
 C
 C  REVISION  HISTORY:
 C     Created 7/2000 by M Houyoux
@@ -21,6 +21,9 @@ C     Version 9/2014 by C Coats:  promote MXOUTREC to INTEGER*8 for CARB;
 C     OpenMP parallel; incremental construction of SORTBUF; use SORTINC8();
 C     major cleanup of post-sort data reorganization; construction of
 C     binning matrices MODREPBN:<NBINS,ISRCB,GFACB>
+C     
+C     Version 10/2022 by Christos Efstathiou: Added BY BOILER and 
+C     by UNIT ID reports           
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -58,7 +61,7 @@ C............  MODINFO contains the information about the source category
      &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP,
      &                      XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE,
      &                      FUGHGT, FUGWID, FUGLEN, FUGANG,
-     &                      NGSPRO, GSPROID, CBLRID
+     &                      NGSPRO, GSPROID, CBLRID, CNEIUID
 
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
@@ -78,7 +81,8 @@ C............  MODINFO contains the information about the source category
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
      &                      BINNAICS, BINNAIIDX, BINSRCTYP, BINORIS,
      &                      BINORSIDX, BINSTKGRP, BININTGR, BINGEO1IDX,
-     &                      BINERPTYP, BINSPCIDX, BINFACILITY, BINBOILER
+     &                      BINERPTYP, BINSPCIDX, BINFACILITY, BINBOILER,
+     &                      BINUNITID
 
         USE MODGRID, ONLY: NCOLS
 
@@ -114,6 +118,7 @@ C...........   Local parameters:
         INTEGER, PARAMETER :: BUFLEN =  85 + SCCLEN3 + SICLEN3 + SPNLEN3
      &                                     + MACLEN3 + NAILEN3 + STPLEN3
      &                                     + ORSLEN3 + TMPLEN3 + TMPLEN3
+     &                                     + BLRLEN3 + NEILEN3      
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
@@ -167,6 +172,7 @@ C...........   Local variables
         CHARACTER(BLRLEN3) BLRID        ! tmp boiler ID
         CHARACTER(STPLEN3) SRCTYP       ! tmp SRCTYP
         CHARACTER(PLTLEN3) PLANT        ! tmp plant ID
+        CHARACTER(NEILEN3) UNITID       ! tmp Unit ID
         CHARACTER(PLTLEN3) FACILITY     ! tmp Facility ID
         CHARACTER(PLTLEN3) PREVPLT      ! previous plant ID
         CHARACTER(FIPLEN3) CFIP         ! tmp country/state/county
@@ -219,6 +225,12 @@ C.........  Consistency checking:  inventory vs report
                 EFLAG = .TRUE.
         END IF
 
+        IF ( RPT_%BYUNIT .AND. .NOT. ALLOCATED( CNEIUID ) ) THEN
+            MESG = 'ERROR: BY UNIT is requested, but ' //
+     &             'UNIT is not present in ASCII inventory file'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+        END IF
 
         IF( RPT_%BYMACT .AND. .NOT. ASSOCIATED( CMACT ) ) THEN
             MESG = 'ERROR: BY MACT is requested, but ' //
@@ -359,8 +371,7 @@ C.................  code, so for now save space for the SRCID.
                     WRITE( SORTBUF( I )( II:IJ ), '( I8.8 )' ) SRCID
                     II = IJ + 1
                 END IF                
-
-
+    
                 IF( RPT_%BYCNTY ) THEN
                     IJ = II + FIPLEN3 - 1
                     CFIP  = CIFIP( OUTSRC( I ) )
@@ -560,6 +571,7 @@ C.................  code, so for now save space for the SRCID.
         
         IS = II
 
+       
 !$OMP   PARALLEL DO DEFAULT( SHARED ),
 !$OMP&              PRIVATE( I, ESTAT ),
 !$OMP&         FIRSTPRIVATE( II, IJ, IS )
@@ -567,6 +579,12 @@ C.................  code, so for now save space for the SRCID.
         DO I = 1, NOUTREC       !!  second parallel loop constructing SORTBUF
         
             II = IS
+
+            IF ( RPT_%BYUNIT ) THEN
+                IJ = II + NEILEN3 - 1
+                SORTBUF( I )( II:IJ ) = CNEIUID( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !!  if report-by-oris
 
             IF ( RPT_%BYORIS ) THEN
                 IJ = II + ORSLEN3 - 1
@@ -752,6 +770,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINSPCID  ) ) DEALLOCATE( BINSPCID )
         IF( ALLOCATED( BINSPCIDX ) ) DEALLOCATE( BINSPCIDX )
         IF( ALLOCATED( BINPLANT  ) ) DEALLOCATE( BINPLANT )
+        IF( ALLOCATED( BINUNITID  ) ) DEALLOCATE( BINUNITID )
         IF( ALLOCATED( BINFACILITY ) ) DEALLOCATE( BINFACILITY )
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
         IF( ALLOCATED( BINY      ) ) DEALLOCATE( BINY )
@@ -926,6 +945,11 @@ C.........  Allocate memory for bins
             ALLOCATE( BINFACILITY ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINFACILITY', PROGNAME )
         ENDIF
+
+        IF( RPT_%BYUNIT ) THEN
+            ALLOCATE( BINUNITID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINUNITID', PROGNAME )
+        ENDIF
         
         IF( RPT_%BYRCL   ) THEN
             ALLOCATE( BINRCL   ( NOUTBINS ), STAT=IOS )
@@ -1001,6 +1025,7 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( RPT_%BYMET )     BINMETID( B )  =    CMET( S )
             IF( RPT_%BYSPC )     BINSPCID( B )  = OUTSPRO( J )
             IF( RPT_%BYERPTYP )  BINERPTYP( B ) = CERPTYP( S )
+            IF( RPT_%BYUNIT )    BINUNITID( B ) = CNEIUID( S )
 
             IF( LREGION ) THEN
                 IF( RPT_%BYCNTY ) THEN

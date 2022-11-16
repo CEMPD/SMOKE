@@ -269,6 +269,12 @@ C.........  Boiler code
                 IVARNAMS( NINVARR ) = 'CBLRID'
             END IF
 
+C.........  Unit ID code
+            IF( ANY_TRUE( NREPORT, ALLRPT%BYUNIT ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'CNEIUID'
+            END IF
+
 C.........  Source type code
             IF( ANY_TRUE( NREPORT, ALLRPT%BYSRCTYP ) ) THEN
                 NINVARR = NINVARR + 1

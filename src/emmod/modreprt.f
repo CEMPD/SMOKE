@@ -137,6 +137,7 @@
             LOGICAL       :: BYMET         ! true: by Met-based hourly temporal code
             LOGICAL       :: BYPLANT       ! true: by plant 
             LOGICAL       :: BYFACILITY    ! true: by Facility
+            LOGICAL       :: BYUNIT        ! true: by Unit ID
             LOGICAL       :: BYSCC         ! true: by SCC 
             LOGICAL       :: BYSIC         ! true: by SIC 
             LOGICAL       :: BYINTGR       ! true: by INTEGRATE 
@@ -342,6 +343,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: SATWIDTH  =0 ! width of saturday profile label
         INTEGER      , PUBLIC :: SUNWIDTH  =0 ! width of sunday profile label
         INTEGER      , PUBLIC :: METWIDTH  =0 ! width of met-based profile label
+        INTEGER      , PUBLIC :: UNITIDWIDTH =0 ! width of unit ID column
 
         CHARACTER(50),  PUBLIC :: CELLFMT     ! format string for cell columns
         CHARACTER(50),  PUBLIC :: DATEFMT     ! format string for date column

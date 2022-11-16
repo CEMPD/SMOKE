@@ -475,6 +475,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYMET     = .FALSE.
                         RPT_%BYPLANT   = .FALSE.
                         RPT_%BYFACILITY = .FALSE.
+                        RPT_%BYUNIT    = .FALSE.
                         RPT_%BYRCL     = .FALSE.
                         RPT_%BYSIC     = .FALSE.
                         RPT_%BYSCC     = .FALSE.
@@ -836,6 +837,7 @@ C.............  AERMOD support report
 
                     RPT_%BYPLANT   = .TRUE.      ! By Plant ID
                     RPT_%SRCNAM    = .TRUE.      ! By Plant Name
+                    RPT_%BYUNIT    = .TRUE.      ! By Unit ID
 
                     TSFLAG         = .TRUE.      ! By TSUP file
                     RPT_%BYMON     = .TRUE.      ! By monthly profile ID
@@ -1037,6 +1039,12 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                         RPT_%SRCNAM = .TRUE.
                     END IF
 
+                CASE( 'UNIT' )
+                    RPT_%BYUNIT = .TRUE.
+                    IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                        RPT_%SRCNAM = .TRUE.
+                    END IF
+                
                 CASE( 'ROADCLASS' )
                     IF( NOT_ASCIIELEV( 'BY ' // SEGMENT( 2 ) ) ) THEN
                         IF( CATEGORY .EQ. 'MOBILE' ) THEN

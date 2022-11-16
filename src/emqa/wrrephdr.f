@@ -84,7 +84,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
      &                      BINGEO1IDX, BINERPTYP, BINSPCIDX,
-     &                      BINFACILITY, BINBOILER
+     &                      BINFACILITY, BINBOILER, BINUNITID
    
 
 C.........  This module contains the arrays for state and county summaries
@@ -201,7 +201,7 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRSELAT= 75
         INTEGER, PARAMETER :: IHDRSELON= 76
         INTEGER, PARAMETER :: IHDRFNAM = 77   ! GSPRO name
-        INTEGER, PARAMETER :: IHDRBLR = 78 ! Boiler
+        INTEGER, PARAMETER :: IHDRBLR  = 78 ! Boiler
         INTEGER, PARAMETER :: NHEADER = 78
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
@@ -1265,6 +1265,23 @@ C.........  Facility ID
             WRITE( CHARFMT, 94645 ) W1, RPT_%DELIM
             CHARWIDTH = W1 + LV
 
+        END IF
+
+C.........  Unit ID
+        IF( RPT_%BYUNIT ) THEN
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINUNITID( I ) ) )
+            END DO
+
+            J  = LEN_TRIM( CHRHDRS( 3 ) )
+            W1 = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( W1, CHRHDRS( 3 ), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( CHARFMT, 94645 ) W1, RPT_%DELIM
+            CHARWIDTH = W1 + LV            
         END IF
 
 C.........  ORIS ID
