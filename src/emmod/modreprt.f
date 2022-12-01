@@ -343,7 +343,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: SATWIDTH  =0 ! width of saturday profile label
         INTEGER      , PUBLIC :: SUNWIDTH  =0 ! width of sunday profile label
         INTEGER      , PUBLIC :: METWIDTH  =0 ! width of met-based profile label
-        INTEGER      , PUBLIC :: UNITIDWIDTH =0 ! width of unit ID column
+        INTEGER      , PUBLIC :: UNITIDWIDTH=0 ! width of unit ID column
 
         CHARACTER(50),  PUBLIC :: CELLFMT     ! format string for cell columns
         CHARACTER(50),  PUBLIC :: DATEFMT     ! format string for date column

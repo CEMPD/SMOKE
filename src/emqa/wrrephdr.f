@@ -71,7 +71,8 @@ C.........  This module contains Smkreport-specific settings
      &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
      &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
-     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH, UNITWIDTH
+     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH, UNITWIDTH,
+     &                      UNITIDWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -1281,7 +1282,7 @@ C.........  Unit ID
             CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
 
             WRITE( CHARFMT, 94645 ) W1, RPT_%DELIM
-            CHARWIDTH = W1 + LV            
+            UNITIDWIDTH = W1 + LV
         END IF
 
 C.........  ORIS ID

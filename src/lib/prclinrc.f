@@ -836,6 +836,7 @@ C.............  AERMOD support report
                     RPT_%SRCMAP    = .TRUE.      ! output source mapping output file
 
                     RPT_%BYPLANT   = .TRUE.      ! By Plant ID
+                    RPT_%BYFACILITY = .TRUE.     ! By Plant Facility
                     RPT_%SRCNAM    = .TRUE.      ! By Plant Name
                     RPT_%BYUNIT    = .TRUE.      ! By Unit ID
 
@@ -1160,6 +1161,7 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                     RPT_%BYSRC   = .TRUE.
                     RPT_%BYFACILITY = .FALSE. ! would be a duplicate
                     RPT_%BYPLANT = .FALSE.  ! would be a duplicate
+                    RPT_%BYUNIT = .FALSE. ! would be a duplicate
                     RPT_%BYCNTY  = .TRUE.
                     IF( .NOT. AFLAG ) THEN
                         RPT_%BYSCC   = .TRUE.

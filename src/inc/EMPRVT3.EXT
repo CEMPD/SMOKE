@@ -44,6 +44,7 @@ C.........  Width of source information strings (ABC order)
         PRIVATE :: TAGLEN3
         PRIVATE :: VIDLEN3
         PRIVATE :: VTPLEN3
+        PRIVATE :: NEILEN3
 
 C.........  Width of other global character strings 
         PRIVATE :: IOVLEN3
