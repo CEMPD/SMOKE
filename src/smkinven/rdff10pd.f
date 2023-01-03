@@ -114,8 +114,13 @@ C              messages
 C...........   Local parameters
         INTEGER, PARAMETER :: MXSEG = 60     ! max no of segments
 
-C...........   Local segment arrays
+C...........   Local arrays
         CHARACTER( 30 )    :: SEGMENT( MXSEG ) = ' '  ! temporary line segments
+        CHARACTER(IOVLEN3), ALLOCATABLE,SAVE :: CEMPOLS( : ) ! CEMS poll list
+
+C.........  File names and unit numbers
+        CHARACTER(IOVLEN3) :: ENAME  ! emis i/o api inven logical name
+        CHARACTER(IOVLEN3) :: ANAME  ! emis ASCII inven logical name
 
 C...........   Local list of FIPS start/end positions to facilitate
 C              faster lookups
@@ -127,10 +132,11 @@ C...........   Local list of arrays for warning handling
         LOGICAL, ALLOCATABLE, SAVE :: WARNMULT( : ) ! true: write warning for Multiple pollutants from a single pollutant in Inventory Table
 
 C...........   Temporary read arrays
-        REAL            TDAT( 31,24 )       ! temporary data values
+        REAL                       TDAT( 31,24 )    ! temporary data values
+        REAL, ALLOCATABLE, SAVE :: EMIS( :,: )      ! annual inventory emissions
 
 C...........   Other local variables
-        INTEGER          D, H, HS, I, J, N, NV, L, LL, L1, L2, S, T    ! counters and indices
+        INTEGER          D, H, HS, I, J, N, NV, L, LL, L1, L2, S, T, V    ! counters and indices
         INTEGER          ES, NS, SS    ! end src, tmp no. src, start sourc
 
         INTEGER          CIDX             ! tmp data index
@@ -150,6 +156,8 @@ C...........   Other local variables
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
         INTEGER, SAVE :: NFIELD = 1       ! number of data fields
         INTEGER       :: NPOA   = 0       ! unused header number of pol/act
+        INTEGER       :: NPOL   = 0       ! no of poll per line
+        INTEGER, SAVE :: NCEMPOL = 0      ! no of CEMS polls
         INTEGER, SAVE :: NSTEPS = 0       ! number of time steps
         INTEGER, SAVE :: NWARN( 5 )       ! warnings counter
         INTEGER          PTR              ! tmp time step pointer
@@ -179,6 +187,8 @@ C...........   Other local variables
         LOGICAL, SAVE :: LFLAG = .FALSE.  ! true: output daily/hourly inv in local time
         LOGICAL, SAVE :: SFLAG = .FALSE.  ! true: use daily total from hourly
         LOGICAL, SAVE :: TFLAG = .FALSE.  ! true: use SCCs for matching with inv
+        LOGICAL       :: CEMPOL =.FALSE.  ! true: CEMS poll processed with HOURACT
+        LOGICAL, SAVE :: CEMFLAG =.FALSE. ! true: CEMS hourly is processed with HOURACT
 
         CHARACTER(256) :: BUFFER = ' '    ! src description buffer 
         CHARACTER(1920):: LINE   = ' '    ! line buffer 
@@ -244,6 +254,20 @@ C.............  Allocate memory for bad source storage
 
 C.............  Create unique list of FIPS codes and other things
             CALL GENUSLST
+
+C.............  Get output inventory file names given source category
+            CALL GETINAME( CATEGORY, ENAME, ANAME )
+
+C.............  Allocate memory for inventory emissions
+            ALLOCATE( EMIS( NSRC, NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EMIS', PROGNAME )
+            ALLOCATE( CEMPOLS( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CEMPOLS', PROGNAME )
+            EMIS = 0.0  ! array
+            CEMPOLS = ' '
+
+C.............  Read emissions from inventory file
+            CALL RDMAPPOL( NSRC, NIPPA, 1, EANAM, EMIS )
 
 C.............  Build helper arrays for making searching faster
             ALLOCATE( STARTSRC( NINVIFIP ), STAT=IOS )
@@ -769,6 +793,23 @@ C................  If it's found, then record that this pollutant was found
 
             END IF  ! if cidx le 0 or not
 
+C.............  Check CEMS hourly temporal profile (TPROHR) is processed 
+            IF( .NOT. CEMFLAG .AND. CNAM == 'HOURACT' ) CEMFLAG = .TRUE.
+
+C.............  Build array for the list of polls
+            IF( GETSIZES ) THEN
+                IF( INDEX1( CNAM, NIPPA, CEMPOLS ) < 1 ) THEN
+                    NCEMPOL = NCEMPOL + 1
+                    CEMPOLS( NCEMPOL ) = CNAM
+                END IF
+            END IF
+
+C.............  Reset recorded pollutants for CEMS processing
+            IF( CEMFLAG ) THEN
+                EASTAT = 1
+                SPSTAT( MXSPDAT ) = 1
+            END IF
+
 C.............  If only getting dates and pollutant information, go 
 C               to next loop iteration
             IF( GETSIZES ) CYCLE
@@ -781,8 +822,12 @@ C.............  NOTE - this is only useful if reading only part of data
             IF( PTR. LT. 1 .OR. PTR .GT. NSTEPS ) CYCLE
 
 C.............  Count estimated record count per time step
-            DO T = PTR, MIN( PTR + 23, NSTEPS )
-                MXPDPT( T ) = MXPDPT( T ) + 1
+            NPOL = 1
+            IF( CNAM == 'HOURACT' ) NPOL = NIPPA - NCEMPOL
+            DO N = 1, NPOL
+                DO T = PTR, MIN( PTR + 23, NSTEPS )
+                    MXPDPT( T ) = MXPDPT( T ) + 1
+                END DO
             END DO
 
 C.............  If only counting records per time step, go to next loop
@@ -808,7 +853,6 @@ C.............  Check and set emissions values
 C.............  If available, set total value from hourly file
             TOTAL = 0.
             IF( SFLAG .OR. .NOT. DAYFLAG ) THEN
-
                 IF( SEGMENT( S1-1 ) .NE. ' ' ) THEN
                     TOTAL = STR2REAL( SEGMENT( S1-1 ) )
                     IF( TOTAL < 0.0 ) THEN
@@ -821,13 +865,36 @@ C.............  If available, set total value from hourly file
                 END IF
             END IF
 
-C.............  Set conversion factor from Inventory Table. Default is
-C               1., which is also what is used in all but a handful of
-C               special toxics cases.
-            CONVFAC = ITFACA( SCASIDX( UCASIDX( CIDX ) ) )
+C.............  CEMS pollutant processing
+            IF( CNAM == 'HOURACT' ) THEN
+                NCEMPOL = NIPPA
+                CEMPOL = .TRUE.
+                TDAT = TDAT / EMIS( S,COD )  ! Compute hourly fac based on mon tot
+            ELSE
+                NCEMPOL = 1
+                CEMPOL  = .FALSE.     ! default value of CEM poll processing
+            END IF
 
 C.............  Record needed data for this source and time step
             DO D = 1, NFIELD
+
+              DO V = 1, NCEMPOL          ! loop for CEMS when HOURACT is processed
+
+                IF( CEMPOL ) THEN
+                    CDAT = EANAM( V )
+                    COD  = INDEX1( CDAT, NIPPA, CEMPOLS )
+                    IF( COD < 1 ) THEN
+                        COD  = INDEX1( CDAT, NIPPA, EANAM )
+                        CIDX = INDEX1( CDAT, NINVTBL, ITNAMA )
+                    ELSE
+                        CYCLE  ! skip CEMS polls
+                    END IF
+                END IF
+
+C.............  Set conversion factor from Inventory Table. Default is
+C               1., which is also what is used in all but a handful of
+C               special toxics cases.
+                CONVFAC = ITFACA( SCASIDX( UCASIDX( CIDX ) ) )
 
                 H = 0
                 DO T = PTR, MIN( PTR + 23, NSTEPS )
@@ -843,15 +910,23 @@ C.............  Record needed data for this source and time step
                         SPDIDA( HS,T ) = S
                         CIDXA ( HS,T ) = CIDX
                         CODEA ( HS,T ) = COD
-                        EMISVA( HS,T ) = CONVFAC * TDAT( D,H )  ! Store data in emissions
-                        DYTOTA( HS,T ) = CONVFAC * TOTAL
+                        IF( CEMPOL ) THEN
+                            EMISVA( HS,T ) = CONVFAC * EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
+                            DYTOTA( HS,T ) = CONVFAC * EMIS(S,COD) * TOTAL
+                        ELSE
+                            EMISVA( HS,T ) = CONVFAC * TDAT( D,H )  ! Store data in emissions
+                            DYTOTA( HS,T ) = CONVFAC * TOTAL
+                        END IF
+
                     END IF
 
                 END DO
+
+              END DO   ! end of NCEMPOL loop
                 
-                PTR = PTR + H
+              PTR = PTR + H
             
-            END DO
+            END DO   ! end of NFIELD loop
 
         END DO
 
