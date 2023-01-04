@@ -120,7 +120,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         EXTERNAL     CRLF, DSCM3GRD, GETIFDSC, GETFLINE, ENVINT, FIND1
      &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE,
-     &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST, 
+     &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST,
      &               FIND1FIRST, STRLIST, STR2INT, BLKORCMT, VERCHAR,
      &               YR2DAY, ENVYN, STR2REAL, FINDC
 
@@ -159,10 +159,10 @@ C...........   integer arrays
         INTEGER, ALLOCATABLE :: PRVENDT ( : )      ! previous day end time HHMMSS
         INTEGER, ALLOCATABLE :: TZONES  ( : )      ! county-specific time zones
         INTEGER, ALLOCATABLE :: METDAYS ( : )      ! dimension: nsteps in episode,
-        INTEGER, ALLOCATABLE :: PROCDAYS( : )      ! no of processing hours 
+        INTEGER, ALLOCATABLE :: PROCDAYS( : )      ! no of processing hours
         INTEGER, ALLOCATABLE :: SRGIDS  ( : )      ! list of surrogates
         INTEGER, ALLOCATABLE :: SRGSTA  ( : )      ! list of state in surrogates
-        INTEGER, ALLOCATABLE :: INDXREF ( : )      ! Index of matched xref entries 
+        INTEGER, ALLOCATABLE :: INDXREF ( : )      ! Index of matched xref entries
         INTEGER, ALLOCATABLE :: MATCHED ( :,: )    ! FIPS/SCC/POL matched source
         INTEGER, ALLOCATABLE :: ISRGFIPS( : )      ! FIPS as integers
 
@@ -179,7 +179,7 @@ C...........   Parameter array
      &          'MONDAY          ','TUESDAY         ','WEDNESDAY       ',
      &          'THURSDAY        ','FRIDAY          ','SATURDAY        ',
      &          'SUNDAY          ','ALLDAY          ' / )
-        
+
 C...........   File units and logical names:
         INTEGER      CDEV  ! unit number for co/st/cy file
         INTEGER      DDEV  ! unit number for daily group file
@@ -232,12 +232,12 @@ C...........   Other local variables:
         INTEGER    SMONTH      ! month of start date
         INTEGER    EMONTH      ! month of end date
         INTEGER    MONTH       ! tmp month
-        INTEGER    TYEAR       ! tmp year 
+        INTEGER    TYEAR       ! tmp year
         INTEGER    TDAY        ! tmp day of month
         INTEGER    METNGRID    ! no. grid cells in met data
         INTEGER    NLINES      ! no. lines in met list file
-        INTEGER    NDAY        ! no. processing days 
-        INTEGER    NMON        ! no. processing month 
+        INTEGER    NDAY        ! no. processing days
+        INTEGER    NMON        ! no. processing month
         INTEGER    NVAR        ! no. met variables
         INTEGER    NSRG        ! no. surrogates
         INTEGER    NSCC        ! no. processing SCCs
@@ -246,7 +246,7 @@ C...........   Other local variables:
         INTEGER    NSTA        ! no. of unique State number
         INTEGER    NCNTY       ! no. of counties for RWC method
         INTEGER    NMATCH      ! no. of matched temporal x-ref input file by FIPS/SCC
-        INTEGER    MXTREF      ! no. matched temporal x-ref entries 
+        INTEGER    MXTREF      ! no. matched temporal x-ref entries
         INTEGER    MXLINE      ! no. temporal x-ref input file
         INTEGER    NSTEPS      ! number of time steps to process temperature data
         INTEGER    POS         ! position in time step loop
@@ -268,10 +268,10 @@ C...........   Other local variables:
 
         INTEGER, SAVE :: MXWARN        ! maximum no of warning messgaes
 
-        REAL       DTEMP               ! RWC default temp (=50.0) 
+        REAL       DTEMP               ! RWC default temp (=50.0)
         REAL       TEMPVAL             ! tmp variable value
-        REAL       SLOPE               ! RWC linear euqation slope 
-        REAL       CONST               ! RWC linear equation constant 
+        REAL       SLOPE               ! RWC linear euqation slope
+        REAL       CONST               ! RWC linear equation constant
 
         LOGICAL :: BASHFLAG = .FALSE.  !  true: processing NH3 option using Bash Equation
         LOGICAL :: EFLAG    = .FALSE.  !  true: error found
@@ -282,6 +282,8 @@ C...........   Other local variables:
         LOGICAL :: MONAVER  = .FALSE.  !  true: monthly averaging
         LOGICAL :: DAYAVER  = .FALSE.  !  true: daily averaging
         LOGICAL :: HOURAVER = .FALSE.  !  true: hourly averaging
+        LOGICAL :: ROFLAG   = .FALSE.  !  true: output averaged raw values
+        LOGICAL :: SOFLAG   = .FALSE.  !  true: output summed raw values
         LOGICAL :: OFLAG    = .FALSE.  !  true: ungridding is 0 for some srcs
         LOGICAL :: ZFLAG    = .FALSE.  !  true: use AZ's new equations
         LOGICAL :: FILEOPEN = .FALSE.  !  true: met file is open
@@ -291,8 +293,8 @@ C...........   Other local variables:
         CHARACTER(SCCLEN3) CSCC        !  SCC code
         CHARACTER(FIPLEN3) CFIPS       !  FIPS code
         CHARACTER(FIPLEN3) TPROID      !  tpro id
-        CHARACTER(1000)    CSCCLIST    !  tmp SCC list line buffer 
-        CHARACTER(16)      CPOL,TPRO   !  Pollutant code, Profile types 
+        CHARACTER(1000)    CSCCLIST    !  tmp SCC list line buffer
+        CHARACTER(16)      CPOL,TPRO   !  Pollutant code, Profile types
         CHARACTER(SCCLEN3) TSCC        !  tmp SCC code
         CHARACTER(IOVLEN3) COORUNIT    !  coordinate system projection units
         CHARACTER(IODLEN3) GDESC       !  grid description
@@ -322,7 +324,7 @@ C           to continue running the program.
 C.........  Obtain parameter settings from the environment...
 C.........  Get file name for country, state, and county file, with time zones
         CDEV = PROMPTFFILE(
-     &         'Enter logical name for Country/State/County file', 
+     &         'Enter logical name for Country/State/County file',
      &         .TRUE., .TRUE., 'COSTCY', PROGNAME )
 
 C.........  Open input surrogates file
@@ -340,9 +342,17 @@ C.........  Open temporal cross-reference INPUT file (TREF_IN)
      &          'Enter logical name for temporal x-reference file',
      &          .TRUE., .TRUE., 'TREF_IN', PROGNAME )
 
+C.........  Output averaged raw values (no profile factors)
+        MESG = 'Output averaged raw values [no profiles]'
+        ROFLAG = ENVYN( 'AVG_RAW_OUTPUT_YN', MESG, .FALSE., IOS )
+
+C.........  Output sum raw values (no profile factors)
+        MESG = 'Output summed raw values [no profiles]'
+        IF( ROFLAG ) SOFLAG = ENVYN( 'SUM_RAW_OUTPUT_YN', MESG, .FALSE., IOS )
+
 C.........  Get maximum number of warnings
         MXWARN = ENVINT( WARNSET , ' ', 100, I )
-            
+
 C.........  Allocate arrays
         ALLOCATE( SCCLIST( MXVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SCCLIST', PROGNAME )
@@ -387,7 +397,7 @@ C.........  Obtain profile generation method: 'RWC', 'RC_NH3', 'BASH_NH3', or 'M
         CALL UPCASE( PROF_METHOD )
 
         MESG = 'ERROR: ' // TRIM( PROF_METHOD ) // ' profile method'
-     &         // ' you defined is not applicable' 
+     &         // ' you defined is not applicable'
         IF( .NOT. ( PROF_METHOD == 'RC_NH3' .OR. PROF_METHOD == 'BASH_NH3' .OR.
      &      PROF_METHOD == 'MET' .OR. PROF_METHOD == 'RWC' ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -454,13 +464,13 @@ C.............  Get the name of the aerodynamic resistance  variable.
                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
            ELSE
                MESG = 'NOTE: Aerodynamic resistance variable ('
-     &             // TRIM( VAR_NAME ) // ') is chosen for "' 
+     &             // TRIM( VAR_NAME ) // ') is chosen for "'
      &             // TRIM( PROF_METHOD ) // '" profile method'
                CALL M3MESG( MESG )
            END IF
 
         ELSE
-           VAR_NAME = '' 
+           VAR_NAME = ''
 
         END IF
 
@@ -497,20 +507,20 @@ C.........  Determine optional linear equation for RWC profile calculation
 
 C.........  Error if hourly output setting for RWC profile method.
         IF( PROF_METHOD == 'RWC' ) THEN
-            MESG = 'ERROR: Profile Method "'//TRIM( PROF_METHOD )//'" can not' 
+            MESG = 'ERROR: Profile Method "'//TRIM( PROF_METHOD )//'" can not'
      &          // ' process "'//TRIM(TPRO_TYPE)//'" temporal output option'
-            IF( TPRO_TYPE == 'HOURLY' .OR. TPRO_TYPE == 'ALL' ) 
+            IF( TPRO_TYPE == 'HOURLY' .OR. TPRO_TYPE == 'ALL' )
      &          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
             HOURAVER = .FALSE.   ! override the setting
 
 C.........  Error if daily or monthly output setting for AGNH3 profile method.
         ELSE IF( NH3FLAG ) THEN
-            MESG = 'ERROR: Profile Method "'//TRIM( PROF_METHOD )//'" can not' 
+            MESG = 'ERROR: Profile Method "'//TRIM( PROF_METHOD )//'" can not'
      &          // ' process "'//TRIM(TPRO_TYPE)//'" temporal output option'
      &         //CRLF()//BLANK10//':: Set TPRO_OUTPUT to HOURLY'
-            IF ( TPRO_TYPE == 'ALL' )   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
-            IF ( DAYAVER .OR. MONAVER ) CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
+            IF ( TPRO_TYPE == 'ALL' )   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            IF ( DAYAVER .OR. MONAVER ) CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END IF
 
@@ -702,7 +712,7 @@ C.........  Open county-specific Temperature setting for RWC
      &             PROGNAME )
 
             NLINES= GETFLINE( RDEV,'County-specific Temperatures file' )
-             
+
 C..............  Store county-specific temperatures
             IREC = 0
             NCNTY = 0
@@ -723,7 +733,7 @@ C.................  Skip blank and comment lines
 
 C.................  Sparse line
                 CALL PARSLINE( LINE, 2, SEGMENT )
-                
+
                 IFIP  = STR2INT ( SEGMENT( 1 ) )     ! FIP ID
                 DTEMP = STR2REAL( SEGMENT( 2 ) )     ! min temp set for RWC eq
 
@@ -744,7 +754,7 @@ C.................  Sparse line
                  MESG = 'ERROR: No entries in COUNTY_TEMP_RWC file'
                  CALL M3MSG2( MESG )
              END IF
-            
+
             CLOSE( RDEV )
 
         END IF
@@ -766,14 +776,14 @@ C.........  Check start date is Jan 1st for a proper processing.
         TYEAR = INT( EPI_SDATE / 1000 )
         TDATE = TYEAR * 1000 + 1
         IF( EPI_SDATE /= TDATE .AND. .NOT. NH3FLAG ) THEN
-            TDATE = TYEAR * 1000 + 1 
+            TDATE = TYEAR * 1000 + 1
             WRITE( MESG,94010 ) 'ERROR: MUST set starting date (STDATE) to ',
      &           TDATE
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
         TDAY = 1 / YR2DAY( TYEAR )
-        TDATE = TYEAR * 1000 + TDAY 
+        TDATE = TYEAR * 1000 + TDAY
         IF( EPI_EDATE /= TDATE .AND. .NOT. NH3FLAG ) THEN
             TDAY = TYEAR * 1000 + TDAY
             WRITE( MESG,94010 ) 'ERROR: MUST set ending date (ENDATE) to ',
@@ -838,7 +848,7 @@ C............  Skip blank or comment lines
             IF( INDEX1( TPRO, NTPRO, TPROTYPES ) < 1 ) THEN
                 MESG = 'ERROR: Older TREF format is no longer supported!'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF            
+            END IF
 
 C.............  temporary limit for supporting older TREF format (v3.5.1 or earlier)
             IF( FIPS < 1 ) FIPS = -9
@@ -866,11 +876,11 @@ C.............  find matched SCC entries
                 ELSE IF( HOURAVER .AND. TPRO == 'HOURLY' ) THEN
                     LL = 1
                 END IF
-                
+
                 IF( L1 < 0 ) LL = 0  ! L1 can be zero if fips can not be found from XREF input file
 
                 WRITE( MESG, 94010 ) 'ERROR: pollutant-specific '//
-     &                'entry for target SCC: ' // CSCC // ' at line', I, 
+     &                'entry for target SCC: ' // CSCC // ' at line', I,
      &                ' is NOT supported'
 
                 IF( NH3FLAG ) THEN
@@ -903,7 +913,7 @@ C.....................  Store all TREF entries including new ones
             END IF
 
         END DO
-        
+
         REWIND( XIDEV )
 
 C.........  Concatenate org x-ref entries and add new FIPS if necessary
@@ -913,9 +923,9 @@ C.........  Find ultimate FIPS/SCC x-ref when no matched in TREF
 
         NWARN = 0
         DO I = 1, NSCC
-            
+
             DO J = 1, NSRGFIPS
-            
+
                 LL = 0
                 L0 = I
                 L1 = J
@@ -926,7 +936,7 @@ C.........  Find ultimate FIPS/SCC x-ref when no matched in TREF
 
 C.................  Check secondly SCC/FIPS specific entries
                 LL = MATCHED( L0,L1 )
- 
+
 C.................  Check a list of state-specific entry first before using default profiles
                 IF( LL < 1 ) THEN
                     ISTA = STR2INT( CFIPS( 8:9 ) )
@@ -952,7 +962,7 @@ C.................  Use default profiles when there no matched x-ref entry
                     END IF
 
                     WRITE( MESG,93000 ) 'WARNING: Could not find ' //
-     &                  'x-ref entries for SCC: ' // CSCC // 
+     &                  'x-ref entries for SCC: ' // CSCC //
      &                  ' and FIPS: '// CFIPS // CRLF() // BLANK10
      &                   //'New x-ref entries for these SCC and FIPS '//
      &                   'are added to TREF_OUT output file'
@@ -976,7 +986,7 @@ C.................  Concatenate all segments into a string
                 END IF
 
                 TPROID = CFIPS
-                
+
 C.................  Append new MONTHLY temporal profile ID to new/existing x-ref entry
                 IF( MONAVER ) THEN
                     WRITE( XODEV,'( A )' ) TRIM(LINE)//'MONTHLY,'//TPROID//',""'
@@ -986,17 +996,17 @@ C.................  Append new DAILY temporal profile ID to new/existing x-ref e
                 IF( DAYAVER ) THEN
                     WRITE( XODEV,'( A )' ) TRIM(LINE)//'DAILY,'//TPROID//',""'
                 END IF
-                    
+
 C.................  Append new HOURLY temporal profile ID to new/existing x-ref entry
                 IF( HOURAVER ) THEN
-                    WRITE( XODEV,'( A )' ) TRIM(LINE)//'HOURLY,'//TPROID//',""' 
+                    WRITE( XODEV,'( A )' ) TRIM(LINE)//'HOURLY,'//TPROID//',""'
                 END IF
 
             ENDDO
 
         ENDDO
 
-C.........  Store the rest of unmatched original x-ref entries        
+C.........  Store the rest of unmatched original x-ref entries
         DO I = 1, MXLINE
 
             LL = 0
@@ -1007,7 +1017,7 @@ C.........  Store the rest of unmatched original x-ref entries
 
 C............  Parse line into substrings (segments)
             IF( BLKORCMT( LINE ) ) CYCLE
-               
+
             CALL PARSLINE ( LINE, MXSEG, SEGMENT )
 
 C.............  Skip all matched org x-ref entries
@@ -1030,7 +1040,7 @@ C.........  Deallocate unnecessary local arrays
 C.........  Find the total number of time steps
         EPI_NSTEPS = 1 +
      &      SECSDIFF( EPI_SDATE,EPI_STIME,EPI_EDATE,EPI_ETIME ) / 3600
- 
+
 C.........  Define the minimum and maximum time zones in the inventory
         TZMIN = MINVAL( TZONES )
         TZMAX = MAXVAL( TZONES )
@@ -1313,7 +1323,7 @@ C.........  Process meteorology data...
         MESG = 'Processing meteorology data using variables ' //
      &         TRIM( TVARNAME ) // ', ' // TRIM( VAR_NAME ) // '...'
         CALL M3MSG2( MESG )
-        
+
         JDATE = SDATE
         JTIME = STIME
         LDATE = -9
@@ -1404,7 +1414,7 @@ C.................  Read current meteorology file
                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                 END IF
 
-C.................  Average the temperatures of the grid cells that 
+C.................  Average the temperatures of the grid cells that
 C                   intersect with the selected
 C                   surrogate. Results are stored in TASRC.
 C                   Equation (1) in design document.
@@ -1456,9 +1466,9 @@ C.................  Skip if begining/ending hours are out of range
                 END IF
 
 C.................  Skip if data is missing
-                IF( TASRC( S ) == 0.0 ) THEN  ! temp in Kevin 
+                IF( TASRC( S ) < 0.0 ) THEN  ! temp in Kevin
                      MESG = 'ERROR: Incorrect temperature '//
-     &                  'value on'//MMDDYY( JDATE )//' of county '//
+     &                  'value on '//MMDDYY( JDATE )//' of county '//
      &                  SRGFIPS( S )
                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                 END IF
@@ -1510,7 +1520,7 @@ C 	     maybe overly flattens the profile for Tt > 50
                             END IF
                             HRLSRC( S,T ) = CONST - ( SLOPE *  MINTEMP( S ) )
                         END IF
-                        
+
                         IF( MINTEMP( S ) > RWC_TEMP( S ) ) THEN
                             HRLSRC( S,T ) = 0.0   ! set it to zero when mintemp > 50F
                         END IF
@@ -1540,9 +1550,9 @@ C                              agricultural ammonia sources using Temp(C) and WS
 
                     ELSE           ! Bash Equation for Livestock NH3
 
-                        TEMPVAL = 161500./TASRC(S) * EXP( -1*10380./TASRC(S) ) ! Henry's equilibrium  
+                        TEMPVAL = 161500./TASRC(S) * EXP( -1*10380./TASRC(S) ) ! Henry's equilibrium
                         HRLSRC( S,T ) = TEMPVAL * VARSRC( S )   ! H(t) / Ra (aerodynamic resistance)
-                    
+
                     END IF
 
 
@@ -1557,8 +1567,8 @@ C                        temporal profiles.
 C.................  Calculate tmp daily total from hourly values
                 TMPDSRC( S ) = TMPDSRC( S ) + HRLSRC( S,T )
 
-C..................  add first hour=1 value to previous daily total as 
-C                    DST adjustment for a proper Temporal processing. 
+C..................  add first hour=1 value to previous daily total as
+C                    DST adjustment for a proper Temporal processing.
                  IF( HOURIDX == 1 .AND. DST == -10000 ) THEN
                      DAYSRC( S,NDAY ) = DAYSRC( S,NDAY ) + HRLSRC( S,T )
                      PT = DT( S ) - 23
@@ -1577,7 +1587,7 @@ C.....................  County-specific procesing days
 
 C.....................  Sum hourly to daily total in local time
                     DAYSRC( S,NDAY ) = TMPDSRC( S )
-                    
+
 C.....................  Store daily total to TOTSRC array for ncf output file
                     IF( DT( S ) == 0 ) THEN
                         DT( S ) = T - 23
@@ -1621,14 +1631,14 @@ C.............  Increment loop time
         END DO   ! End T-loop on hours of met files
 
 C.........  Reset annual total to 1.0 if it is zero
-        DO S = 1, NSRGFIPS 
+        DO S = 1, NSRGFIPS
             IF( ANNSRC( S ) == 0.0 ) THEN
                 ANNSRC( S ) = 1.0
                 DO I = 1, NSCC
-		     MESG = 'CRITICAL WARNING: All temporal'//
-     &               ' profiles are ZERO for county: '//SRGFIPS( S )// 
+                     MESG = 'CRITICAL WARNING: All temporal'//
+     &               ' profiles are ZERO for county: '//SRGFIPS( S )//
      &               ' and SCC: ' // SCCLIST( I )
-                    CALL M3MSG2( MESG ) 
+                    CALL M3MSG2( MESG )
                 END DO
                 MESG = ':: It will result in zeroing out inventory '//
      &                 'if you use these temporal profiles'
@@ -1654,9 +1664,22 @@ C......... Output monthly temporal profiles
 C.........  Compute month of year temporal profiles
         IF( MONAVER ) THEN
 
-            DO MM = 1, NMONTH
-                PROF_MON( :,MM ) = MONSRC( :,MM ) / ANNSRC( : )
-            END DO
+            IF( .NOT. ROFLAG ) THEN   ! if raw_output=N, output profile values
+                DO MM = 1, NMONTH
+                    PROF_MON( :,MM ) = MONSRC( :,MM ) / ANNSRC( : )
+                END DO
+            ELSE
+                DO MM = 1, NMONTH
+                    IF( .NOT. SOFLAG ) THEN
+                        PROF_MON( :,MM ) = MONSRC( :,MM ) / ( MON_DAYS( MM ) * 24 )  ! monthly avg
+                        IF( INDEX( TVARNAME, 'TEMP' ) > 0 ) THEN
+                            PROF_MON( :,MM ) = PROF_MON( :,MM ) - 273.157  ! K --> C
+                        END IF
+                    ELSE
+                        PROF_MON( :,MM ) = MONSRC( :,MM )   ! monthly total
+                    END IF
+                END DO
+            END IF
 
 C.............  Output monthly profiles by county
             DO S = 1, NSRGFIPS
@@ -1666,24 +1689,36 @@ C.............  Output monthly profiles by county
 
         END IF
 
-C.........  Deallocate local arrays        
+C.........  Deallocate local arrays
         DEALLOCATE( PROF_MON )
 
 C......... Output daily temporal profiles
 C.........  Compute day of month temporal profiles
         IF( DAYAVER ) THEN
-
             DO DD = 1, MAXVAL( PROCDAYS )
+
+                MM = MM + 1
 
                 JDATE = INT( SDATE/1000 ) * 1000 + DD
                 CALL DAYMON( JDATE+1, TMPMNTH, TDAY )
                 CALL DAYMON( JDATE  , MONTH  , DAY  )
 
                 DO S = 1, NSRGFIPS
-                    IF( MONSRC( S,MONTH ) /= 0.0 ) THEN
-                        PROF_DAY( S,DAY ) = DAYSRC( S,DD ) / MONSRC( S,MONTH )
+                    IF( .NOT. ROFLAG ) THEN   ! if raw_output=N, output profile values
+                        IF( MONSRC( S,MONTH ) /= 0.0 ) THEN
+                            PROF_DAY( S,DAY ) = DAYSRC( S,DD ) / MONSRC( S,MONTH )
+                        ELSE
+                            PROF_DAY( S,DAY ) = 0.0
+                        END IF
                     ELSE
-                        PROF_DAY( S,DAY ) = 0.0 
+                        IF( .NOT. SOFLAG ) THEN
+                            PROF_DAY( S,DAY ) = DAYSRC( S,DD ) / 24  ! Daily Average
+                            IF( INDEX( TVARNAME, 'TEMP' ) > 0 ) THEN
+                                PROF_DAY( S,DAY ) = PROF_DAY( S,DAY ) - 273.15   ! K --> C
+                            END IF
+                        ELSE
+                            PROF_DAY( S,DAY ) = DAYSRC( S,DD ) ! Daily total
+                        END IF
                     END IF
                 END DO
 
@@ -1696,7 +1731,7 @@ C.................  Output daily profiles by county
      &                      ( (PROF_DAY( S,NP ) ), NP = 1,31 )
                     END DO
 
-                    PROF_DAY = 0.0    ! re-initializing 
+                    PROF_DAY = 0.0    ! re-initializing
 
                 END IF
 
@@ -1704,7 +1739,7 @@ C.................  Output daily profiles by county
 
         END IF
 
-C.........  Deallocate local arrays        
+C.........  Deallocate local arrays
         DEALLOCATE( PROF_DAY )
 
 C.........  Output daily/monthly/annual total values for Temporal to compute
@@ -1780,7 +1815,7 @@ C.............  Open new file
 
             JDATE = SDATE
             JTIME = STIME
-            
+
             ALLOCATE( ISRGFIPS( NSRGFIPS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ISRGFIPS', PROGNAME )
             DO I = 1, NSRGFIPS
