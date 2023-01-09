@@ -1034,6 +1034,7 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
 
                 CASE( 'UNIT' )
                     RPT_%BYUNIT = .TRUE.
+                    RPT_%BYPLANT = .TRUE.
                     IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                         RPT_%SRCNAM = .TRUE.
                     END IF
@@ -1152,7 +1153,7 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                 CASE( 'SOURCE' )
                     RPT_%BYSRC   = .TRUE.
                     RPT_%BYPLANT = .FALSE.  ! would be a duplicate
-                    RPT_%BYUNIT = .FALSE. ! would be a duplicate
+                    RPT_%BYUNIT  = .FALSE.  ! would be a duplicate
                     RPT_%BYCNTY  = .TRUE.
                     IF( .NOT. AFLAG ) THEN
                         RPT_%BYSCC   = .TRUE.

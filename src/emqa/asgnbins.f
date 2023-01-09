@@ -61,7 +61,7 @@ C............  MODINFO contains the information about the source category
      &                      CNAICS, CSRCTYP, CORIS, CINTGR, CERPTYP,
      &                      XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE,
      &                      FUGHGT, FUGWID, FUGLEN, FUGANG,
-     &                      NGSPRO, GSPROID, CBLRID, CNEIUID
+     &                      NGSPRO, GSPROID, CBLRID
 
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
@@ -117,7 +117,7 @@ C...........   Local parameters:
         INTEGER, PARAMETER :: BUFLEN =  85 + SCCLEN3 + SICLEN3 + SPNLEN3
      &                                     + MACLEN3 + NAILEN3 + STPLEN3
      &                                     + ORSLEN3 + TMPLEN3 + TMPLEN3
-     &                                     + BLRLEN3 + NEILEN3      
+     &                                     + BLRLEN3 + CHRLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
      &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
@@ -219,13 +219,6 @@ C.........  Consistency checking:  inventory vs report
         IF ( RPT_%BYBOILER .AND. .NOT. ALLOCATED( CBLRID ) ) THEN
             MESG = 'ERROR: BY BOILER is requested, but ' //
      &             'BOILER is not present in ASCII inventory file'
-                CALL M3MSG2( MESG )
-                EFLAG = .TRUE.
-        END IF
-
-        IF ( RPT_%BYUNIT .AND. .NOT. ALLOCATED( CNEIUID ) ) THEN
-            MESG = 'ERROR: BY UNIT is requested, but ' //
-     &             'UNIT is not present in ASCII inventory file'
                 CALL M3MSG2( MESG )
                 EFLAG = .TRUE.
         END IF
@@ -546,8 +539,8 @@ C.................  code, so for now save space for the SRCID.
             II = IS
 
             IF ( RPT_%BYUNIT ) THEN
-                IJ = II + NEILEN3 - 1
-                SORTBUF( I )( II:IJ ) = CNEIUID( OUTSRC( I ) )
+                IJ = II + CHRLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CSOURC( OUTSRC( I ) ) (LOC_BEGP(3):LOC_ENDP(3))
                 II = IJ + 1
             END IF          !!  if report-by-oris
 
@@ -735,7 +728,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINSPCID  ) ) DEALLOCATE( BINSPCID )
         IF( ALLOCATED( BINSPCIDX ) ) DEALLOCATE( BINSPCIDX )
         IF( ALLOCATED( BINPLANT  ) ) DEALLOCATE( BINPLANT )
-        IF( ALLOCATED( BINUNITID  ) ) DEALLOCATE( BINUNITID )
+        IF( ALLOCATED( BINUNITID ) ) DEALLOCATE( BINUNITID )
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
         IF( ALLOCATED( BINY      ) ) DEALLOCATE( BINY )
         IF( ALLOCATED( BINELEV   ) ) DEALLOCATE( BINELEV )
@@ -977,7 +970,6 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( RPT_%BYMET )     BINMETID( B )  =    CMET( S )
             IF( RPT_%BYSPC )     BINSPCID( B )  = OUTSPRO( J )
             IF( RPT_%BYERPTYP )  BINERPTYP( B ) = CERPTYP( S )
-            IF( RPT_%BYUNIT )    BINUNITID( B ) = CNEIUID( S )
 
             IF( LREGION ) THEN
                 IF( RPT_%BYCNTY ) THEN
@@ -1126,6 +1118,9 @@ C.................  Store plant ID code
                 BINSMKID( B ) = S           !! Needed for plant names
             END IF
 
+C.................  Store unit ID code
+            IF( RPT_%BYUNIT ) THEN
+                BINUNITID( B ) = CSOURC( S )( LOC_BEGP(3) : LOC_ENDP(3) )
             END IF
 
 C.................  Store x-cell and y-cell
