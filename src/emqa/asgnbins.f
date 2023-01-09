@@ -163,15 +163,7 @@ C...........   Local variables
         CHARACTER(BUFLEN)  LBUF         ! previous sorting info buffer
         CHARACTER(SCCLEN3) SCC          ! tmp SCC
         CHARACTER(SICLEN3) SIC          ! tmp SIC
-        CHARACTER(ERPLEN3) ERPTYP       ! tmp ERPTYP
-        CHARACTER(INTLEN3) INTGR        ! tmp INTEGRATE
-        CHARACTER(MACLEN3) MACT         ! tmp MACT
-        CHARACTER(NAILEN3) NAICS        ! tmp NAICS
-        CHARACTER(ORSLEN3) ORIS         ! tmp ORIS
-        CHARACTER(BLRLEN3) BLRID        ! tmp boiler ID
-        CHARACTER(STPLEN3) SRCTYP       ! tmp SRCTYP
         CHARACTER(PLTLEN3) PLANT        ! tmp plant ID
-        CHARACTER(NEILEN3) UNITID       ! tmp Unit ID
         CHARACTER(PLTLEN3) PREVPLT      ! previous plant ID
         CHARACTER(FIPLEN3) CFIP         ! tmp country/state/county
         CHARACTER(FIPLEN3) CCNTRY       ! tmp country
@@ -554,7 +546,7 @@ C.................  code, so for now save space for the SRCID.
                 IJ = II + BLRLEN3 - 1
                 SORTBUF( I )( II:IJ ) = CBLRID( OUTSRC( I ) )
                 II = IJ + 1
-            END IF          !!  if report-by-oris
+            END IF          !!  if report-by-boiler
           
             IF( RPT_%BYRCL ) THEN
                 IJ = II + 7
@@ -955,7 +947,7 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( RPT_%BYMACT  )    BINMACT( B )  =   CMACT( S )
             IF( RPT_%BYNAICS )   BINNAICS( B )  =  CNAICS( S )
             IF( RPT_%BYORIS  )    BINORIS( B )  =   CORIS( S )
-            IF( RPT_%BYBOILER )   BINBOILER( B )  =   CBLRID( S )
+            IF( RPT_%BYBOILER ) BINBOILER( B )  =  CBLRID( S )
             IF( RPT_%BYSRCTYP ) BINSRCTYP( B )  = CSRCTYP( S )
             IF( RPT_%BYMON )     BINMONID( B )  =    CMON( S )
             IF( RPT_%BYWEK )     BINWEKID( B )  =    CWEK( S )
