@@ -135,8 +135,7 @@
             LOGICAL       :: BYSAT         ! true: by Saturday diurnal temporal code
             LOGICAL       :: BYSUN         ! true: by Sunday diurnal temporal code
             LOGICAL       :: BYMET         ! true: by Met-based hourly temporal code
-            LOGICAL       :: BYPLANT       ! true: by plant 
-            LOGICAL       :: BYFACILITY    ! true: by Facility
+            LOGICAL       :: BYPLANT       ! true: by plant/facility
             LOGICAL       :: BYUNIT        ! true: by Unit ID
             LOGICAL       :: BYSCC         ! true: by SCC 
             LOGICAL       :: BYSIC         ! true: by SIC 

@@ -85,7 +85,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
      &                      BINGEO1IDX, BINERPTYP, BINSPCIDX,
-     &                      BINFACILITY, BINBOILER, BINUNITID
+     &                      BINBOILER, BINUNITID
    
 
 C.........  This module contains the arrays for state and county summaries
@@ -1235,26 +1235,6 @@ C.........  Plant ID
             NWIDTH = 0
             DO I = 1, NOUTBINS
                 NWIDTH = MAX( NWIDTH, LEN_TRIM( BINPLANT( I ) ) )
-            END DO
-
-            J  = LEN_TRIM( CHRHDRS( 2 ) )
-            W1 = MAX( NWIDTH, J )
-
-            CALL ADD_TO_HEADER( W1, CHRHDRS( 2 ), LH, HDRBUF )
-            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
-
-            WRITE( CHARFMT, 94645 ) W1, RPT_%DELIM
-            CHARWIDTH = W1 + LV
-
-        END IF
-
-
-
-C.........  Facility ID
-        IF( RPT_%BYFACILITY ) THEN
-            NWIDTH = 0
-            DO I = 1, NOUTBINS
-                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINFACILITY( I ) ) )
             END DO
 
             J  = LEN_TRIM( CHRHDRS( 2 ) )

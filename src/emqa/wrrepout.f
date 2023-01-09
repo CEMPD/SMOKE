@@ -95,8 +95,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX, BINERPTYP, BINFACILITY,
-     &                      BINBOILER, BINUNITID
+     &                      BINGEO1IDX, BINERPTYP, BINBOILER, BINUNITID
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC,
@@ -685,17 +684,6 @@ C.............  Include plant ID
                     LX = 0
                 END IF
 
-C.............  Include Facility ID
-                IF( RPT_%BYFACILITY ) THEN
-                    L = CHARWIDTH
-                    L1 = L - LV - 1                        ! 1 for space
-                    STRING = STRING( 1:LE ) //
-     &                       BINFACILITY( I )( 1:L1 ) // DELIM
-                    MXLE = MXLE + L + LX
-                    LE = MIN( MXLE, STRLEN )
-                    LX = 0
-                END IF
-
 C.............  Include Unit ID
                 IF( RPT_%BYUNIT ) THEN
                     L = UNITIDWIDTH 
@@ -1160,10 +1148,3 @@ C...........   Internal buffering formats............ 94xxx
 94180   FORMAT( I2.2, '/', I2.2, '/', I4.4 )
 
         END SUBROUTINE WRREPOUT
-
-
-
-
-
-
-

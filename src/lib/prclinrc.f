@@ -474,7 +474,6 @@ C.........................  Reset report settings to defaults
                         RPT_%BYSUN     = .FALSE.
                         RPT_%BYMET     = .FALSE.
                         RPT_%BYPLANT   = .FALSE.
-                        RPT_%BYFACILITY = .FALSE.
                         RPT_%BYUNIT    = .FALSE.
                         RPT_%BYRCL     = .FALSE.
                         RPT_%BYSIC     = .FALSE.
@@ -836,7 +835,6 @@ C.............  AERMOD support report
                     RPT_%SRCMAP    = .TRUE.      ! output source mapping output file
 
                     RPT_%BYPLANT   = .TRUE.      ! By Plant ID
-                    RPT_%BYFACILITY = .TRUE.     ! By Plant Facility
                     RPT_%SRCNAM    = .TRUE.      ! By Plant Name
                     RPT_%BYUNIT    = .TRUE.      ! By Unit ID
 
@@ -1028,14 +1026,8 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                         END IF
                     END IF
 
-                CASE( 'PLANT' )
+                CASE( 'PLANT', 'FACILITY' )
                     RPT_%BYPLANT = .TRUE.
-                    IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
-                        RPT_%SRCNAM = .TRUE.
-                    END IF
-
-                CASE( 'FACILITY' )
-                    RPT_%BYFACILITY = .TRUE.
                     IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                         RPT_%SRCNAM = .TRUE.
                     END IF
@@ -1159,7 +1151,6 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                         
                 CASE( 'SOURCE' )
                     RPT_%BYSRC   = .TRUE.
-                    RPT_%BYFACILITY = .FALSE. ! would be a duplicate
                     RPT_%BYPLANT = .FALSE.  ! would be a duplicate
                     RPT_%BYUNIT = .FALSE. ! would be a duplicate
                     RPT_%BYCNTY  = .TRUE.
@@ -1243,7 +1234,6 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                 CASE( 'STACK' )
                     RPT_%BYSTACK = .TRUE.
                     RPT_%BYPLANT = .TRUE.
-                    RPT_%BYFACILITY = .TRUE.
                     IF( SEGMENT( 3 ) .EQ. 'STACKPARM' .OR.
      &                  SEGMENT( 4 ) .EQ. 'STACKPARM'      )
      &                  RPT_%STKPARM = .TRUE.
@@ -1724,4 +1714,3 @@ C...........   Internal buffering formats............ 94xxx
             END FUNCTION NOT_ASCIIELEV
 
         END SUBROUTINE PRCLINRC
-

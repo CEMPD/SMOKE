@@ -119,7 +119,6 @@ C.........  Allocate and initialize report arrays
         ALLRPT%BYHOUR     = .FALSE.
         ALLRPT%BYLAYER    = .FALSE.
         ALLRPT%BYPLANT    = .FALSE.
-        ALLRPT%BYFACILITY = .FALSE.
         ALLRPT%BYRCL      = .FALSE.
         ALLRPT%BYSCC      = .FALSE.
         ALLRPT%BYSIC      = .FALSE.
@@ -380,4 +379,3 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I10, :, 1X ) )
 
         END SUBROUTINE RDRPRTS
-
