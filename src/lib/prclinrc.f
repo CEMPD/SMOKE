@@ -836,7 +836,6 @@ C.............  AERMOD support report
 
                     RPT_%BYPLANT   = .TRUE.      ! By Plant ID
                     RPT_%SRCNAM    = .TRUE.      ! By Plant Name
-                    RPT_%BYUNIT    = .TRUE.      ! By Unit ID
 
                     TSFLAG         = .TRUE.      ! By TSUP file
                     RPT_%BYMON     = .TRUE.      ! By monthly profile ID
