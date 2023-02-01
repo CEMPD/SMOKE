@@ -586,7 +586,6 @@ C               this data
      &                           //CRLF()//BLANK10//BUFFER(1:L2)
                             CALL M3MESG( MESG )
                         END IF
-      if((s==3).and.NAMBUF=='NOX') print*,S,jdate,jtime,trim(NAMBUF),EMIST(S,V),EMACH(I)
                         EMIST( S,V ) = EMACH( I )
                     END IF
                 END DO
