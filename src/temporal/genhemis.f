@@ -52,7 +52,7 @@ C........   MODTMPRL contains the temporal profile tables
 C.........  MODDAYHR contains data for day- and hour-specific data
 C.........  MODINFO contains the information about the source category
 
-        USE MODSOURC, ONLY: TZONES, TPFLAG
+        USE MODSOURC, ONLY: TZONES, TPFLAG, CSOURC
 
         USE MODXREF,  ONLY: MDEX, WDEX, DDEX
 
@@ -63,7 +63,7 @@ C.........  MODINFO contains the information about the source category
      &                      LDSPOA, LHSPOA, LHPROF,
      &                      EMAC, EMACV, EMIST, EMFAC, TMAT
 
-        USE MODINFO, ONLY: NSRC, CATEGORY, NIPPA, EACNV
+        USE MODINFO, ONLY: NSRC, CATEGORY, NIPPA, EACNV, NCHARS
 
         IMPLICIT NONE
 
@@ -78,6 +78,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER(2) , EXTERNAL :: CRLF
         LOGICAL      , EXTERNAL :: ENVYN
+        INTEGER      , EXTERNAL :: ENVINT
         INTEGER      , EXTERNAL :: FIND1
         CHARACTER(10), EXTERNAL :: HHMMSS
         INTEGER      , EXTERNAL :: INDEX1
@@ -112,10 +113,12 @@ C...........   TMAT update variables
 
 C...........   Other local variables
 
-        INTEGER          C, H, I, II, J, K, K1, K2, KK, L, M, S, V !  indices and counters
+        INTEGER          C, H, I, II, IS, J, K, K1, K2, KK, L, L2, M, S, V !  indices and counters
         INTEGER          IHR
-        INTEGER, SAVE :: TZMIN   ! minimum time zone in inventory
-        INTEGER, SAVE :: TZMAX   ! maximum time zone in inventory
+        INTEGER, SAVE :: TZMIN      ! minimum time zone in inventory
+        INTEGER, SAVE :: TZMAX      ! maximum time zone in inventory
+        INTEGER, SAVE :: WARNCNT=0  ! warning count
+        INTEGER, SAVE :: MXWARN     ! max no. warnings
 
         INTEGER          MDAY       ! tmp emissions day of month
         INTEGER          WDAY       ! tmp emissions day of week (1=monday)
@@ -152,7 +155,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: TMATCALC           ! true: need to calculate new TMAT
         LOGICAL, SAVE :: UFLAG  = .FALSE.   ! true: use src-spec hr profiles
         LOGICAL, SAVE :: WKEMSG = .FALSE.   ! true: wkend-profile msg written
-        LOGICAL, SAVE :: ZONE4WM        !  True: src zone for week/mon temp prof
+        LOGICAL, SAVE :: ZONE4WM            ! true: src zone for week/mon temp prof
 
         CHARACTER(300)     BUFFER    ! source info buffer
         CHARACTER(300)     MESG      ! message buffer
@@ -187,6 +190,12 @@ C.............  Check source category name
             END IF  ! End category selection
 
 C.............  Retrieve environment variables
+            MXWARN = ENVINT( WARNSET , 'Maximum warning messages', 100, IOS )
+            IF ( IOS .GT. 0 ) THEN
+                MESG = 'ERROR:  bad env vble "SMK_MAXWARNING"'
+                CALL M3EXIT( PROGNAME, 0,0, MESG, 2 )
+            END IF
+
             MESG = 'Assign weekly/monthly profiles using time zones'
             ZONE4WM = ENVYN ( 'ZONE4WM', MESG, .TRUE., IOS )
 
@@ -300,7 +309,7 @@ C           zones may be used for different sources and this approach
 C               is much more workable.
         IF( DFLAG ) THEN
 
-            RDFLAG = .TRUE.
+            RDFLAG = .TRUE.  
 C.................  Read source index for this day
             IF ( .NOT. READ3( DNAME, 'INDXD', ALLAYS3,
      &                        JDATE, JTIME, INDXD      ) ) THEN
@@ -444,6 +453,22 @@ C.................  Loop through day-specific sources
                     IF( S .EQ. 0 ) CYCLE                ! If no source, skip
                     IF( EMACD( I ) .LE. AMISS3 ) CYCLE  ! No day-specific emis
 
+C.....................  write out warning message(s) of overwriting with daily emissions
+                    IF( WARNCNT <= MXWARN ) THEN
+                        WARNCNT = WARNCNT + 1
+                        CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                        WRITE( MESG,94020 ) 'WARNING: Overwriting annual-based '//
+     &                      TRIM(NAMBUF)//' daily emission "',EMIST(S,V),
+     &                      '" with raw hourly emission "', EMACD(I), '" for source:'
+     &                      //CRLF()//BLANK10//BUFFER(1:L2)
+
+                        WRITE( MESG,94020 ) 'WARNING: Gapfill missing '//
+     &                      'daily emission with annual-based daily '//
+     &                      TRIM(NAMBUF)//' "', EMIST(S,V), '" for source:'
+     &                       //CRLF()//BLANK10//BUFFER(1:L2)
+                        CALL M3MESG( MESG )
+                    END IF
+
 C.....................  Override annual adjusted emissions with day-specific
 C                       emissions and hourly profile adjustments
 
@@ -551,10 +576,20 @@ C               this data
                 DO I = 1, NHRSRC
                     S = INDXH( I )
                     IF( S .EQ. 0 ) CYCLE
-                    IF( EMACH( I ) .GT. AMISS3 )
-     &                  EMIST( S,V ) = EMACH( I )
+                    IF( EMACH( I ) .GT. AMISS3 ) THEN
+                        IF( WARNCNT <= MXWARN ) THEN
+                            WARNCNT = WARNCNT + 1
+                            CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                            WRITE( MESG,94020 ) 'WARNING: Overwriting annual-based '//
+     &                          TRIM(NAMBUF)//' hourly emission "',EMIST(S,V), 
+     &                          '" with raw hourly emission "', EMACH(I), '" for source:'
+     &                           //CRLF()//BLANK10//BUFFER(1:L2)
+                            CALL M3MESG( MESG )
+                        END IF
+      if((s==3).and.NAMBUF=='NOX') print*,S,jdate,jtime,trim(NAMBUF),EMIST(S,V),EMACH(I)
+                        EMIST( S,V ) = EMACH( I )
+                    END IF
                 END DO
-
             END IF
 
 C.............  If input data is in an activity (and output an emission type)...
@@ -585,7 +620,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I9, :, 1X ) )
-
+94020   FORMAT( 10( A, :, E10.2, :, 1X ) )
 94030   FORMAT( 8X, 'at time ', A8 )
 
         END SUBROUTINE GENHEMIS
