@@ -451,22 +451,18 @@ C.................  Loop through day-specific sources
 
                     S = INDXD( I )                      ! Get source index
                     IF( S .EQ. 0 ) CYCLE                ! If no source, skip
-                    IF( EMACD( I ) .LE. AMISS3 ) CYCLE  ! No day-specific emis
+                    IF( EMACD( I ) .LE. AMISS3 ) THEN   ! No day-specific emis
 
 C.....................  write out warning message(s) of overwriting with daily emissions
-                    IF( WARNCNT <= MXWARN ) THEN
-                        WARNCNT = WARNCNT + 1
-                        CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-                        WRITE( MESG,94020 ) 'WARNING: Overwriting annual-based '//
-     &                      TRIM(NAMBUF)//' daily emission "',EMIST(S,V),
-     &                      '" with raw hourly emission "', EMACD(I), '" for source:'
-     &                      //CRLF()//BLANK10//BUFFER(1:L2)
-
-                        WRITE( MESG,94020 ) 'WARNING: Gapfill missing '//
-     &                      'daily emission with annual-based daily '//
-     &                      TRIM(NAMBUF)//' "', EMIST(S,V), '" for source:'
-     &                       //CRLF()//BLANK10//BUFFER(1:L2)
-                        CALL M3MESG( MESG )
+                        IF( WARNCNT <= MXWARN ) THEN
+                            WARNCNT = WARNCNT + 1
+                            CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                            WRITE( MESG,94020 ) 'WARNING: Replacing missing daily '//
+     &                          TRIM(NAMBUF)//' emission with annual-based daily '//
+     &                          'emission "', EMIST(S,V), '" for source:'
+                            CALL M3MESG( MESG )
+                        END IF
+                        CYCLE
                     END IF
 
 C.....................  Override annual adjusted emissions with day-specific
@@ -576,18 +572,19 @@ C               this data
                 DO I = 1, NHRSRC
                     S = INDXH( I )
                     IF( S .EQ. 0 ) CYCLE
-                    IF( EMACH( I ) .GT. AMISS3 ) THEN
+                    IF( EMACH( I ) .LE. AMISS3 ) THEN
                         IF( WARNCNT <= MXWARN ) THEN
                             WARNCNT = WARNCNT + 1
                             CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-                            WRITE( MESG,94020 ) 'WARNING: Overwriting annual-based '//
-     &                          TRIM(NAMBUF)//' hourly emission "',EMIST(S,V), 
-     &                          '" with raw hourly emission "', EMACH(I), '" for source:'
-     &                           //CRLF()//BLANK10//BUFFER(1:L2)
+                            WRITE( MESG,94020 ) 'WARNING: Replacing missing hourly '//
+     &                          TRIM(NAMBUF)//' emission with annual-based hourly '//
+     &                          'emission "', EMIST(S,V), '" for source:'
+     &                          //CRLF()//BLANK10//BUFFER(1:L2)
                             CALL M3MESG( MESG )
                         END IF
-                        EMIST( S,V ) = EMACH( I )
+                        CYCLE
                     END IF
+                    EMIST( S,V ) = EMACH( I )
                 END DO
             END IF
 
