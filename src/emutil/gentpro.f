@@ -66,6 +66,9 @@ C.........  This module is used for MOBILE6 setup information
 C.........  This module contains the inventory arrays
         USE MODSOURC, ONLY: CSOURC
 
+C........   MODTMPRL contains the temporal profile tables
+        USE MODTMPRL, ONLY: NHOLIDAY, HOLJDATE, HOLALTDY
+
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM, NGRID, NCOLS, NROWS, COORD, GDTYP,
      &                     P_ALP, P_BET, P_GAM, XCENT, YCENT, NGRID
@@ -146,7 +149,9 @@ C...........   real arrays
         REAL   , ALLOCATABLE :: TMPDSRC( : )       !  tmp daily total
         REAL   , ALLOCATABLE :: TMPMSRC( : )       !  tmp monthly total
         REAL   , ALLOCATABLE :: MINTEMP ( : )      !  min temp values by source (FIPS)
-        REAL   , ALLOCATABLE :: RWC_TEMP( : )      !  county-min temp values for RWC
+        REAL   , ALLOCATABLE :: MAXTEMP ( : )      !  max temp values by source (FIPS)
+        REAL   , ALLOCATABLE :: RWC_TEMP1( : )     !  county-low temp threshold for RWC
+        REAL   , ALLOCATABLE :: RWC_TEMP2( : )     !  county-high temp threshold for RWC
         REAL   , ALLOCATABLE :: PROF_MON(:,:)      ! Array of monthly profile fractional data values
         REAL   , ALLOCATABLE :: PROF_DAY(:,:)      ! Array of daily profile fractional data values
 
@@ -185,6 +190,7 @@ C...........   File units and logical names:
         INTEGER      DDEV  ! unit number for daily group file
         INTEGER      EDEV  ! unit number for episode group file
         INTEGER      GDEV  ! tmp unit number for individual surrogate file
+        INTEGER      HDEV  ! tmp unit number for holidays file
         INTEGER      IDEV  ! tmp unit number if ENAME is map file
         INTEGER      LDEV  ! unit number for log file
         INTEGER      MDEV  ! unit number for monthly group file
@@ -215,7 +221,7 @@ C...........   Other local variables:
         INTEGER    EPI_EDATE   ! episode ending date based on ERUNLEN
         INTEGER    EPI_ETIME   ! episode ending time based on ERUNLEN
 
-        INTEGER    DAY         ! tmp day of week number
+        INTEGER    WDAY,HDAY   ! tmp day of month, hoilday
         INTEGER    DST         ! tmp daylight saving time
         INTEGER    EDATE       ! ending input date counter (YYYYDDD) in GMT
         INTEGER    ETIME       ! ending input time counter (HHMMSS)  in GMT
@@ -233,7 +239,7 @@ C...........   Other local variables:
         INTEGER    EMONTH      ! month of end date
         INTEGER    MONTH       ! tmp month
         INTEGER    TYEAR       ! tmp year
-        INTEGER    TDAY        ! tmp day of month
+        INTEGER    TDAY, DAY   ! tmp day of month
         INTEGER    METNGRID    ! no. grid cells in met data
         INTEGER    NLINES      ! no. lines in met list file
         INTEGER    NDAY        ! no. processing days
@@ -268,10 +274,12 @@ C...........   Other local variables:
 
         INTEGER, SAVE :: MXWARN        ! maximum no of warning messgaes
 
-        REAL       DTEMP               ! RWC default temp (=50.0)
+        REAL       DDAY,DDATE          ! day of month
+        REAL       TEMP1,TEMP2, SUM    ! RWC default temp
         REAL       TEMPVAL             ! tmp variable value
         REAL       SLOPE               ! RWC linear euqation slope
         REAL       CONST               ! RWC linear equation constant
+        REAL    :: WEEKPROF( 7 ) = 1.0 ! RWC recreational weekly profile
 
         LOGICAL :: BASHFLAG = .FALSE.  !  true: processing NH3 option using Bash Equation
         LOGICAL :: EFLAG    = .FALSE.  !  true: error found
@@ -286,6 +294,7 @@ C...........   Other local variables:
         LOGICAL :: SOFLAG   = .FALSE.  !  true: output summed raw values
         LOGICAL :: OFLAG    = .FALSE.  !  true: ungridding is 0 for some srcs
         LOGICAL :: ZFLAG    = .FALSE.  !  true: use AZ's new equations
+        LOGICAL :: RFLAG    = .FALSE.  !  true: designed for recreational RWC SCCs 
         LOGICAL :: FILEOPEN = .FALSE.  !  true: met file is open
         LOGICAL :: FND_DATA = .FALSE.  !  true: found met data for this hour
         LOGICAL :: ALT_DATA = .FALSE.  !  true: using alternate data for this hour
@@ -494,14 +503,48 @@ C.........  Determine optional linear equation for RWC profile calculation
             MESG = 'Enter B for RWC equation: y = Ax + B'
             CONST = ENVREAL( 'CONSTANT', MESG ,42.12, IOS )
 
-            MESG = 'Enter default minimum temp for RWC method'
-            DTEMP= ENVREAL( 'DEFAULT_TEMP_RWC', MESG ,50.0, IOS )
-
-            MESG = 'Use county-specific min temperature for RWC'
+            MESG = 'Use county-specific temperature thresholds for RWC'
             CFLAG = ENVYN( 'RWC_COUNTY_TEMP_YN', MESG, .FALSE., IOS )
 
             MESG = 'Use the alternative RWC equation'
             ZFLAG = ENVYN( 'RWC_ALT_EQ_YN', MESG, .TRUE., IOS )
+
+            MESG = 'Generate TPROs for recreational RWC SCCs'
+            RFLAG = ENVYN( 'RECREATIONAL_RWC_TPRO_YN', MESG, .FALSE., IOS )
+
+            IF( RFLAG ) THEN
+                MESG = 'Enter low temperature threshold for recreational RWC'
+                TEMP1 = ENVREAL( 'LOW_RWC_TEMP_THRESHOLD', MESG ,50.0, IOS )
+
+                MESG = 'Enter high temperature threshold for recreational RWC'
+                TEMP2 = ENVREAL( 'HIGH_RWC_TEMP_THRESHOLD', MESG ,80.0, IOS )
+
+                MESG = 'List weekly temporal profile from Monday to Sunday'
+                CALL ENVSTR( 'MONTOSUN_WEEKPROF', MESG, '', LINE, IOS )
+
+                IF( LEN_TRIM( LINE ) < 1 ) THEN
+                    MESG = 'ERROR: MUST provide monday to sunday weekly temporal '
+     &                 //  'profile for recreational RWC temporal profiles'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+                CALL PARSLINE( LINE, 7, SEGMENT )
+                SUM =0.0
+                DO I = 1, 7
+                    WEEKPROF( I ) = STR2REAL( SEGMENT( I ) )
+                   SUM = SUM + WEEKPROF( I )
+                END DO
+                WEEKPROF = WEEKPROF / SUM   ! renormalize weekly profile
+
+C.................  Open holidays to treat holidays as Sunday
+                HDEV = PROMPTFFILE( 'Enter logical name for holidays file',
+     &                              .TRUE., .TRUE., 'HOLIDAYS', PROGNAME )
+
+            ELSE
+                MESG = 'Enter temperature threshold for RWC method'
+                TEMP1 = ENVREAL( 'DEFAULT_TEMP_RWC', MESG ,50.0, IOS )
+                TEMP2 = TEMP1
+            END IF
 
         END IF
 
@@ -699,15 +742,18 @@ C.........  Define total number of sources (FIPS * SCC)
         NSRC = NSRGFIPS * NSCC
 
 C.........  Allocate arrays for county-specific temperature settings for RWC
-        ALLOCATE( RWC_TEMP( NSRGFIPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'RWC_TEMP', PROGNAME )
-        RWC_TEMP = DTEMP
+        ALLOCATE( RWC_TEMP1( NSRGFIPS ), STAT=IOS )
+        ALLOCATE( RWC_TEMP2( NSRGFIPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RWC_TEMP1', PROGNAME )
+        CALL CHECKMEM( IOS, 'RWC_TEMP2', PROGNAME )
+        RWC_TEMP1 = TEMP1   ! default low temp threshold
+        RWC_TEMP2 = TEMP2   ! default high temp threshold
 
 C.........  Open county-specific Temperature setting for RWC
         IF( CFLAG ) THEN
 
-            MESG='Enter logical name for County-specific Temperature '//
-     &           'Input file for RWC method'
+            MESG='Enter logical name for county-specific temperature '//
+     &           'threshold input file for RWC emission sources'
             RDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,'RWC_COUNTY_TEMP',
      &             PROGNAME )
 
@@ -732,10 +778,21 @@ C.................  Skip blank and comment lines
                 IF( BLKORCMT( LINE ) ) CYCLE
 
 C.................  Sparse line
-                CALL PARSLINE( LINE, 2, SEGMENT )
+                CALL PARSLINE( LINE, 3, SEGMENT )
+
+C.................  Error if col 3 temp threshold val is missing
+                IF( RFLAG ) THEN
+                    IF( LEN_TRIM( SEGMENT( 3 ) ) < 1 ) THEN
+                        WRITE( MESG, 94010) 'ERROR: Missing 2nd temperarure'
+     &                     //' threshold for recreational RWC SCCs at line', IREC 
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                END IF
 
                 IFIP  = STR2INT ( SEGMENT( 1 ) )     ! FIP ID
-                DTEMP = STR2REAL( SEGMENT( 2 ) )     ! min temp set for RWC eq
+                TEMP1 = STR2REAL( SEGMENT( 2 ) )     ! Low temp set for RWC eq
+                TEMP2 = STR2REAL( SEGMENT( 3 ) )     ! High temp set for RWC eq
+                NCNTY = NCNTY+ 1 
 
                 DO S = 1, NSRGFIPS
 
@@ -743,17 +800,17 @@ C.................  Sparse line
                     ISRGFIP = STR2INT( SRGFIPS( S ) )
 
                     IF( IFIP == ISTA .OR. IFIP == ISRGFIP ) THEN
-                        RWC_TEMP( S ) = DTEMP
+                        RWC_TEMP1( S ) = TEMP1    ! store county-low temp threshold
+                        RWC_TEMP2( S ) = TEMP2    ! store county-high temp threshold
                     END IF
-
                 END DO
 
             END DO    ! end of loop
 
-             IF( N == 0 ) THEN
-                 MESG = 'ERROR: No entries in COUNTY_TEMP_RWC file'
-                 CALL M3MSG2( MESG )
-             END IF
+            IF( NCNTY == 0 ) THEN
+                MESG = 'ERROR: No entries in COUNTY_TEMP_RWC file'
+                CALL M3MSG2( MESG )
+            END IF
 
             CLOSE( RDEV )
 
@@ -772,20 +829,20 @@ C.........  Get episode starting date and time and ending date
         MESG = 'Episode end time (HHMMSS)'
         EPI_ETIME = ENVINT( 'ENDTIME', MESG, 230000, IOS )
 
+        IF( HDEV > 0 ) CALL RDHDAYS( HDEV, EPI_SDATE, EPI_EDATE )
+
 C.........  Check start date is Jan 1st for a proper processing.
         TYEAR = INT( EPI_SDATE / 1000 )
         TDATE = TYEAR * 1000 + 1
         IF( EPI_SDATE /= TDATE .AND. .NOT. NH3FLAG ) THEN
-            TDATE = TYEAR * 1000 + 1
             WRITE( MESG,94010 ) 'ERROR: MUST set starting date (STDATE) to ',
      &           TDATE
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        TDAY = 1 / YR2DAY( TYEAR )
+        TDAY = INT( 1 /  YR2DAY( TYEAR ) + 0.1 )
         TDATE = TYEAR * 1000 + TDAY
         IF( EPI_EDATE /= TDATE .AND. .NOT. NH3FLAG ) THEN
-            TDAY = TYEAR * 1000 + TDAY
             WRITE( MESG,94010 ) 'ERROR: MUST set ending date (ENDATE) to ',
      &             TDATE
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -1269,9 +1326,12 @@ C.........  Source met variable arrays
         CALL CHECKMEM( IOS, 'VARSRC', PROGNAME )
         ALLOCATE( MINTEMP( NSRGFIPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MINTEMP', PROGNAME )
+        ALLOCATE( MAXTEMP( NSRGFIPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MAXTEMP', PROGNAME )
         TASRC = 0.0
         VARSRC = 0.0
-        MINTEMP = -1 * BADVAL3
+        MAXTEMP = BADVAL3
+        MINTEMP = -1.0 * BADVAL3
 
 C.........  Allocate memory for storing hourly/annual meteorology profiles
         ALLOCATE( HRLSRC( NSRGFIPS,NSTEPS ), STAT=IOS )
@@ -1444,7 +1504,7 @@ C                   surrogate. Results are stored in VARSRC.
 
 C.............  If last day of month, process monthly averages
             CALL DAYMON( JDATE, TMPMNTH, TDAY )   ! next day of processing date
-            CALL DAYMON( JDATE-1, MONTH, DAY )       ! processing month and date
+            CALL DAYMON( JDATE-1, MONTH, DAY )    ! processing month and date
 
 C.............  Processing profile methods (RWC, AGNH3 or MET)
 C.............  Loop over source (S) to estimate hourly values and temporal sums
@@ -1480,60 +1540,61 @@ C.................  Choose profile method calcuation
 
 C.................  When new day...
                     IF( HOURIDX == 24 ) THEN
-C.....................  RWC: Compute percentage of emissions (PE) from
-C                       the UNC RWC regression equation (Adelman, 2010)
-C                       to calculate temporal profiles for residential
-C                       wood combustion sources:
-C                          PE = (42.12 - 0.79*T) / Sum(42.12 - 0.79*T) (default equation)
-C                       where T is the minimum ambient temperature
-C                       in a county (not allowed to exceed 50 F).
-C                       Numerator in Equation (2) of the design docment.
-C                       Note: Even though this is labeled as an hourly
-C                             array, it is only calculated once per day.
-C                             Values for the other hours are 0.
+                        TDATE = JDATE
+                        TTIME = JTIME
+                        CALL NEXTIME( TDATE, TTIME, -240000 )
+                        WDAY = WKDAY( TDATE )
+                        IF( HDEV > 0 ) HDAY = FIND1( TDATE, NHOLIDAY, HOLJDATE )
+                        IF( HDAY > 0 ) WDAY = 7    ! treating holiday as Sunday
 
-C 1. original equation with cap T:
-C    if Td <= 50: use equation 42.12 - 0.79*Td
-C    if Td > Tt: 0
-C    if 50 < Td < Tt: use equation 42.12 - 0.79*50
-
-C    - adv:  preserves shape of profile below 50 degrees
-C 	   still based on original regression equation
-
-C    - disadv:  puts only a very small % of profile in Td > 50
-
-C 2. new equation
-C    if Td >= Tt: 0
-C    if Td < Tt: use equation 0.79*(Tt -Td)
-
-C    - adv:  works for any Tt w/o an additional if clause
-C 	   places significant % of profile in Td > 50
-
-C    - disadv: departs from the origial regression equation
-C 	     maybe overly flattens the profile for Tt > 50
+C.....................  RWC: Compute percentage of emissions (PE)
+C                       1. original equation with cap T:
+C                          if Td <= 50: use equation 42.12 - 0.79*Td
+C                          if Td > Tt: 0
+C                          if 50 < Td < Tt: use equation 42.12 - 0.79*50
+C                          - adv: preserves shape of profile below 50 degrees
+C                                 still based on original regression equation
+C                          - disadv:  puts only a very small % of profile in Td > 50
+C
+C                       2. new equation
+C                          if Td >= Tt: 0
+C                          if Td < Tt: use equation 0.79*(Tt -Td)
+C                          - adv:  works for any Tt w/o an additional if clause
+C                                  places significant % of profile in Td > 50
+C                          - disadv: departs from the origial regression equation
+C 	                              maybe overly flattens the profile for Tt > 50
 
                         IF( ZFLAG ) THEN
-                            HRLSRC( S,T ) = SLOPE * ( RWC_TEMP(S) - MINTEMP(S) )
+                            HRLSRC( S,T ) = SLOPE * ( RWC_TEMP1(S) - MINTEMP(S) )
                         ELSE
-                            IF( MINTEMP(S) > 50.0 .AND. MINTEMP(S) <= RWC_TEMP(S) ) THEN
-                                MINTEMP( S ) = 50.0
+                            IF( MINTEMP(S) > TEMP1 .AND. MINTEMP(S) <= RWC_TEMP1(S) ) THEN
+                                MINTEMP( S ) = TEMP1
                             END IF
                             HRLSRC( S,T ) = CONST - ( SLOPE *  MINTEMP( S ) )
                         END IF
 
-                        IF( MINTEMP( S ) > RWC_TEMP( S ) ) THEN
-                            HRLSRC( S,T ) = 0.0   ! set it to zero when mintemp > 50F
+                        IF( RFLAG ) THEN
+                            HRLSRC( S,T ) = WEEKPROF( WDAY )
+                            IF( MINTEMP( S ) >= RWC_TEMP2( S ) .OR.
+     &                          MAXTEMP( S ) <= RWC_TEMP1( S )     ) THEN ! daily min/max temperature 
+                                HRLSRC( S,T ) = 0.0   ! set it to zero when mintemp > 80F or maxtemp < 50F
+                            END IF
+                        ELSE
+                            IF( MINTEMP( S ) > RWC_TEMP1( S ) ) THEN
+                                HRLSRC( S,T ) = 0.0   ! set it to zero when mintemp > 50F
+                            END IF
                         END IF
 
-                        MINTEMP( S ) = -1 * BADVAL3   ! Reset MIN(temp) back to flag value
+                        MINTEMP( S ) = -1.0 * BADVAL3   ! Reset MIN(temp) back to flag value
+                        MAXTEMP( S ) = BADVAL3        ! Reset MAX(temp) back to flag value
 
                     ELSE   ! Another hour, but not a new day yet.
 C.....................  Continue finding the lowest hourly temperature
 C                       in the day for the RWC regression equation.
-
                         HRLSRC( S,T ) = 0.
                         IF( TEMPVAL == 0. ) CYCLE
                         MINTEMP( S ) = MIN( MINTEMP( S ), TEMPVAL )
+                        MAXTEMP( S ) = MAX( MAXTEMP( S ), TEMPVAL )
 
                     END IF   ! IF  (new day)
 
@@ -1893,7 +1954,7 @@ C...........   Internal buffering fosrmats............ 94xxx
 
 94040   FORMAT( A, I4 )
 
-94070   FORMAT( A, F5.1, A )
+94070   FORMAT( A, F10.0, A )
 
 
         END PROGRAM GENTPRO
