@@ -299,9 +299,10 @@ C...........   Other local variables:
         LOGICAL :: FND_DATA = .FALSE.  !  true: found met data for this hour
         LOGICAL :: ALT_DATA = .FALSE.  !  true: using alternate data for this hour
 
+        CHARACTER(3)       PREFIX      !  Prefix for TPRO IDs
         CHARACTER(SCCLEN3) CSCC        !  SCC code
         CHARACTER(FIPLEN3) CFIPS       !  FIPS code
-        CHARACTER(FIPLEN3) TPROID      !  tpro id
+        CHARACTER(TMPLEN3) TPROID      !  tpro id
         CHARACTER(1000)    CSCCLIST    !  tmp SCC list line buffer
         CHARACTER(16)      CPOL,TPRO   !  Pollutant code, Profile types
         CHARACTER(SCCLEN3) TSCC        !  tmp SCC code
@@ -399,6 +400,10 @@ C.........  Get the type of temporal profiles to produce from the environment
 
         MESG = 'ERROR: MUST define TPRO_OUTPUT'
         IF( TPRO_TYPE == ' ' ) CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        MESG = 'Define the prefix for temporal profile IDs [up to 3 chars]'
+        CALL ENVSTR( 'PREFIX_TPRO', MESG, '', PREFIX, IOS )
+        CALL UPCASE( PREFIX )
 
 C.........  Obtain profile generation method: 'RWC', 'RC_NH3', 'BASH_NH3', or 'MET'
         MESG ='Specifies profile method for meteorology processing'
@@ -783,7 +788,7 @@ C.................  Sparse line
 C.................  Error if col 3 temp threshold val is missing
                 IF( RFLAG ) THEN
                     IF( LEN_TRIM( SEGMENT( 3 ) ) < 1 ) THEN
-                        WRITE( MESG, 94010) 'ERROR: Missing 2nd temperarure'
+                        WRITE( MESG, 94010) 'ERROR: Missing higher temperarure'
      &                     //' threshold for recreational RWC SCCs at line', IREC 
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
@@ -1042,7 +1047,7 @@ C.................  Concatenate all segments into a string
 
                 END IF
 
-                TPROID = CFIPS
+                TPROID = TRIM( PREFIX ) // TRIM( CFIPS(7:12) )
 
 C.................  Append new MONTHLY temporal profile ID to new/existing x-ref entry
                 IF( MONAVER ) THEN
@@ -1744,7 +1749,8 @@ C.........  Compute month of year temporal profiles
 
 C.............  Output monthly profiles by county
             DO S = 1, NSRGFIPS
-                WRITE( MODEV, "(A,12(',',E10.3))" ) SRGFIPS( S ),
+                TPROID = TRIM( PREFIX ) // TRIM( SRGFIPS(S)(7:12) )
+                WRITE( MODEV, "(A,12(',',E10.3))" ) TPROID,
      &              ((PROF_MON( S,NP )), NP = 1,12 )
             END DO
 
@@ -1787,8 +1793,9 @@ C.................  Output daily profiles by county
                 IF( MONTH /= TMPMNTH ) THEN
 
                     DO S = 1, NSRGFIPS
+                        TPROID = TRIM( PREFIX ) // TRIM( SRGFIPS(S)(7:12) )
                         WRITE( DODEV, "(A,A,I2.2,31(',',E10.3))" )
-     &                      SRGFIPS( S ), ',', MONTH,
+     &                      TPROID, ',', MONTH,
      &                      ( (PROF_DAY( S,NP ) ), NP = 1,31 )
                     END DO
 
