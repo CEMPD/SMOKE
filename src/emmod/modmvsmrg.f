@@ -83,7 +83,11 @@ C.........  NONHAPTOG calculation information
 
 C.........  Emission factors data
         REAL,                 PUBLIC :: TEMPBIN           ! temperature buffer for max/min profiles
-
+        REAL,                 PUBLIC :: MNTEMP            ! temperature for lowest bin for EMIS_TABLE output file
+        REAL,                 PUBLIC :: MXTEMP            ! temperature for highest bin for EMIS_TABLE output file
+        REAL,                 PUBLIC :: TMPINC            ! temperature increment for EMIS_TABLE output file
+        INTEGER,              PUBLIC :: NTBINS = 1        ! no of temperature bins for EMIS TABLE output file (defualt=1)
+        LOGICAL, PUBLIC              :: ETABLEFLAG        ! ture: output precomputed gridded hourly emissions by temp bin to EMIS_TABLE
         LOGICAL, PUBLIC              :: NOXADJFLAG        ! true: apply humidity adjustment for NOx emissions
         LOGICAL, PUBLIC              :: NOXADJEQS         ! true: apply older humidity adjustment for NOx emissions
         CHARACTER(FLTLEN3), PUBLIC   :: GASFLTYP          ! gasoline fuel type code in NEI MOVES SCC '01'

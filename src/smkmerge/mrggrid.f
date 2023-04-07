@@ -55,6 +55,7 @@ C.........  This module is required for the FileSetAPI
  
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'
+        INCLUDE 'CONST3.EXT'    !  physical constants
         INCLUDE 'PARMS3.EXT'
         INCLUDE 'IODECL3.EXT'
         INCLUDE 'FDESC3.EXT'
@@ -66,18 +67,18 @@ C...........   EXTERNAL FUNCTIONS
         LOGICAL       BLKORCMT
         LOGICAL       ENVYN, GETYN
         INTEGER       GETFLINE, GETEFILE
-        INTEGER       INDEX1
+        INTEGER       INDEX1, STR2INT
         INTEGER       LBLANK
         INTEGER       PROMPTFFILE
         CHARACTER(16) PROMPTMFILE
         INTEGER       SEC2TIME
         INTEGER       SECSDIFF
-        REAL          STR2REAL
+        REAL          STR2REAL, ENVREAL
         LOGICAL       CHKREAL
         LOGICAL       SETENVVAR
 
-        EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK,
-     &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF,
+        EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK, STR2INT,
+     &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF, ENVREAL,
      &           BLKORCMT, STR2REAL, CHKREAL, MMDDYY, SETENVVAR
 
 C.........  LOCAL PARAMETERS and their descriptions:
@@ -86,9 +87,11 @@ C.........  LOCAL PARAMETERS and their descriptions:
      &  CVSW = '$Name SMOKEv4.9_Jun2022$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
+       CHARACTER(16) :: SEGMENT( 3 )
 
 C...........   Emissions arrays
         REAL, ALLOCATABLE :: E2D ( : )        ! 2-d emissions
+        REAL, ALLOCATABLE :: E3D( :,: )       ! 3-d emissions
         REAL, ALLOCATABLE :: EOUT( :,: )      ! output emissions
         REAL, ALLOCATABLE :: BEFORE_ADJ( : )  ! emissions before factors applied
         REAL, ALLOCATABLE :: AFTER_ADJ ( : )  ! emissions after factors applied
@@ -104,14 +107,28 @@ C...........   Input file descriptors
         INTEGER,       ALLOCATABLE :: STIMEA( : ) ! start time
         INTEGER,       ALLOCATABLE :: NLAYSA( : ) ! number of layers in the file
         INTEGER,       ALLOCATABLE :: NFILES( : ) ! number of files in each fileset
-        CHARACTER(16), ALLOCATABLE :: IONAME ( : ) ! IOAPI 16chr 2-d input file names
-        CHARACTER(32), ALLOCATABLE :: FNAME ( : ) ! 2-d input file names
+        INTEGER,       ALLOCATABLE :: ID1(:), ID2(:) ! temperature bin indexes
         LOGICAL,       ALLOCATABLE :: USEFIRST(:) ! true: use first time step of file
         LOGICAL,       ALLOCATABLE :: LVOUTA( :,: ) ! iff out var in input file
+        REAL,          ALLOCATABLE :: ADJ_FACTOR( : ) ! adjustment factors
+        REAL,          ALLOCATABLE :: TA( : )         ! ambient temperatures
+        REAL,          ALLOCATABLE :: TABASE( : )     ! base ambient temperatures
+        REAL,          ALLOCATABLE :: QV( : )         ! specific humidity
+        REAL,          ALLOCATABLE :: RA( : )         ! aerodynamic resistance
+        REAL,          ALLOCATABLE :: RC( : )         ! precipitatoin (cm)
+        REAL,          ALLOCATABLE :: RABASE( : )     ! base aerodynamic resistance
+        REAL,          ALLOCATABLE :: TEMPS( : )      ! temperature bins for layered emissions table
+        REAL,          ALLOCATABLE :: METRWC( : )     ! met adjustment factor for RWC sector
+        REAL,          ALLOCATABLE :: METNH3( : )     ! met adjustment factor for NH3 sector
+        REAL,          ALLOCATABLE :: NOXGAS( : )     ! Humidity NOx adjustment factor for gasoline
+        REAL,          ALLOCATABLE :: NOXDIS( : )     ! Humidity NOx adjustment factor for diesel
         CHARACTER(16), ALLOCATABLE :: VNAMEA( :,: ) ! variable names
         CHARACTER(16), ALLOCATABLE :: VUNITA( :,: ) ! variable units
         CHARACTER(80), ALLOCATABLE :: VDESCA( :,: ) ! var descrip
-        REAL,          ALLOCATABLE :: ADJ_FACTOR( : ) ! adjustment factors
+        CHARACTER(16), ALLOCATABLE :: IONAME( : ) ! IOAPI 16chr 2-d input file names
+        CHARACTER(16), ALLOCATABLE :: METADJ( : ) ! Met adjustment Y|N
+        CHARACTER(16), ALLOCATABLE :: NOXADJ( : ) ! NOx adjustment for mobile source Y|N
+        CHARACTER(32), ALLOCATABLE :: FNAME ( : ) ! 2-d input file names
         CHARACTER(32), ALLOCATABLE :: ADJ_LFN( : )    ! Species name
         CHARACTER(16), ALLOCATABLE :: ADJ_SPC( : )    ! logicalFileName
         CHARACTER(49), ALLOCATABLE :: ADJ_LFNSPC( : ) ! concatenated {logicalFileName}_{Species}
@@ -148,7 +165,7 @@ C...........   Logical names and unit numbers
         CHARACTER(16) PNAME           ! Point source input file name 
 
 C...........   Other local variables 
-        INTEGER       C, DD, F, I, J, K, L, L1, L2, N, NL, V, T ! pointers and counters
+        INTEGER       C, DD, F, I, J, K, L, L1, L2, N, NL, V, S, T ! pointers and counters
 
         INTEGER       ADJ                        ! tmp adjustment factor main index
         INTEGER       ADJ1                       ! tmp adjustment factor index 1
@@ -174,6 +191,7 @@ C...........   Other local variables
         INTEGER       MXNTAG                     ! max no. of tagging species
         INTEGER    :: NADJ = 0                   ! no. of adjustment factors
         INTEGER    :: NTAG = 0                   ! no. of tagging species
+        INTEGER       NTEMPS,IDX1,IDX2,LNOX      ! no. of 3-d layered emissions table with idxes
         INTEGER       NFILE                      ! no. of 2-d input files
         INTEGER       NSTEPS                     ! no. of output time steps
         INTEGER       NVOUT                      ! no. of output variables
@@ -190,16 +208,23 @@ C...........   Other local variables
         INTEGER       VLB                        ! VGLVS3D lower bound 
 
         REAL       :: FACS = 1.0                 ! adjustment factor 
-        REAL          RATIO                      ! ratio 
+        REAL          SUME2D                     ! SUM( E2D(1:NGRID) )
+        REAL          RATIO,TEMPVAL,TMPVAL       ! ratio and temp val
+        REAL          X, Y, CX, CY               ! temp values
+        REAL          RWC_TEMP                   ! RWC related values
+        REAL          BASE                       ! AGNH3 base temp ana wsp
+        REAL          QVMOL, A, B                ! NOx humidity correctino eqs vars
 
         CHARACTER(16)  FDESC                     ! tmp file description
         CHARACTER(16)  MRGFDESC                  ! name for file description EV
         CHARACTER(128) METADESC                  ! output meta description from MRGFDESC
+        CHARACTER(16)  METNAM, NOXNAM            ! tmp met and nox adj names
         CHARACTER(16)  IO_NAM                    ! tmp 16 chr logical file name
         CHARACTER(32)  NAM                       ! tmp logical file name
         CHARACTER(32)  LNAM                      ! tmp previous file name
         CHARACTER(16)  VNM                       ! tmp variable name
         CHARACTER(16)  TVNM                      ! tmp2 variable name
+        CHARACTER(16)  TVARNAME, RANAME, QVNAME, RCNAME  ! temp variable name
         CHARACTER(49)  LFNSPC                    ! tmp spec and file name
         CHARACTER(66)  LFNSPCTAG                 ! tmp speC, file, and tag name
         CHARACTER(256) LINE                      ! input buffer
@@ -215,10 +240,17 @@ C...........   Other local variables
         CHARACTER(32)  LFNTMP                    ! tmp file name
 
         LOGICAL    :: EFLAG   = .FALSE.   ! error flag
+        LOGICAL    :: ETFLAG  = .FALSE.   ! true: 3-d emissions table
         LOGICAL    :: FIRST3D = .TRUE.    ! true: first 3-d file not yet input
         LOGICAL    :: LFLAG   = .FALSE.   ! true  if 3-d file input
         LOGICAL    :: TFLAG   = .FALSE.   ! true: grid didn't match
-        LOGICAL       MRGDIFF             ! true: merge files from different days
+        LOGICAL    :: MRGDIFF = .FALSE.   ! true: merge files from different days
+        LOGICAL    :: RWCFLAG = .FALSE.   ! true: adjust RWC`emissions with met
+        LOGICAL    :: NH3FLAG = .FALSE.   ! true: adjust NH3 `emissions with met
+        LOGICAL    :: METFLAG = .FALSE.   ! true: adjust emissions with met
+        LOGICAL    :: MOBFLAG = .FALSE.   ! true: adjust mobile emissions with met
+        LOGICAL    :: NOXFLAG = .FALSE.   ! true: adjust emissions with met
+        LOGICAL    :: NOXADJEQS = .FALSE. ! true: apply the latest MOVES3 NOx humidity correction equations
 
         CHARACTER(16) :: PROGNAME = 'MRGGRID' ! program name
 C***********************************************************************
@@ -275,6 +307,10 @@ C           of files
         CALL CHECKMEM( IOS, 'FNAME', PROGNAME )
         ALLOCATE( IONAME( MXNFIL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IONAME', PROGNAME )
+        ALLOCATE( METADJ( MXNFIL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'METADJ', PROGNAME )
+        ALLOCATE( NOXADJ( MXNFIL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NOXADJ', PROGNAME )
         ALLOCATE( LVOUTA( MXVARS3,MXNFIL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LVOUTA', PROGNAME )
         ALLOCATE( VNAMEA( MXVARS3,MXNFIL ), STAT=IOS )
@@ -315,13 +351,16 @@ C.............  Read file names - exit if read is at end of file
 C.............  Skip blank and comment lines
             IF ( BLKORCMT( LINE ) ) CYCLE
 
+            SEGMENT = ''
+            CALL PARSLINE( LINE, 3, SEGMENT )
+
             F = F + 1
 
             IF( F .LE. MXNFIL ) THEN
 
-                LB = LBLANK ( LINE )
-                LE = LEN_TRIM( LINE )
-                FNAME( F ) = LINE( LB+1:LE )
+                LB = LBLANK(   SEGMENT( 1 ) )
+                LE = LEN_TRIM( SEGMENT( 1 ) )
+                FNAME( F ) = SEGMENT( 1 )( LB+1:LE )
 
 C.................  Re-set logical file name
                 IF( LE > 16 ) THEN
@@ -343,6 +382,17 @@ C.................  Re-set logical file name
                     IONAME( F ) = IO_NAM
 
                 ENDIF
+
+                METADJ( F ) = SEGMENT( 2 )
+                NOXADJ( F ) = SEGMENT( 3 )
+                L1 = LEN_TRIM( METADJ( F ) )
+                L2 = LEN_TRIM( NOXADJ( F ) )
+
+                IF( L1 > 0 ) METFLAG = .TRUE.
+                IF( METADJ( F ) == 'RWC'    ) RWCFLAG = .TRUE.
+                IF( METADJ( F ) == 'AGNH3'  ) NH3FLAG = .TRUE.
+                IF( METADJ( F ) == 'METEMIS' ) MOBFLAG = .TRUE.
+                IF( METFLAG .AND. L2 > 0 ) NOXFLAG = .TRUE.
 
                 IF ( .NOT. OPENSET( IONAME(F), FSREAD3, PROGNAME )) THEN
  
@@ -376,6 +426,49 @@ C.................  Store whether it's a fileset file or not
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         ENDIF
+
+C.........  Get met adjustment variable setting from FILELIST input file
+C.........  Adjust mobile emissiosn with meteorology
+        IF( METFLAG ) THEN
+            MESG = 'CRITICAL: Meteorological adjustment to gridded emissions ' //
+     &             'has been enabled!'
+            CALL M3MESG( MESG )
+
+            MESG = 'Specifies ambient temperature variable name for ' //
+     &             'meteorological adjustment'
+            CALL ENVSTR( 'TEMP_VAR', MESG, 'TEMP2',TVARNAME, IOS )
+            CALL UPCASE( TVARNAME )
+
+            MESG = 'Specifies aerodynamic resistance variable name for ' //
+     &             'meteorological adjustmen for NH3 emissions'
+            CALL ENVSTR( 'RA_VAR', MESG, 'RADYNI', RANAME, IOS )
+            CALL UPCASE( RANAME )
+
+            MESG = 'Specifies precipitation variable name for ' //
+     &             'meteorological adjustmen for NH3 emissions'
+            CALL ENVSTR( 'RC_VAR', MESG, 'RC', RCNAME, IOS )
+            CALL UPCASE( RCNAME )
+
+            IF( NOXFLAG ) THEN
+                MESG = 'CRITICAL: Humidity correction for NOx emissions ' //
+     &             'from mobile sources has been enabled!'
+                CALL M3MESG( MESG )
+
+                MESG = 'Specifies specific humidity variable name for ' //
+     &                 'humidity adjustmen for mobile NOx emissions'
+                CALL ENVSTR( 'QV_VAR', MESG, 'QV',QVNAME, IOS )
+                CALL UPCASE( QVNAME )
+
+                NOXADJEQS = ENVYN( 'USE_MOVES3_NOX_ADJ_EQS', 'Use ' //
+     &                     'the MOVES3 NOx humidity correction equations',
+     &                     .FALSE., IOS )
+            END IF
+
+C.............  RWC source meteorology adjustment
+            MESG = 'Enter RWC Ambient Threshold Temperature in unit of Fahrenheit (F)'
+            RWC_TEMP = ENVREAL( 'RWC_TEMP_THRESHOLD', MESG, 45.0, IOS )
+
+        END IF
 
 C.........  Get environment variable settings for adjustment factor input file
         CALL ENVSTR( 'ADJ_FACS', MESG, ' ', NAME1 , IOS )
@@ -455,11 +548,9 @@ C           of adjustment factors in ADJ_FACS input file.
 C.........  Define a number of adjustment factors
         IF( ADEV < 0 ) THEN 
             NADJ = 1
-
         ELSE
 C.............  Store a list of adjustment factors
             CALL READ_ADJ_FACS( NADJ )
-
         END IF
 
 C.........  Duplicate Check of ADJ_FACS file
@@ -534,6 +625,7 @@ C.........  Loop through 2D input files
 
             NAM    = FNAME( F )
             IO_NAM = IONAME( F )   ! retrieve 16 char ioapi local file name
+            METNAM = METADJ( F )   ! 'METEMIS', 'AGNH3', or 'RWC'
 
             ICNTFIL = ALLFILES
             IF( NFILES( F ) .EQ. 1 ) ICNTFIL = 1   ! send ALLFILES if more than one file, send 1 otherwise
@@ -541,7 +633,21 @@ C.........  Loop through 2D input files
                 MESG = 'Could not get description of file "'  //
      &                  NAM( 1:LEN_TRIM( NAM ) ) // '"'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
             ELSE
+C.................  Reset NLAYS3D and VGLV3D when processing layered ETABLES from Movesmrg
+                IF( METNAM == 'METEMIS' ) THEN   ! when RatePer (RP) modes layered mobile emission table are processed
+                    NTEMPS = NLAYS3D
+                    IF( .NOT. ALLOCATED( TEMPS ) ) THEN
+                         ALLOCATE( TEMPS( NTEMPS ), STAT=IOS )
+                         CALL CHECKMEM( IOS, 'TEMPS', PROGNAME )
+                    END IF
+                    TEMPS( 0:NTEMPS ) = VGLVS3D( 0:NLAYS3D )
+                    NLAYS3D = 1
+                    VGLVS3D = 0.0
+                    ETFLAG = .TRUE.
+                END IF
+
                 NROWSA( F ) = NROWS3D
                 NCOLSA( F ) = NCOLS3D
                 NLAYSA( F ) = NLAYS3D
@@ -636,7 +742,9 @@ C.............  Search for tag species in the logical file
             END IF
 
 C.............  Search for adj factor species in the logical file
-            DO J = 1, NADJ
+            IF( ADEV > 0 ) THEN
+
+              DO J = 1, NADJ
 
                 LFNTMP = ADJ_LFN( J ) ! retriev logical file from ADJ_FACS
 
@@ -665,7 +773,9 @@ C.........................  Assign adjustment factor for the current species
 
                 END IF
 
-            END DO
+              END DO
+
+            END IF
 
 C.............  Compare all other time steps back to first file.
 C.............  They must match exactly.
@@ -903,10 +1013,8 @@ C........  set up logical arrays for which files have which species
 
             DO F = 1, NFILE
                 LVOUTA( V,F ) = .FALSE.
-
                 J = INDEX1( VNM, NVARSA( F ), VNAMEA( 1,F ) )
                 IF( J .GT. 0 ) LVOUTA( V,F ) = .TRUE.
-                                
             END DO 
         END DO
 
@@ -916,6 +1024,12 @@ C.........  Allocate memory for the number of grid cells and layers
         CALL CHECKMEM( IOS, 'E2D', PROGNAME )
         ALLOCATE( EOUT( NGRID, NLAYS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EOUT', PROGNAME )
+
+        IF( ETFLAG ) THEN    ! 3-d emissions table
+            ALLOCATE( E3D( NGRID,NTEMPS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'E3D', PROGNAME )
+            E3D = 0.0
+        END IF
 
 C.........  Prompt for and open output file
         ONAME = PROMPTMFILE( 
@@ -944,20 +1058,22 @@ C.............  Write header line to report
 
 C.........  Warning missing logical file names from the ADJ_FACS list 
         LNAM = ' '
-        DO I = 1, NADJ
-             NAM = ADJ_LFN( I )
-             L = INDEX1( NAM, NFILE, FNAME )
-             IF( L <= 0 ) THEN
-                 MESG = 'WARNING: The logical file '//TRIM(NAM) //
-     &               ' in the adjustment file (ADJ_FACS) is not '// 
-     &               'found in the FILELIST on DATE : '//
-     &               MMDDYY(SDATE)
-                 IF( LNAM /= NAM ) THEN
-                     CALL M3MSG2( MESG )
-                     LNAM = NAM
+        IF( ADEV > 0 ) THEN
+             DO I = 1, NADJ
+                 NAM = ADJ_LFN( I )
+                 L = INDEX1( NAM, NFILE, FNAME )
+                 IF( L <= 0 ) THEN
+                     MESG = 'WARNING: The logical file '//TRIM(NAM) //
+     &                   ' in the adjustment file (ADJ_FACS) is not '//
+     &                   'found in the FILELIST on DATE : '//
+     &                   MMDDYY(SDATE)
+                     IF( LNAM /= NAM ) THEN
+                         CALL M3MSG2( MESG )
+                         LNAM = NAM
+                     END IF
                  END IF
-              END IF
-        END DO
+            END DO
+        END IF
 
 C.........  Warning missing logical file names from the TAG_SPECIES list 
         LNAM = ' '
@@ -990,7 +1106,180 @@ C.........  Loop through hours
         JDATE = SDATE
         JTIME = STIME
         FACS  = 1.0
+
+        IF( METFLAG ) THEN
+            ALLOCATE( METRWC( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'METRWC', PROGNAME )
+            ALLOCATE( METNH3( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'METNH3', PROGNAME )
+            ALLOCATE( NOXGAS( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NOXGAS', PROGNAME )
+            ALLOCATE( NOXDIS( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NOXDIS', PROGNAME )
+            ALLOCATE( ID1( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ID1', PROGNAME )
+            ALLOCATE( ID2( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ID2', PROGNAME )
+            ALLOCATE( TA( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TA', PROGNAME )
+            ALLOCATE( TABASE( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TABASE', PROGNAME )
+            ALLOCATE( RA( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'RA', PROGNAME )
+            ALLOCATE( RABASE( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'RABASE', PROGNAME )
+            ALLOCATE( RC( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'RC', PROGNAME )
+            METRWC = 1.0
+            METNH3 = 1.0
+            NOXGAS = 1.0
+            NOXDIS = 1.0
+            ID1 = 0
+            ID2 = 0
+            TA = 0.0
+            TABASE = 0.0
+            RA = 0.0
+            RABASE = 0.0
+            RC = 0.0
+            IF( .NOT. OPEN3( 'METCRO2D', FSREAD3, PROGNAME ) ) THEN
+                MESG = 'Could not open METCOR2D meteorology file '
+                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+            END IF
+            IF( NOXFLAG ) THEN
+                ALLOCATE( QV( NGRID ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'QV', PROGNAME )
+                QV = 0.0
+                IF( .NOT. OPEN3( 'METCRO3D', FSREAD3, PROGNAME ) ) THEN
+                    MESG = 'Could not open METCRO3D meteorology file '
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+            END IF
+
+        END IF
+
         DO T = 1, NSTEPS
+
+C...........  Apply the met adjustment for mobile, NH3 and RWC sources
+            IF( METFLAG ) THEN
+C.................  Read current meteorology file
+                IF( .NOT. READ3( 'METCRO2D', TVARNAME, 1,
+     &                            JDATE, JTIME, TA ) ) THEN
+                    MESG = 'Could not read ' // TRIM( TVARNAME ) //
+     &                     ' from METCRO2D input file'
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+                IF( T == 1 ) TABASE = TA
+
+                IF( NH3FLAG ) THEN
+                    IF( .NOT. READ3( 'METCRO2D', RANAME, 1,
+     &                                JDATE, JTIME, RA ) ) THEN
+                        MESG = 'Could not read aerodynamic resistance'//
+     &                         ' variable from METCRO2D input file'
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    END IF
+                    IF( T == 1 ) RABASE = RA
+
+                    IF( .NOT. READ3( 'METCRO2D', RCNAME, 1,
+     &                                JDATE, JTIME, RC ) ) THEN
+                        MESG = 'Could not read precipitation (cm)'//
+     &                         ' variable from METCRO2D input file'
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    END IF
+                END IF
+
+                IF( MOBFLAG .AND. NOXFLAG ) THEN
+                    IF( .NOT. READ3( 'METCRO3D', QVNAME,1,
+     &                                JDATE, JTIME, QV ) ) THEN
+                        MESG = 'Could not read QV specific humidity ' //
+     &                         'variable from METCRO3D input file'
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    END IF
+                END IF
+
+                METRWC = 1.0
+                METNH3 = 1.0
+                IF( RWCFLAG ) THEN
+
+                    DO S = 1, NGRID  ! loop over grid cells
+                        TEMPVAL = 1.8 * TA( S ) - 459.67  ! K --> F
+C                       zero-out the RWC emissions if ambient temp is higher than RWC threshold temp.
+                        IF( TEMPVAL > RWC_TEMP ) METRWC( S ) = 0.2 !
+                    END DO
+                ENDIF
+
+                IF( NH3FLAG ) THEN  ! BASH NH3 calculation
+                    DO S = 1, NGRID  ! loop over grid cells
+                        BASE =(161500.0/TABASE(S))*EXP(-10380.0/TABASE(S))
+                        TEMPVAL=(161500.0/TA(S))*EXP(-10380.0/TA(S))
+                        METNH3( S ) = 1.0 + 0.2 * ( (TEMPVAL-BASE) / BASE )
+                        IF( RC( S ) > 0.1 ) METNH3(S) = METNH3(S) * 0.5  !  Reduce the NH3 emission by 50% if there is rain
+                    END DO
+                ENDIF
+
+                IF( MOBFLAG ) THEN
+                    NOXGAS = 1.0
+                    NOXDIS = 1.0
+
+                    DO S = 1, NGRID  ! loop over grid cells
+
+                        TEMPVAL = ( TA( S ) - CTOK ) * CTOF + 32.  ! convert K to F degree
+
+                        IDX1 = 0
+                        IDX2 = 0
+                        DO L1 = NTEMPS, 1, -1
+                            IF( TEMPVAL < TEMPS( L1 ) ) CYCLE
+
+                            IF( TEMPVAL == TEMPS( L1 ) ) THEN
+                                IDX1 = L1
+                                IDX2 = L1
+                            ELSE
+                                IDX1 = L1
+                                IDX2 = L1 + 1
+                            END IF
+                            EXIT
+                        END DO
+
+                        IF( IDX1 == 0 ) THEN
+                            IF( TEMPVAL >= (TEMPS( 1 ) - 50.)) THEN
+                                IDX1 = 1
+                                IDX2 = 1
+                            END IF
+                        END IF
+
+                        IF( IDX2 > NTEMPS ) THEN
+                            IF( TEMPVAL <= (TEMPS( NTEMPS ) + 50.) ) THEN
+                               IDX1 = NTEMPS
+                               IDX2 = NTEMPS
+                            END IF
+                        END IF
+
+                        ID1( S ) = IDX1
+                        ID2( S ) = IDX2
+
+C.........................  NOx humidity correction
+                        IF( NOXFLAG ) THEN
+                            QV( S ) = QV( S ) * 1000.0     ! convert from kg water/kg dry air to g/kg
+                            IF( NOXADJEQS ) THEN   ! Use newer MOVES3 NOx humidity correction eqs
+                                A = MIN( QV( S ), 17.71 )
+                                B = MAX( 3.0, A )
+                                NOXGAS( S ) = 1.0 - 0.0329 * ( B - 10.71 )   ! NOx humidity correction for Gasoline fuel
+                                QVMOL = QV( S ) * 0.001607524  ! convert from g of water/kg of dry air to moles of water/moles of dry air
+                                A = MIN( QVMOL, 0.035 )
+                                B = MAX( 0.002, A )
+                                NOXDIS( S ) = 1.0 / ( 9.953 * B  + 0.832 )  ! Nox humidity correction for Diesel fuel
+                            ELSE   ! Use older MOVES NOx humidity correction eqs
+                                QV( S ) = QV( S ) * 7.0
+                                A = MIN( QV( S ), 124.0)
+                                B = MAX( 21.0, A ) - 75.0
+                                NOXGAS( S ) = 1.0 - ( B * 0.0038 )     ! NOx humidity correction for Gasoline fuel
+                                NOXDIS( S ) = 1.0 - ( B * 0.0026 )     ! NOx humidity correction for Diesel fuel
+                            END IF
+                        END IF
+
+                    END DO      !!  end parallel loop on S
+
+                END IF
+            END IF
 
 C.............  Loop through species
             DO V = 1, NVOUT
@@ -999,28 +1288,33 @@ C.............  Loop through species
 
 C.................  Output array
                 EOUT = 0.   ! array
+                LNOX = 0
 
                 DO F = 1, NFILE
 
 C.....................  Set read date
                     IF( MRGDIFF ) THEN
-                      IF( USEFIRST( F ) ) THEN
-                        DUMMY = 0
-                        STEPS = SEC2TIME( 
-     &                            SECSDIFF( 
-     &                              SDATE, DUMMY, JDATE, DUMMY ) )
-                        RDATE = SDATEA( F )
-                        CALL NEXTIME( RDATE, DUMMY, STEPS )
-                      END IF 
+                        IF( USEFIRST( F ) ) THEN
+                            DUMMY = 0
+                            STEPS = SEC2TIME(
+     &                              SECSDIFF(
+     &                                SDATE, DUMMY, JDATE, DUMMY ) )
+                            RDATE = SDATEA( F )
+                            CALL NEXTIME( RDATE, DUMMY, STEPS )
+                        ELSE
+                            RDATE = JDATE
+                        END IF
                     ELSE
                         RDATE = JDATE
                     END IF
 
 C.....................  Set tmp variables
+                    NL     = NLAYSA( F )   ! no of layers
                     NAM    = FNAME ( F )   ! input file name
                     IO_NAM = IONAME( F )   ! retrieve 16 char ioapi input file name
-
-                    NL  = NLAYSA( F )       ! number of layers
+                    METNAM = METADJ( F )   ! metadj variable name
+                    NOXNAM = NOXADJ( F )   ! NOx adustment eqs names
+                    LNOX   = LEN_TRIM( NOXNAM )
 
 C.....................  Search adjustment factor for the current file
                     LFNSPC = TRIM( NAM ) // '~' // TRIM( VNM )
@@ -1029,14 +1323,12 @@ C.....................  Assign adjustment factor for the current species
                     ADJ = INDEX1( LFNSPC, NADJ, ADJ_LFNSPC )
                     IF( ADJ > 0 ) THEN
                         FACS = ADJ_FACTOR( ADJ )
-
                         WRITE( MESG,93011 )'Apply adjustment factor' ,
      &                      FACS, ' to the '  // TRIM( VNM ) //
      &                      ' species from the '//TRIM( NAM )// ' file'
                         CALL M3MSG2( MESG )
                     ELSE
                         FACS = 1.0
-                       
                     END IF
 
 C.....................  Search tagged species for the current file
@@ -1058,100 +1350,95 @@ C.....................  If file has species, read (do this for all files)...
                         ICNTFIL = ALLFILES
                         IF( NFILES( F ) .EQ. 1 ) ICNTFIL = 1   ! send ALLFILES if more than one file, send 1 otherwise
 
-C.........................  If 2-d input file, read, and add
-                        IF( NL .EQ. 1 ) THEN
-                            IF( .NOT. 
-     &                           READSET( IO_NAM, TVNM, 1, ICNTFIL,
-     &                                    RDATE, JTIME, E2D     )) THEN
-
-                                MESG = 'Could not read "' // VNM //
-     &                                 '" from file "' //
-     &                                 NAM( 1:LEN_TRIM( NAM ) )// '".'
-                                CALL M3EXIT( PROGNAME, RDATE, JTIME, 
-     &                                       MESG, 2 )
+C.........................  Read, and add
+                        DO K = 1, NL
+                            IF( .NOT.
+     &                          READSET( IO_NAM, TVNM, K, ICNTFIL, RDATE, JTIME, E2D )) THEN
+                                MESG = 'Could not read "' // TVNM // '" from file "' // TRIM( NAM ) // '".'
+                                CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
                             ENDIF
+
+C.............................  Apply the met adjustment for mobile, NH3 and RWC sources
+                            IF( LEN_TRIM( METNAM ) > 0 ) THEN
+
+                                IF( METNAM == 'RWC' ) THEN
+                                    E2D = METRWC * E2D
+
+                                ELSE IF(  METNAM == 'AGNH3' ) THEN
+                                    E2D = METNH3 * E2D
+
+                                ELSE IF( METNAM == 'METEMIS' ) THEN
+
+                                    IF( .NOT. READSET( IO_NAM, TVNM, -1, ICNTFIL,
+     &                                                 RDATE, JTIME, E3D )) THEN
+                                        MESG = 'Could not read "' // TVNM // '" from file "' // TRIM( NAM )// '".'
+                                        CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
+                                    ENDIF
+
+                                    DO S = 1, NGRID  ! loop over grid cells
+                                        TEMPVAL = ( TA( S ) - CTOK ) * CTOF + 32.  ! convert K to F degree
+                                        IDX1 = ID1( S )
+                                        IDX2 = ID2( S )
+                                        RATIO = 1.0
+                                        IF( IDX1 .NE. IDX2 ) THEN
+                                            RATIO = ( TEMPVAL - TEMPS(IDX1) ) /           ! temp interpolation fraction
+     &                                              ( TEMPS(IDX2) - TEMPS(IDX1) )
+                                        END IF
+                                        E2D(S) = E3D(S,IDX1) + RATIO * (E3D(S,IDX2)-E3D(S,IDX1))
+
+C.........................................  NOx humidity correction
+                                        IF( LNOX > 0 ) THEN
+                                            IF( TVNM=='NO' .OR. TVNM=='NO2' .OR. TVNM=='HONO' ) THEN
+                                                RATIO = 1.0
+                                                IF( NOXNAM == 'GASOLINE') RATIO =  NOXGAS( S )    ! Applying NOx humidity correction for gasoline
+                                                IF( NOXNAM == 'DIESEL'  ) RATIO =  NOXDIS( S )    ! Applying NOx humidity correction for diesel
+                                                E2D( S ) = RATIO * E2D( S )
+                                            END IF
+                                        END IF
+                                    END DO
+                                END IF
+                            END IF
 
 C.............................  Logical file specific summary
                             IF( ADJ > 0 ) THEN
-                                BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ ) + 
-     &                                          SUM( E2D(1:NGRID) )
-
-                                AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ ) + 
-     &                                          SUM( E2D(1:NGRID)*FACS )
-
-C.............................  Overall summary by species
-                                BEFORE_SPC( V )  = BEFORE_SPC( V ) + 
-     &                                          SUM( E2D(1:NGRID) )
-
-                                AFTER_SPC ( V ) = AFTER_SPC ( V ) + 
-     &                                          SUM( E2D(1:NGRID)*FACS )
+                                SUME2D = SUM( E2D(1:NGRID) )
+                                BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ ) + SUME2D
+                                AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ ) + SUME2D*FACS
+                                BEFORE_SPC( V )   = BEFORE_SPC( V )   + SUME2D
+                                AFTER_SPC ( V )   = AFTER_SPC ( V )   + SUME2D*FACS
                             END IF
 
-                            EOUT( 1:NGRID,1 ) = EOUT( 1:NGRID,1 ) + 
-     &                                          E2D( 1:NGRID) * FACS
+                            EOUT( 1:NGRID,K ) = EOUT( 1:NGRID,K ) +
+     &                                           E2D( 1:NGRID ) * FACS
 
-C.........................  If 3-d input file, allocate memory, read, and add
-                        ELSE
+                        END DO  !!  end loop on K
 
-                            DO K = 1, NL
-                                IF( .NOT. 
-     &                               READSET( IO_NAM,TVNM,K,ICNTFIL,
-     &                                        RDATE, JTIME, E2D  )) THEN
-
-                                    MESG = 'Could not read "' // VNM //
-     &                                     '" from file "' //
-     &                                   NAM( 1:LEN_TRIM( NAM ) )// '".'
-                                    CALL M3EXIT( PROGNAME, RDATE, JTIME,
-     &                                           MESG, 2 )
-                                END IF
-
-C.................................  Logical file specific summary
-                                IF( ADJ > 0 ) THEN
-
-                                  BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ )+ 
-     &                                              SUM( E2D(1:NGRID) )
-
-                                  AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ )+ 
-     &                                            SUM(E2D(1:NGRID)*FACS)
-
-C.................................  Overall summary by species
-                                  BEFORE_SPC( V )  = BEFORE_SPC( V ) + 
-     &                                           SUM( E2D(1:NGRID) )
-
-                                  AFTER_SPC ( V ) = AFTER_SPC ( V ) + 
-     &                                           SUM(E2D(1:NGRID)*FACS)
-
-                                END IF
-
-                                EOUT( 1:NGRID,K )= EOUT( 1:NGRID,K ) + 
-     &                                             E2D( 1:NGRID )*FACS
-                            END DO
-
-                        END IF  ! if 2-d or 3-d
                     END IF      ! if pollutant is in this file
 
+                END DO          ! parallel loop over input files
+
 C.....................  Build report line if needed
-                    IF( MRGDIFF .AND. V == 1 ) THEN
-                        IF( F == 1 ) THEN
-                            WRITE( RPTLINE,93020 ) JDATE
-                            WRITE( RPTCOL,93020 ) JTIME
-                            RPTLINE = TRIM( RPTLINE ) // RPTCOL
+                IF( MRGDIFF .AND. V == 1 ) THEN
+                    WRITE( RPTLINE,93020 ) JDATE
+                    WRITE( RPTCOL,93020 ) JTIME
+                    RPTLINE = TRIM( RPTLINE ) // RPTCOL
+                    DO F = 1, NFILE
+                        IF( USEFIRST( F ) ) THEN
+                            DUMMY = 0
+                            STEPS = SEC2TIME( SECSDIFF( SDATE, DUMMY, JDATE, DUMMY ) )
+                            RDATE = SDATEA( F )
+                            CALL NEXTIME( RDATE, DUMMY, STEPS )
                         END IF
-                        
                         WRITE( RPTCOL,93020 ) RDATE
                         RPTLINE = TRIM( RPTLINE ) // RPTCOL
-                    END IF
-
-                END DO          ! loop over input files
+                    END DO
+                END IF
 
 C.................  Write species/hour to output file
-                IF( .NOT. WRITE3( ONAME, VNM, JDATE, JTIME, EOUT )) THEN
-
-                    MESG = 'Could not write "'// VNM// '" to file "'// 
+                IF( .NOT. WRITE3( ONAME, TVNM, JDATE, JTIME, EOUT )) THEN
+                    MESG = 'Could not write "'// TVNM// '" to file "'//
      &                      ONAME( 1:LEN_TRIM( ONAME ) ) // '".'
-     &                        
                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
                 END IF
 
             END DO   ! loop through variables
@@ -1175,7 +1462,7 @@ C.........  Write header line to report
 
             VNM = ADJ_SPC( F )     ! species name
             NAM = ADJ_LFN( F )     ! logical file name
-            FACS   = ADJ_FACTOR( F )   ! adjustment factor
+            FACS= ADJ_FACTOR( F )   ! adjustment factor
 
             IF( BEFORE_ADJ( F ) == 0.0 ) CYCLE
 

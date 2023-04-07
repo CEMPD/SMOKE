@@ -51,7 +51,7 @@ C.........  This module contains the global variables for the 3-d grid
      &                     GDTYP, VGTYP, VGTOP, VGLVS
 
 C.........  This module contain the global variables for Movesmrg
-        USE MODMVSMRG, ONLY: MTMP_OUT
+        USE MODMVSMRG, ONLY: MTMP_OUT, NTBINS, ETABLEFLAG, TMPINC, MXTEMP, MNTEMP
 
         USE MODFILESET
 
@@ -172,8 +172,19 @@ C.........  Set up and open I/O API output file
           
 C.............  Prompt for and gridded open file(s)
             CALL SETUP_VARIABLES( NMSPC, EMNAM )
-            NLAYS3D = 1
-            FDESC3D( 1 ) = 'Mobile source emissions data'
+
+            IF( ETABLEFLAG ) THEN
+                NLAYS3D = NTBINS     ! no of temperature bins for EMIS_TABLE output file
+                DO I = 1, NTBINS
+                    VGLVS3D( I ) = MNTEMP + FLOAT( I-1 ) * TMPINC
+                END DO
+                VGLVS3D( NTBINS + 1 ) = VGLVS3D( NTBINS ) + TMPINC
+                FDESC3D( 1 ) = 'Temperature-bin precomputed gridded hourly emissions data'
+            ELSE
+                NLAYS3D = 1
+                FDESC3D( 1 ) = 'Mobile source emissions data'
+            END IF
+
             IF( FDFLAG ) FDESC3D( 1 ) = METADESC
 
 C.............  Open by logical name or physical name

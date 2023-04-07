@@ -50,7 +50,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, ONIFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
      &                       SPDPROFLAG, SPDISTFLAG, CFFLAG, EXPCFFLAG, REFCFFLAG, TEMPBIN,
      &                       MOPTIMIZE, GRDENV, TOTENV, MTMP_OUT, NOXADJFLAG, NOXADJEQS,
-     &                       RPSFLAG
+     &                       RPSFLAG, ETABLEFLAG, MXTEMP, MNTEMP, TMPINC, NTBINS
 
         IMPLICIT NONE
 
@@ -273,6 +273,64 @@ C............  Define the type of NOx adj eqs (MOVES 3 or older version)
             NOXADJEQS = ENVYN( 'USE_MOVES3_NOX_ADJ_EQS', 'Use ' //
      &                    'the MOVES3 NOx humidity correction equations',
      &                    .FALSE., IOS )
+        END IF
+C.........  Output precomputed gridded hourly emissions by temp. bins
+        ETABLEFLAG = ENVYN( 'OUTPUT_EMIS_TABLE_YN', 'Output temperature-bin ' //
+     &             'precomputed gridded hourly emissions tables or not',
+     &             .FALSE., IOS )
+
+        IF( RPPFLAG .AND. ETABLEFLAG ) THEN
+            MESG = 'WARNING: OUTPUT_EMIS_TABLE_YN flag has been reset to N ' //
+     &             'since it is not implemented for RPP mode run yet'
+            CALL M3MESG( MESG )
+            ETABLEFLAG = .FALSE.
+        END IF
+
+C.........   Disabling several options to generate the emissisons table
+        IF( ETABLEFLAG ) THEN
+
+            MNTEMP = ENVREAL( 'MIN_TEMP_EMIS_TABLE', 'Lowest temperature for ' //
+     &                        'precomputed emissions table output file', 0., IOS )
+
+            MXTEMP = ENVREAL( 'MAX_TEMP_EMIS_TABLE', 'Highest temperature for ' //
+     &                        'precomputed emissions table output file', 120., IOS )
+
+            TMPINC = ENVREAL( 'TEMP_INCREMENT_EMIS_TABLE', 'Temperature bin increment for ' //
+     &                        'precomputed emissions table output file', 5., IOS )
+
+            NTBINS = INT( ( MXTEMP - MNTEMP ) / TMPINC ) + 1  ! no of temperature bins
+
+            IF( SRCGRPFLAG .OR. SUBSECFLAG ) THEN
+                MESG = 'WARNING: SMK_SRCGROUP_OUTPUT_YN and SMK_SUB_SECTOR_OUTPUT_YN' //
+     &                 ' flags have been reset to N'
+                CALL M3MSG2( MESG )
+                SRCGRPFLAG = .FALSE.    ! reset SMK_SRCGROUP_OUTPUT_YN=N
+                SUBSECFLAG = .FALSE.    ! reset SMK_SUB_SECTOR_OUTPUT_YN=N
+            END IF
+
+            IF( MTMP_OUT ) THEN
+                MESG = 'WARNING: MTMP_OUTPUT_YN flag has been reset to N'
+                CALL M3MSG2( MESG )
+                MTMP_OUT = .FALSE.
+            END IF
+
+            IF( NOXADJFLAG ) THEN
+                MESG = 'WARNING: APPLY_NOX_HUMIDITY_ADJ flag has been reset to N'
+                CALL M3MSG2( MESG )
+                NOXADJFLAG = .FALSE.
+                NOXADJEQS  = .FALSE.
+            END IF
+
+            IF( LREPANY ) THEN
+                MESG = 'WARNING: Disabling any summary reports generation!'
+                CALL M3MSG2( MESG )
+                LREPANY = .FALSE.
+                LREPSTA = .FALSE.
+                LREPCNY = .FALSE.
+                LREPSCC = .FALSE.
+                LREPSRC = .FALSE.
+            END IF
+
         END IF
 
 C.........  Get directory where MOVES output files are stored
