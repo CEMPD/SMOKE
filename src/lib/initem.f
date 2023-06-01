@@ -76,12 +76,12 @@ C   begin body of program INITEM
 
         LINE0 = 'SMOKE ---------------' 
         WRITE( LINE1,94020 ) 'Copyright (c)', YEAR, 
-     &         'Environmental Modeling for Policy Development'
+     &    'Center for Environmental Modeling for Policy Development'
 
         LINE2 = 'All rights reserved'
 
         LINE3 = 'Online documentation available at:' 
-        LINE4 = '    http://www.cep.unc.edu/empd/products/smoke'
+        LINE4 = '    https://cmascenter.org/smoke/'
 
 C.........  Set up program version information
         VERCHAR = ADJUSTL( NAMEVERS )
