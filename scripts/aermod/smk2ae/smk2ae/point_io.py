@@ -52,7 +52,7 @@ def proc_points(inv, temp, hrly, work_path, grid_info):
     qa.n_temp = inv.stk.shape[0]
     if not inv.stk.empty:
         write_temp_factors(inv.stk, temp.aermod, os.environ['WORK_PATH'])
-    qa.total_benzene = sum(inv.emis.ix[inv.emis['smoke_name'] == 'BENZENE','ann_value'])
+    qa.total_benzene = sum(inv.emis.loc[inv.emis['smoke_name'] == 'BENZENE','ann_value'])
     qa.write_totals(inv.state)
 
 def get_grid_location(df, grid_info):
@@ -94,14 +94,14 @@ def calc_predom_cell(inv, qa):
     Calculate the predominate grid cell for a facility based on HAPs emissions
     '''
     for fac in list(inv.stk['facility_id'].drop_duplicates()):
-        fac_df = inv.stk.ix[inv.stk['facility_id'] == fac, ['col','row','ann_value']].copy()
+        fac_df = inv.stk.loc[inv.stk['facility_id'] == fac, ['col','row','ann_value']].copy()
         fac_df = fac_df.groupby(['col','row'], as_index=False).sum()
         if len(fac_df[['col','row']]) > 1:
             fac_df.sort_values('ann_value', ascending=False, inplace=True)
             fac_df.drop_duplicates(['col','row'],inplace=True)
             qa.moved_facs.append(str(fac))
-            inv.stk.ix[inv.stk['facility_id'] == fac, 'col'] = fac_df['col'].values[0]
-            inv.stk.ix[inv.stk['facility_id'] == fac, 'row'] = fac_df['row'].values[0]
+            inv.stk.loc[inv.stk['facility_id'] == fac, 'col'] = fac_df['col'].values[0]
+            inv.stk.loc[inv.stk['facility_id'] == fac, 'row'] = fac_df['row'].values[0]
     qa.write_moved_facs(inv.state)
     return inv.stk
 
@@ -138,10 +138,10 @@ def get_fug_params(df):
     df['rel_ht'] = df['fug_height'] * 0.3048
     df['x_length'] = df['fug_width_ydim'] * 0.3048
     df['y_length'] = df['fug_length_xdim'] * 0.3048
-    df.ix[df['rel_ht'] > 10, 'szinit'] = old_div(df.ix[df['rel_ht'] > 10, 'rel_ht'], 4.3)
-    df.ix[df['rel_ht'] <= 10, 'szinit'] = 0
+    df.loc[df['rel_ht'] > 10, 'szinit'] = old_div(df.loc[df['rel_ht'] > 10, 'rel_ht'], 4.3)
+    df.loc[df['rel_ht'] <= 10, 'szinit'] = 0
     df.rename(columns={'fug_angle': 'angle'}, inplace=True)
-    df.ix[df['angle'] == -99., 'angle'] = 0
+    df.loc[df['angle'] == -99., 'angle'] = 0
     return df
 
 def write_fug_params(df, work_path):
@@ -165,10 +165,10 @@ def get_temp_codes(df, xref):
     if len(xref[xref['ALLDAY'].isnull()]) > 0:
         if 'TUESDAY' in list(xref.columns):
             try:
-                xref.ix[xref['ALLDAY'].isnull(), 'ALLDAY'] = xref.ix[xref['ALLDAY'].isnull(), 
+                xref.loc[xref['ALLDAY'].isnull(), 'ALLDAY'] = xref.loc[xref['ALLDAY'].isnull(), 
                   'TUESDAY']
             except KeyError:
-                xref.ix[xref['ALLDAY'].isnull(), 'ALLDAY'] = xref.ix[xref['ALLDAY'].isnull(), 
+                xref.loc[xref['ALLDAY'].isnull(), 'ALLDAY'] = xref.loc[xref['ALLDAY'].isnull(), 
                   'WEEKDAY']
     type_cols = ['ALLDAY','MONTHLY','WEEKLY']
     xref.drop_duplicates(['facility_id','region_cd','scc'], inplace=True)
@@ -217,7 +217,7 @@ def get_src_map(pt_df, fug_df):
     for fac in list(uniq_stks['facility_id'].drop_duplicates()):
         n_srcs = len(uniq_stks[uniq_stks['facility_id'] == fac])
         srcs = ['S%s' %str(int(x)).zfill(int(ceil(log10(n_srcs)))) for x in range(1,n_srcs+1)]
-        uniq_stks.ix[uniq_stks['facility_id'] == fac, 'src_id'] = srcs
+        uniq_stks.loc[uniq_stks['facility_id'] == fac, 'src_id'] = srcs
     df = pd.merge(df, uniq_stks, on=uniq_cols, how='left')
     return df[['facility_id','unit_id','rel_point_id','scc','src_id']].copy().drop_duplicates()
 

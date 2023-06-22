@@ -33,7 +33,7 @@ class Airports(object):
         for fac in list(df['facility_id'].drop_duplicates()):
             n_srcs = len(df[df['facility_id'] == fac])
             srcs = ['AP%s' %str(int(x)).zfill(int(ceil(log10(n_srcs)))) for x in range(1,n_srcs+1)]
-            df.ix[df['facility_id'] == fac, 'src_id'] = srcs
+            df.loc[df['facility_id'] == fac, 'src_id'] = srcs
         return df
  
     def refresh_fac_list(self, fac_list):
@@ -58,7 +58,7 @@ class Airports(object):
         inv_fac_list = list(self.inv['facility_id'].drop_duplicates())
         self.refresh_fac_list(inv_fac_list)
         print('Total airport facilities: %s' %len(inv_fac_list))
-        self.emis = inv.emis.ix[inv.emis['facility_id'].isin(self.fac_list), 
+        self.emis = inv.emis.loc[inv.emis['facility_id'].isin(self.fac_list), 
           ['facility_id','smoke_name','ann_value']].groupby(['facility_id','smoke_name'], 
           as_index=False).sum()
         self.inv = self.inv[self.inv['facility_id'].isin(self.fac_list)].copy() 
@@ -124,7 +124,7 @@ class Airports(object):
         '''
         cols = ['facility_id','facility_name','src_id']
         df = df[cols].copy()
-        inv_df = self.inv.ix[self.inv['facility_id'].isin(list(df['facility_id'].drop_duplicates())),
+        inv_df = self.inv.loc[self.inv['facility_id'].isin(list(df['facility_id'].drop_duplicates())),
             ['region_cd','scc','facility_id','ann_value']].copy()
         inv_df.sort('ann_value', ascending=False, inplace=True)
         inv_df.drop_duplicates('facility_id', inplace=True)
@@ -152,7 +152,7 @@ class Airports(object):
         '''
         inv_cols = ['facility_id','facility_name','fac_col','fac_row','state','latitude',
           'longitude']
-        df = self.inv.ix[~ self.inv['facility_id'].isin(self.runways), 
+        df = self.inv.loc[~ self.inv['facility_id'].isin(self.runways), 
           inv_cols].copy()
         df.drop_duplicates(inplace=True)
         if not df.empty:
