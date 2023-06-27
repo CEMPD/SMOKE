@@ -79,7 +79,7 @@ C.........  LOCAL VARIABLES and their descriptions
         CHARACTER(256)  MESG    !  message buffer for M3EXIT()
         CHARACTER(5)    BTMP    ! temporary tag for naming output variables
 C.........  CVS release tag
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv4.9_Jun2022$'
+        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.0_Jun2023$'
 
         INTEGER         NCOLS   ! no. of grid columns
         INTEGER         NROWS   ! no. of grid rows

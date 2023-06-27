@@ -54,7 +54,7 @@ C.........  Includes
         INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 
 C.........  Local parameters
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv4.9_Jun2022$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.0_Jun2023$' ! CVS release tag
         
 C.........  External functions
         LOGICAL, EXTERNAL :: ENVYN

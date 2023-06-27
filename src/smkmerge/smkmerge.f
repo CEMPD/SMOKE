@@ -139,7 +139,7 @@ C.........  LOCAL PARAMETERS and their descriptions:
         CHARACTER(16), PARAMETER :: PROGNAME = 'SMKMERGE' ! program name
 
         CHARACTER(50), PARAMETER ::
-     &  CVSW = '$Name SMOKEv4.9_Jun2022$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv5.0_Jun2023$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
