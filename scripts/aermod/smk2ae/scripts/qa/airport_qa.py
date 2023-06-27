@@ -90,8 +90,8 @@ def get_inv(inv_list, invtable):
             # Remove inv values outside of the CONUS domain
             df = df[~ df['region_cd'].astype(int).astype(str).str.zfill(5).str[:2].isin(('02','15','72','78'))].copy()
         # Cut lead in half for these two SCCs
-        df.ix[(df['scc'].isin(('2275050011','2275060011'))) & (df['poll'] == '7439921'), 'ann_value'] = \
-          df.ix[df['scc'].isin(('2275050011','2275060011')) & (df['poll'] == '7439921'), 'ann_value'] * 0.5
+        df.loc[(df['scc'].isin(('2275050011','2275060011'))) & (df['poll'] == '7439921'), 'ann_value'] = \
+          df.loc[df['scc'].isin(('2275050011','2275060011')) & (df['poll'] == '7439921'), 'ann_value'] * 0.5
         df = pd.merge(df, invtable, on='poll', how='left')
         df['ann_value'] = df['ann_value'] * df['spec_factor']
         inv = pd.concat((inv, df))
@@ -200,16 +200,16 @@ nr = os.path.join(work_path, 'temporal', 'airport_combined_nonrunway_temporal.cs
 nr = pd.read_csv(nr, dtype={'facility_id': str}, skipinitialspace=True, index_col=False)
 temp = pd.concat((temp, nr))
 scalars = [x for x in temp.columns if x.startswith('Scalar')]
-temp.ix[temp['qflag'] == 'MONTH', 'sum'] = temp.ix[temp['qflag'] == 'MONTH', scalars[:12]].sum(axis=1)
-temp.ix[temp['qflag'] == 'HROFDY', 'sum'] = temp.ix[temp['qflag'] == 'HROFDY', scalars[:24]].sum(axis=1)
-temp.ix[temp['qflag'] == 'MHRDOW7', 'sum'] = temp.ix[temp['qflag'] == 'MHRDOW7', scalars].sum(axis=1) * \
+temp.loc[temp['qflag'] == 'MONTH', 'sum'] = temp.loc[temp['qflag'] == 'MONTH', scalars[:12]].sum(axis=1)
+temp.loc[temp['qflag'] == 'HROFDY', 'sum'] = temp.loc[temp['qflag'] == 'HROFDY', scalars[:24]].sum(axis=1)
+temp.loc[temp['qflag'] == 'MHRDOW7', 'sum'] = temp.loc[temp['qflag'] == 'MHRDOW7', scalars].sum(axis=1) * \
   (8760./2016.)
 if 'MHRDOW' in list(temp['qflag']):
     wkday = [scalars[x] for x in range(288)]
     sat = [scalars[x] for x in range(288,576)]
     sun = [scalars[x] for x in range(576,864)]
-    temp.ix[temp['qflag'] == 'MHRDOW', 'sum'] = (5 * temp.ix[temp['qflag'] == 'MHRDOW', wkday].sum(axis=1) + \
-      temp.ix[temp['qflag'] == 'MHRDOW', sat].sum(axis=1) + temp.ix[temp['qflag'] == 'MHRDOW', sun].sum(axis=1)) \
+    temp.loc[temp['qflag'] == 'MHRDOW', 'sum'] = (5 * temp.loc[temp['qflag'] == 'MHRDOW', wkday].sum(axis=1) + \
+      temp.loc[temp['qflag'] == 'MHRDOW', sat].sum(axis=1) + temp.loc[temp['qflag'] == 'MHRDOW', sun].sum(axis=1)) \
       * (8760./2016.)
 temp['sum'] = temp['sum'].round(4)
 temp.to_csv(os.path.join(work_path, 'qa', 'temporal_airport_check.csv'), index=False, 

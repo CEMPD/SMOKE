@@ -94,10 +94,10 @@ def get_group_params(fn, grid):
     df.rename(columns={'release_height': 'rel_ht', 'sigma_z': 'sz'}, inplace=True)
     if grid != '12US2':
         # Fix the run group names based on the domain. Should be able to remove later
-        df.ix[df['run_group'].str[-1] == '4', 'run_group'] = \
-          df.ix[df['run_group'].str[-1] == '4', 'run_group'].str[:-1] + grid[:-1]
-        df.ix[df['run_group'].str[-2:] == '12', 'run_group'] = \
-          df.ix[df['run_group'].str[-2:] == '12', 'run_group'].str[:-2] + grid[:-1]
+        df.loc[df['run_group'].str[-1] == '4', 'run_group'] = \
+          df.loc[df['run_group'].str[-1] == '4', 'run_group'].str[:-1] + grid[:-1]
+        df.loc[df['run_group'].str[-2:] == '12', 'run_group'] = \
+          df.loc[df['run_group'].str[-2:] == '12', 'run_group'].str[:-2] + grid[:-1]
     return df.drop_duplicates('run_group')
 
 def check_params(run_group, work_path, group_params):
@@ -189,16 +189,16 @@ def check_temporal(run_group, work_path):
     temp = os.path.join(work_path, 'temporal', '%s_temporal.csv' %run_group)
     temp = pd.read_csv(temp, skipinitialspace=True, index_col=False)
     scalars = [x for x in temp.columns if x.startswith('Scalar')]
-    temp.ix[temp['qflag'] == 'MONTH', 'sum'] = temp.ix[temp['qflag'] == 'MONTH', scalars[:12]].sum(axis=1)
-    temp.ix[temp['qflag'] == 'HROFDY', 'sum'] = temp.ix[temp['qflag'] == 'HROFDY', scalars[:24]].sum(axis=1)
-    temp.ix[temp['qflag'] == 'MHRDOW7', 'sum'] = temp.ix[temp['qflag'] == 'MHRDOW7', scalars].sum(axis=1) * \
+    temp.loc[temp['qflag'] == 'MONTH', 'sum'] = temp.loc[temp['qflag'] == 'MONTH', scalars[:12]].sum(axis=1)
+    temp.loc[temp['qflag'] == 'HROFDY', 'sum'] = temp.loc[temp['qflag'] == 'HROFDY', scalars[:24]].sum(axis=1)
+    temp.loc[temp['qflag'] == 'MHRDOW7', 'sum'] = temp.loc[temp['qflag'] == 'MHRDOW7', scalars].sum(axis=1) * \
       (8760./2016.)
     if 'MHRDOW' in list(temp['qflag']):
         wkday = [scalars[x] for x in range(288)]
         sat = [scalars[x] for x in range(288,576)]
         sun = [scalars[x] for x in range(576,864)]
-        temp.ix[temp['qflag'] == 'MHRDOW', 'sum'] = (5 * temp.ix[temp['qflag'] == 'MHRDOW', wkday].sum(axis=1) + \
-          temp.ix[temp['qflag'] == 'MHRDOW', sat].sum(axis=1) + temp.ix[temp['qflag'] == 'MHRDOW', sun].sum(axis=1)) \
+        temp.loc[temp['qflag'] == 'MHRDOW', 'sum'] = (5 * temp.loc[temp['qflag'] == 'MHRDOW', wkday].sum(axis=1) + \
+          temp.loc[temp['qflag'] == 'MHRDOW', sat].sum(axis=1) + temp.loc[temp['qflag'] == 'MHRDOW', sun].sum(axis=1)) \
           * (8760./2016.)
     temp['sum'] = temp['sum'].round(4)
     temp.to_csv(os.path.join(work_path, 'qa', '%s_temporal_check.csv' %run_group), index=False, 
@@ -309,10 +309,10 @@ def fix_run_groups(source_groups, grid):
     Fix the run groups names based on the grid name
     Hopefully this step will be removed in the future as the rungroup names are improved
     '''
-    source_groups.ix[source_groups['run_group'].str[-1] == '4', 'run_group'] = \
-      source_groups.ix[source_groups['run_group'].str[-1] == '4', 'run_group'].str[:-1] + grid[:-1]
-    source_groups.ix[source_groups['run_group'].str[-2:] == '12', 'run_group'] = \
-      source_groups.ix[source_groups['run_group'].str[-2:] == '12', 'run_group'].str[:-2] + grid[:-1]
+    source_groups.loc[source_groups['run_group'].str[-1] == '4', 'run_group'] = \
+      source_groups.loc[source_groups['run_group'].str[-1] == '4', 'run_group'].str[:-1] + grid[:-1]
+    source_groups.loc[source_groups['run_group'].str[-2:] == '12', 'run_group'] = \
+      source_groups.loc[source_groups['run_group'].str[-2:] == '12', 'run_group'].str[:-2] + grid[:-1]
     return source_groups 
 
 def emis_compare(inv_rg, emis, run_group, work_path):

@@ -169,16 +169,16 @@ def check_temporal(sector, work_path):
         temp = os.path.join(work_path, 'temporal', '%s_temporal.csv' %sector)
         temp = pd.read_csv(temp, dtype={'facility_id': str}, skipinitialspace=True, index_col=False)
         scalars = [x for x in temp.columns if x.startswith('Scalar')]
-        temp.ix[temp['qflag'] == 'MONTH', 'sum'] = temp.ix[temp['qflag'] == 'MONTH', scalars[:12]].sum(axis=1)
-        temp.ix[temp['qflag'] == 'HROFDY', 'sum'] = temp.ix[temp['qflag'] == 'HROFDY', scalars[:24]].sum(axis=1)
-        temp.ix[temp['qflag'] == 'MHRDOW7', 'sum'] = temp.ix[temp['qflag'] == 'MHRDOW7', scalars].sum(axis=1) * \
+        temp.loc[temp['qflag'] == 'MONTH', 'sum'] = temp.loc[temp['qflag'] == 'MONTH', scalars[:12]].sum(axis=1)
+        temp.loc[temp['qflag'] == 'HROFDY', 'sum'] = temp.loc[temp['qflag'] == 'HROFDY', scalars[:24]].sum(axis=1)
+        temp.loc[temp['qflag'] == 'MHRDOW7', 'sum'] = temp.loc[temp['qflag'] == 'MHRDOW7', scalars].sum(axis=1) * \
           (8760./2016.)
         if 'MHRDOW' in list(temp['qflag']):
             wkday = [scalars[x] for x in range(288)]
             sat = [scalars[x] for x in range(288,576)]
             sun = [scalars[x] for x in range(576,864)]
-            temp.ix[temp['qflag'] == 'MHRDOW', 'sum'] = (5 * temp.ix[temp['qflag'] == 'MHRDOW', wkday].sum(axis=1) + \
-              temp.ix[temp['qflag'] == 'MHRDOW', sat].sum(axis=1) + temp.ix[temp['qflag'] == 'MHRDOW', sun].sum(axis=1)) \
+            temp.loc[temp['qflag'] == 'MHRDOW', 'sum'] = (5 * temp.loc[temp['qflag'] == 'MHRDOW', wkday].sum(axis=1) + \
+              temp.loc[temp['qflag'] == 'MHRDOW', sat].sum(axis=1) + temp.loc[temp['qflag'] == 'MHRDOW', sun].sum(axis=1)) \
               * (8760./2016.)
         temp['sum'] = temp['sum'].round(4)
         temp.to_csv(os.path.join(work_path, 'qa', 'temporal_%s_check.csv' %sector), index=False, 

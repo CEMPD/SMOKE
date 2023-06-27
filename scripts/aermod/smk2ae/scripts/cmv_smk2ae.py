@@ -213,7 +213,7 @@ def write_parameters(df):
         f.write('%s\n' %','.join(out_cols))
         for facid in list(df['facid'].drop_duplicates()):
             # Iterate over vertices in a polygon. This isn't consistent across polygons
-            for src_id in list(df.ix[df['facid'] == facid, 'src_id'].drop_duplicates()):
+            for src_id in list(df.loc[df['facid'] == facid, 'src_id'].drop_duplicates()):
                 src_df = df[(df['facid']==facid) & (df['src_id']==src_id)].copy()
                 numverts = src_df['numvert'].values[0]
                 out_line = [src_df['state'].values[0], src_df['region_cd'].values[0], facid, 
