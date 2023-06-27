@@ -107,7 +107,7 @@ def write_daily_prof(df, temp):
     df = df[['run_group','region_cd','scc',
       'ann_value']].copy().drop_duplicates(['run_group','region_cd','scc'])
     for state in list(df['region_cd'].str[:2].drop_duplicates()):
-        st_df = df.ix[df['region_cd'].str[:2] == state].copy() 
+        st_df = df.loc[df['region_cd'].str[:2] == state].copy() 
         st_df = match_temporal(st_df, temp.profs, value_cols, hierarchy, temp.use_daily)
         st_df.drop('scc', axis=1, inplace=True)
         st_df['year'] = os.environ['BASE_YEAR'][2:4]

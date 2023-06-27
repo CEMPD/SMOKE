@@ -1,4 +1,4 @@
-program convert_phour
+program convert_phour_annual
 
   use m3utilio
 
@@ -25,6 +25,7 @@ program convert_phour
   if (.not. desc3(phour)) then
     call m3exit(progname, 0, 0, 'Could not get PHOUR description', -1)
   end if
+  
   allocate(indxh(nrows3d))
   allocate(tmpannfac(nrows3d))
   allocate(annfac(nrows3d, 366*24))
@@ -42,19 +43,6 @@ program convert_phour
 
     call daymon( jdate, month, day)
 
-    if( month /= pmonth ) then
-        write(infile,'(a,i2.2)') 'PHOUR',month
-        phour = promptmfile(infile, fsread3, infile, progname)
-
-        if (.not. desc3(phour)) then
-           call m3exit(progname, 0, 0, 'Could not get PHOUR description', -1)
-        end if
-    end if
-
-    if (.not. read3(phour, 'HOURACT', allays3, jdate, jtime, tmpannfac)) then
-      call m3exit(progname, jdate, jtime, 'Could not read HOURACT from PHOUR', -1)
-    end if
-
     do srcidx = 1, nrows3d
       annfac(srcidx, tstep) = tmpannfac(srcidx)
     end do
@@ -64,11 +52,11 @@ program convert_phour
     pmonth = month
 
   end do
- 
+  
   do srcidx = 1, nrows3d
     write(phourout, '(I5, ",", I4, 8784(",", E14.7))') indxh(srcidx), year, annfac(srcidx, 1:tstep-1)
   end do
   
   call m3exit(progname, 0, 0, ' ', 0)
 
-end program convert_phour
+end program convert_phour_annual

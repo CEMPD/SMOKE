@@ -1,8 +1,8 @@
 
         SUBROUTINE HRNO_BEIS4( JDATE, JTIME, NX, NY, TA, SOILM, SOILT,
-     &                WSAT, ISLTYP, RAIN, GROWAGNO, NGROWAGNO, NONAGNO, 
-     &                PX_VERSION, INITIAL_HOUR, PTYPE, PULSEDATE, 
-     &                PULSETIME, EMPOL )
+     &                WSAT, WRF_WSAT, ISLTYP, RAIN, GROWAGNO, NGROWAGNO,
+     &                NONAGNO, PX_VERSION, INITIAL_HOUR, PTYPE, 
+     &                PULSEDATE, PULSETIME, EMPOL )
 
 !***********************************************************************
 !  subroutine body starts at line  150
@@ -83,6 +83,8 @@ C    10/03 : modified transition to non growing season for jul-oct of the year
 C    08/04 : Converted to SMOKE code style by C. Seppanen
 C    03/22 : minor edits and cleanup by J Vukovich; still differs from
 C            CMAQ inline BEIS  
+C    05/23 : adding logic in case where WSAT variable not available from
+C            WRF/MCIP
 C 
 C***********************************************************************
 C
@@ -119,7 +121,7 @@ C.........  ARGUMENTS and their descriptions
         REAL, INTENT (IN)  ::  TA    ( NX, NY )    !  air temperature (K)
         REAL, INTENT (IN)  ::  SOILM ( NX, NY )    !  soil moisture (m3/m3)
         REAL, INTENT (IN)  ::  SOILT ( NX, NY )    !  soil temperature (K)
-        REAL, INTENT (IN)  ::  WSAT ( NX, NY )    !  WSAT 
+        REAL, INTENT (IN OUT)  ::  WSAT ( NX, NY )    !  WSAT 
 
         REAL, INTENT (IN)  ::  ISLTYP( NX, NY )    !  soil type
         REAL, INTENT (IN)  ::  RAIN  ( NX, NY )    !  rainfall rate (cm/ 24 hr)
@@ -129,7 +131,8 @@ C.........  ARGUMENTS and their descriptions
         
         LOGICAL, INTENT (IN) :: PX_VERSION         ! true: using PX version of MCIP
         LOGICAL, INTENT (IN) :: INITIAL_HOUR       ! true: 
-        
+        LOGICAL, INTENT (IN) :: WRF_WSAT         
+      
         INTEGER, INTENT (IN OUT) :: PTYPE (NX, NY)     ! 'pulse' type
         INTEGER, INTENT (IN OUT) :: PULSEDATE (NX, NY) ! date of pulse start
         INTEGER, INTENT (IN OUT) :: PULSETIME (NX, NY) ! date of pulse end
@@ -141,8 +144,24 @@ C.........  ARGUMENTS and their descriptions
 
 C.........  Local PARAMETERS
         REAL,    PARAMETER :: CFNODRYFC = ( 1.0 / 3.0 ) * ( 1.0 / 30.0 )
-        
+
+C............MAXSTYPES and SATURATION array only for use in modified
+C............ BEIS4 when WSAT not available from WRFV3-MCIP
+
+        INTEGER, PARAMETER :: MAXSTYPES = 11
+
 C.........  Local ARRAYS
+
+C Saturation values for 11 soil types from pxpbl.F  (MCIP PX version)
+C       PLEIM-XIU LAND-SURFACE AND PBL MODEL (PX-LSM)
+C See JACQUEMIN B. AND NOILHAN J. (1990), BOUND.-LAYER METEOROL., 52,
+C 93-134.
+C   NOTE ONLY WORKS FOR WRFV3/MCIP output
+
+        REAL SATURATION( MAXSTYPES )
+        DATA SATURATION / 0.395, 0.410, 0.435, 0.485,
+     &                    0.451, 0.420, 0.477, 0.476,
+     &                    0.426, 0.482, 0.482        /
 
 C.........  SCRATCH LOCAL VARIABLES and their descriptions:
         INTEGER         R, C, L      ! counters
@@ -165,6 +184,11 @@ C   begin body of subroutine HRNO
         USE_SOILT = .TRUE.  ! use soil temperature in PX version
         EFAC = EXP( -0.103 * 30.0 )
         LSM_WATER = 14
+
+        IF ( .NOT. WRF_WSAT ) THEN
+          MESG = "Estimating WSAT in HRNO_BEIS4 routine..."
+          CALL M3MESG( MESG ) 
+        ENDIF
 
         IF ( GROWSEASON( JDATE ) .EQ. 0 ) THEN   ! not growing season
 
@@ -245,6 +269,11 @@ C!!!!!!
                   SOILCAT = ISLTYP( C,R )
                   TSOI = 0.0
 
+C............ case where WSAT not available from WRF/MCIP
+                  IF ( .NOT. WRF_WSAT ) THEN
+                     WSAT( C,R ) =  SATURATION( SOILCAT )
+                  ENDIF
+      
                   IF( SOILCAT .NE. LSM_WATER  ) THEN
                      RATIO = SOILM( C,R ) / WSAT( C,R )
                      IF ( USE_SOILT ) THEN

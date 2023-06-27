@@ -57,8 +57,8 @@ class AnnualFF10(object):
         # Pandas cannot aggregate with a NaN key. Assign all NaNs to -99.
         df.fillna(-99., inplace=True)
         df = df.groupby(self._keys+['smoke_name',], as_index=False).sum()
-        df.ix[(df['scc'].isin(('2275050011','2275060011'))) & (df['smoke_name'] == 'LEAD'), 'ann_value'] = \
-          df.ix[(df['scc'].isin(('2275050011','2275060011'))) & (df['smoke_name'] == 'LEAD'), 'ann_value'] * 0.5
+        df.loc[(df['scc'].isin(('2275050011','2275060011'))) & (df['smoke_name'] == 'LEAD'), 'ann_value'] = \
+          df.loc[(df['scc'].isin(('2275050011','2275060011'))) & (df['smoke_name'] == 'LEAD'), 'ann_value'] * 0.5
         '''
         Populate the emissions dataframe by facility_id, rel_point, scc, and pollutant
         '''
