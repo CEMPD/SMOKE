@@ -269,9 +269,9 @@ C.........  Get if NOx adjustment should be applied
 
 C............  Define the type of NOx adj eqs (MOVES 3 or older version)
         IF( NOXADJFLAG ) THEN
-            NOXADJEQS = .FALSE.     ! True: Use the latest MOVES3 NOx adj eqs
-            NOXADJEQS = ENVYN( 'USE_MOVES3_NOX_ADJ_EQS', 'Use ' //
-     &                    'the MOVES3 NOx humidity correction equations',
+            NOXADJEQS = .FALSE.     ! True: Use the latest MOVES4 NOx adj eqs
+            NOXADJEQS = ENVYN( 'USE_MOVES4_NOX_ADJ_EQS', 'Use ' //
+     &                    'the MOVES4 NOx humidity correction equations',
      &                    .FALSE., IOS )
         END IF
 C.........  Output precomputed gridded hourly emissions by temp. bins

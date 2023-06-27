@@ -48,7 +48,7 @@ class GridSurg(object):
         df = pd.read_csv(gref, names=names, comment='#', sep=';', 
             dtype={'region_cd': str, 'scc': str, 'code': str})
         df['region_cd'] = df['region_cd'].apply(self._fix_fips) 
-        df.ix[df['scc'].str.startswith('00'), 'scc'] = df.ix[df['scc'].str.startswith('00'), 
+        df.loc[df['scc'].str.startswith('00'), 'scc'] = df.loc[df['scc'].str.startswith('00'), 
           'scc'].str[2:]
         df['code'] = df['code'].str.split('!').str[0].str.strip()
         return df[df['scc'].isin(scc_list)].copy()
@@ -81,7 +81,7 @@ class GridSurg(object):
             print(xref.loc[xref['fname'].isnull()])
             raise ValueError('Missing filenames from grid description')
         for code in codes:
-            fname = xref.ix[xref['code'] == code, 'fname'].values[0]
+            fname = xref.loc[xref['code'] == code, 'fname'].values[0]
             self.surgs[code] = Surrogate(code, fname)
             
 class Surrogate(object):

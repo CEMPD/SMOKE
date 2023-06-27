@@ -166,12 +166,12 @@ RPTOBJ =  $(RPTSRC:.f=.o)
 #  emutil:
 
 UTISRC = \
- aggwndw.f   beld3to2.f       bluesky2inv.f        \
+ aggwndw.f   beld3to2.f       saregroup.f          \
  cemscan.f   extractida.f     gcntl4carb.f         \
  gentpro.f   geofac.f         invsplit.f           \
  layalloc.f  metcombine.f     metscan.f            \
  pktreduc.f  smk2emis.f       surgtool.f           \
- uam2ncf.f   inlineto2d.f     saregroup.f
+ uam2ncf.f   inlineto2d.f     
  
 UTIOBJ =  $(UTISRC:.f=.o)
 
@@ -278,7 +278,7 @@ SLIB  = libsmoke.a
 
 FLIB  = libfileset.a
 
-UTIL  = aggwndw     beld3to2    bluesky2inv cemscan     extractida  \
+UTIL  = aggwndw     beld3to2    cemscan     extractida  \
         geofac      invsplit    metcombine  metscan     pktreduc    \
         smk2emis    surgtool    uam2ncf     gentpro     gcntl4carb  \
         layalloc    inlineto2d  saregroup
@@ -506,7 +506,6 @@ wrrephdr.o    : $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODSTCY) $(MOD
 wrrepout.o    : $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODSTCY) $(MODINFO)
 
 aggwndw.o     : $(MODGRID)
-bluesky2inv.o : $(MODSTCY)
 gentpro.o     : $(MODINFO) $(MODSOURC) $(MODGRID) $(MODSURG) $(MODSTCY)
 geofac.o      : $(MODFILESET)
 inlinto2d.o   : $(MODGRID) $(MODGRDLIB)
@@ -758,9 +757,6 @@ aggwndw: aggwndw.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 
 beld3to2: beld3to2.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
-
-bluesky2inv: bluesky2inv.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 
 cemscan: cemscan.o

@@ -69,7 +69,7 @@ class AnnualFF10(object):
         # Zero pad the FIPS to 5 characters
         df['region_cd'] = df['region_cd'].str.zfill(5)
         # Split out the mode types
-        df.ix[df['poll'].str.contains('__'), 'poll'] = df.ix[df['poll'].str.contains('__'), 
+        df.loc[df['poll'].str.contains('__'), 'poll'] = df.loc[df['poll'].str.contains('__'), 
           'poll'].str.split('__').str[1]
         # Keep only the pollutants that are marked as kept in the inventory table
         df = pd.merge(df, invtable, on='poll', how='left')

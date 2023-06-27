@@ -86,7 +86,7 @@ C...........   Local variables
 
         REAL           SPLTFAC, SDIV, SMFAC ! tmp speciation profile factors
         LOGICAL      :: FOUND_FLAG = .FALSE.   ! flag for requested profile
-        CHARACTER(5)   TMPPRF     ! tmp profile number
+        CHARACTER(SPNLEN3)   TMPPRF     ! tmp profile number
         CHARACTER(16)  POLNAM     ! pollutant name
         CHARACTER(16)  SPECNM     ! tmp species name
         CHARACTER(300) LINE       ! buffer for profile data

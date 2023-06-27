@@ -39,9 +39,9 @@ class Temporal(object):
         key_cols = ['scc','region_cd','facility_id']
         # Replace 0s with null strings
         for col in key_cols:
-            xref.ix[xref[col].str.zfill(15) == '000000000000000', col] = ''
+            xref.loc[xref[col].str.zfill(15) == '000000000000000', col] = ''
         # Fill region_cd to 5 characters using 0s
-        xref.ix[xref['region_cd'] != '', 'region_cd'] = xref.ix[xref['region_cd'] != '', 
+        xref.loc[xref['region_cd'] != '', 'region_cd'] = xref.loc[xref['region_cd'] != '', 
           'region_cd'].str[-5:].str.zfill(5)
         # Narrow down the x-refs to the ones that are in the inventory. This saves processing time.
         xref.set_index(key_cols, inplace=True)

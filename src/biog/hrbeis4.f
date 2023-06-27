@@ -2,7 +2,7 @@
         SUBROUTINE HRBEIS4( JDATE, JTIME, NX, NY, MSPCS, 
      &                PX_VERSION,INITIAL_HOUR, COSZEN, SEMIS,
      &                GROWAGNO, NGROWAGNO, NONAGNO, TA,
-     &                SOILM, SOILT, WSAT, ISLTYP, RAIN,PRES,
+     &                SOILM, SOILT, WSAT, WRF_WSAT, ISLTYP, RAIN,PRES,
      &                RSOLAR,LAI, SLAI, WRF_LAI, USTAR,RSTOM,RATM,
      &                Q2,TEMPG,PTYPE, PULSEDATE, PULSETIME, EMPOL )
 C***********************************************************************
@@ -59,6 +59,7 @@ C.........  ARGUMENTS and their descriptions
         LOGICAL, INTENT (IN)  :: PX_VERSION    ! true: using PX version of MCIP
         LOGICAL, INTENT (IN)  :: INITIAL_HOUR  ! true:
         LOGICAL, INTENT( IN ) :: WRF_LAI
+        LOGICAL, INTENT( IN ) :: WRF_WSAT
 
         REAL, INTENT (IN)  ::  COSZEN   ( NX, NY )    !  cosine of zenith angle
         REAL, INTENT (IN)  ::  SEMIS    ( NX, NY, NSEF ) ! norm emissions
@@ -373,9 +374,9 @@ C
 
 C.........  Calculate NO emissions
         CALL HRNO_BEIS4( JDATE, JTIME, NX, NY,  TA, SOILM, SOILT,
-     &             WSAT, ISLTYP, RAIN, GROWAGNO, NGROWAGNO, NONAGNO,
-     &             PX_VERSION, INITIAL_HOUR, PTYPE, PULSEDATE,
-     &             PULSETIME, EMPOL )
+     &            WSAT, WRF_WSAT, ISLTYP, RAIN, GROWAGNO, NGROWAGNO, 
+     &            NONAGNO, PX_VERSION, INITIAL_HOUR, PTYPE, PULSEDATE,
+     &            PULSETIME, EMPOL )
 
 
         RETURN

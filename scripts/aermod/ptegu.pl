@@ -75,6 +75,9 @@ if (defined $ENV{'PTPRO_WEEKLY'}) {
 $prof_file = $ENV{'PTPRO_HOURLY_WINTER'};
 my %daily_winter = read_profiles($prof_file, 24);
 
+$prof_file = $ENV{'PTPRO_HOURLY_WINTERSHLD'};
+my %daily_wintershld = read_profiles($prof_file, 24);
+
 $prof_file = $ENV{'PTPRO_HOURLY_SUMMER'};
 my %daily_summer = read_profiles($prof_file, 24);
 
@@ -284,6 +287,8 @@ while (my $line = <$in_fh>) {
     }
     die "Invalid hourly profile code: $monday_prof" unless ($monday_prof =~ /w|s$/);
     $monday_prof =~ s/w|s$//;
+    die "Unknown hourly profile code: $monday_prof" unless exists $daily_wintershld{$monday_prof.'ws'};
+    my @hourly_wintershld_factors = @{$daily_wintershld{$monday_prof.'ws'}};
     die "Unknown hourly profile code: $monday_prof" unless exists $daily_winter{$monday_prof.'w'};
     my @hourly_winter_factors = @{$daily_winter{$monday_prof.'w'}};
     die "Unknown hourly profile code: $monday_prof" unless exists $daily_summer{$monday_prof.'s'};
@@ -294,8 +299,10 @@ while (my $line = <$in_fh>) {
     # determine starting day of the week (convert from 0 = Sunday to 0 = Monday for temporal profiles)
     my $day_of_week = (ymd($year, $month, 1)->day_of_week - 1) % 7;
     foreach my $month_factor (@monthly_factors) {
+      my @hourly_factors = @hourly_wintershld_factors;
+      # use winter factors for Jan, Nov, Dec
+      @hourly_factors = @hourly_winter_factors if ($month == 1 || $month >= 11);
       # use summer factors for May through Sep
-      my @hourly_factors = @hourly_winter_factors;
       @hourly_factors = @hourly_summer_factors if ($month >= 5 && $month <= 9);
 
       # note: factors average to 1 rather than summing to 1, so adjust when fractions are needed

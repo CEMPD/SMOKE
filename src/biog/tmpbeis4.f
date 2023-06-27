@@ -188,6 +188,7 @@ C....... BEIS4 settings setup for using SEAON_CALC function as default
         LOGICAL ::      ASSUME_SUMMER = .FALSE. ! use summer normalized emissions
         LOGICAL ::      SEASON_CALC = .TRUE.  ! use frost switch file
         LOGICAL ::      WRF_LAI = .TRUE.  ! use WRF LAI
+        LOGICAL ::      WRF_WSAT = .TRUE.  ! use WRF WSAT
 
         LOGICAL         GETATN
         LOGICAL         PX_VERSION     ! true: using PX version of MCIP
@@ -339,6 +340,10 @@ C.........  Check to compute season function from MCIP soil temperature
 C.........  Check to see if want to use LAI from WRF-MCIP file 
         MESG = 'Use LAI from WRF-MCIP?'
         WRF_LAI = ENVYN( 'USE_WRF_LAI', MESG, .TRUE., IOS)
+
+C.........  Check to see if want to use WSAT from WRF-MCIP file
+        MESG = 'Use WSAT from WRF-MCIP?'
+        WRF_WSAT = ENVYN( 'USE_WRF_WSAT', MESG, .TRUE., IOS)
      
         IF ( SWITCH_FILE .AND. SEASON_CALC ) THEN
           MESG = "ERROR: BIOSW_YN and COMPUTE_SEASON_FUNCTION both " //
@@ -456,11 +461,13 @@ C.............  Check for soil temperature variable
             CALL ENVSTR( 'SOILT2_VAR', MESG, 'SOIT2', STMP2NAM, IOS )
             CALL CHECK_VARIABLE( STMP2NAM, M3NAME )
 
-C.............  Check for soil temperature variable
-            MESG = 'Variable name for saturation'
-            CALL ENVSTR( 'WSAT_VAR', MESG, 'WSAT', WSATNAM, IOS )
-            CALL CHECK_VARIABLE( WSATNAM, M3NAME )
+            IF ( WRF_WSAT ) THEN
+C.............  Check for soil saturation variable
+             MESG = 'Variable name for soil saturation'
+             CALL ENVSTR( 'WSAT_VAR', MESG, 'WSAT', WSATNAM, IOS )
+             CALL CHECK_VARIABLE( WSATNAM, M3NAME )
 
+            ENDIF
 C.............  Check for soil type variable
             MESG = 'Variable name for soil type'
             CALL ENVSTR( 'ISLTYP_VAR', MESG, 'SLTYP', STNAM, IOS )
@@ -799,7 +806,7 @@ C.........  Allocate memory for met and emissions
 
         ALLOCATE( WSAT( NCOLS, NROWS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WSAT', PROGNAME )
-
+         
         ALLOCATE( RN( NCOLS, NROWS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RN', PROGNAME )
 
@@ -1095,15 +1102,22 @@ C.................  Read soil type data
      &                     '" from file "' // TRIM( M3NAME ) // '"'
                     CALL M3EXIT( PROGNAME, MDATE, MTIME, MESG, 2 )
                 END IF
-                
+
+                IF ( WRF_WSAT ) THEN                
+
 C.............  Read WSAT data
-                IF( .NOT. READ3( M3NAME, WSATNAM, 1,
+                 IF( .NOT. READ3( M3NAME, WSATNAM, 1,
      &                       MDATE, MTIME, WSAT ) ) THEN
                     MESG = 'Could not read "' //  WSATNAM //
      &                 '" from file "' // TRIM( M3NAME ) // '"'
                     CALL M3EXIT( PROGNAME, MDATE, MTIME, MESG, 2 )
-                END IF
+                 END IF
 
+                ELSE
+ 
+                 WSAT = 0.000000 ! array
+
+                ENDIF
             END IF 
 C.............  Read rainfall data
             IF( .NOT. READ3( M3NAME, RNNAM, 1, 
@@ -1243,11 +1257,11 @@ C............................... Apply season function to emissions
 C.............  Calculate non-speciated emissions
 
             CALL HRBEIS4( MDATE, MTIME, NCOLS, NROWS, MSPCS,
-     &                   PX_VERSION, INITIAL_HOUR, COSZEN, SEMIS,
-     &                   GROWAGNO, NGROWAGNO, NONAGNO, TASFC,
-     &                   SOILM, SOILT, WSAT, ISLTYP, RN, PRES,
-     &                   RGRND,LAI,SLAI, WRF_LAI,USTAR,RSTOM,RATM,Q2,
-     &                   TEMPG, PTYPE, PULSEDATE, PULSETIME, EMPOL )
+     &                 PX_VERSION, INITIAL_HOUR, COSZEN, SEMIS,
+     &                 GROWAGNO, NGROWAGNO, NONAGNO, TASFC,
+     &                 SOILM, SOILT, WSAT, WRF_WSAT, ISLTYP, RN, PRES,
+     &                 RGRND,LAI,SLAI, WRF_LAI,USTAR,RSTOM,RATM,Q2,
+     &                 TEMPG, PTYPE, PULSEDATE, PULSETIME, EMPOL )
 
 C............. Speciate emissions
             DO I = 1, NCOLS
