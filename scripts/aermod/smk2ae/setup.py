@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="smk2ae",
-    version="0.2",
+    version="0.3",
     packages=['smk2ae'],
     package_dir = {'smk2ae': 'smk2ae'},
     python_requires='>3.5',

@@ -109,7 +109,7 @@ def check_temporal(run_group, work_path):
     if len(nomonth) > 0:
         print('\nTemporal facilities without monthly profiles')
         print(nomonth)
-    temp.ix[temp['qflag'] == 'MONTH', 'sum'] = temp.ix[temp['qflag'] == 'MONTH', scalars[:12]].sum(axis=1)
+    temp.loc[temp['qflag'] == 'MONTH', 'sum'] = temp.loc[temp['qflag'] == 'MONTH', scalars[:12]].sum(axis=1)
     temp['sum'] = temp['sum'].round(4)
     temp.to_csv(os.path.join(work_path, 'qa', '%s_temporal_check.csv' %run_group), index=False, 
       columns=['facid','src_id','qflag','sum'])
