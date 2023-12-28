@@ -194,6 +194,7 @@ C...........   Other local variables
         INTEGER          USTART, UEND, OSTART, OEND
         INTEGER          MXWARN        !  maximum number of warnings
         INTEGER       :: NWARN = 0     !  current number of warnings
+        INTEGER       :: NWARN0 = 0    !  current number of warnings
         INTEGER          GIDX          ! index to source group
         INTEGER          GRPNUM        ! source group number
 
@@ -222,6 +223,7 @@ C...........   Other local variables
         CHARACTER(300)     MESG    ! message buffer
         CHARACTER( 4 )     YEAR    ! modelin year
         CHARACTER( 7 )     TDATE   ! tmp julinan date
+        CHARACTER( 7 )     WEKDAY  ! tmp weekday/weekend
         CHARACTER(IOVLEN3) QVARNAME,MET3DNAME    ! tmp variable type name
         CHARACTER(IOVLEN3) CPOL    ! tmp pollutant or emission type name
         CHARACTER(IOVLEN3) CSPC    ! tmp species name
@@ -699,8 +701,10 @@ C.....................  Determine weekday index (Monday is 1)
                     DAY = WKDAY( DDATE )
                     IF( DAY .GT. 5 ) THEN
                         DAYIDX = 1   ! weekend (6-7)
+                        WEKDAY = 'WEEKEND'
                     ELSE
                         DAYIDX = 2   ! weekday (1-5)
+                        WEKDAY  = 'WEEKDAY'
                     END IF
 
 C.....................  Determine SCC index for source
@@ -708,14 +712,47 @@ C.....................  Determine SCC index for source
 
 C.....................  Determine speed bins for source
                     IF( RPDFLAG ) THEN
+C.......................  Check whether vaild avg speed distributions are avail to apply
+                      IF( SPDISTFLAG ) THEN
+                        ASDVAL = SPDIST( MCFIP( SRC ), SCCIDX, DAYIDX, HOURIDX, 1 )
+                        IF( .NOT. ( ASDVAL < AMISS3 ) ) THEN
+                            BIN1 = 0
+                            BIN2 = 0
+                        ELSE
+                            IF( NWARN0 < MXWARN ) THEN
+                              MESG = 'ERORR: Missing speed distribution '
+     &                         //'profile for:' // CRLF() // BLANK5 //
+     &                         'SCC: ' // CSCC( SRC ) // ' || FIPS: '
+     &                         // CIFIP( SRC ) // ' || DOW: ' // WEKDAY 
+                              CALL M3MSG2( MESG )
+                              NWARN0 = NWARN0 + 1
+                            ELSE
+                              CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                            END IF
+                        END IF
+
+                      ELSE
                         SPEEDVAL = BADVAL3
                         IF( SPDPROFLAG ) THEN
                             SPEEDVAL = SPDPRO( MCFIP( SRC ), SCCIDX, DAYIDX, HOURIDX )
-                        END IF
+                            IF( SPEEDVAL < AMISS3 ) THEN
+                              IF( NWARN0 < MXWARN ) THEN
+                                MESG = 'ERORR: Missing hourly speed '
+     &                             //'profile for:' // CRLF() // BLANK5 //
+     &                             'SCC: ' // CSCC( SRC ) // ' || FIPS: '
+     &                             // CIFIP( SRC ) // ' || DOW: ' // WEKDAY 
+                                CALL M3MSG2( MESG )
+                                NWARN0 = NWARN0 + 1
+                              ELSE
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                              END IF
+                            ENDIF
 
+                        ELSE
 C.........................  Fall back to inventory speed if hourly speed isn't available
-                        IF( SPEEDVAL .LT. AMISS3 ) THEN
-                            SPEEDVAL = SPEED( SRC )
+                            IF( SPEEDVAL .LT. AMISS3 ) THEN
+                                SPEEDVAL = SPEED( SRC )
+                            END IF
                         END IF
 
                         BIN1 = 0
@@ -747,14 +784,7 @@ C.........................  Calculate speed interpolation factor
                             SPDFAC = 0.
                         END IF
 
-C.........................  Check whether vaild avg speed distributions are avail to apply
-                        IF( SPDISTFLAG ) THEN
-                           ASDVAL = SPDIST( MCFIP( SRC ), SCCIDX, DAYIDX, HOURIDX, 1 )
-                           IF( .NOT. ( ASDVAL < AMISS3 ) ) THEN
-                               BIN1 = 0
-                               BIN2 = 0
-                           END IF
-                        END IF
+                      END IF
 
                     END IF
 
@@ -968,7 +998,7 @@ C...........................  Calculate interpolated emission factor if process/
                           DO L = 1, NTBINS      ! no of temperature-bin loop (default=1 bin)
 
                             IF( RPDFLAG ) THEN
-C.................................  retrieve avg spd distributino values
+C.................................  Retrieve avg spd distribution values
                               IF( BIN1 == 0 .AND. BIN2 == 0 ) THEN
                                     DO IBIN = 1, MXSPDBINS
                                         ASDVAL = SPDIST( MCFIP( SRC ), SCCIDX, DAYIDX, HOURIDX, IBIN )

@@ -193,15 +193,19 @@ C.........  Allocate memory for and read required inventory characteristics
 
 C.........  Read speed and vehicle population data from the inventory
         IF( RPDFLAG ) THEN
-            M = INDEX1( 'SPEED', NMAP, MAPNAM )
-            IF( M <= 0 ) THEN
-                MESG = 'Mobile inventory does not include speed data'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-            
             ALLOCATE( SPEED( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
-            CALL RDMAPPOL( NSRC, 1, 1, 'SPEED', SPEED )
+            SPEED = 0.0
+
+            IF( .NOT. (SPDPROFLAG .OR. SPDISTFLAG) ) THEN
+                M = INDEX1( 'SPEED', NMAP, MAPNAM )
+                IF( M <= 0 ) THEN
+                    MESG = 'Mobile inventory does not include speed data'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+                CALL RDMAPPOL( NSRC, 1, 1, 'SPEED', SPEED )
+            END IF
 
 C.............  Make sure inventory has VMT as activity (won't be using this
 C               data but it needs to be there to make emission processes work)
@@ -490,20 +494,21 @@ C.........  Get reference county emission factors file list
      &           'Enter logical name for reference county file list',
      &           .TRUE., .TRUE., 'MRCLIST', PROGNAME )
 
-C.........  Open and read hourly speed data
-        IF( RPDFLAG .AND. SPDPROFLAG ) THEN
-            SPDEV = PROMPTFFILE(
-     &              'Enter logical name for speed profiles file',
-     &              .TRUE., .TRUE., 'SPDPRO', PROGNAME )
-            CALL RDSPDPRO( SPDEV )
-        END IF
-
 C.........  Open and read avereage speed distribution data
         IF( RPDFLAG .AND. SPDISTFLAG ) THEN
             SDDEV = PROMPTFFILE(
      &              'Enter logical name for average speed distribution file',
      &              .TRUE., .TRUE., 'SPDIST', PROGNAME )
             CALL RDSPDIST( SDDEV )
+            SPDPROFLAG = .FALSE.
+        END IF
+
+C.........  Open and read hourly speed data
+        IF( RPDFLAG .AND. SPDPROFLAG ) THEN
+            SPDEV = PROMPTFFILE(
+     &              'Enter logical name for speed profiles file',
+     &              .TRUE., .TRUE., 'SPDPRO', PROGNAME )
+            CALL RDSPDPRO( SPDEV )
         END IF
 
 C.........  Get control factor file 
