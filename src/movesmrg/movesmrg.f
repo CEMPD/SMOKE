@@ -219,6 +219,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.      ! true: first time routine called
         LOGICAL       :: NOXFLAG  = .FALSE.     ! true: NOx huidity correction
         LOGICAL       :: NO_INTRPLT = .FALSE.   ! true: single interploation, false: bi-interpolation
+        LOGICAL       :: EFLAG = .FALSE.        ! true: error(s) occurred
 
         CHARACTER(300)     MESG    ! message buffer
         CHARACTER( 4 )     YEAR    ! modelin year
@@ -726,6 +727,7 @@ C.......................  Check whether vaild avg speed distributions are avail 
      &                         // CIFIP( SRC ) // ' || DOW: ' // WEKDAY 
                               CALL M3MSG2( MESG )
                               NWARN0 = NWARN0 + 1
+                              EFLAG = .TRUE.
                             ELSE
                               CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                             END IF
@@ -742,6 +744,7 @@ C.......................  Check whether vaild avg speed distributions are avail 
      &                             'SCC: ' // CSCC( SRC ) // ' || FIPS: '
      &                             // CIFIP( SRC ) // ' || DOW: ' // WEKDAY 
                                 CALL M3MSG2( MESG )
+                                EFLAG = .TRUE.
                                 NWARN0 = NWARN0 + 1
                               ELSE
                                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
@@ -1169,6 +1172,11 @@ C                               not by applying 1/3600 factor (hr to sec)
                     END DO    ! end loop over grid cells for source
                 
                 END DO    ! end loop over sources in inv. county
+
+                IF( EFLAG ) THEN
+                    MESG = 'ERROR: There is a problem in Movesmrg run'
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
 
 C.................  Read out old data if not first county
                 IF ( MOPTIMIZE ) THEN
