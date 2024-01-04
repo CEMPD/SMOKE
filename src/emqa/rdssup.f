@@ -141,7 +141,10 @@ C.....................  Count the unique list of GSPRO
                     END DO
                 END IF
 
-                IF( S .EQ. NSRC ) V = 0
+C               IF( S .EQ. NSRC ) V = 0
+C  UNC-IE Dec 2023: Replace the above line with the line below this comment which allow
+C                   this subroutine check the last line in A|PSSUP file
+                IF( S == NSRC+1 ) V = 0
 
             END IF
 

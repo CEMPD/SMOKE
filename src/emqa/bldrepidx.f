@@ -512,7 +512,10 @@ C           variables depends on whether we have speciation or not
         END IF
 
 C.........  Allocate memory of reading and output data names
-        ALLOCATE( OUTDNAM( MXOUTDAT, NREPORT ), STAT=IOS )
+C.........  UNC-IE: Dec 2023: Increase allocation of OUTDNAM
+c       ALLOCATE( OUTDNAM( MXOUTDAT, NREPORT ), STAT=IOS )
+        ALLOCATE( OUTDNAM(max(MXOUTDAT,NSVARS+1), NREPORT ),
+     &            STAT=IOS )
         CALL CHECKMEM( IOS, 'OUTDNAM', PROGNAME )
         OUTDNAM = ' '
 
@@ -579,9 +582,12 @@ C                    NSPCPOL = NDATA
                     ALLRPT( N )%NUMDATA = NDATA
 
 C                    DEALLOCATE( OUTDNAM, SPCPOL )
-                    DEALLOCATE( OUTDNAM )
-                    ALLOCATE( OUTDNAM( NDATA, NREPORT ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'OUTDNAM', PROGNAME )
+C   UNC-IE Dec 2023: Comment out the three lines below this comment lines 
+C                    deallocate OUTDNAM could lead to array out of bound issue
+C                    when there are multiple configurations of reported species in REPCONFIG
+c                   DEALLOCATE( OUTDNAM )
+c                   ALLOCATE( OUTDNAM( NDATA, NREPORT ), STAT=IOS )
+c                   CALL CHECKMEM( IOS, 'OUTDNAM', PROGNAME )
 C                    ALLOCATE( SPCPOL( NDATA ), STAT=IOS )
 C                    CALL CHECKMEM( IOS, 'SPCPOL', PROGNAME )
 

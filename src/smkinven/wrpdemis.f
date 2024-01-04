@@ -281,13 +281,17 @@ C.........  Store sorted records for this hour
 
 C...........  Add multiple inventory pollutant(s) with same CAS name
 C             Find code corresponding to current pollutant before you
-          NPPCAS = UCASNKEP( N )
+C             UNC-IE Dec 2023: Move NPPCAS into IF/ELSE IF block to avoid 
+C             array-out-of-bound issue when working with CEM file
+c         NPPCAS = UCASNKEP( N )
 
           IF( CFLAG ) THEN
               NPPCAS = 1
               CV     = V
               NCOMP = 0
               INTGRFLAG = .FALSE.
+          ELSE    
+              NPPCAS = UCASNKEP( N )
           END IF
 
           DO NP = 0, NPPCAS - 1
