@@ -277,6 +277,9 @@ C.........  Store sorted records for this hour
 
           IF( S < 1 ) CYCLE  ! Skip if source is missing
 
+C  UNC-IE: 01/2024: CYCLE loop when V == 9006 (special value of flow position - FLOWPOS in CEM input data)
+          IF(CFLAG .AND. V == 9006) CYCLE          
+
           POLNAM = EANAM( V ) 
 
 C...........  Add multiple inventory pollutant(s) with same CAS name
@@ -295,8 +298,12 @@ c         NPPCAS = UCASNKEP( N )
           END IF
 
           DO NP = 0, NPPCAS - 1
-
-            NC = UCASIDX( N ) + NP
+C  UNC-IE Dec 2023: Add treatment of NC when processing CEM data
+            IF (CFLAG) THEN
+               NC = 1
+            ELSE 
+               NC = UCASIDX( N ) + NP
+            END IF
             IF( NP > 0 ) POLNAM = ITNAMA( SCASIDX( NC ) )
             V = INDEX1( POLNAM, NIPPA, EANAM )
             IF( NP > 0 ) LN = 0

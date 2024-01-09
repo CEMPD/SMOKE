@@ -270,9 +270,12 @@ C               reference counties in MCREFIDX
 
             IF( .NOT. FOUND ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG, 94010 ) 'ERROR: No factor file found ' //
-     &            'for reference county', MCREFIDX( I,1 ), 'in ' //
-     &            'reference county factors list.'
+c               WRITE( MESG, 94010 ) 'ERROR: No factor file found ' //
+c    &            'for reference county', MCREFIDX( I,1 ), 'in ' //
+c    &            'reference county factors list.'
+                WRITE( MESG, '(A)' ) 'ERROR: No factor file found ' // ! UNC-IE: Jan 2024; correcting format follow Carlie's sugestion
+     &            'for reference county ' // MCREFIDX( I,1 ) //
+     &            ' in reference county factors list.'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
