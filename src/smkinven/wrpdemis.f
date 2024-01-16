@@ -277,8 +277,9 @@ C.........  Store sorted records for this hour
 
           IF( S < 1 ) CYCLE  ! Skip if source is missing
 
-C  UNC-IE: 01/2024: CYCLE loop when V == 9006 (special value of flow position - FLOWPOS in CEM input data)
-          IF(CFLAG .AND. V == 9006) CYCLE          
+C  UNC-IE: 01/2024: CYCLE loop when V == MXSPDAT + CODFLAG3 = 9006 
+C                   which is special value of flow position - FLOWPOS in CEM input data
+          IF(CFLAG .AND. V == (MXSPDAT + CODFLAG3)) CYCLE          
 
           POLNAM = EANAM( V ) 
 
