@@ -77,7 +77,7 @@ C.........  LOCAL VARIABLES
         INTEGER          TMPSTEP                  ! temporary no. of time steps
         
         LOGICAL          ISLOGNAM                 ! true: file names are logical names
-        LOGICAL          EFLAG                    ! true: an error has happened
+        LOGICAL       :: EFLAG = .FALSE.          ! true: an error has happened
 
         CHARACTER(512)   MESG                     ! message buffer
         CHARACTER(256)   NAM                      ! current file name

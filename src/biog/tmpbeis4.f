@@ -20,6 +20,9 @@ C
 C  REVISION  HISTORY:
 C      4/22: Prototype by Jeff Vukovich based of Jesse Bash's proposed
 C            modifications
+C      10/2023: Adapted to USE M3UTILIO by Carlie J. Coats, Jr., UNCIE
+C      01/2024: Adapted Carlie J. Coats, Jr., UNCIE's edits to loop re-structre
+C               for better efficientcy in memory accessing
 C                  
 C***********************************************************************
 C
@@ -41,6 +44,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***********************************************************************
+        USE M3UTILIO
 
 C.........  Modules for public variables
 C.........  This module contains the speciation profile tables
@@ -55,27 +59,14 @@ C.......... no longer needed
         IMPLICIT NONE
 
 C.........  INCLUDES:
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'     !
         INCLUDE 'B3V14DIMS3.EXT'  ! biogenic-related constants for BEIS3
 C.................................  and BEIS4
         
 C.........  EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER         ENVINT 
-        LOGICAL         ENVYN
         CHARACTER(50)   GETCFDSC
         INTEGER         GETFLINE
-        CHARACTER(10)   HHMMSS
-        INTEGER         INDEX1
-
-        CHARACTER(16)   PROMPTMFILE
-        INTEGER         PROMPTFFILE
         CHARACTER(16)   VERCHAR
-
-        EXTERNAL        ENVINT, ENVYN, GETFLINE, HHMMSS, INDEX1, 
-     &                  PROMPTMFILE, PROMPTFFILE, VERCHAR
 
 C.........  ARGUMENTS and their descriptions
         CHARACTER(50) :: CVSW    ! CVS release tag
@@ -105,7 +96,9 @@ C.........  Gridded meteorology data
         REAL, ALLOCATABLE :: RSTOMI( : , : )    ! inverse of stomatal resistance
         REAL, ALLOCATABLE ::  RSTOM( : , : )    ! stomatal resistance
         REAL, ALLOCATABLE ::  RGRND( : , : )     ! solar radiation reaching ground		
-        REAL, ALLOCATABLE :: FSEAS( :,: )  ! Seasonal function for BEIS4
+C       REAL, ALLOCATABLE :: FSEAS( :,: )  ! Seasonal function for BEIS4
+        REAL                 PSEAS         ! 01/2024 H.Tran: Use singular PSEAS instead of FSEAS following
+C                                          !                 Carlie's edit for better efficientcy
 
         INTEGER, ALLOCATABLE :: SWITCH( :, : )     ! Seasonal switch
         INTEGER, ALLOCATABLE :: PTYPE ( :, : )     ! NO emissions 'pulse type'
@@ -242,9 +235,15 @@ C.........  Check if processing variable grid data
         VFLAG = ENVYN( 'USE_VARIABLE_GRID', 
      &                 'Use variable grid definition', 
      &                 .FALSE., IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "USE_VARIABLE_GRID"', 2 )
+        END IF
      
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "OUTZONE"', 2 )
+        END IF
 
 C.........  Write time zone to character string
         WRITE( CTZONE,94000 ) TZONE
@@ -252,13 +251,22 @@ C.........  Write time zone to character string
 C.........  Get the speciation profile to use
         MESG = 'Speciation profile to use for biogenics'
         CALL ENVSTR( 'BIOG_SPRO', MESG, 'B3V10', SPPRO, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "BIOG_SPRO"', 2 )
+        END IF
 
 C.........  Are the radiation/cloud data in the same file as temperature data
         MESG = 'Radiation/cloud in same file as temperature data?'
         SAMEFILE = ENVYN ( 'BIOMET_SAME', MESG, .TRUE., IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "BIOMET_SAME"', 2 )
+        END IF
 
 C........  Determine output units; only moles/hr and moles/s supported
         UNITTYPE = ENVINT( 'OUT_UNITS', 'BEIS4 output units ', 1, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "OUT_UNITS"', 2 )
+        END IF
 
         IF( UNITTYPE /= 1 .AND. UNITTYPE /= 2 ) THEN
             MESG = 'ERROR: Unsupported output units setting; valid ' //
@@ -273,6 +281,9 @@ C.........  Open speciation profiles file
         RDEV = PROMPTFFILE(
      &           'Enter logical name for SPECIATION PROFILES file',
      &           .TRUE., .TRUE., 'GSPRO', PROGNAME )
+        IF ( RDEV .LT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Could not open SPECIATION PROFILES file', 2 )
+        END IF
 
 C.........  Scan speciation profiles file to get all of the pollutant-species
 C           combinations that are valid for the pollutants in the inventory.
@@ -319,6 +330,9 @@ C.........  Read speciation profiles file
 C.........  Get the method to calculate PAR
         PARTYPE = ENVINT( 'BG_CLOUD_TYPE', 
      &                    'How PAR will be calculated', 1, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "BG_CLOUD_TYPE"', 2 )
+        END IF
 
         IF( PARTYPE /= 1 ) THEN
             MESG = 'ERROR: Unsupported PAR calculation method; ' //
@@ -332,6 +346,9 @@ C.........  Get the method to calculate PAR
 C.........  Check to see if frost date switch file to be used
         MESG = 'Using a frost date switch file?'
         SWITCH_FILE = ENVYN( 'BIOSW_YN', MESG, .FALSE., IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "BIOSW_YN"', 2 )
+        END IF
 
 C.........  Check to compute season function from MCIP soil temperature 
         MESG = 'Compute season function from soil temperature?'
@@ -344,6 +361,9 @@ C.........  Check to see if want to use LAI from WRF-MCIP file
 C.........  Check to see if want to use WSAT from WRF-MCIP file
         MESG = 'Use WSAT from WRF-MCIP?'
         WRF_WSAT = ENVYN( 'USE_WRF_WSAT', MESG, .TRUE., IOS)
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "USE_WRF_LAI"', 2 )
+        END IF
      
         IF ( SWITCH_FILE .AND. SEASON_CALC ) THEN
           MESG = "ERROR: BIOSW_YN and COMPUTE_SEASON_FUNCTION both " //
@@ -401,16 +421,20 @@ C.............  Check grid definition
             CALL CHECKMEM( IOS, 'SWITCH', PROGNAME )
             SWITCH = 0   ! array
 
-        ELSE IF ( SEASON_CALC ) THEN 
+c       ELSE IF ( SEASON_CALC ) THEN 
 
-            ALLOCATE( FSEAS( NCOLS,NROWS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'FSEAS', PNAME )
-            FSEAS = 0.000   ! array
+C............. 01/2024 H.Tran: use PSEAS instead of FSEAS
+c           ALLOCATE( FSEAS( NCOLS,NROWS ), STAT=IOS )
+c           CALL CHECKMEM( IOS, 'FSEAS', PROGNAME )
+c           FSEAS = 0.000   ! array
 
         ELSE
 
             MESG = 'Use summer normalized emissions?'
             ASSUME_SUMMER = ENVYN ( 'SUMMER_YN', MESG, .TRUE., IOS )
+            IF ( IOS .GT. 0 ) THEN
+                CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "SUMMER_YN"', 2 )
+            END IF
 
         END IF
 
@@ -438,56 +462,98 @@ C.........  Check that grid description matches BEIS_NORM_EMIS file
 C.........  Check for temperature variable
         MESG = 'Variable name for temperature'
         CALL ENVSTR( 'TMPR_VAR', MESG, 'TA', TMPRNAM, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "TMPR_VAR"', 2 )
+        END IF
         CALL CHECK_VARIABLE( TMPRNAM, M3NAME )
 
 C.........  Check if using PX version of MCIP
         PX_VERSION = ENVYN( 'PX_VERSION', 'MCIP is PX version?',
      &                      .FALSE., IOS)
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "PX_VERSION"', 2 )
+        END IF
           
         IF (PX_VERSION) THEN
         
 C.............  Check for soil moisture variable
             MESG = 'Variable name for soil moisture'
             CALL ENVSTR( 'SOILM_VAR', MESG, 'SOIM1', SMNAM, IOS )
+            IF ( IOS .GT. 0 ) THEN
+                CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "SOILM_VAR"', 2 )
+            END IF
             CALL CHECK_VARIABLE( SMNAM, M3NAME )
 
 C.............  Check for soil temperature variable
             MESG = 'Variable name for soil temperature'
             CALL ENVSTR( 'SOILT_VAR', MESG, 'SOIT1', STMPNAM, IOS )
+            IF ( IOS .GT. 0 ) THEN
+                CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "SOILT_VAR"', 2 )
+            END IF
             CALL CHECK_VARIABLE( STMPNAM, M3NAME )
 
 C.............  Check for soil temperature variable
             MESG = 'Variable name for soil temperature 2nd layer'
             CALL ENVSTR( 'SOILT2_VAR', MESG, 'SOIT2', STMP2NAM, IOS )
+            IF ( IOS .GT. 0 ) THEN
+                CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "SOILT2_VAR"', 2 )
+            END IF
             CALL CHECK_VARIABLE( STMP2NAM, M3NAME )
 
             IF ( WRF_WSAT ) THEN
 C.............  Check for soil saturation variable
              MESG = 'Variable name for soil saturation'
              CALL ENVSTR( 'WSAT_VAR', MESG, 'WSAT', WSATNAM, IOS )
+             IF ( IOS .GT. 0 ) THEN
+                CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "WSAT_VAR"', 2 )
+             END IF
              CALL CHECK_VARIABLE( WSATNAM, M3NAME )
 
             ENDIF
 C.............  Check for soil type variable
             MESG = 'Variable name for soil type'
             CALL ENVSTR( 'ISLTYP_VAR', MESG, 'SLTYP', STNAM, IOS )
+            IF ( IOS .GT. 0 ) THEN
+                CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "ISLTYP_VAR"', 2 )
+            END IF
             CALL CHECK_VARIABLE( STNAM, M3NAME )
+
+            ALLOCATE( SOILM( NCOLS, NROWS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SOILM', PROGNAME )
+
+            ALLOCATE( SOILT( NCOLS, NROWS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SOILT', PROGNAME )
+
+            ALLOCATE( SOILT2( NCOLS, NROWS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SOILT2', PROGNAME )
+
+            ALLOCATE( ISLTYP( NCOLS, NROWS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ISLTYP', PROGNAME )
 
         END IF
 
 C.........  Check for nonconvective rainfall variable
         MESG = 'Variable name for nonconvective rainfall'
         CALL ENVSTR( 'RN_VAR', MESG, 'RN', RNNAM, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "RN_VAR"', 2 )
+        END IF
         CALL CHECK_VARIABLE( RNNAM, M3NAME )
 
 C.........  Check for convective rainfall variable
         MESG = 'Variable name for convective rainfall'
         CALL ENVSTR( 'RC_VAR', MESG, 'RC', RCNAM, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "RC_VAR"', 2 )
+        END IF
         CALL CHECK_VARIABLE( RCNAM, M3NAME )
         
 C.........  Check for pressure variable; could be in either MET_FILE1 or MET_FILE2
         MESG = 'Variable name for surface pressure'
         CALL ENVSTR( 'PRES_VAR', MESG, 'PRES', PRESNAM, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "PRES_VAR"', 2 )
+        END IF
         
         J = INDEX1( PRESNAM, NVARS3D, VNAME3D )
         IF( J <= 0 ) THEN
@@ -520,7 +586,7 @@ C.............  Get description of radiation/cloud file
 
 C.............  Check that grid description matches BGRD file
             CALL CHKGRID( M2NAME, 'GRID' , 0 , EFLAG )
-            EFLAG = .FALSE.
+c           EFLAG = .FALSE.       ! 01/2024: It is unclear why EFLAG was hard-coded to FALSE here; disable this following Carlie's edit 
             IF ( EFLAG ) THEN
                 MESG = 'Grid in file "' // TRIM( M2NAME ) //
      &                 '" does not match previously set grid.'
@@ -545,31 +611,49 @@ C.........  If not using separate files, set M2NAME equal to first file
 C.........  Check for radiation variable
         MESG = 'Variable name for radiation'
         CALL ENVSTR( 'RGRND_VAR', MESG, 'RGRND', RGRNDNAM, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "RGRND_VAR"', 2 )
+        END IF
         CALL CHECK_VARIABLE( RGRNDNAM, M2NAME )
 
 C.........  Check for inverse aerodynamic resistance variable
         MESG = 'Variable name for inverse aerodynamic resistance'
         CALL ENVSTR( 'RADYNI_VAR', MESG, 'RADYNI', RADYNINAM, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "RADYNI_VAR"', 2 )
+        END IF
         CALL CHECK_VARIABLE( RADYNINAM, M3NAME )
 
 C.........  Check for ground temp variable
         MESG = 'Variable name for ground temperature'
         CALL ENVSTR( 'TEMPG_VAR', MESG, 'TEMPG', TEMPGNAM, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "TEMPG_VAR"', 2 )
+        END IF
         CALL CHECK_VARIABLE( TEMPGNAM, M3NAME )
 
 C.........  Check for LAI variable
         MESG = 'Variable name for LAI '
         CALL ENVSTR( 'LAI_VAR', MESG, 'LAI', LAINAM, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "LAI_VAR"', 2 )
+        END IF
         CALL CHECK_VARIABLE( LAINAM, M3NAME )
 
 C.........  Check for Q2 variable
         MESG = 'Variable name for Q2 '
         CALL ENVSTR( 'Q2_VAR', MESG, 'Q2', Q2NAM, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "Q2_VAR"', 2 )
+        END IF
         CALL CHECK_VARIABLE( Q2NAM, M3NAME )
 
 C.........  Check for RSTOMI variable
         MESG = 'Variable name for RSTOMI '
         CALL ENVSTR( 'RSTOMI_VAR', MESG, 'RSTOMI', RSTOMINAM, IOS )
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "RSTOMI_VAR"', 2 )
+        END IF
         CALL CHECK_VARIABLE( RSTOMINAM, M3NAME )
 
 C.........  Check for USTAR variable
@@ -789,20 +873,6 @@ C.........  Read the various categories of normalized emissions
 C.........  Allocate memory for met and emissions 
         ALLOCATE( TASFC( NCOLS, NROWS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TASFC', PROGNAME )
-        
-        IF( PX_VERSION ) THEN
-            ALLOCATE( SOILM( NCOLS, NROWS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SOILM', PROGNAME )
-
-            ALLOCATE( SOILT( NCOLS, NROWS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SOILT', PROGNAME )
-
-            ALLOCATE( SOILT2( NCOLS, NROWS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SOILT2', PROGNAME )
-
-            ALLOCATE( ISLTYP( NCOLS, NROWS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'ISLTYP', PROGNAME )
-        END IF
 
         ALLOCATE( WSAT( NCOLS, NROWS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WSAT', PROGNAME )
@@ -1027,11 +1097,12 @@ C.................  If new date, read season switch
                     MESG = 'Applying gridded season switch data...' 
                     CALL M3MSG2( MESG )
 
-                    DO I = 1, NCOLS
-                        DO J = 1, NROWS
-
+                    IF( SWITCH_FILE ) THEN
 C.............................  If switch equal to 0 use winter normalized emissions
-                          IF( SWITCH_FILE ) THEN
+
+                        DO J = 1, NROWS
+                        DO I = 1, NCOLS
+
                             IF( SWITCH( I,J ) == 0 ) THEN
                                 SEMIS( I, J, 1:NSEF   ) =
      &                              AVGEMIS( I, J, 1:NSEF  , NWINTER )
@@ -1043,10 +1114,11 @@ C.............................  If switch equal to 0 use winter normalized emiss
                                 SLAI( I, J, 1:NLAI ) =
      &                              AVGLAI( I, J, 1:NLAI, NSUMMER )
                             END IF                      
-                          ENDIF
 
+                        
+                        END DO ! loop over columns
                         END DO ! loop over rows
-                    END DO ! loop over columns
+                    ENDIF      ! if switch_file 
  
                 END IF  ! if using switch file
 
@@ -1220,38 +1292,39 @@ C.............  Calculate hourly rainfall totals
             ENDIF
 
 C calculate fseas based on deep soil temperature following WRF 3.8.1 PX
+C 01/2024 H.Tran: replacing FSEAS(:,:) with singular PSEAS following Carlie's edit 
 
             IF ( SEASON_CALC ) THEN
-             DO I = 1, NCOLS
-              DO J = 1, NROWS
-               IF ( SOILT2(I,J) .LT. 290.0 .AND. SOILT2(I,J) .GT. 282.0)
-     &          THEN
-                 FSEAS(I,J) = 1.0 - 0.015625 * ( 290.0 - SOILT2(I,J))**2
-               ELSEIF ( SOILT2(I,J) .GE. 290.0 ) THEN
-                 FSEAS(I,J) = 1.0
-               ELSEIF ( SOILT2(I,J) .LE. 282.0 ) THEN
-                 FSEAS(I,J) = 0.0
-               ENDIF
+                DO J = 1, NROWS
+                DO I = 1, NCOLS
+              
+                    IF ( SOILT2(I,J) .GE. 290.0 ) THEN
+                        PSEAS = 1.0
+                    ELSE IF ( SOILT2(I,J) .LE. 282.0 ) THEN
+                        PSEAS = 0.0
+                    ELSE
+                        PSEAS = 1.0 - 0.015625 * ( 290.0 - SOILT2(I,J))**2
+                    ENDIF
 
 C.......... Special case for coastal water cells that may have some 
 C.......... biogenic emissions due to disconnect between WRF water and
 C.......... and BELD6 water.   Note SOIT2 in MCIP doesn't seem to vary
 C.......... thru the year in water cells in WRF.
 
-               IF ( ISLTYP( I,J ) .EQ. 14 .AND. SOILT(I,J) .GE. 295.0 )
-     &          THEN
-                 FSEAS(I,J) = 1.0
-               ENDIF  
+                    IF ( ISLTYP( I,J ) .EQ. 14 .AND. 
+     &                    SOILT(I,J) .GE. 295.0 ) THEN
+                        PSEAS = 1.0
+                    ENDIF  
 C............................... Apply season function to emissions
-               SEMIS( I, J, 1:NSEF   ) = FSEAS(I,J) *
-     &          AVGEMIS( I, J, 1:NSEF , NSUMMER ) +
-     &          (1-FSEAS(I,J) ) * AVGEMIS( I, J, 1:NSEF, NWINTER)
-               SLAI( I, J, 1:NLAI ) = FSEAS(I,J) *
-     &          AVGLAI( I, J, 1:NLAI, NSUMMER ) +
-     &          (1-FSEAS(I,J) ) * AVGLAI( I, J, 1:NLAI, NWINTER )
+                    SEMIS( I, J, 1:NSEF   ) = PSEAS *
+     &                AVGEMIS( I, J, 1:NSEF , NSUMMER ) +
+     &                (1-PSEAS ) * AVGEMIS( I, J, 1:NSEF, NWINTER)
+                    SLAI( I, J, 1:NLAI ) = PSEAS *
+     &                AVGLAI( I, J, 1:NLAI, NSUMMER ) +
+     &                (1-PSEAS ) * AVGLAI( I, J, 1:NLAI, NWINTER )
 
-              ENDDO
-             ENDDO
+                ENDDO
+                ENDDO
             ENDIF
 
 C.............  Calculate non-speciated emissions
@@ -1264,17 +1337,19 @@ C.............  Calculate non-speciated emissions
      &                 TEMPG, PTYPE, PULSEDATE, PULSETIME, EMPOL )
 
 C............. Speciate emissions
-            DO I = 1, NCOLS
+            DO L = 1, MSPCS
+            DO K = 1, NSEF
                 DO J = 1, NROWS
-                    DO L = 1, MSPCS
-                        DO K = 1, NSEF
+                DO I = 1, NCOLS
+                
+                    
                             EMISL( I, J, L  ) = EMISL( I ,J, L ) +
      &                          EMPOL( I, J, K ) * MLFAC( L, K )
                             EMISS( I, J, L  ) = EMISS( I, J, L ) +
      &                          EMPOL( I, J, K ) * MSFAC( L, K ) 
-                        END DO
-                    END DO
                 END DO
+                END DO
+            END DO
             END DO
 
 C............  Convert to moles/second if necessary
