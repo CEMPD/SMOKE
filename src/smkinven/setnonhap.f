@@ -131,6 +131,9 @@ C.........   Other local variables
         
         CHARACTER(10) :: PROGNAME = 'SETNONHAP' ! program name
 
+        INTEGER:: IPOSVOC = 0       ! UNC-IE Feb 2024: Tracking VOC index in INVSTAT
+        LOGICAL:: KEEPVOC=.FALSE.   ! UNC-IE Feb 2024: Whether or not to set VOC index in INVSTAT to 0, i.e., dropping it 
+
 C***********************************************************************
 C       begin body of subroutine SETNONHAP
 
@@ -613,6 +616,7 @@ C....................  Check that average day NONHAP value is not negative
 
 C.....................  Rename VOC to NONHAPVOC
 C.....................  increment a number of poll for NONHAP[VOC|TOG]
+                    IF (IPOSVOC /= IPOSCOD(VPOS)) IPOSVOC = IPOSCOD( VPOS ) ! UNC-IE, Feb 2024: Save location of VOC in INVSTAT
                     NONVPOS = INDEX1( NONHAPNAM( K ), MXIDAT, INVDNAM )
                     IPOSCOD  ( VPOS )   = NONVPOS
                     TMPPOSCOD( NVPOS )  = NONVPOS
@@ -658,9 +662,14 @@ C................  Store pollutant for this position
                IPOSCOD( CURRPOS ) = TMPPOSCOD( CURRPOS )
                POLVAL( CURRPOS,:) = TMPPOLVAL( CURRPOS,: )
                POLNAM = INVDNAM( IPOSCOD( CURRPOS) )
+
+               IF (IPOSCOD (CURRPOS) == IPOSVOC) KEEPVOC = .TRUE. ! UNC-IE Feb 2024: Not dropping VOC from INVSTAT if there is still VOC remains
+
             ENDDO
 
         ENDDO
+        
+        IF ( .NOT. KEEPVOC ) INVSTAT ( IPOSVOC ) = 0 ! UNC-IE Feb 2024: drop VOC from INVSTAT if there is no VOC remains after HAPs integration
         
         DEALLOCATE( TMPNPCNT, TMPPOLVAL, TMPPOSCOD )
         
