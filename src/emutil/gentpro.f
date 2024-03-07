@@ -1635,13 +1635,17 @@ C.................  Calculate tmp daily total from hourly values
 
 C..................  add first hour=1 value to previous daily total as
 C                    DST adjustment for a proper Temporal processing.
-                 IF( HOURIDX == 1 .AND. DST == -10000 ) THEN
+C                    Huy Tran UNC-IE March 2024: Make this adjustment for daylight saving
+C                    time observant counties only
+c                IF( HOURIDX == 1 .AND. DST == -10000 ) THEN
+                 IF( HOURIDX == 1 .AND. DST == -10000 .AND. USEDAYLT(S) ) THEN
                      DAYSRC( S,NDAY ) = DAYSRC( S,NDAY ) + HRLSRC( S,T )
                      PT = DT( S ) - 23
                      TOTSRC( S,PT:T-1,1 ) = DAYSRC( S,NDAY )
                 END IF
 
-                IF( HOURIDX == 24 .AND. DST ==  10000 ) THEN
+c               IF( HOURIDX == 24 .AND. DST ==  10000 ) THEN
+                IF( HOURIDX == 24 .AND. DST ==  10000 .AND. USEDAYLT(S)) THEN
                     TMPDSRC( S ) = TMPDSRC( S ) - HRLSRC( S,T )  ! skip one hour value
                 END IF
 
