@@ -19,6 +19,7 @@ C      Subroutines: I/O API subroutine
 C
 C  REVISION  HISTORY:
 C      Created by B.H. Baek on 8/2011
+C      Modified by H. Tran on 3/2024 to fix daylight saving issue
 C
 C***************************************************************************
 C
@@ -205,6 +206,8 @@ C...........   Other local variables
         CHARACTER(SCCLEN3) TSCC      ! tmp source category code
         CHARACTER(ALLLEN3) CSRC      ! tmp source string
 
+        INTEGER, ALLOCATABLE :: HSVAL(:,:,:)   ! HS value record keeper; added by Huy Tran UNC-IE        
+
         CHARACTER(16) :: PROGNAME = 'RDFF10PD' !  program name
 
 C***********************************************************************
@@ -343,6 +346,14 @@ C           of the reference date/time so that the indexing will work properly.
         LFIP = ''
         IREC = 0
         TDAT = 0.0   !  array
+
+        IF( ALLOCATED( HSVAL ) ) DEALLOCATE( HSVAL )
+        IF (.NOT. GETSIZES) THEN
+            ALLOCATE( HSVAL(NSRC,NIPPA,NSTEPS), STAT=IOS )
+            CALL CHECKMEM( IOS, 'HSVAL', PROGNAME )
+            HSVAL  = 0
+        END IF
+
         DO         !  Head of period-specific file read loop
 
 C.............  Read first line of file
@@ -900,6 +911,47 @@ C               special toxics cases.
                 DO T = PTR, MIN( PTR + 23, NSTEPS )
 
                     H = H + 1
+
+c                   Processing for Day light saving start                    
+                    IF ( HSVAL(S,COD,T) .NE. 0 ) THEN ! If this combination of source/pol/timestep was already processed
+                       HS = HSVAL(S,COD,T)            ! Recover recorded HS value
+
+c                      Just update emission values and move on
+                       IF( HS .LE. MXPDSRC ) THEN
+                          IF( CEMPOL ) THEN               
+                            EMISVA( HS,T ) = CONVFAC * EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
+                            DYTOTA( HS,T ) = CONVFAC * EMIS(S,COD) * TOTAL
+                          ELSE
+                            EMISVA( HS,T ) = CONVFAC * TDAT( D,H )  ! Store data in emissions
+                            DYTOTA( HS,T ) = CONVFAC * TOTAL
+                          END IF 
+                       END IF                            
+                       CYCLE
+                    END IF
+
+c                   Processing for when Day light saving end
+                    IF (T .GT. 2 ) THEN
+                      IF ( HSVAL(S,COD,T-1) .EQ. 0) THEN ! No data had been read for previous time step of this combo
+                        NPDPT(T-1) = NPDPT(T-1) + 1
+                        HS = NPDPT(T-1)
+                            
+                        IF( HS .LE. MXPDSRC ) THEN
+                          IDXSRC( HS,T-1 ) = HS
+                          SPDIDA( HS,T-1 ) = S
+                          CIDXA ( HS,T-1 ) = CIDX
+                          CODEA ( HS,T-1 ) = COD
+                          IF( CEMPOL ) THEN
+                            EMISVA( HS,T-1 ) = CONVFAC * EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
+                            DYTOTA( HS,T-1 ) = CONVFAC * EMIS(S,COD) * TOTAL
+                          ELSE
+                            EMISVA( HS,T-1 ) = CONVFAC * TDAT( D,H )  ! Store data in emissions
+                            DYTOTA( HS,T-1 ) = CONVFAC * TOTAL
+                          END IF
+                        END IF   
+                        HSVAL(S,COD,T-1) = HS
+                      END IF    
+                    END IF 
+
                     NPDPT( T ) = NPDPT( T ) + 1
 
                     HS = NPDPT( T )
@@ -919,6 +971,8 @@ C               special toxics cases.
                         END IF
 
                     END IF
+
+                    HSVAL(S,COD,T) = HS    ! Record HS source index for this combination of source, pol, and timestep
 
                 END DO
 
