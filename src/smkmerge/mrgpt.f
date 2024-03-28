@@ -21,6 +21,7 @@ C  REVISION  HISTORY:
 C    Original by G. Pouliot 11/30/2007
 C    Revised by M. Omary 08/05/2010
 C    Revised by H. Tran 09/25/2018
+C    Revised by H. Tran 03/28/2024
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -255,11 +256,11 @@ C.........  Read names of input files and open files
         MESG = 'Enter logical name for STACK_GROUP INPUTS list'
 
         IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
-     &                      'FILELIST_S', PROGNAME   )
+     &                      'FILELIST_STACK', PROGNAME )
 
         MESG = 'Enter logical name for INLINEPT INPUTS list'
         JDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
-     &                      'FILELIST_E', PROGNAME   )
+     &                      'FILELIST_INLN', PROGNAME )
      
 C.........  Determine maximum number of input files in file
         MXNFIL_1 = GETFLINE( IDEV, 'List of files to merge' )
@@ -492,8 +493,8 @@ c.............  Check if the # of recrords (NROWS) are tha same in the Stack gro
             MESG = 'Inconsistent number of sources between:' //CRLF() //
      &              BLANK10 //'stack group file '//TRIM(FNAME( F,1 ))//' '//
      &              'and Emissions file '//TRIM(FNAME( F,2 ))//CRLF() //
-     &              BLANK10 //'The order of the input files in the FILELISTE_S should be'//
-     &              CRLF() //BLANK10 //'the same as in the FILELIST_E  '               
+     &              BLANK10 //'The order of the input files in the FILELIST_STACK should be'//
+     &              CRLF() //BLANK10 //'the same as in the FILELIST_INLN  '               
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
          END IF
        END DO
@@ -831,7 +832,7 @@ C.........  Warning missing emissions logical file names from the ADJ_FACS list
                            IF( L <= 0 ) THEN
                              MESG = 'WARNING: The logical file '//TRIM(NAM1) //
      &                       ' in the adjustment file (ADJ_FACS) is not '// 
-     &                       'found in the FILELIST_E on DATE : '//
+     &                       'found in the FILELIST_INLN on DATE : '//
      &                       MMDDYY(SDATE)
                               IF( LNAM /= NAM1 ) THEN
                                  CALL M3MSG2( MESG )
@@ -1067,7 +1068,7 @@ C.........  Create report file
 	         DO F = 1, NFILE
 		    WRITE(EDEV,93000)'Emissions Before Adjustment'
 		    WRITE(EDEV,*)'Emissions from ......',FNAME(F,2)
-                    WRITE(EDEV,950)'SATET FIP',(OUTNAM( INDXN( V,2 ),2 ),V =1,NVOUT(2))		
+                    WRITE(EDEV,950)'STATE FIP',(OUTNAM( INDXN( V,2 ),2 ),V =1,NVOUT(2))		
                     WRITE(EDEV,950)'         ',(VUNITU( INDXN( V,2 ),2 ),V =1,NVOUT(2))
 		    WRITE(EDEV,960)'-----------',(UNDERLINE(K),K=1,NVOUT(2))
 		  DO J = 1,NSTATES(F)
@@ -1110,7 +1111,7 @@ cxx                             CALL M3MSG2( MESG )
 		     END IF
 		    		
 		    WRITE(EDEV,*)'Emissions from ......',FNAME(F,2)
-                    WRITE(EDEV,950)'SATET FIP',(OUTNAM( INDXN( V,2 ),2 ),V =1,NVOUT(2))		
+                    WRITE(EDEV,950)'STATE FIP',(OUTNAM( INDXN( V,2 ),2 ),V =1,NVOUT(2))		
                     WRITE(EDEV,950)'         ',(VUNITU( INDXN( V,2 ),2 ),V =1,NVOUT(2))
 		    WRITE(EDEV,960)'-----------',(UNDERLINE(K),K=1,NVOUT(2))
 		  DO J = 1,NSTATES(F)
