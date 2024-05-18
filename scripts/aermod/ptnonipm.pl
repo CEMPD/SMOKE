@@ -100,7 +100,7 @@ while (my $line = <$in_fh>) {
   my ($is_header, @data) = parse_report_line($line);
   
   if ($is_header) {
-    parse_header(\@data, \%headers, \@pollutants, 'Fac Name');
+    parse_header(\@data, \%headers, \@pollutants, 'Plt Name');
     next;
   }
   
@@ -114,7 +114,7 @@ while (my $line = <$in_fh>) {
   next if $record_emissions == 0;
   
   # initialize facility data if needed
-  my $plant_id = $data[$headers{'Facility ID'}];
+  my $plant_id = $data[$headers{'Plant ID'}];
   unless (exists $facility_data{$plant_id}) {
     $facility_data{$plant_id}{'count'} = 0;
     $facility_data{$plant_id}{'max_emissions'} = $record_emissions;
@@ -138,7 +138,7 @@ while (my $line = <$in_fh>) {
   
   my @common;
   push @common, $plant_id;
-  push @common, '"' . $data[$headers{'Fac Name'}] . '"';
+  push @common, '"' . $data[$headers{'Plt Name'}] . '"';
   push @common, $src_id;
   
   # prepare location output
@@ -214,7 +214,7 @@ while (my $line = <$in_fh>) {
     # output inventory source file for QA
     @output = $state;
     push @output, $plant_id;
-    push @output, '"' . $data[$headers{'Fac Name'}] . '"';
+    push @output, '"' . $data[$headers{'Plt Name'}] . '"';
     push @output, $xwalk_data[4]; # unit ID
     push @output, $xwalk_data[6]; # process ID
     push @output, $xwalk_data[5]; # release point
@@ -225,7 +225,7 @@ while (my $line = <$in_fh>) {
       next if $src_data[$src_headers{$poll}] == 0.0;
       @output = $state;
       push @output, $plant_id;
-      push @output, '"' . $data[$headers{'Fac Name'}] . '"';
+      push @output, '"' . $data[$headers{'Plt Name'}] . '"';
       push @output, $data[$headers{'Source type'}];
       push @output, $src_id;
       push @output, $xwalk_data[4]; # unit ID
