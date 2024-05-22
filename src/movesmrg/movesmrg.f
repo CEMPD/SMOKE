@@ -815,17 +815,13 @@ C......................  Compute Temperature bins fraction and indexes for EMIS_
 
 C.................................  Check that an appropriate temperature was found
                             IF( IDX1( L ) == 0 ) THEN
-                                IF( TEMPVAL >= (EMTEMPS( 1 ) - TEMPBIN) ) THEN
                                   IDX1( L ) = 1
                                   IDX2( L ) = 1
-                                END IF
                             END IF
 
                             IF( IDX2( L ) > NEMTEMPS ) THEN
-                                IF( TEMPVAL <= (EMTEMPS( NEMTEMPS ) + TEMPBIN) ) THEN
                                   IDX1( L ) = NEMTEMPS
                                   IDX2( L ) = NEMTEMPS
-                                END IF
                             END IF
 
                             IF( IDX1( L ) .NE. IDX2( L ) ) THEN
@@ -995,10 +991,10 @@ C...........................  Check pol names to be NOx/NO/NO2/HONO for NOX humi
                           END IF
 
 C...........................  Calculate interpolated emission factor if process/pollutant has changed
-                          EFVALA = 0.0
-                          EFVALB = 0.0
-
                           DO L = 1, NTBINS      ! no of temperature-bin loop (default=1 bin)
+
+                            EFVALA = 0.0
+                            EFVALB = 0.0
 
                             IF( RPDFLAG ) THEN
 C.................................  Retrieve avg spd distribution values
