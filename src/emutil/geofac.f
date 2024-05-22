@@ -15,6 +15,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C             10/00 : Prototype by JMV
+C             04/24 : Improvised by Huy Tran (UNC-IE)
 C
 C***********************************************************************
 C
@@ -45,7 +46,7 @@ C...........   INCLUDES:
 
         INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'     ! Emissions constants
-        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
+        INCLUDE 'SETDECL.EXT'     ! FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -56,6 +57,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         EXTERNAL  GETFLINE, PROMPTFFILE, PROMPTMFILE,
      &            TRIMLEN
+        LOGICAL, EXTERNAL :: ENVYN          ! from IOAPI
            
 C...........   PARAMETERS and their descriptions:
 
@@ -64,12 +66,12 @@ C...........   PARAMETERS and their descriptions:
 
 C...........  LOCAL VARIABLES
 
-        REAL  FEMIS                              ! temporary value for emissions
-        REAL, ALLOCATABLE :: EMIS( :, : , : )        ! emissions 
+C       REAL  FEMIS                              ! temporary value for emissions
+        REAL, ALLOCATABLE :: EMIS( :, : , : )    ! emissions 
         REAL, ALLOCATABLE :: SPCFAC( : )         ! species factors
 
         INTEGER  TSTEP                           ! time step
-        INTEGER  I, J, K , L, M, N                  ! counters
+        INTEGER  I, J, K , L, M, N               ! counters
         INTEGER, ALLOCATABLE ::  IMASK ( :, : )  ! mask values
         INTEGER  LDEV                            ! log file unit number
         INTEGER  RDEV                            ! species factors unit number
@@ -88,7 +90,12 @@ C...........  LOCAL VARIABLES
         CHARACTER(16)  MNAME                       ! logical name for mask file
         CHARACTER(300) MESG                        ! message buffer for M3EXIT()
 
-        CHARACTER(16) :: PROGNAME = 'GEOFAC'   !  program name
+        CHARACTER(16) :: PROGNAME = 'GEOFAC'       !  program name
+
+        LOGICAL :: ZEROYN                          ! flag to zero out emissions for grid-cell that are not interested
+        LOGICAL :: MASKFRAC                        ! flag to use fractional mask value; if false then use unity mask value
+        CHARACTER(16) :: MASKVAR                   ! Variable name in mask file indicating masked region
+        REAL :: MAXMSK
 
 C***********************************************************************
 C   begin body of program
@@ -106,7 +113,13 @@ C.........  Prompt for name of NetCDF input file
      &       'Enter logical name for SMOKE gridded input (NetCDF) file',
      &        FSREAD3, 'INFILE', PROGNAME )
 
-        IF ( .NOT. DESCSET( ENAME,-1 ) ) THEN
+C Huy Tran 04/24: ! Call DESCSET with index -1 will cause it to use 
+C /NUMBER OF VARIABLES/ in FILEDESC attribute which may differ from the actual 
+C number of variable in SMOKE gridded input file
+C Modified to use index 1 to force using number of variable in the header of 
+C SMOKE gridded input file
+C       IF ( .NOT. DESCSET( ENAME,-1 ) ) THEN
+        IF ( .NOT. DESCSET( ENAME, 1 ) ) THEN
 
             MESG = 'Could not get description of file "' //
      &             ENAME( 1:TRIMLEN( ENAME ) ) // '"'
@@ -129,24 +142,36 @@ C.......   Get the mask file name
      &       'Enter logical name for mask input (NetCDF) file',
      &        FSREAD3, 'GEOMASK', PROGNAME )
 
+C.......   Get variable name that represent mask area in mask file
+        CALL ENVSTR( 'MASKVAR', 'Variable indicating masked region',
+     &               'MASK', MASKVAR, IOS )
+
+C.......   Check if to use fractional mask value or unity mask value
+        MASKFRAC = ENVYN( 'MASKFRAC', 'Whether or not using fractional mask value',
+     &               .TRUE., IOS )
+
 C.......   Get the species fac file name
 
         RDEV = PROMPTFFILE(
      &           'Enter logical name for factors file',
      &           .TRUE., .TRUE., 'SPECFACS', PROGNAME )
 
+C.......   Get whether or not to zero out emission for grid-cell not = 1 in mask file
+        ZEROYN = ENVYN( 'ZEROEMIS', 'Whether or not zeroing out emiss',
+     &                       .FALSE., IOS )
+
 C.........  Read mask file header      
 
         ALLOCATE( IMASK ( NCOLS3D, NROWS3D ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IMASK', PROGNAME )
      
-
-        IF ( .NOT. READ3( MNAME, 'IFAC', 1,
+        IF ( .NOT. READ3( MNAME, MASKVAR, 1,
      &                            0, 0, IMASK ) ) THEN
                   CALL M3ERR( PROGNAME , 0, 0,
-     &                       'Error reading factors from file '
+     &                       'Error reading masked region from file '
      &                       // MNAME , .TRUE. )
         ENDIF
+        MAXMSK = maxval(IMASK)
  
 C.........  Read species factors
 
@@ -186,60 +211,50 @@ C.........  Loop over time steps
 
         DO HR = 1, NSTEPS
 
-C.............  Write to screen because WRITE3 only writes to LDEV
-
-          DO  L = 1, NSPECS
-
-            EMIS = 0.0   !  array
-
-C.....................  Read input file for time and species of interest
-
-            IF ( .NOT. READSET( ENAME, VNAMESET( L ), ALLAYS3,
-     &                          ALLFILES, SDATE, STIME, EMIS   ) ) THEN
-              CALL M3ERR( PROGNAME , 0, 0,
-     &                       'Error reading ' // VNAMESET( L ) //
-     &                       ' from file ' // ENAME , .TRUE. )
-            ENDIF
-
-            DO M = 1, NLINES
-
-C...........   Find out if factor for this species exists
- 
-              IF ( VNAMESET ( L ) .EQ. SPCNAM ( M )  ) THEN                   
-
+C...........  Write to screen because WRITE3 only writes to LDEV
 C...........  Loop through cells and apply factor to cells in mask
 
-                DO K = 1, NLAYS
+          DO  L = 1, NSPECS
+C...........  Read input file for time and species of interest
 
-                  DO I = 1, NCOLS3D 
-
-                    DO J = 1, NROWS3D
-
-                      FEMIS  = EMIS ( I, J, K  )   
-
-C...........   Find out if grid cell is in geographical region of interest
-
-                      IF ( IMASK ( I, J ) .EQ. 1 ) THEN
-                        FEMIS = FEMIS * SPCFAC( M ) 
-                      ENDIF
-
-                      EMIS ( I, J , K ) = FEMIS
-
-                    ENDDO
-    
-                  ENDDO
-   
-                ENDDO
- 
+              IF ( .NOT. READSET( ENAME, VNAMESET( L ), ALLAYS3,
+     &              ALLFILES, SDATE, STIME, EMIS   ) ) THEN
+                 CALL M3ERR( PROGNAME , 0, 0,
+     &               'Error reading ' // VNAMESET( L ) //
+     &               ' from file ' // ENAME , .TRUE. )
               ENDIF
 
-C.............  Finished for this species
+              DO I = 1, NCOLS3D 
+              DO J = 1, NROWS3D
 
-            ENDDO
+C...........    If grid cell is NOT in geographical region of interest
+                IF (IMASK ( I, J ) .EQ. 0 ) GOTO 100
+                IF ( .NOT. MASKFRAC .AND.
+     &                IMASK ( I, J ) .NE. MAXMSK ) GOTO 100
+                GOTO 200
+100             IF (ZEROYN) EMIS ( I, J, : ) = 0.0 ! set emission to zero if needed
+                CYCLE                              ! skip to next grid cell
+
+200             CONTINUE
+
+                DO M = 1, NLINES
+
+C...........       Find out if factor for this species exists
+                   IF ( VNAMESET ( L ) .EQ. SPCNAM ( M )  ) THEN
+
+                        EMIS (I,J,:) = EMIS ( I, J, :  ) * SPCFAC( M ) 
+
+                   ENDIF
+
+                ENDDO
+    
+              ENDDO ! Finished NROWS
+              ENDDO ! Finished NCOLS
 
 C............  Write out new emissions
               
-            IF ( .NOT. WRITESET( ONAME, VNAMESET( L ), -1, SDATE,
+C           IF ( .NOT. WRITESET( ONAME, VNAMESET( L ), -1, SDATE,
+            IF ( .NOT. WRITESET( ONAME, VNAMESET( L ),  1, SDATE,
      &                           STIME, EMIS ) ) THEN
 
               CALL M3EXIT( PROGNAME , SDATE, STIME,
@@ -249,7 +264,7 @@ C............  Write out new emissions
 
             END IF         !  if writeset() failed
 
-           ENDDO
+           ENDDO           ! Finished for this species
 
 C............  Next time step
 
