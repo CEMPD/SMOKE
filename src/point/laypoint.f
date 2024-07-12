@@ -177,6 +177,7 @@ C.........  Allocatable un-gridding matrices
         INTEGER, ALLOCATABLE :: ND( : )     !  records per cell (unused) 
         INTEGER, ALLOCATABLE :: NX( : )     !  records per cell (unused)
         INTEGER, ALLOCATABLE :: GD( : )     !  dot-point, cell index 
+        INTEGER, ALLOCATABLE :: GDS( : )    !  dot-point, cell index shift
         INTEGER, ALLOCATABLE :: GX( : )     !  cross-point, cell index
         INTEGER, ALLOCATABLE :: SN( : )        ! record index (unused)
         INTEGER, ALLOCATABLE :: INDX( : )      ! sorting index (unused)
@@ -921,6 +922,8 @@ C.............  Layer fractions for all sources
 C.............  Allocate ungridding arrays
             ALLOCATE( GD( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'GD', PROGNAME )
+            ALLOCATE( GDS( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GDS', PROGNAME )
             ALLOCATE( GX( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'GX', PROGNAME )
 
@@ -993,6 +996,15 @@ C.............  Determine the X & Y values from the lat and lon
             ELSE
                 CALL GENPTCEL( NSRC, METNGRID, XLOCA, YLOCA, NEXCLD, NX,
      &                      INDX, GX, SN )
+C.............  Calculate grid dot reference cell index
+                DO S = 1, NSRC
+                    NCEL = GX( S )
+                    ROW = NCEL / NCOLS
+                    IF( MOD( NCEL, NCOLS ) .GT. 0 ) ROW = ROW + 1
+                    COL = NCEL - ( ROW - 1 ) * NCOLS
+                    GD( S ) = COL + ( NCOLS + 1 ) * ( ROW - 1 )
+                END DO
+
             END IF
 
 C.............  Read time-independent ZF and ZH for non-hydrostatic Met data
@@ -1248,24 +1260,26 @@ C.............  Read and transform meteorology:
 
 C.............  Read the low left dot and interpolate with the upper right
 C.............  Shift over one column
+            NCEL = 0
             IF ( .NOT. GFLAG) THEN
                 DO S = 1, NSRC
-                    NCEL = GX( S )
-                    GD( S ) = NCEL + 1 
+                    NCEL = GD( S )
+                    GDS( S ) = NCEL + 1 
                 END DO
             END IF
             CALL SAFE_READ3( DNAME, 'UWINDC', ALLAYS3, JDATE,JTIME,DBUF )
-            CALL METDOT_3D( NDOTS, NSRC, EMLAYS, GX, GD, DBUF, UWIND )
+            CALL METDOT_3D( NDOTS, NSRC, EMLAYS, GD, GDS, DBUF, UWIND )
 
-C.............  Shift over one row
+C.............  Shift over one row on the dot grid
+            NCEL = 0
             IF ( .NOT. GFLAG) THEN
                 DO S = 1, NSRC
-                    NCEL = GX( S )
-                    GD( S ) = NCEL + NCOLS
+                    NCEL = GD( S )
+                    GDS( S ) = NCEL + (NCOLS + 1)
                 END DO
             END IF
             CALL SAFE_READ3( DNAME, 'VWINDC', ALLAYS3, JDATE,JTIME,DBUF )
-            CALL METDOT_3D( NDOTS, NSRC, EMLAYS, GX, GD, DBUF, VWIND )
+            CALL METDOT_3D( NDOTS, NSRC, EMLAYS, GD, GDS, DBUF, VWIND )
             END IF
 
 C.............  Precompute constants before starting source loop
