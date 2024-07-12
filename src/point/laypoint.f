@@ -1433,7 +1433,7 @@ C.....................  Compute derived met vars needed before layer assignments
      &                       TSFC( S ), DDZF( 1,S ), QV( 1,S ),
      &                       TA( 1,S ), UWIND( 1,S ), VWIND( 1,S ),
      &                       ZH( 1,S ), ZF( 1,S ), ZSTK( 1,S ),
-     &                       PRESF( 1 ), LSTK, LPBL, TSTK, WSTK,
+     &                       PRESF, LSTK, LPBL, TSTK, WSTK,
      &                       DTHDZ, WSPD, ZZF )
 
 C.....................  Retreive altitude from source characterisitcs and
@@ -1459,6 +1459,7 @@ C.....................  Compute pressures, use sigma values and surface pressure
                         PRESF( L ) = VGLVSXG( L ) *
      &                               ( PRSFC( S ) - VGTOP ) * CONVPA +
      &                               VGTOP * CONVPA
+
                     END DO
 
 C.....................  Convert surface pressure from Pa to mb
@@ -1466,18 +1467,18 @@ C.....................  Convert surface pressure from Pa to mb
 
 C.....................  Compute derived met vars needed before layer assignments
                     IF( FIREFLAG ) THEN
-                        CALL FIRE_PREPLM( EMLAYS, HMIX( S ), ZERO, PSFC,
+                        CALL FIRE_PREPLM( S, EMLAYS, HMIX( S ), ZERO, PSFC,
      &                           TSFC( S ), DDZF( 1,S ), QV( 1,S ),
      &                           TA( 1,S ), UWIND( 1,S ), VWIND( 1,S ),
      &                           ZH( 1,S ), ZF( 1,S ), ZSTK( 1,S ),
-     &                           PRESF( 1 ), LSTK, LPBL, TSTK, WSTK,
+     &                           PRESF, LSTK, LPBL, TSTK, WSTK,
      &                           DTHDZ, WSPD, ZZF )
                     ELSE
                         CALL PREPLM( EMLAYS, HMIX( S ), STKHT(S), PSFC,
      &                           TSFC( S ), DDZF( 1,S ), QV( 1,S ),
      &                           TA( 1,S ), UWIND( 1,S ), VWIND( 1,S ),
      &                           ZH( 1,S ), ZF( 1,S ), ZSTK( 1,S ),
-     &                           PRESF( 1 ), LSTK, LPBL, TSTK, WSTK,
+     &                           PRESF, LSTK, LPBL, TSTK, WSTK,
      &                           DTHDZ, WSPD, ZZF )
                     END IF
 
@@ -1511,7 +1512,7 @@ C.....................  Compute plume rise for this source, if needed
                                 TMPBFLX = BFLX( S )
                             END IF
 
-                            CALL FIRE_PLMRIS( EMLAYS, LPBL, LSTK,
+                            CALL FIRE_PLMRIS( S, EMLAYS, LPBL, LSTK,
      &                           HFX(S), HMIX(S), TMPBFLX, TSTK, USTMP,
      &                           DTHDZ, TA(1,S), WSPD, ZZF(0), ZH(1,S),
      &                           ZSTK(1,S), WSTK, ZTOP, ZBOT, ZPLM )
@@ -1521,7 +1522,7 @@ C.....................  Compute plume rise for this source, if needed
      &                           DTHDZ, TA(1,S), WSPD, ZZF(0), ZH(1,S),
      &                           ZSTK(1,S), WSTK, ZPLM )
                         END IF
-
+                        
 C.........................  Determine bottom and top heights of the plume
                         IF( IPVERT == 0 ) THEN
 
@@ -1598,7 +1599,7 @@ C.................  Allocate plume to layers
 
                       ENDIF
                     END IF
-
+                    
                     CALL FIRE_POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF,
      &                                 LFULLHT, TEMPS, LHALFHT, TMPACRE,
      &                                 FPB1FLAG, LTOP, TFRAC )
