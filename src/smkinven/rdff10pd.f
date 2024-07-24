@@ -20,6 +20,7 @@ C
 C  REVISION  HISTORY:
 C      Created by B.H. Baek on 8/2011
 C      Modified by H. Tran on 3/2024 to fix daylight saving issue
+C      Modified by H. Tran on 7/2024 to fix processing HOURACT data and CONVFAC 
 C
 C***************************************************************************
 C
@@ -918,9 +919,12 @@ c                   Processing for Day light saving start
 
 c                      Just update emission values and move on
                        IF( HS .LE. MXPDSRC ) THEN
-                          IF( CEMPOL ) THEN               
-                            EMISVA( HS,T ) = CONVFAC * EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
-                            DYTOTA( HS,T ) = CONVFAC * EMIS(S,COD) * TOTAL
+                          IF( CEMPOL ) THEN
+c UNC-IE 07/11/2024: Remove CONVFAC for CEMPOL as CONVFAC was already applied to EMIS                                         
+C                           EMISVA( HS,T ) = CONVFAC * EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
+C                           DYTOTA( HS,T ) = CONVFAC * EMIS(S,COD) * TOTAL
+                            EMISVA( HS,T ) = EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
+                            DYTOTA( HS,T ) = EMIS(S,COD) * TOTAL
                           ELSE
                             EMISVA( HS,T ) = CONVFAC * TDAT( D,H )  ! Store data in emissions
                             DYTOTA( HS,T ) = CONVFAC * TOTAL
@@ -930,8 +934,9 @@ c                      Just update emission values and move on
                     END IF
 
 c                   Processing for when Day light saving end
-                    IF (T .GT. 2 ) THEN
-                      IF ( HSVAL(S,COD,T-1) .EQ. 0) THEN ! No data had been read for previous time step of this combo
+                    IF (T .GT. 24 ) THEN
+                        IF ( HSVAL(S,COD,T-1) .EQ. 0
+     &                       .AND. HSVAL(S,COD,T-2) .GT. 0 ) THEN ! No data had been read for the previous hour of this combo but was read for the hour before that
                         NPDPT(T-1) = NPDPT(T-1) + 1
                         HS = NPDPT(T-1)
                             
@@ -941,8 +946,9 @@ c                   Processing for when Day light saving end
                           CIDXA ( HS,T-1 ) = CIDX
                           CODEA ( HS,T-1 ) = COD
                           IF( CEMPOL ) THEN
-                            EMISVA( HS,T-1 ) = CONVFAC * EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
-                            DYTOTA( HS,T-1 ) = CONVFAC * EMIS(S,COD) * TOTAL
+c UNC-IE 07/11/2024: Remove CONVFAC for CEMPOL as CONVFAC was already applied to EMIS                          
+                            EMISVA( HS,T-1 ) = EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
+                            DYTOTA( HS,T-1 ) = EMIS(S,COD) * TOTAL
                           ELSE
                             EMISVA( HS,T-1 ) = CONVFAC * TDAT( D,H )  ! Store data in emissions
                             DYTOTA( HS,T-1 ) = CONVFAC * TOTAL
@@ -963,8 +969,9 @@ c                   Processing for when Day light saving end
                         CIDXA ( HS,T ) = CIDX
                         CODEA ( HS,T ) = COD
                         IF( CEMPOL ) THEN
-                            EMISVA( HS,T ) = CONVFAC * EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
-                            DYTOTA( HS,T ) = CONVFAC * EMIS(S,COD) * TOTAL
+c UNC-IE 07/11/2024: Remove CONVFAC for CEMPOL as CONVFAC was already applied to EMIS
+                            EMISVA( HS,T ) = EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
+                            DYTOTA( HS,T ) = EMIS(S,COD) * TOTAL
                         ELSE
                             EMISVA( HS,T ) = CONVFAC * TDAT( D,H )  ! Store data in emissions
                             DYTOTA( HS,T ) = CONVFAC * TOTAL
