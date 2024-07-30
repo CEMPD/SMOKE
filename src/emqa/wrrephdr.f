@@ -1355,13 +1355,15 @@ C.........  Fugitive parameters.  +3 for decimal and 2 significant figures
             PWIDTH( 7 ) = 10
             CALL ADD_TO_HEADER( PWIDTH( 7 ), HEADERS( IHDRFUGLN ),
      &                          LH, HDRBUF )
-            CALL ADD_TO_HEADER( PWIDTH( 7 ), ATTRUNIT( 8 ), LU, UNTBUF )
+c           CALL ADD_TO_HEADER( PWIDTH( 7 ), ATTRUNIT( 8 ), LU, UNTBUF ) ! UNC-IE: Wrong unit was applied
+            CALL ADD_TO_HEADER( PWIDTH( 7 ), ATTRUNIT( 6 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRFUGAN ) )
             PWIDTH( 8 ) = 10
             CALL ADD_TO_HEADER( PWIDTH( 8 ), HEADERS( IHDRFUGAN ),
      &                          LH, HDRBUF )
-            CALL ADD_TO_HEADER( PWIDTH( 8 ), ATTRUNIT( 9 ), LU, UNTBUF )
+c           CALL ADD_TO_HEADER( PWIDTH( 8 ), ATTRUNIT( 9 ), LU, UNTBUF ) ! UNC-IE: Wrong unit was applied
+            CALL ADD_TO_HEADER( PWIDTH( 8 ), 'deg', LU, UNTBUF )            
 
             WRITE( FUGPFMT, 94640 ) PWIDTH( 5 ), RPT_%DELIM,
      &                              PWIDTH( 6 ), RPT_%DELIM,
