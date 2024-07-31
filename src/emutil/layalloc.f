@@ -60,7 +60,7 @@ C...........   PARAMETERS:
 
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name SMOKEv5.0_Jun2023$' ! CVS release tag
+        CHARACTER*50, PARAMETER :: CVSW = '$Name SMOKEv5.1_Jul2024$' ! CVS release tag
         REAL,         PARAMETER :: CONVPA = 1.0E-2  ! conversion factor for Pa to mb
 
 C...........   LOCAL VARIABLES and their descriptions:

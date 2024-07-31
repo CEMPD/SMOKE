@@ -41,7 +41,7 @@ C.........  EXTERNAL FUNCTIONS
 
 C.........  LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.0_Jun2023$'  ! CVS release tag
+     &  CVSW = '$Name SMOKEv5.1_Jul2024$'  ! CVS release tag
         INTEGER, PARAMETER :: MXSEG = 16        ! number of segments in line
 
 C.........  LOCAL VARIABLES

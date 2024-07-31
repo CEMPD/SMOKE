@@ -66,7 +66,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  LOCAL PARAMETERS and their descriptions:
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.0_Jun2023$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv5.1_Jul2024$' ! CVS release tag
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: SDATE    ! Julian start date
