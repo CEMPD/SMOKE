@@ -87,7 +87,7 @@ while (my $line = <$in_fh>) {
   my ($is_header, @data) = parse_report_line($line);
 
   if ($is_header) {
-    parse_header(\@data, \%headers, \@pollutants, 'Fac Name');
+    parse_header(\@data, \%headers, \@pollutants, 'Plt Name');
     next;
   }
   
@@ -101,7 +101,7 @@ while (my $line = <$in_fh>) {
   next if $all_zero;
   
   my $state = substr($data[$headers{'Region'}], 7, 2);
-  my $plant_id = $data[$headers{'Facility ID'}];
+  my $plant_id = $data[$headers{'Plant ID'}];
   
   # store all the records by plant ID
   push @{$records{$state}{$plant_id}}, \@data;
@@ -162,7 +162,7 @@ for my $state (sort keys %records) {
 
     my @common;
     push @common, $plant_id;
-    push @common, '"' . $data[$headers{'Fac Name'}] . '"';
+    push @common, '"' . $data[$headers{'Plt Name'}] . '"';
     push @common, $src_id unless $is_runway;
 
     # prepare location output
