@@ -101,7 +101,7 @@ C...........  LOCAL PARAMETERS and their descriptions:
         REAL, PARAMETER :: BTU2M4PS3 = 0.00000258  ! conv. factor for bouyancy flux
 
         CHARACTER(50), PARAMETER ::
-     &  CVSW = '$Name SMOKEv5.1_Jul2024$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv5.0_Jun2023$' ! CVS release tag
 
 C.........  Indicator for which public inventory arrays need to be read
         INTEGER,            PARAMETER :: NINVARR = 9
@@ -173,14 +173,14 @@ C.........  Allocatable dot-point surface grid coordinates
         REAL   , ALLOCATABLE :: DXVALS( :,: )   ! x values
         REAL   , ALLOCATABLE :: DYVALS( :,: )   ! y values
 
-C.........  Allocatable un-gridding matrices
-        INTEGER, ALLOCATABLE :: ND( : )     !  records per cell (unused) 
-        INTEGER, ALLOCATABLE :: NX( : )     !  records per cell (unused)
-        INTEGER, ALLOCATABLE :: GD( : )     !  dot-point, cell index 
-        INTEGER, ALLOCATABLE :: GDS( : )    !  dot-point, cell index shift
-        INTEGER, ALLOCATABLE :: GX( : )     !  cross-point, cell index
-        INTEGER, ALLOCATABLE :: SN( : )        ! record index (unused)
-        INTEGER, ALLOCATABLE :: INDX( : )      ! sorting index (unused)
+C.........  Allocatable un-gridding matrices (uses bilinear interpolation)
+C           Dimensioned 4 by NSRC
+        INTEGER, ALLOCATABLE :: ND( :,: )     !  dot-point, cell indexes
+        INTEGER, ALLOCATABLE :: NDS( : )     !  dot-point, cell indexes
+        INTEGER, ALLOCATABLE :: NX( :,: )     !  cross-point, cell indexes
+
+        REAL   , ALLOCATABLE :: CD( :,: )     !  dot-point, coefficients
+        REAL   , ALLOCATABLE :: CX( :,: )     !  cross-point, coefficients
 
 C.........  Output layer fractions, dimensioned NSRC, emlays
         REAL   , ALLOCATABLE :: LFRAC( :, : )
@@ -221,7 +221,7 @@ C...........   Logical names and unit numbers
         CHARACTER(16) DAYNAME   !  daily inventory file name
 
 C...........   Other local variables
-        INTEGER          I, J, K, L, L1, L2, S, T   ! counters and indices
+        INTEGER          I, J, K, L, L1, L2, S, T  ! counters and indices
 
         INTEGER          EMLAYS    ! number of emissions layers
         INTEGER          IOS       ! tmp i/o status
@@ -245,9 +245,6 @@ C...........   Other local variables
         INTEGER       :: STIME = 0 ! start time (HHMMSS)
         INTEGER          TSTEP     ! output time step
         INTEGER          IPVERT    ! plume vertical spread method
-        INTEGER          NEXCLD    ! number of sources excluded on grid
-        INTEGER          COL       ! column number
-        INTEGER          ROW       ! row number
         INTEGER          NCEL      ! cell index number
 
         REAL             X, Y, P, Q
@@ -920,12 +917,16 @@ C.............  Layer fractions for all sources
             LFRAC = 0.0
 
 C.............  Allocate ungridding arrays
-            ALLOCATE( GD( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GD', PROGNAME )
-            ALLOCATE( GDS( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GDS', PROGNAME )
-            ALLOCATE( GX( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GX', PROGNAME )
+            ALLOCATE( ND( 4,NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ND', PROGNAME )
+            ALLOCATE( NDS( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ND', PROGNAME )
+            ALLOCATE( NX( 4,NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NX', PROGNAME )
+            ALLOCATE( CD( 4,NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CD', PROGNAME )
+            ALLOCATE( CX( 4,NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CX', PROGNAME )
 
 C.............  Allocate per-layer arrays from 1:EMLAYS
             ALLOCATE( WSPD( EMLAYS ), STAT=IOS )
@@ -951,19 +952,9 @@ C.............  Allocate array for tmp gridded, layered cross-point met data
             ALLOCATE( DBUF( NDOTS,NLAYS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'DBUF', PROGNAME )
 
-C.........  Allocate memory so that we can use the GENPTCEL
-            ALLOCATE( NX( METNGRID ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'NX', PROGNAME )
-            ALLOCATE( ND( NDOTS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'ND', PROGNAME )
-            ALLOCATE( INDX( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'INDX', PROGNAME )
-            ALLOCATE( SN( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SN', PROGNAME )
 
-C.............  Compute un-gridding matrices for dot and cross point met data
-            IF( GFLAG ) THEN
 C.............  If variable grid, allocate latitude and longitude arrays
+            IF( GFLAG ) THEN
                 ALLOCATE( XXVALS( METNCOLS,METNROWS ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'XXVALS', PROGNAME )
                 ALLOCATE( XYVALS( METNCOLS,METNROWS ), STAT=IOS )
@@ -972,15 +963,18 @@ C.............  If variable grid, allocate latitude and longitude arrays
                 CALL CHECKMEM( IOS, 'DXVALS', PROGNAME )
                 ALLOCATE( DYVALS( METNCOLS+1,METNROWS+1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'DYVALS', PROGNAME )
+            END IF
 
-C.............  Determine grid cells for these coordinate locations
-C.............  Determine the X & Y values from the lat and lon
+C.............  Compute un-gridding matrices for dot and cross point met data
+            IF( GFLAG ) THEN
                 CALL SAFE_READ3( TNAME, 'LON', 1, 0, 0, DXVALS )
                 CALL SAFE_READ3( TNAME, 'LAT', 1, 0, 0, DYVALS )
 
                 CALL CONVRTXY( (METNCOLS+1), (METNROWS+1), GDTYP, GRDNM,
      &                         P_ALP, P_BET, P_GAM, XCENT, YCENT,
      &                         DXVALS, DYVALS )
+                CALL UNGRIDBV( METNCOLS+1, METNROWS+1, DXVALS, DYVALS,
+     &                         NSRC, XLOCA, YLOCA, ND, CD )
 
                 CALL SAFE_READ3( CNAME, 'LON', 1, 0, 0, XXVALS )
                 CALL SAFE_READ3( CNAME, 'LAT', 1, 0, 0, XYVALS )
@@ -988,23 +982,16 @@ C.............  Determine the X & Y values from the lat and lon
                 CALL CONVRTXY( METNCOLS, METNROWS, GDTYP, GRDNM,
      &                         P_ALP, P_BET, P_GAM, XCENT, YCENT,
      &                         XXVALS, XYVALS )
-
-                CALL GENPTVCEL( NSRC, NDOTS, DXVALS, DYVALS, NEXCLD, ND,
-     &                      INDX, GD, SN )
-                CALL GENPTVCEL( NSRC, METNGRID, XXVALS, XYVALS, NEXCLD, NX,
-     &                      INDX, GX, SN )
+                CALL UNGRIDBV( METNCOLS, METNROWS, XXVALS, XYVALS,
+     &                         NSRC, XLOCA, YLOCA, NX, CX )
             ELSE
-                CALL GENPTCEL( NSRC, METNGRID, XLOCA, YLOCA, NEXCLD, NX,
-     &                      INDX, GX, SN )
-C.............  Calculate grid dot reference cell index
-                DO S = 1, NSRC
-                    NCEL = GX( S )
-                    ROW = NCEL / NCOLS
-                    IF( MOD( NCEL, NCOLS ) .GT. 0 ) ROW = ROW + 1
-                    COL = NCEL - ( ROW - 1 ) * NCOLS
-                    GD( S ) = COL + ( NCOLS + 1 ) * ( ROW - 1 )
-                END DO
+                CALL UNGRIDBD1( METNCOLS+1, METNROWS+1,
+     &                        XORIGDG, YORIGDG, XCELLDG, YCELLDG,
+     &                        NSRC, XLOCA, YLOCA, ND, CD )
 
+                CALL UNGRIDBD1( METNCOLS, METNROWS,
+     &                        METXORIG, METYORIG, XCELL, YCELL,
+     &                        NSRC, XLOCA, YLOCA, NX, CX )
             END IF
 
 C.............  Read time-independent ZF and ZH for non-hydrostatic Met data
@@ -1034,12 +1021,12 @@ C.................  Open GRIDCRO3D file and check that it matches other met file
                 CALL GET_VARIABLE_NAME( 'ZH', VNAME )
                 CALL SAFE_READ3( GNAME, VNAME, ALLAYS3, SDATE3D,
      &                           STIME3D, XBUF )
-                CALL METCELL_3D( METNGRID, NSRC, EMLAYS, GX, XBUF, ZH )
+                CALL METCELL_3D( METNGRID, NSRC, EMLAYS, NX, XBUF, ZH )
 
                 CALL GET_VARIABLE_NAME( 'ZF', VNAME )
                 CALL SAFE_READ3( GNAME, VNAME, ALLAYS3, SDATE3D,
      &                           STIME3D, XBUF )
-                CALL METCELL_3D( METNGRID, NSRC, EMLAYS, GX, XBUF, ZF )
+                CALL METCELL_3D( METNGRID, NSRC, EMLAYS, NX, XBUF, ZF )
 
 C.................  Pre-process ZF and ZH to compute DDZH and DDZF
                 CALL COMPUTE_DELTA_ZS
@@ -1218,10 +1205,10 @@ C.............  Compute per-source heights
             IF( .NOT. XFLAG .AND. .NOT. ZSTATIC ) THEN
 
                 CALL SAFE_READ3( XNAME,'ZH',ALLAYS3,JDATE,JTIME,XBUF )
-                CALL METCELL_3D( METNGRID, NSRC, EMLAYS, GX, XBUF, ZH )
+                CALL METCELL_3D( METNGRID, NSRC, EMLAYS, NX, XBUF, ZH )
 
                 CALL SAFE_READ3( XNAME,'ZF',ALLAYS3,JDATE,JTIME,XBUF )
-                CALL METCELL_3D( METNGRID, NSRC, EMLAYS, GX, XBUF, ZF )
+                CALL METCELL_3D( METNGRID, NSRC, EMLAYS, NX, XBUF, ZF )
 
 C.................  Pre-process ZF and ZH to compute DDZH and DDZF
                 CALL COMPUTE_DELTA_ZS
@@ -1231,55 +1218,55 @@ C.................  Pre-process ZF and ZH to compute DDZH and DDZF
 C.............  Read and transform meteorology:
             IF ( .NOT. XFLAG ) THEN
             CALL SAFE_READ3( SNAME, 'HFX', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL METCELL_2D( METNGRID, NSRC, GX, XBUF, HFX)
+            CALL METCELL_2D( METNGRID, NSRC, NX, XBUF, HFX)
 
             CALL SAFE_READ3( SNAME, 'PBL', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL METCELL_2D( METNGRID, NSRC, GX, XBUF, HMIX)
+            CALL METCELL_2D( METNGRID, NSRC, NX, XBUF, HMIX)
 
             CALL GET_VARIABLE_NAME( 'TGD', VNAME )
             CALL SAFE_READ3( SNAME, VNAME, ALLAYS3, JDATE, JTIME, XBUF )
-            CALL METCELL_2D( METNGRID, NSRC, GX, XBUF, TSFC)
+            CALL METCELL_2D( METNGRID, NSRC, NX, XBUF, TSFC)
 
             CALL SAFE_READ3( SNAME, 'USTAR', ALLAYS3, JDATE,JTIME,XBUF )
-            CALL METCELL_2D( METNGRID, NSRC, GX, XBUF, USTAR)
+            CALL METCELL_2D( METNGRID, NSRC, NX, XBUF, USTAR)
 
             CALL SAFE_READ3( SNAME, 'PRSFC', ALLAYS3, JDATE,JTIME,XBUF )
-            CALL METCELL_2D( METNGRID, NSRC, GX, XBUF, PRSFC)
+            CALL METCELL_2D( METNGRID, NSRC, NX, XBUF, PRSFC)
 
             CALL SAFE_READ3( XNAME, 'TA', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL METCELL_3D( METNGRID, NSRC, EMLAYS, GX, XBUF, TA )
+            CALL METCELL_3D( METNGRID, NSRC, EMLAYS, NX, XBUF, TA )
 
             CALL SAFE_READ3( XNAME, 'QV', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL METCELL_3D( METNGRID, NSRC, EMLAYS, GX, XBUF, QV )
+            CALL METCELL_3D( METNGRID, NSRC, EMLAYS, NX, XBUF, QV )
 
             CALL SAFE_READ3( XNAME, 'PRES', ALLAYS3, JDATE, JTIME,XBUF )
-            CALL METCELL_3D( METNGRID, NSRC, EMLAYS, GX, XBUF, PRES )
+            CALL METCELL_3D( METNGRID, NSRC, EMLAYS, NX, XBUF, PRES )
 
             CALL SAFE_READ3( XNAME, 'DENS', ALLAYS3, JDATE, JTIME,XBUF )
-            CALL METCELL_3D( METNGRID, NSRC, EMLAYS, GX, XBUF, DENS )
+            CALL METCELL_3D( METNGRID, NSRC, EMLAYS, NX, XBUF, DENS )
 
 C.............  Read the low left dot and interpolate with the upper right
 C.............  Shift over one column
             NCEL = 0
             IF ( .NOT. GFLAG) THEN
                 DO S = 1, NSRC
-                    NCEL = GD( S )
-                    GDS( S ) = NCEL + 1 
+                    NCEL = ND( 1, S )
+                    NDS( S ) = NCEL + 1 
                 END DO
             END IF
             CALL SAFE_READ3( DNAME, 'UWINDC', ALLAYS3, JDATE,JTIME,DBUF )
-            CALL METDOT_3D( NDOTS, NSRC, EMLAYS, GD, GDS, DBUF, UWIND )
+            CALL METDOT_3D( NDOTS, NSRC, EMLAYS, ND, NDS, DBUF, UWIND )
 
 C.............  Shift over one row on the dot grid
             NCEL = 0
             IF ( .NOT. GFLAG) THEN
                 DO S = 1, NSRC
-                    NCEL = GD( S )
-                    GDS( S ) = NCEL + (NCOLS + 1)
+                    NCEL = ND( 1, S )
+                    NDS( S ) = NCEL + (NCOLS + 1)
                 END DO
             END IF
             CALL SAFE_READ3( DNAME, 'VWINDC', ALLAYS3, JDATE,JTIME,DBUF )
-            CALL METDOT_3D( NDOTS, NSRC, EMLAYS, GD, GDS, DBUF, VWIND )
+            CALL METDOT_3D( NDOTS, NSRC, EMLAYS, ND, NDS, DBUF, VWIND )
             END IF
 
 C.............  Precompute constants before starting source loop
@@ -1459,7 +1446,6 @@ C.....................  Compute pressures, use sigma values and surface pressure
                         PRESF( L ) = VGLVSXG( L ) *
      &                               ( PRSFC( S ) - VGTOP ) * CONVPA +
      &                               VGTOP * CONVPA
-
                     END DO
 
 C.....................  Convert surface pressure from Pa to mb
@@ -1522,7 +1508,7 @@ C.....................  Compute plume rise for this source, if needed
      &                           DTHDZ, TA(1,S), WSPD, ZZF(0), ZH(1,S),
      &                           ZSTK(1,S), WSTK, ZPLM )
                         END IF
-                        
+
 C.........................  Determine bottom and top heights of the plume
                         IF( IPVERT == 0 ) THEN
 
@@ -1599,7 +1585,7 @@ C.................  Allocate plume to layers
 
                       ENDIF
                     END IF
-                    
+
                     CALL FIRE_POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF,
      &                                 LFULLHT, TEMPS, LHALFHT, TMPACRE,
      &                                 FPB1FLAG, LTOP, TFRAC )
@@ -1952,7 +1938,7 @@ C                value to the source
 C.............  Subprogram arguments
             INTEGER, INTENT (IN)  :: M              ! length of input
             INTEGER, INTENT (IN)  :: N              ! length of output array
-            INTEGER, INTENT (IN)  :: IX( N )        ! index array
+            INTEGER, INTENT (IN)  :: IX( 4, N )        ! index array
             REAL,    INTENT (IN)  :: V( M )         ! input vector
             REAL,    INTENT (OUT) :: Y( N )         ! output vector
 C.............  Local variables
@@ -1962,7 +1948,7 @@ C----------------------------------------------------------------------
 
             DO S = 1, N
                
-                J = IX( S ) 
+                J = IX( 1, S ) 
                 Y( S ) = V( J )
 
             END DO
@@ -1979,7 +1965,7 @@ C.............  Subprogram arguments
             INTEGER, INTENT (IN)  :: M              ! length of input
             INTEGER, INTENT (IN)  :: N              ! length of output array
             INTEGER, INTENT (IN)  :: P              ! number of layers
-            INTEGER, INTENT (IN)  :: IX( N )        ! index array
+            INTEGER, INTENT (IN)  :: IX( 4, N )        ! index array
             REAL,    INTENT (IN)  :: V( M, P )         ! input vector
             REAL,    INTENT (OUT) :: Y( P, N )         ! output vector
 C.............  Local variables
@@ -1989,7 +1975,7 @@ C----------------------------------------------------------------------
 
             DO S = 1, N
                
-                J = IX( S ) 
+                J = IX( 1, S ) 
 
                 DO L = 1, P
 
@@ -2009,7 +1995,7 @@ C.............  Subprogram arguments
             INTEGER, INTENT (IN)  :: M              ! length of input
             INTEGER, INTENT (IN)  :: N              ! length of output array
             INTEGER, INTENT (IN)  :: P              ! number of layers
-            INTEGER, INTENT (IN)  :: JX( N )        ! index array dot 1
+            INTEGER, INTENT (IN)  :: JX( 4, N )        ! index array dot 1
             INTEGER, INTENT (IN)  :: KX( N )        ! index array dot 2
             REAL,    INTENT (IN)  :: V( M, P )         ! input vector
             REAL,    INTENT (OUT) :: Y( P, N )         ! output vector
@@ -2021,7 +2007,7 @@ C----------------------------------------------------------------------
 
             DO S = 1, N
                
-                J = JX( S )
+                J = JX( 1, S )
                 K = KX( S ) 
 
                 DO L = 1, P
