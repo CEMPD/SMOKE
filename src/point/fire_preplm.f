@@ -1,5 +1,5 @@
 
-        SUBROUTINE FIRE_PREPLM( EMLAYS, HMIX, HTS, PSFC, TS, DDZF, 
+        SUBROUTINE FIRE_PREPLM( NS, EMLAYS, HMIX, HTS, PSFC, TS, DDZF, 
      &                          QV, TA, UW, VW, ZH, ZF, ZSTK, PRES, 
      &                          LSTK, LPBL, TSTK, WSTK, DTHDZ, WSPD, 
      &                          ZZF )
@@ -57,6 +57,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL      POLY
 
 C...........   SUBROUTINE ARGUMENTS (NOTE: All met parms are per-source)
+        INTEGER, INTENT (IN) :: NS
         INTEGER, INTENT (IN) :: EMLAYS          ! no. emissions layers
         REAL   , INTENT (IN) :: HMIX            ! mixing height
         REAL   , INTENT (IN) :: HTS             ! stack height
@@ -114,6 +115,7 @@ C.........  Compute wind speed and virtual temperature
         TVSFC = TS   * ( 1.0 + 0.6077 * QSFC )
         THETG = TVSFC  * ( 1000.0 / PSFC )**0.286
 
+
         IF ( HMIX .LE. ZF( 1 ) ) THEN
             LPBL = 1
         END IF
@@ -137,7 +139,7 @@ C.........  Compute temperatures at full-layer face heights
                        
         THV1 = TF( 1 ) * ( 1000. / PRES( 1 ) )**0.286
         DTHDZ( 1 ) = ( THV1 - THETG ) / ZF( 1 )
-
+    
         DO L = 2, EMLAYS
  
             IF ( HMIX > ZF( L-1 ) )  LPBL = L
@@ -145,12 +147,14 @@ C.........  Compute temperatures at full-layer face heights
  
             THVK = TF( L ) * ( 1000. / PRES( L ) )**0.286
             DTHDZ( L ) = DDZF( L ) * ( THVK - THV1 )
+
             THV1 = THVK
  
             ZZF( L ) = ZF( L )
  
         END DO
-        
+ 
+       
 C.........  Set the 1st level vertical THETV gradient to the 2nd layer value
 C           This overrides the layer 1 gradient determined above
         DTHDZ( 1 ) = DTHDZ( 2 )

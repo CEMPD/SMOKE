@@ -1,5 +1,5 @@
 
-        SUBROUTINE FIRE_PLMRIS( EMLAYS, LPBL, LSTK, HFX, HMIX, BFLX,
+        SUBROUTINE FIRE_PLMRIS( NS, EMLAYS, LPBL, LSTK, HFX, HMIX, BFLX,
      &                          TSTK, USTAR, DTHDZ, TA, WSPD, ZF, ZH,
      &                          ZSTK, WSTK, TOP, BOT, ZPLM )
 
@@ -55,6 +55,7 @@ C...........   INCLUDES:
 
 C...........   ARGUMENTS and their descriptions:
 
+        INTEGER, INTENT (IN) :: NS
         INTEGER, INTENT (IN) :: EMLAYS    ! no. of emission layers
         INTEGER, INTENT (IN) :: LPBL      ! lyr of height of PBL, = RADM's KMIX
         INTEGER, INTENT (IN) :: LSTK      ! lyr of top of stack, = RADM's KSTK
