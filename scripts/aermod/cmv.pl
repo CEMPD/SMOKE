@@ -381,11 +381,11 @@ close $in_fh;
 
 # prepare port location output
 foreach my $facility_id (sort keys %port_cell_emissions) {
-  foreach my $group_type (sort keys $port_cell_emissions{$facility_id}) {
+  foreach my $group_type (sort keys %{$port_cell_emissions{$facility_id}}) {
     # determine grid cell with the maximum emissions total
     my $max_cell;
     my $max_emis = -1;
-    foreach my $cell (sort keys $port_cell_emissions{$facility_id}{$group_type}) {
+    foreach my $cell (sort keys %{$port_cell_emissions{$facility_id}{$group_type}}) {
       my $cell_emis = $port_cell_emissions{$facility_id}{$group_type}{$cell}{'emis'};
       if ($cell_emis > $max_emis) {
         $max_emis = $cell_emis;
@@ -434,7 +434,7 @@ my $src_fh = open_output($file);
 print $src_fh "state,file_prefix,run_group,facid,src_id,poll,annual_emis,smoke_ids\n";
 
 foreach my $facility_id (sort keys %emissions) {
-  foreach my $group_type (sort keys $emissions{$facility_id}) {
+  foreach my $group_type (sort keys %{$emissions{$facility_id}}) {
     my $run_group = $sources{$facility_id}{$group_type}{'run_group'};
     my $source_id = $sources{$facility_id}{$group_type}{'source_id'};
   
@@ -448,7 +448,7 @@ foreach my $facility_id (sort keys %emissions) {
   
     my $emis_val = 0;
     if ($run_group eq $UW_GROUP) {
-      foreach my $region (sort keys $emissions{$facility_id}{$group_type}) {
+      foreach my $region (sort keys %{$emissions{$facility_id}{$group_type}}) {
         $emis_val = $emis_val + $emissions{$facility_id}{$group_type}{$region}{$hourly_poll};
       }
     } else {
@@ -469,7 +469,7 @@ close $src_fh;
 
 # prepare emissions output
 foreach my $facility_id (sort keys %emissions) {
-  foreach my $group_type (sort keys $emissions{$facility_id}) {
+  foreach my $group_type (sort keys %{$emissions{$facility_id}}) {
     my $source_id = $sources{$facility_id}{$group_type}{'source_id'};
     my $run_group = $sources{$facility_id}{$group_type}{'run_group'};
     my $source_group = $sources{$facility_id}{$group_type}{'source_group'};
@@ -487,8 +487,8 @@ foreach my $facility_id (sort keys %emissions) {
     my $emis_fh = $handles{$file};
   
     if ($run_group eq $UW_GROUP) {
-      foreach my $region (sort keys $emissions{$facility_id}{$group_type}) {
-        foreach my $poll (sort keys $emissions{$facility_id}{$group_type}{$region}) {
+      foreach my $region (sort keys %{$emissions{$facility_id}{$group_type}}) {
+        foreach my $poll (sort keys %{$emissions{$facility_id}{$group_type}{$region}}) {
           my $emis_val = $emissions{$facility_id}{$group_type}{$region}{$poll};
           next if $emis_val == 0.0;
         
@@ -504,7 +504,7 @@ foreach my $facility_id (sort keys %emissions) {
         }
       }
     } else {
-      foreach my $poll (sort keys $emissions{$facility_id}{$group_type}) {
+      foreach my $poll (sort keys %{$emissions{$facility_id}{$group_type}}) {
         my $emis_val = $emissions{$facility_id}{$group_type}{$poll};
         next if $emis_val == 0.0;
       
