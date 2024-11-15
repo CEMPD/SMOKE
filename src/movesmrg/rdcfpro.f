@@ -281,7 +281,7 @@ C.............  Build FIPS and SCC hierarchy tables
             NS = 0
             PSTA = -1
             DO J = 1 , NINVIFIP
-                ISTA = STR2INT( INVCFIP( J )( 8:9 ) )
+                ISTA = STR2INT( INVCFIP( J )( 8:9 ) ) * 1000
                 IF( ISTA /= PSTA ) THEN
                     NS = NS + 1
                     WRITE( CSTA,'(I12.12)' ) ISTA  
@@ -412,12 +412,12 @@ C.............  Parse line into fields
             END IF
 
             IF( FF <= 0 ) THEN
-	            FF = FINDC( CFIPSCC, NCHRT18, CHRT18 ) ! SCC=full, FIP=full, Mon=0, Pol=pol
+                FF = FINDC( CFIPSCC, NCHRT18, CHRT18 ) ! SCC=full, FIP=full, Mon=0, Pol=pol
             	IF( FF > 0 ) FF = 22
             END IF
 
             IF( FF <= 0 ) THEN
- 		        FF = FINDC( CFIPSCC, NCHRT17, CHRT17 ) ! SCC=full, FIP=full, Mon=0, Pol=0
+                FF = FINDC( CFIPSCC, NCHRT17, CHRT17 ) ! SCC=full, FIP=full, Mon=0, Pol=0
             	IF( FF > 0 ) FF = 21
             END IF
                         
@@ -544,16 +544,16 @@ C.............  No of CFPRO entries check
         NXREF = NX
 
 C.........  Processing a list of valid CFPRO entries
-        DO N = 1, 24     ! six hierarchy
+        DO N = 1, 24     ! hierarchy
 
           DO I = 1, NXREF
-        
+
             IF( INDXCF( I ) /= N ) CYCLE   ! process low hierarchy first
 
             NFIPS = 0
             NSCCS = 0
             NPOLS = 0
-       
+
 C.............  Parse line into fields
             CALL PARSLINE( CFIPSCCLIST( I ), 6, SEGMENT )
 
@@ -567,6 +567,7 @@ C.............  Parse line into fields
 
 C.............  Convert FIP to integer
             K = 0
+
 C.............  State-level is not applicable when REF_CFPRO_YN is set to Y
             IF( CFIP == BLKFIP  ) THEN 
                 IF( REFCFFLAG ) THEN
@@ -577,48 +578,44 @@ C.............  State-level is not applicable when REF_CFPRO_YN is set to Y
                 DO J = 1, NINVIFIP
                     NLFIPS( J ) = J
                 END DO
-            ELSE         ! FIPS is not zero
-                L1 = FINDC( CFIP, NINVIFIP, INVCFIP )
-                IF( L1 > 0 ) THEN 
-                    NFIPS = 1
-                    NLFIPS(1) = L1
 
-C.....................  Propagate reference-county-specific control factor to inventory counties.
-                    IF( REFCFFLAG ) THEN
-                        L2 = FINDC( CFIP, NREFC, MCREFIDX( :,1 ) )
-                        IF( L2 < 1 ) THEN
-                            MESG = 'WARNING: FIPS code '//CFIP//' is not a reference county'
-                            CALL M3MESG( MESG )
-                            CYCLE
-                        END IF
-
-C.........................  find ref county and apply CF to ref-inventory counties
-                        DO J = 1, NINVC
-                            IF( CFIP == MCREFSORT( J,2 ) ) THEN  ! found matched ref county
-                                L1 = FINDC( MCREFSORT( J,1 ), NINVIFIP, INVCFIP )
-                                IF( L1 > 0 ) THEN
-                                    K = K + 1
-                                    NLFIPS( K ) = L1
-                                END IF
-                            END IF
-                        END DO
-                        NFIPS = K
+            ELSE IF( CFIP( 10:12 ) == '000' ) THEN   ! state-specific CFPRO
+                DO J = 1, NINVIFIP
+                    IF( CFIP(8:9) == INVCFIP(J)(8:9) ) THEN
+                        K = K + 1
+                        NLFIPS( K ) = J
                     END IF
-                ELSE     ! FIPS is country/state  
-C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
-                    IF( CFIP( 10:12 ) /= '000' ) THEN
-                        MESG = 'WARNING: FIPS '//CFIP//' is not an inventory county'
+                END DO
+                NFIPS = K
+
+            ELSE         ! FIPS is not zero
+C.................  Propagate reference-county-specific control factor to inventory counties.
+                IF( REFCFFLAG ) THEN
+                    L2 = FINDC( CFIP, NREFC, MCREFIDX( :,1 ) )
+                    IF( L2 < 1 ) THEN
+                        MESG = 'WARNING: FIPS code '//CFIP//' is not a reference county'
                         CALL M3MESG( MESG )
                         CYCLE
                     END IF
 
-                    DO J = 1, NINVIFIP 
-                        IF( CFIP(8:9) == INVCFIP(J)(8:9) ) THEN
-                            K = K + 1
-                            NLFIPS( K ) = J
+C.....................  find ref county and apply CF to ref-inventory counties
+                    DO J = 1, NINVC
+                        IF( CFIP == MCREFSORT( J,2 ) ) THEN  ! found matched ref county
+                            L1 = FINDC( MCREFSORT( J,1 ), NINVIFIP, INVCFIP )
+                            IF( L1 > 0 ) THEN
+                                K = K + 1
+                                NLFIPS( K ) = L1
+                            END IF
                         END IF
+
                     END DO
                     NFIPS = K
+                ELSE
+                    L1 = FINDC( CFIP, NINVIFIP, INVCFIP )
+                    IF( L1 > 0 ) THEN
+                        NFIPS = 1
+                        NLFIPS(1) = L1
+                    END IF
                 END IF
             END IF
 
@@ -741,10 +738,10 @@ C.............  check and get up control factor values
                 END DO
               END DO
             END DO
+       
+          END DO
 
-          END DO  
-
-        END DO  
+        END DO   ! looping over the number of CFPRO in the order of hierarchy  
 
         REWIND( CFDEV )
         
