@@ -9,6 +9,9 @@ use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 require 'aermod.subs';
 require 'aermod_pt.subs';
 
+print "Supports TPROs WINTER, WINTERSHLD, and SUMMER\n";
+print "Updated Aug. 8, 2024 to fix monthly temporal assignments\n";
+
 my $sector = $ENV{'SECTOR'} || 'ptegu';
 
 my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
@@ -299,9 +302,10 @@ while (my $line = <$in_fh>) {
     # determine starting day of the week (convert from 0 = Sunday to 0 = Monday for temporal profiles)
     my $day_of_week = (ymd($year, $month, 1)->day_of_week - 1) % 7;
     foreach my $month_factor (@monthly_factors) {
+      # use wintershld for Mar, Apr, Oct, Nov
       my @hourly_factors = @hourly_wintershld_factors;
-      # use winter factors for Jan, Nov, Dec
-      @hourly_factors = @hourly_winter_factors if ($month == 1 || $month >= 11);
+      # use winter factors for Jan, Feb, Dec
+      @hourly_factors = @hourly_winter_factors if ($month == 1 || $month == 2 || $month == 12);
       # use summer factors for May through Sep
       @hourly_factors = @hourly_summer_factors if ($month >= 5 && $month <= 9);
 

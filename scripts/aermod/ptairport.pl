@@ -4,16 +4,27 @@ use strict;
 use warnings;
 
 use Text::CSV ();
+use Date::Simple qw(leap_year ymd);
 use Geo::Coordinates::UTM qw(latlon_to_utm latlon_to_utm_force_zone);
 
 require 'aermod.subs';
 require 'aermod_pt.subs';
 
+printf('Modified for month-to-day temporal processing\n');
+
 my $sector = $ENV{'SECTOR'} || 'airport';
 
+my @days_in_month = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+
 # check environment variables
-foreach my $envvar (qw(REPORT RUNWAYS PTPRO_MONTHLY PTPRO_WEEKLY PTPRO_HOURLY OUTPUT_DIR)) {
+foreach my $envvar (qw(REPORT YEAR RUNWAYS PTPRO_MONTHLY PTPRO_DAILY PTPRO_HOURLY OUTPUT_DIR)) {
   die "Environment variable '$envvar' must be set" unless $ENV{$envvar};
+}
+
+# adjust for leap years
+my $year = $ENV{'YEAR'};
+if (leap_year($year)) {
+  $days_in_month[2] = 29;
 }
 
 # open report file
@@ -41,8 +52,8 @@ print "Reading temporal profiles...\n";
 my $prof_file = $ENV{'PTPRO_MONTHLY'};
 my %monthly = read_profiles($prof_file, 12);
 
-$prof_file = $ENV{'PTPRO_WEEKLY'};
-my %weekly = read_profiles($prof_file, 7);
+$prof_file = $ENV{'PTPRO_DAILY'};
+my %dayofmonth = read_dom_profiles($prof_file, 31, \@days_in_month);
 
 $prof_file = $ENV{'PTPRO_HOURLY'};
 my %daily = read_profiles($prof_file, 24);
@@ -58,18 +69,12 @@ write_line_location_header($line_loc_fh);
 my $line_param_fh = open_output("$output_dir/parameters/${sector}_line_params.csv");
 print $line_param_fh "facility_id,facility_name,src_id,src_type,area,fract,relhgt,width,szinit\n";
 
-my $line_tmp_fh = open_output("$output_dir/temporal/${sector}_line_temporal.csv");
-write_temporal_header($line_tmp_fh);
-
 # non-runway files
 my $area_loc_fh = open_output("$output_dir/locations/${sector}_nonrunway_locations.csv");
 write_point_location_header($area_loc_fh);
 
 my $area_param_fh = open_output("$output_dir/parameters/${sector}_nonrunway_params.csv");
 print $area_param_fh "facility_id,facility_name,src_id,relhgt,lengthx,lengthy,angle,szinit\n";
-
-my $area_tmp_fh = open_output("$output_dir/temporal/${sector}_nonrunway_temporal.csv");
-write_temporal_header($area_tmp_fh);
 
 # emissions crosswalk file
 my $x_fh = open_output("$output_dir/xwalk/${sector}_srcid_emis.csv");
@@ -78,6 +83,7 @@ print $x_fh "state,facility_id,facility_name,fac_source_type,smoke_name,ann_valu
 my %headers;
 my @pollutants;
 my %records;
+my %hourly_files;
 
 print "Processing AERMOD sources...\n";
 while (my $line = <$in_fh>) {
@@ -222,25 +228,109 @@ for my $state (sort keys %records) {
       print $area_param_fh join (',', @output) . "\n";
     }
 
-    # prepare temporal profiles output
-    my ($qflag, @factors) = get_factors(\%headers, \@data, \%monthly, \%weekly, \%daily);
-  
-    if ($is_runway) {
-      my $runway_ct = 1;
-      foreach my $runway (@{$runways{$plant_id}}) {
-        my @output = @common;
-        push @output, $src_id . sprintf('%02d', $runway_ct);
-        push @output, $qflag;
-        push @output, map { sprintf('%.8f', $_) } @factors;
-        print $line_tmp_fh join(',', @output) . "\n";
-        $runway_ct++;
-      }
-    } else {
-      my @output = @common;
-      push @output, $qflag;
-      push @output, map { sprintf('%.8f', $_) } @factors;
-      print $area_tmp_fh join(',', @output) . "\n";
+  # prepare temporal profiles output
+  my $temporal_file_name;
+  if ($is_runway) {
+   $temporal_file_name = "$output_dir/temporal/${plant_id}_${state}_line_hourly.csv";
+  } else {
+   $temporal_file_name = "$output_dir/temporal/${plant_id}_${state}_nonrunway_hourly.csv";
+   }
+  unless (exists $hourly_files{$plant_id}) {
+   my $fh = open_output($temporal_file_name);
+   print $fh "facility_id,src_id,year,month,day,hour,hour_factor\n";
+     $hourly_files{$plant_id} = $fh;
+  }
+  my $fh = $hourly_files{$plant_id};
+
+  my $factor_ref;
+  my $prof = $data[$headers{'Monthly Prf'}];
+  my $monthly_prof = $data[$headers{'Monthly Prf'}];
+  die "Unknown monthly profile code: $monthly_prof" unless exists $monthly{$monthly_prof};
+  my @monthly_factors = @{$monthly{$monthly_prof}};
+
+  my $dom_prof = $data[$headers{'Day-Month Prf'}];
+  my %dom_factors;
+  if ($dom_prof) {
+    die "Unknown day-of-month profile code: $dom_prof" unless exists $dayofmonth{$dom_prof};
+    %dom_factors = %{$dayofmonth{$dom_prof}};
+     }
+
+  my $monday_prof = $data[$headers{'Mon Diu Prf'}];
+  # check that all days of the week use the same profile
+  unless ($monday_prof eq $data[$headers{'Tue Diu Prf'}] &&
+          $monday_prof eq $data[$headers{'Wed Diu Prf'}] &&
+          $monday_prof eq $data[$headers{'Thu Diu Prf'}] &&
+          $monday_prof eq $data[$headers{'Fri Diu Prf'}] &&
+          $monday_prof eq $data[$headers{'Sat Diu Prf'}] &&
+          $monday_prof eq $data[$headers{'Sun Diu Prf'}]) {
+  die "All days of the week must use the same hourly temporal profile";
+  }
+  die "Unknown hourly profile code: $monday_prof" unless exists $daily{$monday_prof};
+  my @hourly_factors = @{$daily{$monday_prof}};
+
+    my @factors;
+    my $month = 1;
+    # determine starting day of the week (convert from 0 = Sunday to 0 = Monday for temporal profiles)
+    my $day_of_week = (ymd($year, $month, 1)->day_of_week - 1) % 7;
+    foreach my $month_factor (@monthly_factors) {
+      # note: factors average to 1 rather than summing to 1, so adjust when fractions are needed
+      if ($dom_prof) {
+        my $day_of_month = 1;
+        foreach my $dom_factor (@{$dom_factors{$month}}) {
+          last if $day_of_month > $days_in_month[$month];
+          push @factors, map { $_ * $dom_factor * $month_factor } @hourly_factors;
+          $day_of_month++;
+	} 
+       }
+      $month++;
     }
+    $factor_ref = \@factors;
+    
+  if ($is_runway) {
+    my $runway_ct = 1;
+    foreach my $runway (@{$runways{$plant_id}}) {
+      my @output = @common;
+      my $date = Date::Simple->new($year.'-01-01');
+      my $hour = 0;
+      for my $factor (@$factor_ref) {
+        $factor =~ s/^\s+//;
+        @output = ($plant_id, $src_id . sprintf('%02d', $runway_ct) );
+        push @output, $date->year;
+        push @output, $date->month;
+        push @output, $date->day;
+        push @output, $hour+1;
+        push @output, $factor;
+        print $fh join (',', @output) . "\n";
+
+        $hour++;
+        if ($hour == 24) {
+          $hour = 0;
+          $date = $date->next;
+      }
+    }
+    $runway_ct++;
+    }
+  } else {
+    my @output = @common;
+    my $date = Date::Simple->new($year.'-01-01');
+    my $hour = 0;
+    for my $factor (@$factor_ref) {
+      $factor =~ s/^\s+//;
+      @output = ($plant_id, $src_id );
+      push @output, $date->year;
+      push @output, $date->month;
+      push @output, $date->day;
+      push @output, $hour+1;
+      push @output, $factor;
+      print $fh join (',', @output) . "\n";
+
+      $hour++;
+      if ($hour == 24) {
+        $hour = 0;
+        $date = $date->next;
+      }
+    }
+  }
   
     # prepare crosswalk output
     pop @common if !$is_runway;
@@ -260,10 +350,8 @@ for my $state (sort keys %records) {
 close $in_fh;
 close $line_loc_fh;
 close $line_param_fh;
-close $line_tmp_fh;
 close $area_loc_fh;
 close $area_param_fh;
-close $area_tmp_fh;
 close $x_fh;
 
 print "Done.\n";
