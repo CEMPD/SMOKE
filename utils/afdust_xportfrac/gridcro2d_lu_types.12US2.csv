@@ -1,0 +1,41 @@
+GRIDCRO_landuse_type,TransportCaptureClass
+LUFRAC_01,Forest,Evergreen Needleleaf Forest                    
+LUFRAC_02,Forest,Evergreen Broadleaf Forest                     
+LUFRAC_03,Forest,Deciduous Needleleaf Forest                    
+LUFRAC_04,Forest,Deciduous Broadleaf Forest                     
+LUFRAC_05,Forest,Mixed Forest                                   
+LUFRAC_06,Shrubland,Closed Shrublands                              
+LUFRAC_07,Shrubland,Open Shrublands                                
+LUFRAC_08,Grasses,Woody Savanna                                  
+LUFRAC_09,Grasses,Savanna                                        
+LUFRAC_10,Grasses,Grasslands                                     
+LUFRAC_11,Grasses,Permanent Wetlands                             
+LUFRAC_12,Agricultural,Croplands                                      
+LUFRAC_13,Urban,Urban and Built-up                             
+LUFRAC_14,Agricultural,Cropland-Natural Vegetation Mosaic             
+LUFRAC_15,Water,Snow and Ice                                   
+LUFRAC_16,Water,Barren or Sparsely Vegetated                   
+LUFRAC_17,Water,IGBP water                                     
+LUFRAC_18,Water,unclassified                                   
+LUFRAC_19,Water,fill value (normally ocean water)              
+LUFRAC_20,Water,unclassified                                   
+LUFRAC_21,Water,Open water                                     
+LUFRAC_22,Water,Perrenial Ice/snow                             
+LUFRAC_23,Grasses,Developed open space                           
+LUFRAC_24,DevLowIntensity,Developed Low Intensity                        
+LUFRAC_25,DevMedIntensity,Developed Medium Intensity                     
+LUFRAC_26,DevHiIntensity,Developed High Intensity                       
+LUFRAC_27,Water,Barren Land                                    
+LUFRAC_28,Forest,Deciduous Forest                               
+LUFRAC_29,Forest,Evergreen Forest                               
+LUFRAC_30,Forest,Mixed Forest                                   
+LUFRAC_31,Grasses,Dwarf Scrub                                    
+LUFRAC_32,Shrubland,Shrub/Scrub                                    
+LUFRAC_33,Grasses,Grassland/Herbaceous                           
+LUFRAC_34,Grasses,Sedge/Herbaceous                               
+LUFRAC_35,Water,Lichens                                        
+LUFRAC_36,Water,Moss                                           
+LUFRAC_37,Grasses,Pasture/Hay                                    
+LUFRAC_38,Agricultural,Cultivated Crops                               
+LUFRAC_39,Forest,Woody Wetland                                  
+LUFRAC_40,Grasses,Emergent Herbaceous Wetland                    

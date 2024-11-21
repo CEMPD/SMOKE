@@ -1,0 +1,25 @@
+GRIDCRO_landuse_type,TransportCaptureClass
+LUFRAC_01,Urban,Urban Land
+LUFRAC_02,Agricultural,Dryland Cropland and Pasture
+LUFRAC_03,Agricultural,Irrigated Cropland and Pasture
+LUFRAC_04,Agricultural,Mixed Dryland and Irrigated Cropland and Pasture
+LUFRAC_05,Agricultural,Cropland-Grassland Mosaic
+LUFRAC_06,Agricultural,Cropland-Woodland Mosaic
+LUFRAC_07,Grasses,Grassland
+LUFRAC_08,Shrubland,Shrubland
+LUFRAC_09,Grasses,Mixed Shrubland-Grassland
+LUFRAC_10,Grasses,Savannah
+LUFRAC_11,Forest,Deciduous Broadleaf Forest
+LUFRAC_12,Forest,Deciduous Needleleaf Forest
+LUFRAC_13,Forest,Evergreen Broadleaf Forest
+LUFRAC_14,Forest,Evergreen Needleleaf Forest
+LUFRAC_15,Forest,Mixed Forest
+LUFRAC_16,Water,Water
+LUFRAC_17,Grasses,Herbaceous Wetland
+LUFRAC_18,Forest,Wooded Wetland
+LUFRAC_19,Water,Barren or Sparsely Vegetated
+LUFRAC_20,Grasses,Herbaceous Tundra
+LUFRAC_21,Forest,Wooded Tundra
+LUFRAC_22,Grasses,Mixed Tundra
+LUFRAC_23,Water,Bare Ground Tundra
+LUFRAC_24,Water,Snow or Ice

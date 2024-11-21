@@ -1,0 +1,10 @@
+CaptureClass,Fraction
+Agricultural,0.75
+DevLowIntensity,0.70
+DevMedIntensity,0.40
+DevHiIntensity,0.10
+Grasses,0.75
+Water,1.00
+Forest,0.05
+Urban,0.40
+Shrubland,0.80
