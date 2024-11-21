@@ -1,0 +1,14 @@
+priority,known,count,message type,first file
+1,True,434124,'WARNING: Dropping SCC .* not listed in SCCXREF file',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/smkinven_RPP_onroad_dec_2016fh_16j.log
+2,True,60,'WARNING: Inventory base year .* is inconsistent w',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/movesmrg_RPP_onroad_feb_2016fh_16j_20160201_12US1_cmaq_cb6.log
+2,True,32580,'WARNING: Re-normalizing county total surrogate fractions of Co/St/Ct: .* :: Surrogate: .* greater than 1 ::   .*',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/grdmat_RPP_onroad_jun_2016fh_16j_12US1.log
+2,True,3480,'WARNING: Ignoring county cross-reference for inventory county .*',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/movesmrg_RPP_onroad_feb_2016fh_16j_20160201_12US1_cmaq_cb6.log
+2,True,12,'WARNING: No toxics were selected from the inventory as a subtratacter for the NHAPEXCLUDE processing.',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/smkinven_RPP_onroad_dec_2016fh_16j.log
+2,True,248248,'WARNING: Emission factors file does not contain requested model species .*',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/movesmrg_RPP_onroad_feb_2016fh_16j_20160201_12US1_cmaq_cb6.log
+3,True,120,'Value for SMK_MAXWARNING:',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/movesmrg_RPP_onroad_feb_2016fh_16j_20160201_12US1_cmaq_cb6.log
+3,True,12,'Value for SMK_MAXERROR:',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/smkinven_RPP_onroad_dec_2016fh_16j.log
+3,True,36,'>>--->> WARNING in subroutine',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/spcmat_RPP_onroad_mar_2016fh_16j_cmaq_cb6.log
+3,True,2400,'WARNING: Missing average day emissions for',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/smkinven_RPP_onroad_dec_2016fh_16j.log
+3,True,60,'WARNING: Reset MRG_REPSCC_YN, MRG_REPCNY, and MRG_REPSTA_YN to N since MRG_REPSRC_YN is set to Y',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/movesmrg_RPP_onroad_feb_2016fh_16j_20160201_12US1_cmaq_cb6.log
+3,True,12,'WARNING: No definition found for NONHAPTOG in the GSPRO file.  Spcmat will',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/spcmat_RPP_onroad_mar_2016fh_16j_cmaq_cb6.log
+3,True,16861482,'WARNING: Resetting negative .* factor to zero at line',/work/EMIS/em_v7.3/2016platform/2016fh_16j/intermed/onroad/RPP/logs/movesmrg_RPP_onroad_feb_2016fh_16j_20160201_12US1_cmaq_cb6.log

@@ -1,0 +1,52 @@
+.SUFFIXES:
+.SUFFIXES: .f .F .o .x
+
+
+
+##### for SUN OS ######
+#FC=f90
+#FFLAGS=-C -xpp=cpp
+#LFLAGS=-Bstatic
+#LIBDIR=-L/project/emisdata5/smokev13/subsys/smokev1/SunOS5f90
+#LLIBS=-lioapi -lnetcdf
+##### for SUN OS ######
+###### FOR AIX #######
+#FC=xlf
+#FFLAGS= -O -qmaxmem=10240
+#LFLAGS=-bmaxdata:0X80000000 -bmaxstack:0x10000000
+#LIBDIR=-L/work/pou/ioapi_22/AIX   -L/usr/local/lib/netcdf-3.4/lib
+#LLIBS=-lioapi -lnetcdf -lxlsmp
+###### FOR AIX ######
+
+FC=ifort
+FFLAGS= -O -132 -check -debug -g 
+#FFLAGS= -O3 -132  
+LFLAGS=  -g -debug
+LIBDIR= -L/usr/lib -L/work/wdx/tools/ioapi_3/Linux2_ia64ifort -L/usr/local/netcdf/lib
+LLIBS=  -lioapi -lnetcdf -lunwind
+
+
+INCLUDES = /work/wdx/tools/ioapi_3/ioapi/fixed_src
+
+SRC = .
+BIN = .
+
+SRCNAME = mult
+
+OBJS = $(SRCNAME).o
+
+all: $(OBJS) $(SRCNAME).x
+
+.F.o:
+	$(FC) $(FFLAGS) -I$(INCLUDES) -c $(SRC)/$<
+
+.f.o:
+	$(FC) $(FFLAGS) -I$(INCLUDES) -c $(SRC)/$<
+
+.o.x:
+	$(FC) $(LFLAGS) -o $(BIN)/$@ $< $(LIBDIR) $(LLIBS)
+
+
+clean:
+	- rm -f *.o
+	- rm $(BIN)/*.x

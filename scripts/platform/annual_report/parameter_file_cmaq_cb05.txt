@@ -1,0 +1,43 @@
+## Parameters for annual emission python script
+## python variables
+
+## chemical mechanism
+chem_mechanism = "cmaq_cb05"
+
+## molecDict defines the molecular weight of the given species
+molecDct = {"CO": 28, "NH3": 17, "NO": 46, "NO2": 46, "SO2": 64, \
+	  "SULF": 98, "PEC": 1, "POC": 1, "PMFINE": 1, "PNO3": 1, \
+	  "PSO4": 1, "PMC": 1,"ALD2": 46.8, "ALDX": 38.6, "CH4": 16.0,\
+	  "ETH": 33.1, "ETHA": 30.1,"ETOH": 45.6, "FORM": 29.9, \
+	  "IOLE": 55.3, "ISOP": 68.1, "MEOH": 32.0,"NVOL": 15.9, \
+	  "OLE": 32.3, "PAR": 16.9, "TERP": 134.4, "TOL": 97.7, \
+	  "UNK": 352.4, "UNR": 25.9, "XYL": 109.0, "HGIIGAS": 200.59,\
+	  "HGNRVA":200.59, "PHGI": 1, "DIESEL_PEC": 1, \
+	  "DIESEL_PMFINE": 1, "DIESEL_PNO3":1, "DIESEL_POC": 1, \
+	  "DIESEL_PSO4": 1, "DIESEL_PMC": 1, "FORM_PRIMARY":30.026,\
+	  "ALD2_PRIMARY": 44.0526, "ACROLEIN": 56.0633, \
+	  "BUTADIENE13":54.0904, "BENZENE": 78.1118, "VOC_INV": 46.0, \
+	  "NAPHTHALENE": 128.1705, "CL2": 70.91,"CHROMHEX_C": 1, \
+	  "CHROMHEX_F": 1, "CHROMTRI_C": 1, "CHROMTRI_F": 1,\
+	  "NICKEL_C": 1, "NICKEL_F": 1, "BERYLLIUM_C": 1, \
+	  "BERYLLIUM_F": 1,"CADMIUM_C": 1, "CADMIUM_F": 1, "LEAD_C":1,\
+	  "LEAD_F": 1, "MANGANESE_C":1, "MANGANESE_F": 1, \
+	  "OXYL": 106.165, "PXYL": 106.165, "MXYL": 106.165,\
+           "TOLU": 92.1384, "CL4_ETHE": 165.83, "TRIETHYLAMINE": 101.19,\
+           "HEXAMETHY_DIIS": 168.2, "CHCL3": 119.3776, "CL_ETHE": 62.5,\
+           "CL4_ETHANE1122": 167.85, "ETOX": 44.0526, "QUINOLINE": 129.16,\
+           "ACRYLONITRILE": 53.06, "CL2_C2_12": 98.9592, \
+           "BR2_C2_12": 187.86,"HYDRAZINE": 32.05, "CARBONTET": 153.8227,\
+           "DICHLOROPROPENE": 110.97,"PROPDICHLORIDE": 112.9, \
+           "MAL_ANHYDRIDE": 98.06, "DICHLOROBENZENE":147.0002, \
+           "TOL_DIIS": 174.1561, "CL2_ME": 84.93, "CL3_ETHE": 131.3883,\
+           "HCL": 36.46, "HONO": 46, "NOX": 46, "PM2_5": 1, "PM10": 1, "HFLUX": 1, "NH3_FERT": 17}
+
+## aggregate species dictionary, species that are composed of
+## other species.
+## Use sets (>=python 2.4) for testing if any component species
+## in state totals
+aggregSpecDct = {"NOX":set(["NO","NO2","HONO"]) ,\
+                 "PM2_5":set(["PSO4","PNO3","POC","PEC","PMFINE"]), \
+                 "PM10":set(["PSO4","PNO3","POC","PEC","PMFINE", "PMC"])}
+

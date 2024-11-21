@@ -1,0 +1,76 @@
+#!/bin/csh -f
+#***************************************************************************
+#
+# COPYRIGHT (C) 2006, Carolina Environmental Program - UNC Chapel Hill
+# All Rights Reserved
+#
+# See file COPYRIGHT for conditions of use.
+#
+# Center for Environmental Modeling for Policy Development
+# Carolina Environmental Program
+# University of North Carolina
+# 137 E. Franklin St., CB# 6116
+# Chapel Hill, NC  27599-6116
+#
+# smoke@unc.edu
+#
+# Last Updated: 9-25-06
+#***************************************************************************
+#
+# Purpose: Configure platform settings for running and compiling SMOKE 
+#
+# Usage Notes: <include hardware and operating system restrictions>
+#
+#   Script must be executed by "source platform" to set
+#   the environment variables in the parent.
+#
+# History of Major Revisions: (in reverse chronological order)
+#
+# Date: Unknown 
+#   Ted Smith        Environmental Programs - MCNC
+#   919 248 9232     smith_w@mcnc.org
+#   creation
+# Date: September 25, 2006
+#   Zac Adelman      CEMPD - UNC
+#   zac@unc.edu
+#   updated to remove all references to EDSS
+#   generalized for non-Linux O/S
+#
+#  %W% %P% %G% %U%
+
+# User setting compiler abbreviation
+set comp_abbrv = ifort
+
+
+#  Determine operating system for compiling SMOKE
+set os = `uname -s``uname -r | cut -d"." -f1`_`uname -p`
+
+#  C. Allen (CSC) added this, 10 Sep 2012, to help run on sage. Kernel version
+#  on sage is 3.X instead of 2.X. But it (hopefully) shouldn't make a difference
+#  in the executables. Hardwire sage to use Linux2 directories.
+#  Activate this behavior with USE_LINUX2 parameter set to anything.
+set hostnamex = `hostname`
+set os = "Linux2_x86_64"
+## Set default number of bits 
+setenv SMOKE_EXE $os$comp_abbrv
+setenv BIN $SMOKE_EXE
+echo $SMOKE_EXE
+
+# Set default compiler flags for Linux; if using other O/S override by setting env variables manually
+setenv FC $comp_abbrv
+setenv FFLAG   "-O3 -132 -save -zero -common-args -static"
+#setenv FFLAG   "-O3 -ip -save -132 -zero"
+setenv DBGFLAG "-g -save -debug -cm -132 -zero -common-args -i-static"
+
+if ( ! $?FC || ! $?FFLAG || ! $?DBGFLAG ) then
+       echo ""
+       if ( ! $?FC ) echo "--> Compiler variable FC undefined..."
+       if ( ! $?FFLAG ) echo "--> Compiler flag variable FFLAG undefined..."
+       if ( ! $?DBGFLAG ) echo "--> Compiler flag variable DBGFLAG undefined..."
+       echo ""
+       echo "--> Set the variables above to proceed..."
+       echo ""
+       exit( 1 )
+endif
+
+exit( 0 )

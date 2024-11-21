@@ -1,0 +1,27 @@
+priority,known,count,message type,first file
+2,True,11,'WARNING: Duplicate records found for',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_2017gb_task40_tag1_17j.log
+2,True,2,'WARNING: Largest negative value for',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_2017gb_task40_tag1_17j.log
+2,True,10,'WARNING: No kept pollutants found at line .*',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_2017gb_task40_tag1_17j.log
+2,True,1,'WARNING: No speciation profiles found for pollutant',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/spcmat_ptegu_2017gb_task40_tag1_17j_cmaq_cb6ae7.log
+2,True,6,'WARNING: Some excluded CEM records contained years other than the base year',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_jan_daily_2017gb_task40_tag1_17j.log
+2,True,12,'WARNING: Hour-specific pollutant .* is not in inventory file, so it will be ignored',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/temporal_ptegu_dec_2017gb_task40_tag1_17j_20171201.log
+2,True,45,'WARNING: Description of NAICS',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkreport_ptegu_2017gb_task40_tag1_17j_inv.log
+3,True,31,'Value for SMK_MAXWARNING:',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/temporal_ptegu_dec_2017gb_task40_tag1_17j_20171201.log
+3,True,14,'Value for SMK_MAXERROR:',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/temporal_ptegu_dec_2017gb_task40_tag1_17j_20171201.log
+3,True,12,'WARNING: Hour-specific starting date/time',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/temporal_ptegu_dec_2017gb_task40_tag1_17j_20171201.log
+3,True,367,'>>--->> WARNING in subroutine',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkmerge_ptegu_jun_2017gb_task40_tag1_17j_20170628_12US2_cmaq_cb6ae7.log
+3,True,2,'WARNING: Missing control efficiency for',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_2017gb_task40_tag1_17j.log
+3,True,1,'WARNING: No grouping criteria in PELVCONFIG will likely',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/elevpoint_ptegu_2017gb_task40_tag1_17j_12US2.log
+3,True,12,'WARNING: output file already exists:',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_feb_daily_2017gb_task40_tag1_17j.log
+3,True,3,'WARNING: Records in GSCNV file for pollutant',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/spcmat_ptegu_2017gb_task40_tag1_17j_cmaq_cb6ae7.log
+3,True,20,'WARNING: Resetting negative value of',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_2017gb_task40_tag1_17j.log
+3,True,1,'WARNING: Some base year control efficiency values',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_2017gb_task40_tag1_17j.log
+3,True,3,'WARNING: Missing average day emissions for',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_2017gb_task40_tag1_17j.log
+3,True,24,'WARNING: Different plant descriptions found for ORIS ID',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_feb_daily_2017gb_task40_tag1_17j.log
+3,True,12,'WARNING: Different FIPS codes found for ORIS ID',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_feb_daily_2017gb_task40_tag1_17j.log
+3,True,3,'WARNING: Missing SO2 emissions for ORIS:',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_nov_daily_2017gb_task40_tag1_17j.log
+3,True,5,'WARNING: CAS number .* at line .* is not in the inventory pollutants list',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_2017gb_task40_tag1_17j.log
+3,True,2653,'WARNING: Different descriptions for the same data name at line .*',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkmerge_ptegu_jun_2017gb_task40_tag1_17j_20170628_12US2_cmaq_cb6ae7.log
+3,True,1,'Value for DEFAULT_CONV_FAC_ERROR not defined;returning default:   FALSE',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/spcmat_ptegu_2017gb_task40_tag1_17j_cmaq_cb6ae7.log
+3,True,8,'WARNING: Missing NOX emissions for ORIS: .*',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkinven_ptegu_apr_daily_2017gb_task40_tag1_17j.log
+3,True,893520,'WARNING: SCC .* at line .* does not match inventory.',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/ptegu/logs/smkmerge_ptegu_jun_2017gb_task40_tag1_17j_20170628_12US2_cmaq_cb6ae7.log

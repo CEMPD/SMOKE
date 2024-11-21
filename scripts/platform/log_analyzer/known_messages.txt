@@ -1,0 +1,204 @@
+3,Value for SMK_MAXWARNING:  
+3,Value for SMK_MAXERROR:
+3,WARNING: Could not read "INDXD" from file "PDAY"
+3,WARNING: Hour-specific starting date/time 
+3,WARNING: If FILL_ANNUAL was set to Y in previous SMKINVEN
+3,>>--->> WARNING in subroutine 
+3,WARNING: Missing annual emissions for 
+3,WARNING: Missing control efficiency for 
+3,WARNING: Missing emission factor for 
+3,WARNING: Missing primary control code for 
+3,WARNING: Missing rule effectiveness for 
+3,WARNING: Missing rule penetration for 
+3,WARNING: No grouping criteria in PELVCONFIG will likely
+3,WARNING: output file already exists: 
+3,WARNING: Processing non-wildfire sources
+3,WARNING: Processing Wildfire emissions
+3,WARNING: Records in GSCNV file for pollutant 
+3,WARNING: Resetting negative value of 
+3,WARNING: Resetting number of time steps for report
+3,WARNING: Skipping requested output data 
+3,WARNING: Some base year control efficiency values 
+3,WARNING: Some base year rule effectiveness values 
+3,WARNING: Some base year rule penetration values 
+3,WARNING: Using average day emissions to fill in annual 
+3,WARNING: Missing SIC code at line
+3,WARNING: Missing average day emissions for
+3,WARNING: Different plant descriptions found for ORIS ID
+3,WARNING: Different FIPS codes found for ORIS ID
+3,WARNING: All emissions set to 0. for ORIS:
+3,WARNING: Missing SO2 emissions for ORIS:
+3,WARNING: ORIS ID requested, but is not present in ASCII inventory file
+3,WARNING: Boiler requested, but is not present in ASCII inventory file
+3,WARNING: MACT requested, but is not present in ASCII inventory file
+3,WARNING: Input file
+3,Error reading REAL from
+3,WARNING: Missing NFDRS code at line
+3,WARNING: Resetting missing value of PM2_5 to 0
+3,WARNING: Skipping internal heat flux computation due to the existence of precomputed HFLUX in PTDAY file
+3,WARNING: The contents of the PTMP file overlap with the requested
+2,WARNING: Pollutant .*for report .* not found     
+2,WARNING: Duplicate records found for 
+2,WARNING: Largest negative value for
+2,WARNING: SCC code is less than 8 characters long at line
+2,WARNING: .*  stack groups are outside of grid
+2,WARNING: Inventory base year .* is inconsistent w
+2,WARNING: No kept pollutants found at line .* 
+2,WARNING: No speciation profiles found for pollutant 
+2,WARNING: Causing zeroing emissions due to missing surrogate .* for co/st/cy :: .*
+2,WARNING: Re-normalizing county total surrogate fractions of Co/St/Ct: .* :: Surrogate: .* greater than 1 ::   .*
+2,WARNING: Re-normalizing county total surrogate fractions of Co/St/Ct:  .* :: Surrogate: .* greater than 1 ::   .*
+2,WARNING: Zero fallback surrogate data will cause zero emissions inside the grid
+2,WARNING: resetting surrogates ratio at line
+2,WARNING: resetting surrogates ratio .* and surrogate : .* from .* to 1.0
+2,WARNING: Some surrogates renormalized when total of surrogates
+2,WARNING: Stack diameter is equal to 0 at line .* :
+2,WARNING: State and/or county code is zero \(missing\) at 
+2,WARNING: Duplicate entry in GRIDDING x-ref file: 
+2,WARNING: Duplicate entry in SPECIATION x-ref file: 
+2,WARNING: Duplicate entry in TEMPORAL x-ref file: 
+2, WARNING: Some excluded CEM records contained years other than the base year 
+2,WARNING: Time zone .* in day-specific file at line
+2,WARNING: Hour-specific starting date/time of .*  @ .* is later than episode starting date/time of .* 
+2,WARNING: Hour-specific pollutant .* is not in inventory file, so it will be ignored
+2,WARNING: Skipping pollutant .* at line .* - not in inventory
+2,WARNING: Skipping pollutant .* at line .* - not in annual inventory
+2,WARNING: Skipping all lines for pollutant .* because pollutant is not kept
+2,WARNING: Data missing for
+1, Time step error for file:  PDAY
+2, Region: .* Plant: .* Char1: .* Char2: ERROR Char3: .*
+2,WARNING: Description of SCC
+2,WARNING: Description of SIC
+2,WARNING: Description of MACT
+2,WARNING: Description of NAICS
+2,WARNING: Additional extended requested, but is not present in ASCII inventory file
+2,WARNING: Source latitude .* is inconsistent with group
+2,WARNING: Source longitude .* is inconsistent with group
+2,WARNING: .* emissions from the .* file will be zero due to a zero adjustment factor
+1, \*\*\* ERROR ABORT in subroutine
+1,ERROR: input file not found:
+3,WARNING: NAICS requested, but is not present in ASCII inventory
+2,WARNING: Both SCC and SIC values are given at line
+2,WARNING: CONTROL packet record number .* control ignored for source because base year controls are greater for
+2,WARNING: variable .*CE.*in matrix
+2,WARNING: variable .*RE.*in matrix
+2,WARNING: variable .*RP.*in matrix
+2,WARNING: Duplicate source in inventory will have summed emissions
+2,WARNING: Keep status at line .* different from previously set status
+2,WARNING: Summed emissions of .* for pollutant, .* differ from component total
+2,WARNING: No pollutants were selected from the inventory as being subratactable for the NHAPEXCLUDE processing
+2,WARNING: no sources with data for output of data variable .*VOC
+2,WARNING: Number of map-formatted variables is less than number in header of inventory file
+3,WARNING: POINT source hourly emission files have inconsistent
+2,WARNING: Input year and output year are the same.
+2,WARNING: The logical file PTFIRE in the adjustment file \(ADJ_FACS\) is not found in the FILELIST on DATE
+3,WARNING: Input year and output year are the same
+3,WARNING: Line .* in GRIDDESC file skipped because more than 32 fields were found.
+2,WARNING: State/county FIPS code .* at line .* does not match inventory
+3,WARNING: Source type code requested, but is not present in ASCII inventory
+2,WARNING: No sources matched tagging criteria in GSTAG for tag .* and species .*
+2,WARNING: Species .* at line .* is not a valid species for the pollutants and species
+3,WARNING: SMK_NHAPEXCLUDE_YN is no longer supported
+3,WARNING: No toxics or .* emissions found for source:
+2,WARNING: no sources with data for output of data variable .*VOC_INV"
+2,WARNING: Ignoring county cross-reference for inventory county .*
+3,WARNING: Base year of .* file: .*
+3,WARNING: Reset MRG_REPSCC_YN, MRG_REPCNY, and MRG_REPSTA_YN to N since MRG_REPSRC_YN is set to Y
+3,WARNING: Skipping all lines for pollutant "VOC" because Inventory Table splits it into       2 pollutants.
+2,WARNING: No toxics were selected from the inventory as a subtratacter for the NHAPEXCLUDE processing.
+3,WARNING: Monthly inventory is missing: Annual inventory will be used
+3,Note: multiple 'WARNING: Monthly inventory is missing: Annual inventory will be used' .*
+1,WARNING: Duplicate entry in NONHAP x-ref file:
+3,WARNING: Missing both .* monthly and annual invenotries
+3,WARNING: Instructions not recognized at line .* Line is ignored.
+3,WARNING: Skipping line .* of control factor file because FIPS .* is not in the inventory.
+2,WARNING: No definition found for NONHAPVOC in the GSPRO file.  Spcmat will
+3,WARNING: CAS number .* at line .* is not in the inventory pollutants list
+3,WARNING: Skipping pollutant .* at line .* - not in Inventory Table
+1,WARNING: Following SCC .* is missing in this emission factors file
+3,WARNING: Both VOC and toxics are NOT found for the source:
+1,WARNING: Missing speciation profile .* : Default pollutant conversion factor
+3,WARNING: All counties will be controlled by zero or blank FIPS entry at line .*
+3,WARNING: Different descriptions for the same data name at line .*
+2,WARNING: Duplicate entry at line .* Overwriting factor from
+3,WARNING: No definition found for NONHAPTOG in the GSPRO file.  Spcmat will
+3,Value for MISSING_SCC_WARNING_YN not defined
+3,WARNING: Speciation variable .* does not match any
+1,WARNING: Dropping SCC .* not listed in SCCXREF file
+2,WARNING: Emission factors file does not contain requested model species .*
+2,WARNING: Emission factors file does not contain requested inventory pollutant .*
+3,WARNING: Different SPECIATE4 IDs for the same data name at line .*
+3,Value for DEFAULT_CONV_FAC_ERROR: .*
+3,Value for DEFAULT_CONV_FAC_ERROR not defined;returning default:   FALSE
+3,WARNING: VEGETATION NAME: .* in emission factor file but not in land use file
+2,WARNING: One or more negative plume fractions found for:
+3,WARNING: AREA source hourly emission files have inconsistent
+1,WARNING: ACETALD is not found in inventory pollutant list.
+1,WARNING: ACROLEI is not found in inventory pollutant list.
+1,WARNING: BRAKEPM10 is not found in inventory pollutant list.
+1,WARNING: BUTADIE is not found in inventory pollutant list.
+1,WARNING: CH4_INV is not found in inventory pollutant list.
+1,WARNING: CO_INV is not found in inventory pollutant list.
+1,WARNING: FORMALD is not found in inventory pollutant list.
+1,WARNING: HONO_INV is not found in inventory pollutant list.
+1,WARNING: NAPHTH is not found in inventory pollutant list.
+1,WARNING: NH3_INV is not found in inventory pollutant list.
+1,WARNING: NO2_INV is not found in inventory pollutant list.
+1,WARNING: NO_INV is not found in inventory pollutant list.
+1,WARNING: NOX is not found in inventory pollutant list.
+1,WARNING: PM10 is not found in inventory pollutant list.
+1,WARNING: PM25BRAKE is not found in inventory pollutant list.
+1,WARNING: PM2_5 is not found in inventory pollutant list.
+1,WARNING: PM25TIRE is not found in inventory pollutant list.
+1,WARNING: PROPIONAL is not found in inventory pollutant list.
+1,WARNING: SO2_INV is not found in inventory pollutant list.
+1,WARNING: STYRENE is not found in inventory pollutant list.
+1,WARNING: TIREPM10 is not found in inventory pollutant list.
+1,WARNING: PMN is not found in inventory pollutant list.
+1,WARNING: EPM_NHTOG is not found in inventory pollutant list.
+1,WARNING: EXH_NHTOG is not found in inventory pollutant list.
+1,WARNING: PAL is not found in inventory pollutant list.
+1,WARNING: PCA is not found in inventory pollutant list.
+1,WARNING: PCL is not found in inventory pollutant list.
+1,WARNING: PEC is not found in inventory pollutant list.
+1,WARNING: PFE is not found in inventory pollutant list.
+1,WARNING: PH2O is not found in inventory pollutant list.
+1,WARNING: PK is not found in inventory pollutant list.
+1,WARNING: PMC is not found in inventory pollutant list.
+1,WARNING: PMG is not found in inventory pollutant list.
+1,WARNING: PMOTHR is not found in inventory pollutant list.
+1,WARNING: PNA is not found in inventory pollutant list.
+1,WARNING: PNCOM is not found in inventory pollutant list.
+1,WARNING: PNH4 is not found in inventory pollutant list.
+1,WARNING: PNO3 is not found in inventory pollutant list.
+1,WARNING: POC is not found in inventory pollutant list.
+1,WARNING: PSI is not found in inventory pollutant list.
+1,WARNING: PSO4 is not found in inventory pollutant list.
+1,WARNING: PTI is not found in inventory pollutant list.
+1,WARNING: RFL_NHTOG is not found in inventory pollutant list.
+1,WARNING: TOG is not found in inventory pollutant list.
+1,WARNING: ETHANOL is not found in inventory pollutant list.
+1,WARNING: MTBE is not found in inventory pollutant list.
+3,WARNING: Area surrogate is 0. for
+1,WARNING: Duplicate entry in AR2PT x-ref file:
+3,WARNING: Could not read  "ENDHOUR" from file "PDAY"
+3,WARNING: Could not read  "BEGHOUR" from file "PDAY"
+2,WARNING: Packet /PROJECTION .* not apply to current
+3,WARNING: Negative stack height :: Reset to zero at line
+3,WARNING: Negative stack diameter :: Reset to zero at line
+3,WARNING: Negative stack exit velocity :: Reset to zero at line
+3,WARNING: Negative stack exit temperature :: Reset to zero at line
+3,WARNING: Resetting negative .* factor to zero at line
+3,WARNING: Missing NOX emissions for ORIS: .*
+1,WARNING: Total .* toxic emissions greater than annual .* emissions for source:
+1,WARNING: Total average day .* toxic emissions greater than average day .* emissions for source:
+3,WARNING: .* is not found in both inventory pollutant and model species lists.
+2,WARNING: Speciation profile .* ?? .* is not in profiles
+3,WARNING: SCC .* at line .* does not match inventory.
+3,WARNING: Multiple ORIS/Boiler IDs under same point source
+3,WARNING: Duplicate source in inventory. Will store only one value for
+3,WARNING: .* county is not a reference counties at line
+3,WARNING: Inventory year .* is outside of expected range.
+2,WARNING: XREF fracs do not add up to 1 for
+3,WARNING: Replacing missing daily .* emission with annual-based daily emission
+3,WARNING: Replacing missing hourly .* emission with annual-based hourly emission

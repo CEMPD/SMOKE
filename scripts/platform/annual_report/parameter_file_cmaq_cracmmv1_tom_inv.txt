@@ -1,0 +1,70 @@
+## Parameters for annual emission python script
+## python variables
+
+## chemical mechanism
+chem_mechanism = "cmaq_cracmmv1"
+
+## molecDict defines the molecular weight of the given species
+molecDct = {"CO": 28, "NH3": 17, "NO": 46, "NO2": 46, "SO2": 64, \
+            "SULF": 98, "PEC": 1, "PMOCN2": 1, "PMFINE": 1, "PNO3": 1, \
+            "PSO4": 1, "PMC": 1, "FORM_PRIMARY":30.026,\
+            "ALD2_PRIMARY": 44.0526, "ACROLEIN": 56.0633, \
+            "BUTADIENE13":54.0904, "VOC_INV": 1.0, "VOC": 1, \
+            "HCL": 36.46, "HONO": 46, "NOX": 46, "PM2_5": 1, "PM10": 1, "HFLUX": 1,\
+            "NH3_FERT": 17, "PAL": 1, "PCA": 1, "PCL": 1, \
+            "PFE": 1, "PH2O": 1, "PK": 1, "PMG": 1, "PMN": 1, "PMOTHR": 1, \
+            "PNA": 1, "PMNCOMN2": 1, "PNH4": 1, "PSI": 1, "PTI": 1, 
+            "SOAALK": 92.1006, "NMOG": 1.0, "VOC_BEIS": 46, "TOG_INV": 1, \
+            "ACD": 44.053, "ACE": 26.037, "ACRO": 56.063, "ACT": 58.079, \
+            "ALD": 65.3665, "API": 136.234, "BALD": 115.0873, "BDE13": 54.09, \
+            "BEN": 78.112, "CSL": 122.0033, "ECH4": 16.042, "EOH": 46.068, \
+            "ETE": 28.053, "ETEG": 62.068, "ETH": 30.069, "FURAN": 72.2989, \
+            "GLY": 58.036, "HC3": 58.4107, "HC5": 82.5977, "HC10": 103.2933, \
+            "HCHO": 30.026, "ISO": 68.117, "KET": 106.8355, "LIM": 136.234, \
+            "MEK": 72.106, "MOH": 32.0419, "MVK": 70.09, "NAPH": 145.4619, \
+            "OLI": 93.33, "OLT": 65.5403, "ORA1": 46.025, "ORA2": 64.3665, \
+            "PHEN": 94.111, "PROG": 76.094, "VROCIOXY": 111.4328, "ROCP0": 147.211, \
+            "ROCP1": 251.467, "ROCP2": 292.8446, "ROCP3": 240.468, "ROCP4": 239.6231, \
+            "ROCP5": 210.6373, "ROCP5ARO": 171.1934, "ROCP6": 140.5942, "ROCP6ARO": 113.636, \
+            "ROH": 75.5254, "SLOWROC": 107.0321, "TOL": 92.138, "XYM": 111.6467, \
+            "XYE": 115.5535, "DCB1": 100.116, "HKET": 116.158, "MACR": 70.09, \
+            "MCT": 124.575, "MGLY": 72.063, "ONIT": 105.09, "ROCN1": 212.246, \
+            "ROCN2": 292.243, "SESQ": 204.357, "UALD": 84.116, "UNKKOH": 70.91, \
+            "UNKSMILES": 353.37, "PNCOMN1": 1, "PNCOMN2": 1, "PNCOMP0": 1, \
+	    "PNCOMP1": 1, "PNCOMP2": 1, "POCN1": 1, "POCN2": 1, \
+	    "POCP0": 1, "POCP1": 1, "POCP2": 1, "CL2": 70.91, \
+	    "ROCP0ALK": 147.2124, "ROCP1ALK": 251.4408, "ROCP2ALK": 292.854, \
+	    "ROCP3ALK": 240.475, "ROCP4ALK": 239.6568, "ROCP5ALK": 210.6427, "ROCP6ALK": 140.6013, \
+	    "HGIIGAS": 200.59, "HGNRVA":200.59, "PHGI": 1, "DIESEL_PMEC": 1, \
+	    "DIESEL_PMFINE": 1, "DIESEL_PMNO3":1, "DIESEL_PMOC": 1, \
+	    "DIESEL_PMSO4": 1, "DIESEL_PMC": 1, "ACROLEIN": 56.0633, \
+	    "BUTADIENE13":54.0904, "CHROMHEX_C": 1, "CHROMHEX_F": 1, \
+	    "NICKEL_C": 1, "NICKEL_F": 1, "BERYLLIUM_C": 1, \
+	    "BERYLLIUM_F": 1,"CADMIUM_C": 1, "CADMIUM_F": 1, "LEAD_C":1,\
+	    "LEAD_F": 1, "MANGANESE_C":1, "MANGANESE_F": 1, \
+	    "TOLU": 92.1384, "CL4_ETHE": 165.83, "TRIETHYLAMINE": 101.19,\
+            "HEXAMETHY_DIIS": 168.2, "CHCL3": 119.3776, "CL_ETHE": 62.5,\
+            "CL4_ETHANE1122": 167.85, "ETOX": 44.0526, "QUINOLINE": 129.16,\
+            "ACRYLONITRILE": 53.06, "CL2_C2_12": 98.9592, \
+            "BR2_C2_12": 187.86,"HYDRAZINE": 32.05, "CARBONTET": 153.8227,\
+            "DICHLOROPROPENE": 110.97,"PROPDICHLORIDE": 112.9, \
+            "MAL_ANHYDRIDE": 98.06, "DICHLOROBENZENE":147.0002, \
+            "TOL_DIIS": 174.1561, "CL2_ME": 84.93, "CL3_ETHE": 131.3883,\
+	    "ARSENIC_C": 1, "ARSENIC_F": 1, "TOM_INV": 1, \
+	    "PAH_000E0": 379.00, "PAH_101E2": 268.00, "PAH_114E1": 256.00, \
+	    "PAH_176E2": 302.00, "PAH_176E3": 244.00, "PAH_176E4": 248.00, \
+	    "PAH_176E5": 228.00, "PAH_192E3": 278.00, "PAH_880E5": 196.00, \
+	    "ACETONITRILE": 41.05, "ACRYLICACID": 72.06, "ACRYLONITRILE": 53.06, \
+	    "CARBSULFIDE": 60.07, "CHLOROPRENE": 88.54, "ETHYLBENZ": 106.165, \
+	    "HEXANE": 86.175, "METHCHLORIDE": 50.49, "STYRENE": 104.15, \
+	    "XYLENES": 106.165, "BENZOAPYRNE": 252.316, "ROCN1ALK": 219.285, \
+	    "ROCN2ALK": 292.244}
+
+## aggregate species dictionary, species that are composed of
+## other species.
+## Use sets (>=python 2.4) for testing if any component species
+## in state totals
+aggregSpecDct = {"NOX":set(["NO","NO2","HONO"]) ,\
+                 "PM2_5":set(["PSO4","PNO3","PEC","PAL","PCA","PCL","PFE","PH2O","PK","PMG","PMN","PMOTHR","PNA","PNH4","PSI","PTI","TOM_INV"]), \
+                 "PM10":set(["PMC","PSO4","PNO3","PEC","PAL","PCA","PCL","PFE","PH2O","PK","PMG","PMN","PMOTHR","PNA","PNH4","PSI","PTI","TOM_INV"])}
+

@@ -1,0 +1,12 @@
+grep: /work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs: Is a directory
+grep: /work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs: Is a directory
+log analyzer
+Getting message data (might take some time).... 
+Finished getting data
+Classifying message types...
+Total number of known messages: 1734199
+Total number of unknown messages: 0
+Level 1 analysis...
+Finished classifying message types
+Testing for exit priority <=  1
+All message priorities >  1

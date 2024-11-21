@@ -1,0 +1,146 @@
+priority,known,count,message type,file
+2,True,310,WARNING: Re-normalizing county total surrogate fractions of Co/St/Ct:  .* :: Surrogate: .* greater than 1 ::   .*,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/grdmat_alm_2002ac_36km.log
+3,True,200,WARNING: Resetting negative value of,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkinven_alm_2002ac.log
+2,True,44,WARNING: Causing zeroing emissions due to missing surrogate .* for co/st/cy :: .*,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/grdmat_alm_2002ac_36km.log
+3,True,34,WARNING: Missing control efficiency for,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkinven_alm_2002ac.log
+3,True,34,WARNING: Missing average day emissions for,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkinven_alm_2002ac.log
+3,True,16,WARNING: Missing rule effectiveness for,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkinven_alm_2002ac.log
+3,True,16,WARNING: Missing rule penetration for,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkinven_alm_2002ac.log
+3,True,7,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_inv_2002ac_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020506_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021110_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021104_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021109_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021202_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021105_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021203_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/temporal_alm_2002ac_20020101.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021208_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020915_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021207_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020806_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020512_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020909_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020914_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020811_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020810_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020507_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020805_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020910_alm.log
+3,True,5,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020511_alm.log
+3,True,4,Value for SMK_MAXWARNING:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkinven_alm_2002ac.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020708_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020714_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021104_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021109_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020811_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021105_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021202_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021110_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021203_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020713_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021208_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020709_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020810_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20021207_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020806_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020512_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020909_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020914_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020915_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020507_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020805_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020910_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020511_alm.log
+3,True,4,WARNING: Resetting number of time steps for report,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020506_alm.log
+2,True,4,WARNING: Duplicate entry in SPECIATION x-ref file:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/spcmat_alm_2002ac_cmaq_cb05pm.log
+3,True,3,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkinven_alm_2002ac.log
+3,True,2,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/spcmat_alm_2002ac_cmaq_cb05pm.log
+3,True,2,WARNING: Largest negative value for,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkinven_alm_2002ac.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020805_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020806_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020915_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020910_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020914_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020507_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021202_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021104_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021110_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020112_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020810_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020811_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021208_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020511_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020113_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020512_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021207_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021203_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021109_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020506_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020909_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/spcmat_alm_2002ac_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/grdmat_alm_2002ac_36km.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020108_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021105_36km_cmaq_cb05pm.log
+3,True,2,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020107_36km_cmaq_cb05pm.log
+3,True,1,Value for SMK_MAXWARNING:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/temporal_alm_2002ac_20020101.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020805_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020713_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020806_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020714_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020915_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020910_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020914_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020414_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020507_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021202_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021104_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021110_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020309_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020112_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020810_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020305_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020310_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020811_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021208_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020511_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020113_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020512_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/temporal_alm_2002ac_20020101.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021207_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020409_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021203_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020413_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020709_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021109_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020506_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020909_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020708_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020304_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020108_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20021105_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020107_36km_cmaq_cb05pm.log
+3,True,1,>>--->> WARNING in subroutine,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020408_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020708_alm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020714_alm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020713_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020413_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020714_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020414_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020309_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020305_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020310_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020409_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020709_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020713_alm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020708_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkreport_alm_temporal_2002ac_20020709_alm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020304_36km_cmaq_cb05pm.log
+3,True,1,WARNING: output file already exists:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkmerge_alm_2002ac_20020408_36km_cmaq_cb05pm.log
+3,True,1,WARNING: Processing non-wildfire sources,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/temporal_alm_2002ac_20020101.log
+3,True,1,WARNING: Records in GSCNV file for pollutant,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/spcmat_alm_2002ac_cmaq_cb05pm.log
+3,True,1,WARNING: Some base year rule effectiveness values,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkinven_alm_2002ac.log
+3,True,1,WARNING: Some base year rule penetration values,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkinven_alm_2002ac.log
+2,True,1,WARNING: No speciation profiles found for pollutant,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/spcmat_alm_2002ac_cmaq_cb05pm.log
+3,True,1,Value for SMK_MAXERROR:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/smkinven_alm_2002ac.log
+3,True,1,Value for SMK_MAXERROR:,/home/azubrow/smoke_emf/2002/smoke/intermed/v3/2002ac/alm/logs/temporal_alm_2002ac_20020101.log

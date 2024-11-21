@@ -1,0 +1,75 @@
+#!/bin/csh -f
+# Script for automatically moving old EMF scripts for the same job as the
+# one being run when this helper script is called
+
+## Check for all needed environment variables. If any aren't available,
+## print a warning message and abort
+
+set exitstat = 0
+if ( ! $?EMF_JOBNAME ) then
+   echo "SCRIPT WARNING: Could not move old scripts because EMF_JOBNAME was not set"
+   set exitstat = 1
+endif
+
+if ( ! $?EMF_SCRIPTDIR ) then
+   echo "SCRIPT WARNING: Could not move old scripts because EMF_SCRIPTDIR was not set"
+   set exitstat = 1
+endif
+
+if ( ! $?EMF_SCRIPTNAME ) then
+   echo "SCRIPT WARNING: Could not move old scripts because EMF_SCRIPTNAME was not set"
+   set exitstat = 1
+endif
+
+if ( ! $?SECTOR ) then
+   echo "SCRIPT WARNING: Could not move old scripts because SECTOR was not set"
+   set exitstat = 1
+endif
+
+if ( ! $?CASE ) then
+   echo "SCRIPT WARNING: Could not move old scripts because CASE was not set"
+   set exitstat = 1
+endif
+
+if ( $exitstat > 0 ) then
+   exit ( $exitstat )
+endif
+
+## Create the directory to move the old scripts to and change the permissions
+## to group-writable
+mkdir -p $EMF_SCRIPTDIR/old/$SECTOR
+chmod g+rwx $EMF_SCRIPTDIR/old 
+chmod g+rwx $EMF_SCRIPTDIR/old/$SECTOR
+
+## Create the directory to move the old logs to and change the permissions 
+## to group writable
+mkdir -p $EMF_SCRIPTDIR/old_logs/$SECTOR
+chmod g+rwx $EMF_SCRIPTDIR/old_logs 
+chmod g+rwx $EMF_SCRIPTDIR/old_logs/$SECTOR
+
+## Move the old scripts
+set num = `/bin/ls -1 "$EMF_SCRIPTDIR/${EMF_JOBNAME}_${CASE}"* | wc -l`
+if ( $num > 0 ) then
+   foreach f ( "$EMF_SCRIPTDIR/${EMF_JOBNAME}_${CASE}"* )
+      if ( "$f" != $EMF_SCRIPTNAME ) then
+         /bin/mv $f $EMF_SCRIPTDIR/old/$SECTOR
+         if ( $status != 0 ) set exitstat = 1
+      endif
+   end
+endif
+
+## Move the old logs
+set len = `echo $EMF_SCRIPTNAME | wc -m`
+@ len = $len - 4                                # 4 is to remove .csh
+set logroot = `echo $EMF_SCRIPTNAME | cut -c1-$len`
+set num = `/bin/ls -1 "$EMF_SCRIPTDIR/logs/${EMF_JOBNAME}_${CASE}"* | wc -l`
+if ( $num > 0 ) then
+   foreach f ( "$EMF_SCRIPTDIR/logs/${EMF_JOBNAME}_${CASE}"* )
+      if ( "$f" != $logroot.log ) then
+         /bin/mv $f $EMF_SCRIPTDIR/old_logs/$SECTOR
+         if ( $status != 0 ) set exitstat = 1
+      endif
+   end
+endif
+  
+exit ( $exitstat )

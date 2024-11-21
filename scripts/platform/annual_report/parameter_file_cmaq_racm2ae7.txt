@@ -1,0 +1,38 @@
+## Parameters for annual emission python script
+## python variables
+
+## chemical mechanism
+chem_mechanism = "cmaq_racm2ae7"
+
+## molecDict defines the molecular weight of the given species
+molecDct = {"CO": 28, "NH3": 17, "NO": 46, "NO2": 46, "SO2": 64, \
+            "SULF": 98, "PEC": 1, "POC": 1, "PMFINE": 1, "PNO3": 1, \
+            "PSO4": 1, "PMC": 1, "FORM_PRIMARY":30.026,\
+            "ALD2_PRIMARY": 44.0526, "ACROLEIN": 56.0633, \
+            "BUTADIENE13":54.0904, "VOC_INV": 1.0, "VOC": 1, \
+            "HCL": 36.46, "HONO": 46, "NOX": 46, "PM2_5": 1, "PM10": 1, "HFLUX": 1,\
+            "NH3_FERT": 17, "PAL": 1, "PCA": 1, "PCL": 1, \
+            "PFE": 1, "PH2O": 1, "PK": 1, "PMG": 1, "PMN": 1, "PMOTHR": 1, \
+            "PNA": 1, "PNCOM": 1, "PNH4": 1, "PSI": 1, "PTI": 1, 
+            "SOAALK": 92.1006, "NMOG": 1.0, "VOC_BEIS": 46, "TOG_INV": 1, \
+            "ACD": 44.0458, "ACE": 26.037, "ACT": 57.5054, "ALD": 66.769, \
+            "API": 136.234, "BALD": 106.122, "BEN": 78.112, "CSL": 147.48, \
+            "DIEN": 58.601, "ECH4": 16.042, "EOH": 46.068, "ETE": 28.053, \
+            "ETEG": 62.068, "ETH": 30.069, "GLY": 58.036, "HC3": 59.126, \
+            "HC5": 87.7361, "HC8": 91.6913, "HCHO": 30.026, "HKET": 96.2251, \
+            "ISO": 68.117, "IVOC": 130.5856, "KET": 107.277, "LIM": 139.5566, \
+            "MACR": 70.09, "MEK": 72.1034, "MGLY": 72.063, "MOH": 31.9669, \
+            "MVK": 84.187, "NAPTHALENE": 128.171, "NR": 102.0963, "NVOL": 154.1337, \
+            "OLI": 96.4883, "OLT": 63.7852, "ORA1": 46.025, "ORA2": 64.3665, \
+            "ROH": 72.3218, "SESQ": 212.415, "TOL": 118.3643, "UALD": 56.063, \
+            "UNK": 137.19, "XYM": 110.3898, "XYO": 110.6415, "XYP": 111.9474, \
+            "CL2": 70.91}
+
+## aggregate species dictionary, species that are composed of
+## other species.
+## Use sets (>=python 2.4) for testing if any component species
+## in state totals
+aggregSpecDct = {"NOX":set(["NO","NO2","HONO"]) ,\
+                 "PM2_5":set(["PSO4","PNO3","POC","PEC","PAL","PCA","PCL","PFE","PH2O","PK","PMG","PMN","PMOTHR","PNA","PNCOM","PNH4","PSI","PTI"]), \
+                 "PM10":set(["PMC","PSO4","PNO3","POC","PEC","PAL","PCA","PCL","PFE","PH2O","PK","PMG","PMN","PMOTHR","PNA","PNCOM","PNH4","PSI","PTI"])}
+

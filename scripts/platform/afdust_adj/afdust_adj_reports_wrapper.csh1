@@ -1,0 +1,19 @@
+#!/bin/csh -f
+#SBATCH --export=NONE
+
+setenv SECTOR othptdust
+setenv BASE_YEAR 2018
+setenv GRID 4EUS1
+setenv EMF_SPC cmaq_cb6
+setenv CASE 2018ff_18j_WR405
+setenv PROJECT_ROOT /work/MOD3DEV/callen05/WR405 #/work/EMIS/em_v7.2/2016platform
+setenv IMD_ROOT ${PROJECT_ROOT}/$CASE/premerged
+setenv PREMERGED $IMD_ROOT/$SECTOR
+setenv RUN_SECT "ADJ"
+setenv MRGDATE_ROOT /work/EMIS/em_v6.3/ge_dat/smk_dates/$BASE_YEAR
+setenv MONTHS_LIST "1 2 3 4 5 6 7 8 9 10 11 12"
+setenv SCRIPTS /work/EMIS/smoke/smoke4.6/scripts
+#setenv MONTHS_LIST "4" #5 6 7 8 9"
+
+#/work/EMIS/smoke/smoke4.5/scripts/afdust_adj/afdust_ann_report_test.py
+/work/EMIS/smoke/smoke4.6/scripts/afdust_adj/afdust_ann_report.py

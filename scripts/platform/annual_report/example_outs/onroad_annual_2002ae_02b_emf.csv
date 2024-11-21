@@ -1,0 +1,1750 @@
+State,Sector,Species,annu_emis
+Alabama,onroad,PAR,62763.9754
+Alabama,onroad,ETOH,0.0000
+Alabama,onroad,PSO4,21.8570
+Alabama,onroad,PM2.5,3081.6699
+Alabama,onroad,TOL,15226.7816
+Alabama,onroad,ETH,5117.8457
+Alabama,onroad,NO2,15273.0031
+Alabama,onroad,PEC,1731.7820
+Alabama,onroad,OLE,6240.0656
+Alabama,onroad,NO,137457.0513
+Alabama,onroad,PNO3,3.6109
+Alabama,onroad,CH4,11136.2844
+Alabama,onroad,PMC,1101.2059
+Alabama,onroad,POC,777.2001
+Alabama,onroad,TERP,33.2916
+Alabama,onroad,UNR,11483.0625
+Alabama,onroad,PMFINE,547.2199
+Alabama,onroad,CO,1237420.5259
+Alabama,onroad,FORM,2074.1063
+Alabama,onroad,MEOH,0.0000
+Alabama,onroad,ALD2,2326.5242
+Alabama,onroad,ETHA,1646.6442
+Alabama,onroad,ISOP,1.0895
+Alabama,onroad,SO2,5570.9017
+Alabama,onroad,NH3,5628.9005
+Alabama,onroad,SULF,0.0000
+Alabama,onroad,UNK,274.3831
+Alabama,onroad,PM10,4182.8758
+Alabama,onroad,IOLE,1707.9808
+Alabama,onroad,ALDX,818.9200
+Alabama,onroad,NOX,152730.0544
+Alabama,onroad,NVOL,22.2580
+Alabama,onroad,XYL,15517.3140
+Alaska,onroad,PAR,0.0000
+Alaska,onroad,ETOH,0.0000
+Alaska,onroad,PSO4,0.0000
+Alaska,onroad,PM2.5,0.0000
+Alaska,onroad,TOL,0.0000
+Alaska,onroad,ETH,0.0000
+Alaska,onroad,NO2,0.0000
+Alaska,onroad,PEC,0.0000
+Alaska,onroad,OLE,0.0000
+Alaska,onroad,NO,0.0000
+Alaska,onroad,PNO3,0.0000
+Alaska,onroad,CH4,0.0000
+Alaska,onroad,PMC,0.0000
+Alaska,onroad,POC,0.0000
+Alaska,onroad,TERP,0.0000
+Alaska,onroad,UNR,0.0000
+Alaska,onroad,PMFINE,0.0000
+Alaska,onroad,CO,0.0000
+Alaska,onroad,FORM,0.0000
+Alaska,onroad,MEOH,0.0000
+Alaska,onroad,ALD2,0.0000
+Alaska,onroad,ETHA,0.0000
+Alaska,onroad,ISOP,0.0000
+Alaska,onroad,SO2,0.0000
+Alaska,onroad,NH3,0.0000
+Alaska,onroad,SULF,0.0000
+Alaska,onroad,UNK,0.0000
+Alaska,onroad,PM10,0.0000
+Alaska,onroad,IOLE,0.0000
+Alaska,onroad,ALDX,0.0000
+Alaska,onroad,NOX,0.0000
+Alaska,onroad,NVOL,0.0000
+Alaska,onroad,XYL,0.0000
+Arizona,onroad,PAR,48259.1398
+Arizona,onroad,ETOH,4940.8565
+Arizona,onroad,PSO4,20.3439
+Arizona,onroad,PM2.5,2911.4587
+Arizona,onroad,TOL,12821.3790
+Arizona,onroad,ETH,3740.5523
+Arizona,onroad,NO2,15807.4213
+Arizona,onroad,PEC,1701.6744
+Arizona,onroad,OLE,4448.3021
+Arizona,onroad,NO,142266.7753
+Arizona,onroad,PNO3,3.5833
+Arizona,onroad,CH4,8144.7990
+Arizona,onroad,PMC,1062.8056
+Arizona,onroad,POC,693.1713
+Arizona,onroad,TERP,35.9997
+Arizona,onroad,UNR,9053.6289
+Arizona,onroad,PMFINE,492.6858
+Arizona,onroad,CO,834736.2754
+Arizona,onroad,FORM,1665.7273
+Arizona,onroad,MEOH,0.0000
+Arizona,onroad,ALD2,1945.5193
+Arizona,onroad,ETHA,1181.7064
+Arizona,onroad,ISOP,0.4729
+Arizona,onroad,SO2,2842.7216
+Arizona,onroad,NH3,5140.1647
+Arizona,onroad,SULF,0.0000
+Arizona,onroad,UNK,186.5153
+Arizona,onroad,PM10,3974.2643
+Arizona,onroad,IOLE,1143.6253
+Arizona,onroad,ALDX,714.2368
+Arizona,onroad,NOX,158074.1966
+Arizona,onroad,NVOL,24.0684
+Arizona,onroad,XYL,10399.5841
+Arkansas,onroad,PAR,31187.1319
+Arkansas,onroad,ETOH,2715.6101
+Arkansas,onroad,PSO4,11.7197
+Arkansas,onroad,PM2.5,1595.4007
+Arkansas,onroad,TOL,8456.8029
+Arkansas,onroad,ETH,2995.2811
+Arkansas,onroad,NO2,8317.6697
+Arkansas,onroad,PEC,870.4891
+Arkansas,onroad,OLE,3569.2691
+Arkansas,onroad,NO,74859.0281
+Arkansas,onroad,PNO3,1.8821
+Arkansas,onroad,CH4,6523.2702
+Arkansas,onroad,PMC,588.1477
+Arkansas,onroad,POC,416.1503
+Arkansas,onroad,TERP,16.3635
+Arkansas,onroad,UNR,6444.7609
+Arkansas,onroad,PMFINE,295.1595
+Arkansas,onroad,CO,736914.7228
+Arkansas,onroad,FORM,1171.9286
+Arkansas,onroad,MEOH,0.0000
+Arkansas,onroad,ALD2,1228.3592
+Arkansas,onroad,ETHA,967.7468
+Arkansas,onroad,ISOP,0.2344
+Arkansas,onroad,SO2,3070.3379
+Arkansas,onroad,NH3,3007.7002
+Arkansas,onroad,SULF,0.0000
+Arkansas,onroad,UNK,147.0689
+Arkansas,onroad,PM10,2183.5484
+Arkansas,onroad,IOLE,770.1080
+Arkansas,onroad,ALDX,392.7745
+Arkansas,onroad,NOX,83176.6978
+Arkansas,onroad,NVOL,10.9402
+Arkansas,onroad,XYL,7403.3748
+California,onroad,PAR,213561.5098
+California,onroad,ETOH,0.0000
+California,onroad,PSO4,142.0905
+California,onroad,PM2.5,20616.2879
+California,onroad,TOL,51147.7382
+California,onroad,ETH,17021.0797
+California,onroad,NO2,68863.6502
+California,onroad,PEC,11503.7330
+California,onroad,OLE,20707.1119
+California,onroad,NO,619773.0950
+California,onroad,PNO3,24.1115
+California,onroad,CH4,36515.8659
+California,onroad,PMC,6469.9783
+California,onroad,POC,5426.8199
+California,onroad,TERP,165.1590
+California,onroad,UNR,38811.7072
+California,onroad,PMFINE,3519.5331
+California,onroad,CO,3563790.7399
+California,onroad,FORM,7521.0302
+California,onroad,MEOH,0.0000
+California,onroad,ALD2,8939.5732
+California,onroad,ETHA,5387.7101
+California,onroad,ISOP,3.7672
+California,onroad,SO2,4762.0258
+California,onroad,NH3,31774.2716
+California,onroad,SULF,0.0000
+California,onroad,UNK,921.9045
+California,onroad,PM10,27086.2662
+California,onroad,IOLE,5772.3470
+California,onroad,ALDX,3510.6222
+California,onroad,NOX,688636.7453
+California,onroad,NVOL,110.4212
+California,onroad,XYL,51893.9849
+Colorado,onroad,PAR,45856.8392
+Colorado,onroad,ETOH,2881.7643
+Colorado,onroad,PSO4,16.8648
+Colorado,onroad,PM2.5,2328.8218
+Colorado,onroad,TOL,12237.0235
+Colorado,onroad,ETH,4622.4712
+Colorado,onroad,NO2,12649.3111
+Colorado,onroad,PEC,1294.8987
+Colorado,onroad,OLE,5494.6416
+Colorado,onroad,NO,113843.7824
+Colorado,onroad,PNO3,2.7556
+Colorado,onroad,CH4,9745.8714
+Colorado,onroad,PMC,853.7674
+Colorado,onroad,POC,592.0887
+Colorado,onroad,TERP,49.6858
+Colorado,onroad,UNR,9746.2609
+Colorado,onroad,PMFINE,422.2139
+Colorado,onroad,CO,1100645.1432
+Colorado,onroad,FORM,2071.7067
+Colorado,onroad,MEOH,0.0000
+Colorado,onroad,ALD2,2365.9983
+Colorado,onroad,ETHA,1454.7476
+Colorado,onroad,ISOP,0.3661
+Colorado,onroad,SO2,4117.5947
+Colorado,onroad,NH3,4402.5477
+Colorado,onroad,SULF,0.0000
+Colorado,onroad,UNK,236.0841
+Colorado,onroad,PM10,3182.5892
+Colorado,onroad,IOLE,1149.0203
+Colorado,onroad,ALDX,961.8207
+Colorado,onroad,NOX,126493.0934
+Colorado,onroad,NVOL,33.2186
+Colorado,onroad,XYL,11228.0351
+Connecticut,onroad,PAR,27762.3899
+Connecticut,onroad,ETOH,3.5423
+Connecticut,onroad,PSO4,9.8898
+Connecticut,onroad,PM2.5,1053.9219
+Connecticut,onroad,TOL,7092.5213
+Connecticut,onroad,ETH,2576.8857
+Connecticut,onroad,NO2,6625.2823
+Connecticut,onroad,PEC,495.2751
+Connecticut,onroad,OLE,3133.9622
+Connecticut,onroad,NO,59627.5395
+Connecticut,onroad,PNO3,1.2811
+Connecticut,onroad,CH4,5646.0693
+Connecticut,onroad,PMC,540.9216
+Connecticut,onroad,POC,289.4799
+Connecticut,onroad,TERP,8.2749
+Connecticut,onroad,UNR,5426.8389
+Connecticut,onroad,PMFINE,257.9959
+Connecticut,onroad,CO,639906.9536
+Connecticut,onroad,FORM,938.2169
+Connecticut,onroad,MEOH,0.0000
+Connecticut,onroad,ALD2,932.4567
+Connecticut,onroad,ETHA,843.2429
+Connecticut,onroad,ISOP,0.4112
+Connecticut,onroad,SO2,1654.9171
+Connecticut,onroad,NH3,3247.9642
+Connecticut,onroad,SULF,0.0000
+Connecticut,onroad,UNK,136.8505
+Connecticut,onroad,PM10,1594.8435
+Connecticut,onroad,IOLE,760.2408
+Connecticut,onroad,ALDX,281.1032
+Connecticut,onroad,NOX,66252.8218
+Connecticut,onroad,NVOL,5.5323
+Connecticut,onroad,XYL,7303.5823
+Delaware,onroad,PAR,6661.6300
+Delaware,onroad,ETOH,0.1327
+Delaware,onroad,PSO4,3.1204
+Delaware,onroad,PM2.5,401.6091
+Delaware,onroad,TOL,1678.3756
+Delaware,onroad,ETH,601.0006
+Delaware,onroad,NO2,2151.7108
+Delaware,onroad,PEC,218.2067
+Delaware,onroad,OLE,730.3714
+Delaware,onroad,NO,19365.3927
+Delaware,onroad,PNO3,0.4771
+Delaware,onroad,CH4,1306.8916
+Delaware,onroad,PMC,164.7231
+Delaware,onroad,POC,100.8510
+Delaware,onroad,TERP,3.0850
+Delaware,onroad,UNR,1285.8760
+Delaware,onroad,PMFINE,78.9539
+Delaware,onroad,CO,155365.7330
+Delaware,onroad,FORM,232.2784
+Delaware,onroad,MEOH,0.0000
+Delaware,onroad,ALD2,244.3794
+Delaware,onroad,ETHA,194.7749
+Delaware,onroad,ISOP,0.1021
+Delaware,onroad,SO2,552.7976
+Delaware,onroad,NH3,903.2741
+Delaware,onroad,SULF,0.0000
+Delaware,onroad,UNK,32.1145
+Delaware,onroad,PM10,566.3322
+Delaware,onroad,IOLE,181.6107
+Delaware,onroad,ALDX,82.4995
+Delaware,onroad,NOX,21517.1035
+Delaware,onroad,NVOL,2.0625
+Delaware,onroad,XYL,1722.3765
+District of Columbia,onroad,PAR,3216.3320
+District of Columbia,onroad,ETOH,0.0000
+District of Columbia,onroad,PSO4,1.2845
+District of Columbia,onroad,PM2.5,147.9316
+District of Columbia,onroad,TOL,790.9357
+District of Columbia,onroad,ETH,270.4372
+District of Columbia,onroad,NO2,866.4359
+District of Columbia,onroad,PEC,73.5199
+District of Columbia,onroad,OLE,329.8778
+District of Columbia,onroad,NO,7797.9216
+District of Columbia,onroad,PNO3,0.1780
+District of Columbia,onroad,CH4,592.3890
+District of Columbia,onroad,PMC,68.0863
+District of Columbia,onroad,POC,39.7704
+District of Columbia,onroad,TERP,1.2680
+District of Columbia,onroad,UNR,596.4357
+District of Columbia,onroad,PMFINE,33.1788
+District of Columbia,onroad,CO,64962.5888
+District of Columbia,onroad,FORM,103.8142
+District of Columbia,onroad,MEOH,0.0000
+District of Columbia,onroad,ALD2,111.1448
+District of Columbia,onroad,ETHA,87.8185
+District of Columbia,onroad,ISOP,0.0542
+District of Columbia,onroad,SO2,268.1090
+District of Columbia,onroad,NH3,395.8772
+District of Columbia,onroad,SULF,0.0000
+District of Columbia,onroad,UNK,14.4178
+District of Columbia,onroad,PM10,216.0180
+District of Columbia,onroad,IOLE,87.8562
+District of Columbia,onroad,ALDX,36.0162
+District of Columbia,onroad,NOX,8664.3575
+District of Columbia,onroad,NVOL,0.8478
+District of Columbia,onroad,XYL,808.8642
+Florida,onroad,PAR,223784.0250
+Florida,onroad,ETOH,0.0000
+Florida,onroad,PSO4,68.6733
+Florida,onroad,PM2.5,8929.2048
+Florida,onroad,TOL,52219.5964
+Florida,onroad,ETH,16112.7124
+Florida,onroad,NO2,44406.1679
+Florida,onroad,PEC,4662.6847
+Florida,onroad,OLE,19794.1416
+Florida,onroad,NO,399655.4860
+Florida,onroad,PNO3,10.4820
+Florida,onroad,CH4,35591.6901
+Florida,onroad,PMC,3369.7416
+Florida,onroad,POC,2432.9609
+Florida,onroad,TERP,89.1641
+Florida,onroad,UNR,38280.9562
+Florida,onroad,PMFINE,1754.4039
+Florida,onroad,CO,3785259.3129
+Florida,onroad,FORM,6431.3300
+Florida,onroad,MEOH,0.0000
+Florida,onroad,ALD2,7439.7957
+Florida,onroad,ETHA,5207.1250
+Florida,onroad,ISOP,4.4138
+Florida,onroad,SO2,21272.9856
+Florida,onroad,NH3,18213.9043
+Florida,onroad,SULF,0.0000
+Florida,onroad,UNK,859.6430
+Florida,onroad,PM10,12298.9464
+Florida,onroad,IOLE,6112.3949
+Florida,onroad,ALDX,2427.6526
+Florida,onroad,NOX,444061.6538
+Florida,onroad,NVOL,59.6129
+Florida,onroad,XYL,52910.9118
+Georgia,onroad,PAR,110293.8819
+Georgia,onroad,ETOH,0.0000
+Georgia,onroad,PSO4,43.2307
+Georgia,onroad,PM2.5,6287.8461
+Georgia,onroad,TOL,26974.8610
+Georgia,onroad,ETH,9257.6701
+Georgia,onroad,NO2,30473.6905
+Georgia,onroad,PEC,3587.3967
+Georgia,onroad,OLE,11259.0650
+Georgia,onroad,NO,274263.1666
+Georgia,onroad,PNO3,7.3533
+Georgia,onroad,CH4,19992.5660
+Georgia,onroad,PMC,2160.8801
+Georgia,onroad,POC,1574.3306
+Georgia,onroad,TERP,70.1187
+Georgia,onroad,UNR,20540.1308
+Georgia,onroad,PMFINE,1075.5348
+Georgia,onroad,CO,2244681.7668
+Georgia,onroad,FORM,3853.0916
+Georgia,onroad,MEOH,0.0000
+Georgia,onroad,ALD2,4358.2029
+Georgia,onroad,ETHA,2962.8484
+Georgia,onroad,ISOP,1.8439
+Georgia,onroad,SO2,11170.6438
+Georgia,onroad,NH3,10641.8162
+Georgia,onroad,SULF,0.0000
+Georgia,onroad,UNK,498.2565
+Georgia,onroad,PM10,8448.7262
+Georgia,onroad,IOLE,2992.5782
+Georgia,onroad,ALDX,1613.1469
+Georgia,onroad,NOX,304736.8571
+Georgia,onroad,NVOL,46.8798
+Georgia,onroad,XYL,27503.2359
+Hawaii,onroad,PAR,0.0000
+Hawaii,onroad,ETOH,0.0000
+Hawaii,onroad,PSO4,0.0000
+Hawaii,onroad,PM2.5,0.0000
+Hawaii,onroad,TOL,0.0000
+Hawaii,onroad,ETH,0.0000
+Hawaii,onroad,NO2,0.0000
+Hawaii,onroad,PEC,0.0000
+Hawaii,onroad,OLE,0.0000
+Hawaii,onroad,NO,0.0000
+Hawaii,onroad,PNO3,0.0000
+Hawaii,onroad,CH4,0.0000
+Hawaii,onroad,PMC,0.0000
+Hawaii,onroad,POC,0.0000
+Hawaii,onroad,TERP,0.0000
+Hawaii,onroad,UNR,0.0000
+Hawaii,onroad,PMFINE,0.0000
+Hawaii,onroad,CO,0.0000
+Hawaii,onroad,FORM,0.0000
+Hawaii,onroad,MEOH,0.0000
+Hawaii,onroad,ALD2,0.0000
+Hawaii,onroad,ETHA,0.0000
+Hawaii,onroad,ISOP,0.0000
+Hawaii,onroad,SO2,0.0000
+Hawaii,onroad,NH3,0.0000
+Hawaii,onroad,SULF,0.0000
+Hawaii,onroad,UNK,0.0000
+Hawaii,onroad,PM10,0.0000
+Hawaii,onroad,IOLE,0.0000
+Hawaii,onroad,ALDX,0.0000
+Hawaii,onroad,NOX,0.0000
+Hawaii,onroad,NVOL,0.0000
+Hawaii,onroad,XYL,0.0000
+Idaho,onroad,PAR,15649.1552
+Idaho,onroad,ETOH,0.0000
+Idaho,onroad,PSO4,5.5623
+Idaho,onroad,PM2.5,776.5750
+Idaho,onroad,TOL,4186.0080
+Idaho,onroad,ETH,1650.7482
+Idaho,onroad,NO2,4433.7221
+Idaho,onroad,PEC,432.4846
+Idaho,onroad,OLE,1993.4612
+Idaho,onroad,NO,39903.4962
+Idaho,onroad,PNO3,0.9101
+Idaho,onroad,CH4,3555.8247
+Idaho,onroad,PMC,281.8721
+Idaho,onroad,POC,197.9779
+Idaho,onroad,TERP,8.2125
+Idaho,onroad,UNR,3309.2010
+Idaho,onroad,PMFINE,139.6402
+Idaho,onroad,CO,389935.6644
+Idaho,onroad,FORM,627.3462
+Idaho,onroad,MEOH,0.0000
+Idaho,onroad,ALD2,621.5990
+Idaho,onroad,ETHA,535.6555
+Idaho,onroad,ISOP,0.1823
+Idaho,onroad,SO2,1304.9199
+Idaho,onroad,NH3,1420.2234
+Idaho,onroad,SULF,0.0000
+Idaho,onroad,UNK,88.3100
+Idaho,onroad,PM10,1058.4471
+Idaho,onroad,IOLE,425.8810
+Idaho,onroad,ALDX,215.6227
+Idaho,onroad,NOX,44337.2183
+Idaho,onroad,NVOL,5.4907
+Idaho,onroad,XYL,4335.3875
+Illinois,onroad,PAR,90382.9266
+Illinois,onroad,ETOH,5233.0126
+Illinois,onroad,PSO4,40.1585
+Illinois,onroad,PM2.5,5619.7665
+Illinois,onroad,TOL,24157.8968
+Illinois,onroad,ETH,9109.6130
+Illinois,onroad,NO2,29393.8026
+Illinois,onroad,PEC,3169.1386
+Illinois,onroad,OLE,10877.8778
+Illinois,onroad,NO,264544.1893
+Illinois,onroad,PNO3,6.5931
+Illinois,onroad,CH4,19530.8357
+Illinois,onroad,PMC,2057.0544
+Illinois,onroad,POC,1399.1008
+Illinois,onroad,TERP,67.1340
+Illinois,onroad,UNR,19048.6970
+Illinois,onroad,PMFINE,1004.7754
+Illinois,onroad,CO,2085295.6161
+Illinois,onroad,FORM,3737.3148
+Illinois,onroad,MEOH,0.0000
+Illinois,onroad,ALD2,4030.3680
+Illinois,onroad,ETHA,2917.1231
+Illinois,onroad,ISOP,0.7777
+Illinois,onroad,SO2,8447.1739
+Illinois,onroad,NH3,10628.3337
+Illinois,onroad,SULF,0.0000
+Illinois,onroad,UNK,461.4292
+Illinois,onroad,PM10,7676.8208
+Illinois,onroad,IOLE,2302.2679
+Illinois,onroad,ALDX,1462.8917
+Illinois,onroad,NOX,293937.9919
+Illinois,onroad,NVOL,44.8840
+Illinois,onroad,XYL,22493.1923
+Indiana,onroad,PAR,79247.0381
+Indiana,onroad,ETOH,2290.4216
+Indiana,onroad,PSO4,28.9476
+Indiana,onroad,PM2.5,4035.7227
+Indiana,onroad,TOL,20787.9467
+Indiana,onroad,ETH,7714.3886
+Indiana,onroad,NO2,21452.8360
+Indiana,onroad,PEC,2224.2743
+Indiana,onroad,OLE,9294.1236
+Indiana,onroad,NO,193075.5008
+Indiana,onroad,PNO3,4.7137
+Indiana,onroad,CH4,16727.5252
+Indiana,onroad,PMC,1430.3771
+Indiana,onroad,POC,1048.5257
+Indiana,onroad,TERP,39.6146
+Indiana,onroad,UNR,16142.1690
+Indiana,onroad,PMFINE,729.2613
+Indiana,onroad,CO,1738926.6686
+Indiana,onroad,FORM,2971.8362
+Indiana,onroad,MEOH,0.0000
+Indiana,onroad,ALD2,3066.0853
+Indiana,onroad,ETHA,2499.3329
+Indiana,onroad,ISOP,0.9176
+Indiana,onroad,SO2,8532.6723
+Indiana,onroad,NH3,7344.3746
+Indiana,onroad,SULF,0.0000
+Indiana,onroad,UNK,399.9617
+Indiana,onroad,PM10,5466.0997
+Indiana,onroad,IOLE,2095.1105
+Indiana,onroad,ALDX,1020.6445
+Indiana,onroad,NOX,214528.3368
+Indiana,onroad,NVOL,26.4853
+Indiana,onroad,XYL,20368.7479
+Iowa,onroad,PAR,42732.7011
+Iowa,onroad,ETOH,1015.3948
+Iowa,onroad,PSO4,12.4568
+Iowa,onroad,PM2.5,1707.2219
+Iowa,onroad,TOL,11413.3477
+Iowa,onroad,ETH,4383.5074
+Iowa,onroad,NO2,11484.7876
+Iowa,onroad,PEC,928.6321
+Iowa,onroad,OLE,5289.9376
+Iowa,onroad,NO,103363.0752
+Iowa,onroad,PNO3,1.9975
+Iowa,onroad,CH4,9582.9215
+Iowa,onroad,PMC,626.9127
+Iowa,onroad,POC,449.3056
+Iowa,onroad,TERP,11.8390
+Iowa,onroad,UNR,8913.2010
+Iowa,onroad,PMFINE,314.8299
+Iowa,onroad,CO,1057960.4217
+Iowa,onroad,FORM,1561.9335
+Iowa,onroad,MEOH,0.0000
+Iowa,onroad,ALD2,1486.4820
+Iowa,onroad,ETHA,1437.8761
+Iowa,onroad,ISOP,0.4666
+Iowa,onroad,SO2,2989.3642
+Iowa,onroad,NH3,3096.9052
+Iowa,onroad,SULF,0.0000
+Iowa,onroad,UNK,226.3900
+Iowa,onroad,PM10,2334.1346
+Iowa,onroad,IOLE,1144.5830
+Iowa,onroad,ALDX,425.2841
+Iowa,onroad,NOX,114847.8628
+Iowa,onroad,NVOL,7.9152
+Iowa,onroad,XYL,11382.5772
+Kansas,onroad,PAR,29888.4601
+Kansas,onroad,ETOH,737.7569
+Kansas,onroad,PSO4,11.2223
+Kansas,onroad,PM2.5,1610.4345
+Kansas,onroad,TOL,7821.9669
+Kansas,onroad,ETH,2911.5414
+Kansas,onroad,NO2,8495.6260
+Kansas,onroad,PEC,916.7755
+Kansas,onroad,OLE,3509.6102
+Kansas,onroad,NO,76460.6302
+Kansas,onroad,PNO3,1.8840
+Kansas,onroad,CH4,6303.7607
+Kansas,onroad,PMC,568.7338
+Kansas,onroad,POC,400.5365
+Kansas,onroad,TERP,15.5969
+Kansas,onroad,UNR,6084.0030
+Kansas,onroad,PMFINE,280.0163
+Kansas,onroad,CO,684182.2630
+Kansas,onroad,FORM,1128.3399
+Kansas,onroad,MEOH,0.0000
+Kansas,onroad,ALD2,1168.7354
+Kansas,onroad,ETHA,942.3176
+Kansas,onroad,ISOP,0.3542
+Kansas,onroad,SO2,2877.7776
+Kansas,onroad,NH3,2871.3487
+Kansas,onroad,SULF,0.0000
+Kansas,onroad,UNK,151.7178
+Kansas,onroad,PM10,2179.1684
+Kansas,onroad,IOLE,793.2657
+Kansas,onroad,ALDX,395.5554
+Kansas,onroad,NOX,84956.2562
+Kansas,onroad,NVOL,10.4277
+Kansas,onroad,XYL,7721.3014
+Kentucky,onroad,PAR,47656.4263
+Kentucky,onroad,ETOH,159.4137
+Kentucky,onroad,PSO4,19.4346
+Kentucky,onroad,PM2.5,2810.7649
+Kentucky,onroad,TOL,12117.5044
+Kentucky,onroad,ETH,4410.9158
+Kentucky,onroad,NO2,14656.0901
+Kentucky,onroad,PEC,1593.5970
+Kentucky,onroad,OLE,5343.7101
+Kentucky,onroad,NO,131904.7992
+Kentucky,onroad,PNO3,3.2753
+Kentucky,onroad,CH4,9517.1231
+Kentucky,onroad,PMC,969.5906
+Kentucky,onroad,POC,708.6097
+Kentucky,onroad,TERP,28.2139
+Kentucky,onroad,UNR,9368.0773
+Kentucky,onroad,PMFINE,485.8483
+Kentucky,onroad,CO,1053656.1477
+Kentucky,onroad,FORM,1764.0000
+Kentucky,onroad,MEOH,0.0000
+Kentucky,onroad,ALD2,1889.0227
+Kentucky,onroad,ETHA,1420.4863
+Kentucky,onroad,ISOP,0.6883
+Kentucky,onroad,SO2,5536.3080
+Kentucky,onroad,NH3,4828.5866
+Kentucky,onroad,SULF,0.0000
+Kentucky,onroad,UNK,235.9833
+Kentucky,onroad,PM10,3780.3555
+Kentucky,onroad,IOLE,1289.9440
+Kentucky,onroad,ALDX,679.7291
+Kentucky,onroad,NOX,146560.8893
+Kentucky,onroad,NVOL,18.8631
+Kentucky,onroad,XYL,12360.3520
+Louisiana,onroad,PAR,47080.8784
+Louisiana,onroad,ETOH,0.0000
+Louisiana,onroad,PSO4,17.2277
+Louisiana,onroad,PM2.5,2477.5992
+Louisiana,onroad,TOL,11272.3321
+Louisiana,onroad,ETH,3691.9905
+Louisiana,onroad,NO2,12316.1503
+Louisiana,onroad,PEC,1407.8066
+Louisiana,onroad,OLE,4509.9361
+Louisiana,onroad,NO,110845.3536
+Louisiana,onroad,PNO3,2.8950
+Louisiana,onroad,CH4,8054.7859
+Louisiana,onroad,PMC,868.9763
+Louisiana,onroad,POC,619.5537
+Louisiana,onroad,TERP,24.3644
+Louisiana,onroad,UNR,8436.1094
+Louisiana,onroad,PMFINE,430.1161
+Louisiana,onroad,CO,944349.8084
+Louisiana,onroad,FORM,1505.3993
+Louisiana,onroad,MEOH,0.0000
+Louisiana,onroad,ALD2,1715.6407
+Louisiana,onroad,ETHA,1187.1437
+Louisiana,onroad,ISOP,0.8528
+Louisiana,onroad,SO2,4388.8685
+Louisiana,onroad,NH3,4366.5678
+Louisiana,onroad,SULF,0.0000
+Louisiana,onroad,UNK,197.8994
+Louisiana,onroad,PM10,3346.5755
+Louisiana,onroad,IOLE,1281.6795
+Louisiana,onroad,ALDX,600.6605
+Louisiana,onroad,NOX,123161.5039
+Louisiana,onroad,NVOL,16.2894
+Louisiana,onroad,XYL,11462.0954
+Maine,onroad,PAR,14562.2897
+Maine,onroad,ETOH,0.7775
+Maine,onroad,PSO4,5.7807
+Maine,onroad,PM2.5,867.1872
+Maine,onroad,TOL,3918.6856
+Maine,onroad,ETH,1563.5284
+Maine,onroad,NO2,4694.4713
+Maine,onroad,PEC,513.4483
+Maine,onroad,OLE,1885.6917
+Maine,onroad,NO,42250.2417
+Maine,onroad,PNO3,1.0143
+Maine,onroad,CH4,3354.6790
+Maine,onroad,PMC,300.7277
+Maine,onroad,POC,204.5983
+Maine,onroad,TERP,8.6760
+Maine,onroad,UNR,3116.2371
+Maine,onroad,PMFINE,142.3455
+Maine,onroad,CO,361825.2974
+Maine,onroad,FORM,603.4835
+Maine,onroad,MEOH,0.0000
+Maine,onroad,ALD2,602.9216
+Maine,onroad,ETHA,505.9226
+Maine,onroad,ISOP,0.1623
+Maine,onroad,SO2,1115.8920
+Maine,onroad,NH3,1471.4328
+Maine,onroad,SULF,0.0000
+Maine,onroad,UNK,83.8119
+Maine,onroad,PM10,1167.9149
+Maine,onroad,IOLE,395.4970
+Maine,onroad,ALDX,216.2680
+Maine,onroad,NOX,46944.7130
+Maine,onroad,NVOL,5.8006
+Maine,onroad,XYL,4059.7429
+Maryland,onroad,PAR,41665.6523
+Maryland,onroad,ETOH,0.0522
+Maryland,onroad,PSO4,18.3663
+Maryland,onroad,PM2.5,2169.6575
+Maryland,onroad,TOL,10619.9637
+Maryland,onroad,ETH,3855.1191
+Maryland,onroad,NO2,12071.7799
+Maryland,onroad,PEC,1114.5238
+Maryland,onroad,OLE,4686.3443
+Maryland,onroad,NO,108645.9998
+Maryland,onroad,PNO3,2.6684
+Maryland,onroad,CH4,8423.6738
+Maryland,onroad,PMC,963.2760
+Maryland,onroad,POC,568.1454
+Maryland,onroad,TERP,14.6712
+Maryland,onroad,UNR,8138.5913
+Maryland,onroad,PMFINE,465.9535
+Maryland,onroad,CO,1003002.6127
+Maryland,onroad,FORM,1429.6052
+Maryland,onroad,MEOH,0.0000
+Maryland,onroad,ALD2,1444.3398
+Maryland,onroad,ETHA,1257.7925
+Maryland,onroad,ISOP,0.6189
+Maryland,onroad,SO2,3939.7547
+Maryland,onroad,NH3,5584.6824
+Maryland,onroad,SULF,0.0000
+Maryland,onroad,UNK,205.1575
+Maryland,onroad,PM10,3132.9334
+Maryland,onroad,IOLE,1139.4099
+Maryland,onroad,ALDX,453.5299
+Maryland,onroad,NOX,120717.7797
+Maryland,onroad,NVOL,9.8087
+Maryland,onroad,XYL,10929.6332
+Massachusetts,onroad,PAR,40877.1395
+Massachusetts,onroad,ETOH,5.8417
+Massachusetts,onroad,PSO4,18.0272
+Massachusetts,onroad,PM2.5,2236.6480
+Massachusetts,onroad,TOL,10549.9240
+Massachusetts,onroad,ETH,3946.9930
+Massachusetts,onroad,NO2,12694.2054
+Massachusetts,onroad,PEC,1193.3177
+Massachusetts,onroad,OLE,4779.3616
+Massachusetts,onroad,NO,114247.8012
+Massachusetts,onroad,PNO3,2.6643
+Massachusetts,onroad,CH4,8517.2884
+Massachusetts,onroad,PMC,977.1820
+Massachusetts,onroad,POC,562.5810
+Massachusetts,onroad,TERP,22.6633
+Massachusetts,onroad,UNR,8214.4217
+Massachusetts,onroad,PMFINE,460.0580
+Massachusetts,onroad,CO,955481.2274
+Massachusetts,onroad,FORM,1543.9772
+Massachusetts,onroad,MEOH,0.0000
+Massachusetts,onroad,ALD2,1606.5338
+Massachusetts,onroad,ETHA,1275.5298
+Massachusetts,onroad,ISOP,0.5620
+Massachusetts,onroad,SO2,3139.0833
+Massachusetts,onroad,NH3,5486.3232
+Massachusetts,onroad,SULF,0.0000
+Massachusetts,onroad,UNK,211.4615
+Massachusetts,onroad,PM10,3213.8301
+Massachusetts,onroad,IOLE,1111.4084
+Massachusetts,onroad,ALDX,568.0338
+Massachusetts,onroad,NOX,126942.0066
+Massachusetts,onroad,NVOL,15.1521
+Massachusetts,onroad,XYL,10859.0453
+Michigan,onroad,PAR,115329.1174
+Michigan,onroad,ETOH,773.6593
+Michigan,onroad,PSO4,41.2306
+Michigan,onroad,PM2.5,5816.7175
+Michigan,onroad,TOL,30927.9460
+Michigan,onroad,ETH,12254.8219
+Michigan,onroad,NO2,31238.1020
+Michigan,onroad,PEC,3194.0190
+Michigan,onroad,OLE,14772.3185
+Michigan,onroad,NO,281142.8485
+Michigan,onroad,PNO3,6.8414
+Michigan,onroad,CH4,26349.9534
+Michigan,onroad,PMC,1973.2430
+Michigan,onroad,POC,1541.6725
+Michigan,onroad,TERP,65.4114
+Michigan,onroad,UNR,24561.9280
+Michigan,onroad,PMFINE,1032.9539
+Michigan,onroad,CO,2739124.4986
+Michigan,onroad,FORM,4707.8919
+Michigan,onroad,MEOH,0.0000
+Michigan,onroad,ALD2,4713.0568
+Michigan,onroad,ETHA,3968.9955
+Michigan,onroad,ISOP,1.2696
+Michigan,onroad,SO2,13428.2678
+Michigan,onroad,NH3,9797.3148
+Michigan,onroad,SULF,0.0000
+Michigan,onroad,UNK,651.1502
+Michigan,onroad,PM10,7789.9605
+Michigan,onroad,IOLE,3115.8870
+Michigan,onroad,ALDX,1655.3182
+Michigan,onroad,NOX,312380.9505
+Michigan,onroad,NVOL,43.7323
+Michigan,onroad,XYL,31705.0671
+Minnesota,onroad,PAR,58433.6217
+Minnesota,onroad,ETOH,310.2100
+Minnesota,onroad,PSO4,19.6599
+Minnesota,onroad,PM2.5,2706.1651
+Minnesota,onroad,TOL,15216.8002
+Minnesota,onroad,ETH,5740.3421
+Minnesota,onroad,NO2,16194.7666
+Minnesota,onroad,PEC,1527.3680
+Minnesota,onroad,OLE,6942.2897
+Minnesota,onroad,NO,145752.8997
+Minnesota,onroad,PNO3,3.1878
+Minnesota,onroad,CH4,12403.1929
+Minnesota,onroad,PMC,1044.3110
+Minnesota,onroad,POC,663.3018
+Minnesota,onroad,TERP,30.6424
+Minnesota,onroad,UNR,11872.9233
+Minnesota,onroad,PMFINE,492.6475
+Minnesota,onroad,CO,1314778.0931
+Minnesota,onroad,FORM,2217.7655
+Minnesota,onroad,MEOH,0.0000
+Minnesota,onroad,ALD2,2277.1620
+Minnesota,onroad,ETHA,1858.7533
+Minnesota,onroad,ISOP,0.7605
+Minnesota,onroad,SO2,2793.8070
+Minnesota,onroad,NH3,5362.8496
+Minnesota,onroad,SULF,0.0000
+Minnesota,onroad,UNK,305.4206
+Minnesota,onroad,PM10,3750.4760
+Minnesota,onroad,IOLE,1581.9935
+Minnesota,onroad,ALDX,787.6680
+Minnesota,onroad,NOX,161947.6663
+Minnesota,onroad,NVOL,20.4868
+Minnesota,onroad,XYL,15548.7610
+Mississippi,onroad,PAR,37520.2018
+Mississippi,onroad,ETOH,234.5248
+Mississippi,onroad,PSO4,15.4013
+Mississippi,onroad,PM2.5,2285.3580
+Mississippi,onroad,TOL,9027.8266
+Mississippi,onroad,ETH,2955.4381
+Mississippi,onroad,NO2,10472.7011
+Mississippi,onroad,PEC,1342.8196
+Mississippi,onroad,OLE,3598.3261
+Mississippi,onroad,NO,94254.3026
+Mississippi,onroad,PNO3,2.8336
+Mississippi,onroad,CH4,6400.4843
+Mississippi,onroad,PMC,746.6210
+Mississippi,onroad,POC,556.7771
+Mississippi,onroad,TERP,24.0835
+Mississippi,onroad,UNR,6776.1191
+Mississippi,onroad,PMFINE,367.5265
+Mississippi,onroad,CO,740968.2303
+Mississippi,onroad,FORM,1256.4667
+Mississippi,onroad,MEOH,0.0000
+Mississippi,onroad,ALD2,1464.6764
+Mississippi,onroad,ETHA,942.7600
+Mississippi,onroad,ISOP,0.6550
+Mississippi,onroad,SO2,3579.1827
+Mississippi,onroad,NH3,3615.6792
+Mississippi,onroad,SULF,0.0000
+Mississippi,onroad,UNK,158.3287
+Mississippi,onroad,PM10,3031.9790
+Mississippi,onroad,IOLE,1010.5379
+Mississippi,onroad,ALDX,542.9211
+Mississippi,onroad,NOX,104727.0037
+Mississippi,onroad,NVOL,16.1016
+Mississippi,onroad,XYL,9049.1690
+Missouri,onroad,PAR,71169.4748
+Missouri,onroad,ETOH,442.6752
+Missouri,onroad,PSO4,26.9195
+Missouri,onroad,PM2.5,3771.0158
+Missouri,onroad,TOL,18295.5892
+Missouri,onroad,ETH,6752.7393
+Missouri,onroad,NO2,19863.1728
+Missouri,onroad,PEC,2113.3723
+Missouri,onroad,OLE,8169.1107
+Missouri,onroad,NO,178768.5565
+Missouri,onroad,PNO3,4.4232
+Missouri,onroad,CH4,14560.9642
+Missouri,onroad,PMC,1373.3106
+Missouri,onroad,POC,951.7596
+Missouri,onroad,TERP,42.0608
+Missouri,onroad,UNR,14201.8755
+Missouri,onroad,PMFINE,674.5411
+Missouri,onroad,CO,1598585.2242
+Missouri,onroad,FORM,2683.3536
+Missouri,onroad,MEOH,0.0000
+Missouri,onroad,ALD2,2841.0355
+Missouri,onroad,ETHA,2176.5409
+Missouri,onroad,ISOP,0.9737
+Missouri,onroad,SO2,6111.7889
+Missouri,onroad,NH3,6917.6764
+Missouri,onroad,SULF,0.0000
+Missouri,onroad,UNK,360.1383
+Missouri,onroad,PM10,5144.3264
+Missouri,onroad,IOLE,1920.6332
+Missouri,onroad,ALDX,1017.6886
+Missouri,onroad,NOX,198631.7294
+Missouri,onroad,NVOL,28.1207
+Missouri,onroad,XYL,18596.7413
+Montana,onroad,PAR,11269.5444
+Montana,onroad,ETOH,66.8171
+Montana,onroad,PSO4,4.3664
+Montana,onroad,PM2.5,680.4302
+Montana,onroad,TOL,3074.1875
+Montana,onroad,ETH,1249.6356
+Montana,onroad,NO2,3650.5938
+Montana,onroad,PEC,405.6111
+Montana,onroad,OLE,1504.3115
+Montana,onroad,NO,32855.3421
+Montana,onroad,PNO3,0.7902
+Montana,onroad,CH4,2680.8170
+Montana,onroad,PMC,220.3754
+Montana,onroad,POC,162.5165
+Montana,onroad,TERP,6.5907
+Montana,onroad,UNR,2462.3938
+Montana,onroad,PMFINE,107.1462
+Montana,onroad,CO,284733.2065
+Montana,onroad,FORM,477.7055
+Montana,onroad,MEOH,0.0000
+Montana,onroad,ALD2,470.5671
+Montana,onroad,ETHA,404.9055
+Montana,onroad,ISOP,0.1121
+Montana,onroad,SO2,1058.7282
+Montana,onroad,NH3,1035.7913
+Montana,onroad,SULF,0.0000
+Montana,onroad,UNK,66.4803
+Montana,onroad,PM10,900.8057
+Montana,onroad,IOLE,304.5634
+Montana,onroad,ALDX,166.4306
+Montana,onroad,NOX,36505.9359
+Montana,onroad,NVOL,4.4064
+Montana,onroad,XYL,3164.2603
+Nebraska,onroad,PAR,20921.2325
+Nebraska,onroad,ETOH,0.0000
+Nebraska,onroad,PSO4,8.3344
+Nebraska,onroad,PM2.5,1297.0000
+Nebraska,onroad,TOL,5447.2574
+Nebraska,onroad,ETH,2083.6276
+Nebraska,onroad,NO2,6568.5371
+Nebraska,onroad,PEC,773.7927
+Nebraska,onroad,OLE,2515.6527
+Nebraska,onroad,NO,59116.8307
+Nebraska,onroad,PNO3,1.5528
+Nebraska,onroad,CH4,4451.5539
+Nebraska,onroad,PMC,409.1006
+Nebraska,onroad,POC,312.5816
+Nebraska,onroad,TERP,15.2533
+Nebraska,onroad,UNR,4294.2871
+Nebraska,onroad,PMFINE,200.7385
+Nebraska,onroad,CO,474437.1202
+Nebraska,onroad,FORM,849.9243
+Nebraska,onroad,MEOH,0.0000
+Nebraska,onroad,ALD2,904.8049
+Nebraska,onroad,ETHA,668.0774
+Nebraska,onroad,ISOP,0.2703
+Nebraska,onroad,SO2,2000.8450
+Nebraska,onroad,NH3,1876.6949
+Nebraska,onroad,SULF,0.0000
+Nebraska,onroad,UNK,112.2657
+Nebraska,onroad,PM10,1706.1006
+Nebraska,onroad,IOLE,566.1339
+Nebraska,onroad,ALDX,344.8466
+Nebraska,onroad,NOX,65685.3679
+Nebraska,onroad,NVOL,10.1979
+Nebraska,onroad,XYL,5608.4075
+Nevada,onroad,PAR,15547.4701
+Nevada,onroad,ETOH,995.6617
+Nevada,onroad,PSO4,4.2480
+Nevada,onroad,PM2.5,395.4132
+Nevada,onroad,TOL,4067.7350
+Nevada,onroad,ETH,1258.2441
+Nevada,onroad,NO2,2816.3620
+Nevada,onroad,PEC,167.6296
+Nevada,onroad,OLE,1515.6970
+Nevada,onroad,NO,25347.2317
+Nevada,onroad,PNO3,0.4921
+Nevada,onroad,CH4,2784.9612
+Nevada,onroad,PMC,244.0379
+Nevada,onroad,POC,110.7586
+Nevada,onroad,TERP,5.8552
+Nevada,onroad,UNR,2908.6725
+Nevada,onroad,PMFINE,112.2848
+Nevada,onroad,CO,300405.4639
+Nevada,onroad,FORM,486.5725
+Nevada,onroad,MEOH,0.0000
+Nevada,onroad,ALD2,516.4554
+Nevada,onroad,ETHA,408.0866
+Nevada,onroad,ISOP,0.1909
+Nevada,onroad,SO2,357.2536
+Nevada,onroad,NH3,1529.6913
+Nevada,onroad,SULF,0.0000
+Nevada,onroad,UNK,64.0789
+Nevada,onroad,PM10,639.4510
+Nevada,onroad,IOLE,391.7246
+Nevada,onroad,ALDX,156.8759
+Nevada,onroad,NOX,28163.5937
+Nevada,onroad,NVOL,3.9146
+Nevada,onroad,XYL,3619.8271
+New Hampshire,onroad,PAR,12194.0947
+New Hampshire,onroad,ETOH,0.0000
+New Hampshire,onroad,PSO4,4.8335
+New Hampshire,onroad,PM2.5,705.9160
+New Hampshire,onroad,TOL,3233.2062
+New Hampshire,onroad,ETH,1261.8460
+New Hampshire,onroad,NO2,3851.8507
+New Hampshire,onroad,PEC,412.9738
+New Hampshire,onroad,OLE,1523.9554
+New Hampshire,onroad,NO,34666.6414
+New Hampshire,onroad,PNO3,0.8287
+New Hampshire,onroad,CH4,2712.9058
+New Hampshire,onroad,PMC,253.8709
+New Hampshire,onroad,POC,167.7029
+New Hampshire,onroad,TERP,7.0547
+New Hampshire,onroad,UNR,2552.0836
+New Hampshire,onroad,PMFINE,119.5771
+New Hampshire,onroad,CO,294921.3330
+New Hampshire,onroad,FORM,488.9159
+New Hampshire,onroad,MEOH,0.0000
+New Hampshire,onroad,ALD2,495.0356
+New Hampshire,onroad,ETHA,408.1770
+New Hampshire,onroad,ISOP,0.1474
+New Hampshire,onroad,SO2,874.1378
+New Hampshire,onroad,NH3,1267.4547
+New Hampshire,onroad,SULF,0.0000
+New Hampshire,onroad,UNK,67.6295
+New Hampshire,onroad,PM10,959.7869
+New Hampshire,onroad,IOLE,331.3599
+New Hampshire,onroad,ALDX,176.5057
+New Hampshire,onroad,NOX,38518.4920
+New Hampshire,onroad,NVOL,4.7166
+New Hampshire,onroad,XYL,3342.5568
+New Jersey,onroad,PAR,59946.6439
+New Jersey,onroad,ETOH,5.9597
+New Jersey,onroad,PSO4,23.0375
+New Jersey,onroad,PM2.5,2505.7344
+New Jersey,onroad,TOL,14867.2962
+New Jersey,onroad,ETH,5140.1152
+New Jersey,onroad,NO2,16035.3313
+New Jersey,onroad,PEC,1216.6860
+New Jersey,onroad,OLE,6270.0721
+New Jersey,onroad,NO,144317.9597
+New Jersey,onroad,PNO3,3.0554
+New Jersey,onroad,CH4,11294.6764
+New Jersey,onroad,PMC,1260.8162
+New Jersey,onroad,POC,666.0681
+New Jersey,onroad,TERP,19.3355
+New Jersey,onroad,UNR,11218.5008
+New Jersey,onroad,PMFINE,596.8874
+New Jersey,onroad,CO,1320679.5300
+New Jersey,onroad,FORM,1916.4275
+New Jersey,onroad,MEOH,0.0000
+New Jersey,onroad,ALD2,1994.5526
+New Jersey,onroad,ETHA,1676.9890
+New Jersey,onroad,ISOP,0.9882
+New Jersey,onroad,SO2,3629.9863
+New Jersey,onroad,NH3,7611.6131
+New Jersey,onroad,SULF,0.0000
+New Jersey,onroad,UNK,273.2325
+New Jersey,onroad,PM10,3766.5507
+New Jersey,onroad,IOLE,1640.5461
+New Jersey,onroad,ALDX,613.4898
+New Jersey,onroad,NOX,160353.2910
+New Jersey,onroad,NVOL,12.9273
+New Jersey,onroad,XYL,15232.3611
+New Mexico,onroad,PAR,25491.1814
+New Mexico,onroad,ETOH,1192.0005
+New Mexico,onroad,PSO4,9.5882
+New Mexico,onroad,PM2.5,1459.5710
+New Mexico,onroad,TOL,6631.7304
+New Mexico,onroad,ETH,2410.0139
+New Mexico,onroad,NO2,7697.6803
+New Mexico,onroad,PEC,860.2210
+New Mexico,onroad,OLE,2876.4606
+New Mexico,onroad,NO,69279.1264
+New Mexico,onroad,PNO3,1.6992
+New Mexico,onroad,CH4,5074.9976
+New Mexico,onroad,PMC,486.6934
+New Mexico,onroad,POC,351.7289
+New Mexico,onroad,TERP,28.0772
+New Mexico,onroad,UNR,5204.1988
+New Mexico,onroad,PMFINE,236.3337
+New Mexico,onroad,CO,587276.0052
+New Mexico,onroad,FORM,1107.6008
+New Mexico,onroad,MEOH,0.0000
+New Mexico,onroad,ALD2,1294.7339
+New Mexico,onroad,ETHA,754.9793
+New Mexico,onroad,ISOP,0.2671
+New Mexico,onroad,SO2,2243.4538
+New Mexico,onroad,NH3,2326.8889
+New Mexico,onroad,SULF,0.0000
+New Mexico,onroad,UNK,125.6671
+New Mexico,onroad,PM10,1946.2644
+New Mexico,onroad,IOLE,648.3898
+New Mexico,onroad,ALDX,539.0474
+New Mexico,onroad,NOX,76976.8066
+New Mexico,onroad,NVOL,18.7717
+New Mexico,onroad,XYL,6209.0331
+New York,onroad,PAR,124658.8287
+New York,onroad,ETOH,8.4261
+New York,onroad,PSO4,48.5392
+New York,onroad,PM2.5,5482.0762
+New York,onroad,TOL,31413.9915
+New York,onroad,ETH,11194.3973
+New York,onroad,NO2,28841.2782
+New York,onroad,PEC,2682.8804
+New York,onroad,OLE,13621.9919
+New York,onroad,NO,259571.4868
+New York,onroad,PNO3,6.8642
+New York,onroad,CH4,24478.5376
+New York,onroad,PMC,2497.7388
+New York,onroad,POC,1510.4235
+New York,onroad,TERP,45.6305
+New York,onroad,UNR,23952.5674
+New York,onroad,PMFINE,1233.3689
+New York,onroad,CO,2814100.3403
+New York,onroad,FORM,4195.8592
+New York,onroad,MEOH,0.0000
+New York,onroad,ALD2,4317.8187
+New York,onroad,ETHA,3647.0746
+New York,onroad,ISOP,1.9310
+New York,onroad,SO2,8025.4929
+New York,onroad,NH3,14541.7529
+New York,onroad,SULF,0.0000
+New York,onroad,UNK,596.0286
+New York,onroad,PM10,7979.8150
+New York,onroad,IOLE,3407.4609
+New York,onroad,ALDX,1369.9961
+New York,onroad,NOX,288412.7651
+New York,onroad,NVOL,30.5074
+New York,onroad,XYL,32261.5559
+North Carolina,onroad,PAR,84882.1838
+North Carolina,onroad,ETOH,0.0000
+North Carolina,onroad,PSO4,33.0640
+North Carolina,onroad,PM2.5,4818.4847
+North Carolina,onroad,TOL,20930.7423
+North Carolina,onroad,ETH,7250.6056
+North Carolina,onroad,NO2,24045.5186
+North Carolina,onroad,PEC,2748.8308
+North Carolina,onroad,OLE,8822.4726
+North Carolina,onroad,NO,216409.6813
+North Carolina,onroad,PNO3,5.6857
+North Carolina,onroad,CH4,15736.1023
+North Carolina,onroad,PMC,1636.8998
+North Carolina,onroad,POC,1212.5872
+North Carolina,onroad,TERP,45.7983
+North Carolina,onroad,UNR,15925.0664
+North Carolina,onroad,PMFINE,818.3170
+North Carolina,onroad,CO,1789023.0202
+North Carolina,onroad,FORM,2911.3790
+North Carolina,onroad,MEOH,0.0000
+North Carolina,onroad,ALD2,3200.4256
+North Carolina,onroad,ETHA,2335.4489
+North Carolina,onroad,ISOP,1.3944
+North Carolina,onroad,SO2,8642.4418
+North Carolina,onroad,NH3,7963.7522
+North Carolina,onroad,SULF,0.0000
+North Carolina,onroad,UNK,388.7089
+North Carolina,onroad,PM10,6455.3846
+North Carolina,onroad,IOLE,2309.2564
+North Carolina,onroad,ALDX,1129.6703
+North Carolina,onroad,NOX,240455.2000
+North Carolina,onroad,NVOL,30.6195
+North Carolina,onroad,XYL,21388.6147
+North Dakota,onroad,PAR,8457.6223
+North Dakota,onroad,ETOH,0.0000
+North Dakota,onroad,PSO4,2.9928
+North Dakota,onroad,PM2.5,450.6364
+North Dakota,onroad,TOL,2321.4623
+North Dakota,onroad,ETH,949.0010
+North Dakota,onroad,NO2,2468.6126
+North Dakota,onroad,PEC,264.0081
+North Dakota,onroad,OLE,1143.7744
+North Dakota,onroad,NO,22217.5147
+North Dakota,onroad,PNO3,0.5250
+North Dakota,onroad,CH4,2040.0499
+North Dakota,onroad,PMC,151.9845
+North Dakota,onroad,POC,109.1673
+North Dakota,onroad,TERP,4.4182
+North Dakota,onroad,UNR,1856.1212
+North Dakota,onroad,PMFINE,73.9431
+North Dakota,onroad,CO,207302.2487
+North Dakota,onroad,FORM,355.6940
+North Dakota,onroad,MEOH,0.0000
+North Dakota,onroad,ALD2,342.1021
+North Dakota,onroad,ETHA,308.4870
+North Dakota,onroad,ISOP,0.0849
+North Dakota,onroad,SO2,697.8956
+North Dakota,onroad,NH3,735.1752
+North Dakota,onroad,SULF,0.0000
+North Dakota,onroad,UNK,50.7451
+North Dakota,onroad,PM10,602.6208
+North Dakota,onroad,IOLE,230.1770
+North Dakota,onroad,ALDX,118.1712
+North Dakota,onroad,NOX,24686.1272
+North Dakota,onroad,NVOL,2.9539
+North Dakota,onroad,XYL,2413.8886
+Ohio,onroad,PAR,116434.3826
+Ohio,onroad,ETOH,4251.4158
+Ohio,onroad,PSO4,42.5473
+Ohio,onroad,PM2.5,5863.1183
+Ohio,onroad,TOL,30427.6628
+Ohio,onroad,ETH,11015.5685
+Ohio,onroad,NO2,32465.8365
+Ohio,onroad,PEC,3209.8534
+Ohio,onroad,OLE,13265.8095
+Ohio,onroad,NO,292192.5326
+Ohio,onroad,PNO3,6.8537
+Ohio,onroad,CH4,23950.1427
+Ohio,onroad,PMC,2104.0769
+Ohio,onroad,POC,1529.5268
+Ohio,onroad,TERP,56.5104
+Ohio,onroad,UNR,23401.6038
+Ohio,onroad,PMFINE,1074.3371
+Ohio,onroad,CO,2598193.9763
+Ohio,onroad,FORM,4255.3098
+Ohio,onroad,MEOH,0.0000
+Ohio,onroad,ALD2,4431.6878
+Ohio,onroad,ETHA,3568.0951
+Ohio,onroad,ISOP,1.3555
+Ohio,onroad,SO2,12620.1447
+Ohio,onroad,NH3,10973.0391
+Ohio,onroad,SULF,0.0000
+Ohio,onroad,UNK,567.0284
+Ohio,onroad,PM10,7967.1952
+Ohio,onroad,IOLE,3051.7236
+Ohio,onroad,ALDX,1455.0255
+Ohio,onroad,NOX,324658.3690
+Ohio,onroad,NVOL,37.7813
+Ohio,onroad,XYL,29304.3138
+Oklahoma,onroad,PAR,49347.2163
+Oklahoma,onroad,ETOH,1667.7450
+Oklahoma,onroad,PSO4,18.2396
+Oklahoma,onroad,PM2.5,2563.2787
+Oklahoma,onroad,TOL,12743.1062
+Oklahoma,onroad,ETH,4506.7876
+Oklahoma,onroad,NO2,13209.6968
+Oklahoma,onroad,PEC,1424.0769
+Oklahoma,onroad,OLE,5435.1233
+Oklahoma,onroad,NO,118887.2837
+Oklahoma,onroad,PNO3,2.9943
+Oklahoma,onroad,CH4,9803.1016
+Oklahoma,onroad,PMC,905.1060
+Oklahoma,onroad,POC,659.5274
+Oklahoma,onroad,TERP,24.8413
+Oklahoma,onroad,UNR,9722.2041
+Oklahoma,onroad,PMFINE,458.4406
+Oklahoma,onroad,CO,1069119.3200
+Oklahoma,onroad,FORM,1764.6952
+Oklahoma,onroad,MEOH,0.0000
+Oklahoma,onroad,ALD2,1871.4577
+Oklahoma,onroad,ETHA,1456.9086
+Oklahoma,onroad,ISOP,0.6196
+Oklahoma,onroad,SO2,5320.9597
+Oklahoma,onroad,NH3,4627.2562
+Oklahoma,onroad,SULF,0.0000
+Oklahoma,onroad,UNK,233.0809
+Oklahoma,onroad,PM10,3468.3848
+Oklahoma,onroad,IOLE,1295.3574
+Oklahoma,onroad,ALDX,624.6663
+Oklahoma,onroad,NOX,132096.9804
+Oklahoma,onroad,NVOL,16.6083
+Oklahoma,onroad,XYL,12279.8031
+Oregon,onroad,PAR,51707.4966
+Oregon,onroad,ETOH,1724.6621
+Oregon,onroad,PSO4,14.0162
+Oregon,onroad,PM2.5,1996.9248
+Oregon,onroad,TOL,13719.4986
+Oregon,onroad,ETH,5072.1973
+Oregon,onroad,NO2,10838.2995
+Oregon,onroad,PEC,1107.0319
+Oregon,onroad,OLE,6107.9864
+Oregon,onroad,NO,97544.6698
+Oregon,onroad,PNO3,2.3519
+Oregon,onroad,CH4,11031.0198
+Oregon,onroad,PMC,682.6835
+Oregon,onroad,POC,524.3899
+Oregon,onroad,TERP,22.9904
+Oregon,onroad,UNR,10589.6086
+Oregon,onroad,PMFINE,349.1350
+Oregon,onroad,CO,1078526.0525
+Oregon,onroad,FORM,1918.9136
+Oregon,onroad,MEOH,0.0000
+Oregon,onroad,ALD2,1939.6427
+Oregon,onroad,ETHA,1648.2078
+Oregon,onroad,ISOP,0.5699
+Oregon,onroad,SO2,3475.2637
+Oregon,onroad,NH3,3270.8843
+Oregon,onroad,SULF,0.0000
+Oregon,onroad,UNK,262.2921
+Oregon,onroad,PM10,2679.6084
+Oregon,onroad,IOLE,1360.4760
+Oregon,onroad,ALDX,623.5208
+Oregon,onroad,NOX,108382.9693
+Oregon,onroad,NVOL,15.3708
+Oregon,onroad,XYL,13328.8426
+Pennsylvania,onroad,PAR,106581.9471
+Pennsylvania,onroad,ETOH,0.6943
+Pennsylvania,onroad,PSO4,38.9013
+Pennsylvania,onroad,PM2.5,5158.3329
+Pennsylvania,onroad,TOL,27261.8287
+Pennsylvania,onroad,ETH,10011.1559
+Pennsylvania,onroad,NO2,29208.2520
+Pennsylvania,onroad,PEC,2808.9455
+Pennsylvania,onroad,OLE,12146.8917
+Pennsylvania,onroad,NO,262874.2680
+Pennsylvania,onroad,PNO3,6.0940
+Pennsylvania,onroad,CH4,21727.2989
+Pennsylvania,onroad,PMC,2020.4139
+Pennsylvania,onroad,POC,1321.0380
+Pennsylvania,onroad,TERP,49.6902
+Pennsylvania,onroad,UNR,21045.7049
+Pennsylvania,onroad,PMFINE,983.3540
+Pennsylvania,onroad,CO,2419289.5477
+Pennsylvania,onroad,FORM,3837.3874
+Pennsylvania,onroad,MEOH,0.0000
+Pennsylvania,onroad,ALD2,3962.4900
+Pennsylvania,onroad,ETHA,3247.6330
+Pennsylvania,onroad,ISOP,1.5394
+Pennsylvania,onroad,SO2,7839.0320
+Pennsylvania,onroad,NH3,10611.9703
+Pennsylvania,onroad,SULF,0.0000
+Pennsylvania,onroad,UNK,534.8975
+Pennsylvania,onroad,PM10,7178.7468
+Pennsylvania,onroad,IOLE,2905.4006
+Pennsylvania,onroad,ALDX,1338.0734
+Pennsylvania,onroad,NOX,292082.5200
+Pennsylvania,onroad,NVOL,33.2215
+Pennsylvania,onroad,XYL,28046.3621
+Puerto Rico,onroad,PAR,0.0000
+Puerto Rico,onroad,ETOH,0.0000
+Puerto Rico,onroad,PSO4,0.0000
+Puerto Rico,onroad,PM2.5,0.0000
+Puerto Rico,onroad,TOL,0.0000
+Puerto Rico,onroad,ETH,0.0000
+Puerto Rico,onroad,NO2,0.0000
+Puerto Rico,onroad,PEC,0.0000
+Puerto Rico,onroad,OLE,0.0000
+Puerto Rico,onroad,NO,0.0000
+Puerto Rico,onroad,PNO3,0.0000
+Puerto Rico,onroad,CH4,0.0000
+Puerto Rico,onroad,PMC,0.0000
+Puerto Rico,onroad,POC,0.0000
+Puerto Rico,onroad,TERP,0.0000
+Puerto Rico,onroad,UNR,0.0000
+Puerto Rico,onroad,PMFINE,0.0000
+Puerto Rico,onroad,CO,0.0000
+Puerto Rico,onroad,FORM,0.0000
+Puerto Rico,onroad,MEOH,0.0000
+Puerto Rico,onroad,ALD2,0.0000
+Puerto Rico,onroad,ETHA,0.0000
+Puerto Rico,onroad,ISOP,0.0000
+Puerto Rico,onroad,SO2,0.0000
+Puerto Rico,onroad,NH3,0.0000
+Puerto Rico,onroad,SULF,0.0000
+Puerto Rico,onroad,UNK,0.0000
+Puerto Rico,onroad,PM10,0.0000
+Puerto Rico,onroad,IOLE,0.0000
+Puerto Rico,onroad,ALDX,0.0000
+Puerto Rico,onroad,NOX,0.0000
+Puerto Rico,onroad,NVOL,0.0000
+Puerto Rico,onroad,XYL,0.0000
+Rhode Island,onroad,PAR,8357.8649
+Rhode Island,onroad,ETOH,0.0000
+Rhode Island,onroad,PSO4,2.3866
+Rhode Island,onroad,PM2.5,206.4967
+Rhode Island,onroad,TOL,2148.5219
+Rhode Island,onroad,ETH,782.1010
+Rhode Island,onroad,NO2,1659.4051
+Rhode Island,onroad,PEC,77.4257
+Rhode Island,onroad,OLE,952.6902
+Rhode Island,onroad,NO,14934.6409
+Rhode Island,onroad,PNO3,0.2593
+Rhode Island,onroad,CH4,1728.0043
+Rhode Island,onroad,PMC,133.5133
+Rhode Island,onroad,POC,62.6146
+Rhode Island,onroad,TERP,1.0926
+Rhode Island,onroad,UNR,1635.6227
+Rhode Island,onroad,PMFINE,63.8104
+Rhode Island,onroad,CO,187400.0613
+Rhode Island,onroad,FORM,268.6830
+Rhode Island,onroad,MEOH,0.0000
+Rhode Island,onroad,ALD2,252.6238
+Rhode Island,onroad,ETHA,258.2403
+Rhode Island,onroad,ISOP,0.1233
+Rhode Island,onroad,SO2,422.2228
+Rhode Island,onroad,NH3,850.1396
+Rhode Island,onroad,SULF,0.0000
+Rhode Island,onroad,UNK,41.2940
+Rhode Island,onroad,PM10,340.0100
+Rhode Island,onroad,IOLE,229.9588
+Rhode Island,onroad,ALDX,64.9698
+Rhode Island,onroad,NOX,16594.0460
+Rhode Island,onroad,NVOL,0.7305
+Rhode Island,onroad,XYL,2218.2181
+South Carolina,onroad,PAR,53734.4054
+South Carolina,onroad,ETOH,0.0000
+South Carolina,onroad,PSO4,18.6990
+South Carolina,onroad,PM2.5,2618.7782
+South Carolina,onroad,TOL,13138.0358
+South Carolina,onroad,ETH,4475.7939
+South Carolina,onroad,NO2,13357.1403
+South Carolina,onroad,PEC,1455.0564
+South Carolina,onroad,OLE,5453.4095
+South Carolina,onroad,NO,120214.2468
+South Carolina,onroad,PNO3,3.0643
+South Carolina,onroad,CH4,9738.7186
+South Carolina,onroad,PMC,936.7132
+South Carolina,onroad,POC,672.3204
+South Carolina,onroad,TERP,27.6828
+South Carolina,onroad,UNR,9940.0393
+South Carolina,onroad,PMFINE,469.6381
+South Carolina,onroad,CO,1143620.9365
+South Carolina,onroad,FORM,1794.5119
+South Carolina,onroad,MEOH,0.0000
+South Carolina,onroad,ALD2,1985.8368
+South Carolina,onroad,ETHA,1442.5003
+South Carolina,onroad,ISOP,0.9108
+South Carolina,onroad,SO2,5002.4886
+South Carolina,onroad,NH3,4719.7729
+South Carolina,onroad,SULF,0.0000
+South Carolina,onroad,UNK,239.7715
+South Carolina,onroad,PM10,3555.4914
+South Carolina,onroad,IOLE,1462.8712
+South Carolina,onroad,ALDX,692.6508
+South Carolina,onroad,NOX,133571.3871
+South Carolina,onroad,NVOL,18.5080
+South Carolina,onroad,XYL,13408.6122
+South Dakota,onroad,PAR,9068.6326
+South Dakota,onroad,ETOH,0.0000
+South Dakota,onroad,PSO4,3.5719
+South Dakota,onroad,PM2.5,558.5041
+South Dakota,onroad,TOL,2420.6002
+South Dakota,onroad,ETH,954.7187
+South Dakota,onroad,NO2,2972.2932
+South Dakota,onroad,PEC,333.7246
+South Dakota,onroad,OLE,1152.1632
+South Dakota,onroad,NO,26750.6386
+South Dakota,onroad,PNO3,0.6485
+South Dakota,onroad,CH4,2049.5977
+South Dakota,onroad,PMC,180.6952
+South Dakota,onroad,POC,132.9821
+South Dakota,onroad,TERP,5.4138
+South Dakota,onroad,UNR,1918.0451
+South Dakota,onroad,PMFINE,87.5769
+South Dakota,onroad,CO,219863.2447
+South Dakota,onroad,FORM,370.3089
+South Dakota,onroad,MEOH,0.0000
+South Dakota,onroad,ALD2,373.4843
+South Dakota,onroad,ETHA,308.7197
+South Dakota,onroad,ISOP,0.1056
+South Dakota,onroad,SO2,849.5725
+South Dakota,onroad,NH3,846.0486
+South Dakota,onroad,SULF,0.0000
+South Dakota,onroad,UNK,51.1909
+South Dakota,onroad,PM10,739.1993
+South Dakota,onroad,IOLE,246.3008
+South Dakota,onroad,ALDX,134.1959
+South Dakota,onroad,NOX,29722.9318
+South Dakota,onroad,NVOL,3.6195
+South Dakota,onroad,XYL,2504.7355
+Tennessee,onroad,PAR,83043.6074
+Tennessee,onroad,ETOH,0.0000
+Tennessee,onroad,PSO4,29.5022
+Tennessee,onroad,PM2.5,4607.6902
+Tennessee,onroad,TOL,20495.8643
+Tennessee,onroad,ETH,7112.7255
+Tennessee,onroad,NO2,23803.0326
+Tennessee,onroad,PEC,2726.3511
+Tennessee,onroad,OLE,8653.3905
+Tennessee,onroad,NO,214227.2786
+Tennessee,onroad,PNO3,5.3566
+Tennessee,onroad,CH4,15431.9638
+Tennessee,onroad,PMC,1452.0454
+Tennessee,onroad,POC,1122.7597
+Tennessee,onroad,TERP,45.0932
+Tennessee,onroad,UNR,15604.1126
+Tennessee,onroad,PMFINE,723.7206
+Tennessee,onroad,CO,1680992.6418
+Tennessee,onroad,FORM,2857.2153
+Tennessee,onroad,MEOH,0.0000
+Tennessee,onroad,ALD2,3139.2310
+Tennessee,onroad,ETHA,2290.7886
+Tennessee,onroad,ISOP,1.3594
+Tennessee,onroad,SO2,7623.7366
+Tennessee,onroad,NH3,6667.6214
+Tennessee,onroad,SULF,0.0000
+Tennessee,onroad,UNK,381.3585
+Tennessee,onroad,PM10,6059.7356
+Tennessee,onroad,IOLE,2259.0165
+Tennessee,onroad,ALDX,1109.9295
+Tennessee,onroad,NOX,238030.3112
+Tennessee,onroad,NVOL,30.1481
+Tennessee,onroad,XYL,20946.8408
+Texas,onroad,PAR,180750.9614
+Texas,onroad,ETOH,3133.6350
+Texas,onroad,PSO4,82.7285
+Texas,onroad,PM2.5,11548.9027
+Texas,onroad,TOL,44808.8940
+Texas,onroad,ETH,15152.1866
+Texas,onroad,NO2,61461.3116
+Texas,onroad,PEC,6525.7206
+Texas,onroad,OLE,18334.5180
+Texas,onroad,NO,553151.7367
+Texas,onroad,PNO3,13.6995
+Texas,onroad,CH4,32571.2401
+Texas,onroad,PMC,4306.1112
+Texas,onroad,POC,2858.0243
+Texas,onroad,TERP,134.5696
+Texas,onroad,UNR,33967.7298
+Texas,onroad,PMFINE,2068.7298
+Texas,onroad,CO,3781267.2064
+Texas,onroad,FORM,6537.4697
+Texas,onroad,MEOH,0.0000
+Texas,onroad,ALD2,7541.9266
+Texas,onroad,ETHA,4815.4547
+Texas,onroad,ISOP,2.7675
+Texas,onroad,SO2,21371.8114
+Texas,onroad,NH3,21901.6659
+Texas,onroad,SULF,0.0000
+Texas,onroad,UNK,806.8595
+Texas,onroad,PM10,15855.0139
+Texas,onroad,IOLE,4791.3540
+Texas,onroad,ALDX,2888.3622
+Texas,onroad,NOX,614613.0484
+Texas,onroad,NVOL,89.9698
+Texas,onroad,XYL,44032.6605
+Utah,onroad,PAR,31820.4777
+Utah,onroad,ETOH,345.4787
+Utah,onroad,PSO4,9.0163
+Utah,onroad,PM2.5,1172.4332
+Utah,onroad,TOL,8367.3885
+Utah,onroad,ETH,3164.0167
+Utah,onroad,NO2,7588.9222
+Utah,onroad,PEC,628.1356
+Utah,onroad,OLE,3822.1101
+Utah,onroad,NO,68300.2995
+Utah,onroad,PNO3,1.3897
+Utah,onroad,CH4,6845.6817
+Utah,onroad,PMC,468.5319
+Utah,onroad,POC,305.2584
+Utah,onroad,TERP,15.8538
+Utah,onroad,UNR,6521.4019
+Utah,onroad,PMFINE,228.6332
+Utah,onroad,CO,764043.9440
+Utah,onroad,FORM,1210.2082
+Utah,onroad,MEOH,0.0000
+Utah,onroad,ALD2,1227.5343
+Utah,onroad,ETHA,1026.1502
+Utah,onroad,ISOP,0.3919
+Utah,onroad,SO2,1976.5724
+Utah,onroad,NH3,2453.5368
+Utah,onroad,SULF,0.0000
+Utah,onroad,UNK,167.4685
+Utah,onroad,PM10,1640.9651
+Utah,onroad,IOLE,856.6876
+Utah,onroad,ALDX,416.5039
+Utah,onroad,NOX,75889.2217
+Utah,onroad,NVOL,10.5994
+Utah,onroad,XYL,8470.8921
+Vermont,onroad,PAR,10009.0986
+Vermont,onroad,ETOH,518.6874
+Vermont,onroad,PSO4,4.3077
+Vermont,onroad,PM2.5,462.8715
+Vermont,onroad,TOL,2690.2365
+Vermont,onroad,ETH,1035.8732
+Vermont,onroad,NO2,2173.6950
+Vermont,onroad,PEC,229.2101
+Vermont,onroad,OLE,1239.4291
+Vermont,onroad,NO,19563.2514
+Vermont,onroad,PNO3,0.8182
+Vermont,onroad,CH4,2233.4050
+Vermont,onroad,PMC,180.1376
+Vermont,onroad,POC,137.0780
+Vermont,onroad,TERP,5.9926
+Vermont,onroad,UNR,2130.5777
+Vermont,onroad,PMFINE,91.4574
+Vermont,onroad,CO,237927.7885
+Vermont,onroad,FORM,405.6519
+Vermont,onroad,MEOH,0.0000
+Vermont,onroad,ALD2,420.6292
+Vermont,onroad,ETHA,334.4426
+Vermont,onroad,ISOP,0.0858
+Vermont,onroad,SO2,621.6592
+Vermont,onroad,NH3,942.0562
+Vermont,onroad,SULF,0.0000
+Vermont,onroad,UNK,52.4333
+Vermont,onroad,PM10,643.0091
+Vermont,onroad,IOLE,258.1414
+Vermont,onroad,ALDX,143.1640
+Vermont,onroad,NOX,21736.9464
+Vermont,onroad,NVOL,4.0065
+Vermont,onroad,XYL,2548.8652
+Virgin Islands,onroad,PAR,0.0000
+Virgin Islands,onroad,ETOH,0.0000
+Virgin Islands,onroad,PSO4,0.0000
+Virgin Islands,onroad,PM2.5,0.0000
+Virgin Islands,onroad,TOL,0.0000
+Virgin Islands,onroad,ETH,0.0000
+Virgin Islands,onroad,NO2,0.0000
+Virgin Islands,onroad,PEC,0.0000
+Virgin Islands,onroad,OLE,0.0000
+Virgin Islands,onroad,NO,0.0000
+Virgin Islands,onroad,PNO3,0.0000
+Virgin Islands,onroad,CH4,0.0000
+Virgin Islands,onroad,PMC,0.0000
+Virgin Islands,onroad,POC,0.0000
+Virgin Islands,onroad,TERP,0.0000
+Virgin Islands,onroad,UNR,0.0000
+Virgin Islands,onroad,PMFINE,0.0000
+Virgin Islands,onroad,CO,0.0000
+Virgin Islands,onroad,FORM,0.0000
+Virgin Islands,onroad,MEOH,0.0000
+Virgin Islands,onroad,ALD2,0.0000
+Virgin Islands,onroad,ETHA,0.0000
+Virgin Islands,onroad,ISOP,0.0000
+Virgin Islands,onroad,SO2,0.0000
+Virgin Islands,onroad,NH3,0.0000
+Virgin Islands,onroad,SULF,0.0000
+Virgin Islands,onroad,UNK,0.0000
+Virgin Islands,onroad,PM10,0.0000
+Virgin Islands,onroad,IOLE,0.0000
+Virgin Islands,onroad,ALDX,0.0000
+Virgin Islands,onroad,NOX,0.0000
+Virgin Islands,onroad,NVOL,0.0000
+Virgin Islands,onroad,XYL,0.0000
+Virginia,onroad,PAR,71018.7204
+Virginia,onroad,ETOH,3177.7215
+Virginia,onroad,PSO4,27.8795
+Virginia,onroad,PM2.5,3448.3019
+Virginia,onroad,TOL,18768.6403
+Virginia,onroad,ETH,6747.4302
+Virginia,onroad,NO2,21271.3844
+Virginia,onroad,PEC,1786.1982
+Virginia,onroad,OLE,8123.1952
+Virginia,onroad,NO,191442.4403
+Virginia,onroad,PNO3,4.1495
+Virginia,onroad,CH4,14774.2999
+Virginia,onroad,PMC,1445.3117
+Virginia,onroad,POC,919.7894
+Virginia,onroad,TERP,25.6335
+Virginia,onroad,UNR,14319.3480
+Virginia,onroad,PMFINE,710.2854
+Virginia,onroad,CO,1722045.4135
+Virginia,onroad,FORM,2506.8020
+Virginia,onroad,MEOH,0.0000
+Virginia,onroad,ALD2,2523.5331
+Virginia,onroad,ETHA,2199.8757
+Virginia,onroad,ISOP,0.7797
+Virginia,onroad,SO2,6628.4412
+Virginia,onroad,NH3,7881.6393
+Virginia,onroad,SULF,0.0000
+Virginia,onroad,UNK,343.5789
+Virginia,onroad,PM10,4893.6136
+Virginia,onroad,IOLE,1849.7218
+Virginia,onroad,ALDX,756.4836
+Virginia,onroad,NOX,212713.8247
+Virginia,onroad,NVOL,17.1379
+Virginia,onroad,XYL,17821.8975
+Washington,onroad,PAR,91115.0990
+Washington,onroad,ETOH,412.6542
+Washington,onroad,PSO4,23.1654
+Washington,onroad,PM2.5,3360.7670
+Washington,onroad,TOL,23756.4659
+Washington,onroad,ETH,8939.5655
+Washington,onroad,NO2,19792.7117
+Washington,onroad,PEC,1885.2324
+Washington,onroad,OLE,10824.9538
+Washington,onroad,NO,178134.3929
+Washington,onroad,PNO3,3.9633
+Washington,onroad,CH4,19412.7252
+Washington,onroad,PMC,1129.8027
+Washington,onroad,POC,873.2109
+Washington,onroad,TERP,38.8078
+Washington,onroad,UNR,18459.4196
+Washington,onroad,PMFINE,575.1950
+Washington,onroad,CO,1817139.1907
+Washington,onroad,FORM,3354.1483
+Washington,onroad,MEOH,0.0000
+Washington,onroad,ALD2,3363.0023
+Washington,onroad,ETHA,2909.1885
+Washington,onroad,ISOP,1.1990
+Washington,onroad,SO2,5498.1543
+Washington,onroad,NH3,5156.3867
+Washington,onroad,SULF,0.0000
+Washington,onroad,UNK,474.5080
+Washington,onroad,PM10,4490.5696
+Washington,onroad,IOLE,2475.4044
+Washington,onroad,ALDX,1100.8769
+Washington,onroad,NOX,197927.1045
+Washington,onroad,NVOL,25.9458
+Washington,onroad,XYL,24330.6864
+West Virginia,onroad,PAR,21202.9934
+West Virginia,onroad,ETOH,0.0000
+West Virginia,onroad,PSO4,8.1143
+West Virginia,onroad,PM2.5,1138.4548
+West Virginia,onroad,TOL,5513.5912
+West Virginia,onroad,ETH,2077.7188
+West Virginia,onroad,NO2,5986.8242
+West Virginia,onroad,PEC,622.7841
+West Virginia,onroad,OLE,2517.2463
+West Virginia,onroad,NO,53881.4165
+West Virginia,onroad,PNO3,1.3317
+West Virginia,onroad,CH4,4503.0460
+West Virginia,onroad,PMC,391.6413
+West Virginia,onroad,POC,302.0483
+West Virginia,onroad,TERP,9.7177
+West Virginia,onroad,UNR,4288.6982
+West Virginia,onroad,PMFINE,204.1765
+West Virginia,onroad,CO,503753.7874
+West Virginia,onroad,FORM,787.0825
+West Virginia,onroad,MEOH,0.0000
+West Virginia,onroad,ALD2,794.7948
+West Virginia,onroad,ETHA,675.0662
+West Virginia,onroad,ISOP,0.2858
+West Virginia,onroad,SO2,2672.0524
+West Virginia,onroad,NH3,1955.9857
+West Virginia,onroad,SULF,0.0000
+West Virginia,onroad,UNK,110.9590
+West Virginia,onroad,PM10,1530.0962
+West Virginia,onroad,IOLE,578.1101
+West Virginia,onroad,ALDX,266.7310
+West Virginia,onroad,NOX,59868.2407
+West Virginia,onroad,NVOL,6.4971
+West Virginia,onroad,XYL,5687.8777
+Wisconsin,onroad,PAR,52919.9672
+Wisconsin,onroad,ETOH,1027.7179
+Wisconsin,onroad,PSO4,23.3081
+Wisconsin,onroad,PM2.5,3281.6038
+Wisconsin,onroad,TOL,14358.1050
+Wisconsin,onroad,ETH,5688.7585
+Wisconsin,onroad,NO2,17078.9172
+Wisconsin,onroad,PEC,1829.2045
+Wisconsin,onroad,OLE,6837.7348
+Wisconsin,onroad,NO,153710.2644
+Wisconsin,onroad,PNO3,3.8279
+Wisconsin,onroad,CH4,12218.8763
+Wisconsin,onroad,PMC,1156.4095
+Wisconsin,onroad,POC,839.3840
+Wisconsin,onroad,TERP,31.8815
+Wisconsin,onroad,UNR,11406.0350
+Wisconsin,onroad,PMFINE,585.8794
+Wisconsin,onroad,CO,1322562.0525
+Wisconsin,onroad,FORM,2202.8171
+Wisconsin,onroad,MEOH,0.0000
+Wisconsin,onroad,ALD2,2214.0810
+Wisconsin,onroad,ETHA,1839.6426
+Wisconsin,onroad,ISOP,0.5161
+Wisconsin,onroad,SO2,7198.8283
+Wisconsin,onroad,NH3,6010.2353
+Wisconsin,onroad,SULF,0.0000
+Wisconsin,onroad,UNK,299.3583
+Wisconsin,onroad,PM10,4438.0133
+Wisconsin,onroad,IOLE,1408.7390
+Wisconsin,onroad,ALDX,781.6036
+Wisconsin,onroad,NOX,170789.1815
+Wisconsin,onroad,NVOL,21.3152
+Wisconsin,onroad,XYL,14401.1634
+Wyoming,onroad,PAR,10031.5872
+Wyoming,onroad,ETOH,0.0000
+Wyoming,onroad,PSO4,3.7946
+Wyoming,onroad,PM2.5,599.4521
+Wyoming,onroad,TOL,2714.6741
+Wyoming,onroad,ETH,1091.0512
+Wyoming,onroad,NO2,3243.0869
+Wyoming,onroad,PEC,360.8086
+Wyoming,onroad,OLE,1315.5159
+Wyoming,onroad,NO,29187.7792
+Wyoming,onroad,PNO3,0.6959
+Wyoming,onroad,CH4,2341.5029
+Wyoming,onroad,PMC,192.2375
+Wyoming,onroad,POC,141.3970
+Wyoming,onroad,TERP,5.8363
+Wyoming,onroad,UNR,2162.7584
+Wyoming,onroad,PMFINE,92.7561
+Wyoming,onroad,CO,246836.2596
+Wyoming,onroad,FORM,418.3010
+Wyoming,onroad,MEOH,0.0000
+Wyoming,onroad,ALD2,414.0490
+Wyoming,onroad,ETHA,353.4071
+Wyoming,onroad,ISOP,0.1086
+Wyoming,onroad,SO2,901.3165
+Wyoming,onroad,NH3,895.4072
+Wyoming,onroad,SULF,0.0000
+Wyoming,onroad,UNK,58.4578
+Wyoming,onroad,PM10,791.6897
+Wyoming,onroad,IOLE,272.5650
+Wyoming,onroad,ALDX,147.4642
+Wyoming,onroad,NOX,32430.8662
+Wyoming,onroad,NVOL,3.9020
+Wyoming,onroad,XYL,2815.3665

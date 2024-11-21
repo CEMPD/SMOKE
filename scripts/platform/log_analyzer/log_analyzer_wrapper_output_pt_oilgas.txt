@@ -1,0 +1,20 @@
+priority,known,count,message type,first file
+2,True,2,'WARNING: Largest negative value for',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkinven_pt_oilgas_2017gb_task40_tag1_17j.log
+2,True,10,'WARNING: No kept pollutants found at line .*',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkinven_pt_oilgas_2017gb_task40_tag1_17j.log
+2,True,1,'WARNING: No speciation profiles found for pollutant',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/spcmat_pt_oilgas_2017gb_task40_tag1_17j_cmaq_cb6ae7.log
+2,True,10,'WARNING: State and/or county code is zero \(missing\) at',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkinven_pt_oilgas_2017gb_task40_tag1_17j.log
+2,True,37,'WARNING: Description of NAICS',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkreport_pt_oilgas_2017gb_task40_tag1_17j_inv.log
+3,True,19,'Value for SMK_MAXWARNING:',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/temporal_pt_oilgas_nov_2017gb_task40_tag1_17j_20171106.log
+3,True,14,'Value for SMK_MAXERROR:',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/temporal_pt_oilgas_nov_2017gb_task40_tag1_17j_20171106.log
+3,True,90,'>>--->> WARNING in subroutine',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkmerge_pt_oilgas_feb_2017gb_task40_tag1_17j_20170206_12US2_cmaq_cb6ae7.log
+3,True,2,'WARNING: Missing control efficiency for',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkinven_pt_oilgas_2017gb_task40_tag1_17j.log
+3,True,1,'WARNING: No grouping criteria in PELVCONFIG will likely',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/elevpoint_pt_oilgas_2017gb_task40_tag1_17j_12US2.log
+3,True,20,'WARNING: output file already exists:',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkmerge_pt_oilgas_jan_2017gb_task40_tag1_17j_20170102_12US2_cmaq_cb6ae7.log
+3,True,3,'WARNING: Records in GSCNV file for pollutant',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/spcmat_pt_oilgas_2017gb_task40_tag1_17j_cmaq_cb6ae7.log
+3,True,20,'WARNING: Resetting negative value of',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkinven_pt_oilgas_2017gb_task40_tag1_17j.log
+3,True,1,'WARNING: Some base year control efficiency values',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkinven_pt_oilgas_2017gb_task40_tag1_17j.log
+3,True,3,'WARNING: Missing average day emissions for',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkinven_pt_oilgas_2017gb_task40_tag1_17j.log
+3,True,5,'WARNING: CAS number .* at line .* is not in the inventory pollutants list',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkinven_pt_oilgas_2017gb_task40_tag1_17j.log
+3,True,462,'WARNING: Different descriptions for the same data name at line .*',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkmerge_pt_oilgas_feb_2017gb_task40_tag1_17j_20170206_12US2_cmaq_cb6ae7.log
+3,True,1,'Value for DEFAULT_CONV_FAC_ERROR not defined;returning default:   FALSE',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/spcmat_pt_oilgas_2017gb_task40_tag1_17j_cmaq_cb6ae7.log
+3,True,254592,'WARNING: SCC .* at line .* does not match inventory.',/work/EMIS/em_v8/2017platformtag/2017gb_task40_tag1_17j/intermed/pt_oilgas/logs/smkmerge_pt_oilgas_feb_2017gb_task40_tag1_17j_20170206_12US2_cmaq_cb6ae7.log

@@ -1,0 +1,59 @@
+## Parameters for annual emission python script
+## python variables
+
+## chemical mechanism
+chem_mechanism = "cmaq_saprc07t"
+
+## molecDict defines the molecular weight of the given species
+molecDct = {"CO": 28, "NH3": 17, "NO": 46, "NO2": 46, "SO2": 64, \
+	  "SULF": 98, "PEC": 1, "POC": 1, "PMFINE": 1, "PNO3": 1, \
+	  "PSO4": 1, "PMC": 1, "HGIIGAS": 200.59,\
+	  "HGNRVA":200.59, "PHGI": 1, "DIESEL_PMEC": 1, \
+	  "DIESEL_PMFINE": 1, "DIESEL_PMNO3":1, "DIESEL_PMOC": 1, \
+	  "DIESEL_PMSO4": 1, "DIESEL_PMC": 1, "FORM_PRIMARY":30.026,\
+	  "ALD2_PRIMARY": 44.0526, "ACROLEIN": 56.0633, \
+	  "BUTADIENE13":54.0904, "BENZENE": 78.1118, "VOC_INV": 46.0, "VOC": 46.0, \
+	  "NAPHTHALENE": 128.1705, "NAPHTH": 128.1705, "CL2": 70.91,"CHROMHEX_C": 1, \
+	  "CHROMHEX_F": 1, "CHROMTRI_C": 1, "CHROMTRI_F": 1,\
+	  "NICKEL_C": 1, "NICKEL_F": 1, "BERYLLIUM_C": 1, \
+	  "BERYLLIUM_F": 1,"CADMIUM_C": 1, "CADMIUM_F": 1, "LEAD_C":1,\
+	  "LEAD_F": 1, "MANGANESE_C":1, "MANGANESE_F": 1, \
+	  "CL4_ETHE": 165.83, "TRIETHYLAMINE": 101.19,\
+           "HEXAMETHY_DIIS": 168.2, "CHCL3": 119.3776, "CL_ETHE": 62.5,\
+           "CL4_ETHANE1122": 167.85, "ETOX": 44.0526, "QUINOLINE": 129.16,\
+           "ACRYLONITRILE": 53.06, "CL2_C2_12": 98.9592, \
+           "BR2_C2_12": 187.86,"HYDRAZINE": 32.05, "CARBONTET": 153.8227,\
+           "DICHLOROPROPENE": 110.97,"PROPDICHLORIDE": 112.9, \
+           "MAL_ANHYDRIDE": 98.06, "DICHLOROBENZENE":147.0002, \
+           "TOL_DIIS": 174.1561, "CL2_ME": 84.93, "CL3_ETHE": 131.3883,\
+           "HCL": 36.46, "HONO": 46, "NOX": 46, "PM2_5": 1, "PM10": 1, "HFLUX": 1,\
+	   "PEC_72": 1, "PMFINE_72": 1, "POC_72": 1, "PMC_72": 1, "OTHER": 1,\
+           "NAPHTH_72": 128.1705, "NH3_FERT": 17, "PAL": 1, "PCA": 1, "PCL": 1, \
+	   "PFE": 1, "PH2O": 1, "PK": 1, "PMG": 1, "PMN": 1, "PMOTHR": 1, \
+	   "PNA": 1, "PNCOM": 1, "PNH4": 1, "PSI": 1, "PTI": 1, 
+	   "ARSENIC_C": 1, "ARSENIC_F": 1, \
+	   "PAH_000E0": 379.00, "PAH_101E2": 268.00, "PAH_114E1": 256.00, \
+	   "PAH_176E2": 302.00, "PAH_176E3": 244.00, "PAH_176E4": 248.00, \
+	   "PAH_176E5": 228.00, "PAH_192E3": 278.00, "PAH_880E5": 196.00, \
+	   "BDE13": 54.09, "AACD": 60.052, "ACET": 57.5207, "ACRO": 56.063, \
+	   "ACYE": 26.037, "ALK1": 59.8679, "ALK2": 54.3472, "ALK3": 64.5085, \
+	   "ALK4": 82.6463, "ALK5": 99.4061, "APIN": 135.249, "ARO1": 155.2612, \
+	   "ARO2": 144.5487, "ARO2MN": 149.3382, "B124": 123.5202, "BALD": 115.0873, "BENZ": 78.112, \
+	   "CCHO": 44.0458, "CH4": 16.042, "CRES": 103.9443, "ETHE": 28.053, \
+	   "ETOH": 45.5741, "FACD": 46.025, "GLY": 58.036, "HCHO": 30.026, \
+	   "ISOP": 68.117, "MEK": 72.1041, "MEOH": 31.9622, "MVK": 136.2205, \
+	   "MXYL": 106.4292, "NROG": 101.7013, "NMOG": 1, "NVOL": 1000.0048, "OLE1": 74.7722, \
+	   "OLE2": 91.4263, "OXYL": 106.2463, "PACD": 74.079, "PRD2": 105.7891, \
+	   "PRPE": 42.08, "PXYL": 106.271, "RCHO": 66.769, "TERP": 135.2788, \
+	   "TOLU": 92.5003, "UNK": 352.43, "BACL": 86.089, "MGLY": 72.07, "MACR": 70.09, \
+     "IPRD": 100.12, "SESQ": 204.35, "SOAALK": 92.1006, "SOAPAH": 138.2448, "TOG_INV": 1, \
+		 "FURAN": 1, "FURAN2M": 1, "FURAN3M": 1, "FURAN25M": 1, "IVOC": 1, "NAPH": 1}
+
+## aggregate species dictionary, species that are composed of
+## other species.
+## Use sets (>=python 2.4) for testing if any component species
+## in state totals
+aggregSpecDct = {"NOX":set(["NO","NO2","HONO"]) ,\
+                 "PM2_5":set(["PSO4","PNO3","POC","PEC","PAL","PCA","PCL","PFE","PH2O","PK","PMG","PMN","PMOTHR","PNA","PNCOM","PNH4","PSI","PTI"]), \
+                 "PM10":set(["PMC","PSO4","PNO3","POC","PEC","PAL","PCA","PCL","PFE","PH2O","PK","PMG","PMN","PMOTHR","PNA","PNCOM","PNH4","PSI","PTI"])}
+

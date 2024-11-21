@@ -1,0 +1,15 @@
+priority,known,count,message type,first file
+2,True,12,'WARNING: No speciation profiles found for pollutant',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/spcmat_RPH_onroad_jul_P105_2020ha_CRACMM_cmaq_cracmmv1.log
+2,True,10224,'WARNING: Re-normalizing county total surrogate fractions of Co/St/Ct: .* :: Surrogate: .* greater than 1 ::   .*',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/grdmat_RPH_onroad_jul_P105_2020ha_CRACMM_12US1.log
+2,True,91656,'WARNING: Ignoring county cross-reference for inventory county .*',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/movesmrg_RPH_onroad_sep_P105_2020ha_CRACMM_20200915_12US1_cmaq_cracmmv1.log
+2,True,12,'WARNING: No toxics were selected from the inventory as a subtratacter for the NHAPEXCLUDE processing.',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/smkinven_RPH_onroad_jun_P105_2020ha_CRACMM.log
+2,True,805504,'WARNING: Emission factors file does not contain requested model species .*',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/movesmrg_RPH_onroad_sep_P105_2020ha_CRACMM_20200915_12US1_cmaq_cracmmv1.log
+2,True,28768,'WARNING: Emission factors file does not contain requested inventory pollutant .*',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/movesmrg_RPH_onroad_sep_P105_2020ha_CRACMM_20200915_12US1_cmaq_cracmmv1.log
+3,True,144,'Value for SMK_MAXWARNING:',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/movesmrg_RPH_onroad_sep_P105_2020ha_CRACMM_20200915_12US1_cmaq_cracmmv1.log
+3,True,36,'Value for SMK_MAXERROR:',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/temporal_RPH_onroad_apr_P105_2020ha_CRACMM_20200401_12US1.log
+3,True,60,'>>--->> WARNING in subroutine',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/temporal_RPH_onroad_apr_P105_2020ha_CRACMM_20200401_12US1.log
+3,True,11,'WARNING: output file already exists:',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/movesmrg_RPH_onroad_jan_P105_2020ha_CRACMM_20200101_12US1_cmaq_cracmmv1.log
+3,True,60,'WARNING: Reset MRG_REPSCC_YN, MRG_REPCNY, and MRG_REPSTA_YN to N since MRG_REPSRC_YN is set to Y',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/movesmrg_RPH_onroad_sep_P105_2020ha_CRACMM_20200915_12US1_cmaq_cracmmv1.log
+3,True,12,'Value for DEFAULT_CONV_FAC_ERROR: .*',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/spcmat_RPH_onroad_jul_P105_2020ha_CRACMM_cmaq_cracmmv1.log
+3,True,10020,'WARNING: SCC .* at line .* does not match inventory.',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/movesmrg_RPH_onroad_sep_P105_2020ha_CRACMM_20200915_12US1_cmaq_cracmmv1.log
+3,True,787680,'WARNING: .* county is not a reference counties at line',/work/MOD3DEV/callen05/P105/P105_2020ha_CRACMM/intermed/onroad/RPH/logs/spcmat_RPH_onroad_jul_P105_2020ha_CRACMM_cmaq_cracmmv1.log

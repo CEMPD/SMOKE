@@ -1,0 +1,2 @@
+ifort -Bstatic -static-intel -I/work/EMIS/smoke/test/repo/ioapi-3.2/ioapi/fixed_src -I/work/EMIS/smoke/test/ioapi -extend-source 132 -auto -zero -xHost -traceback -c ./apply_precip_adj.f
+ifort -Bstatic -static-intel -debug -o apply_precip_adj.x apply_precip_adj.o -extend-source 132 -auto -zero -xHost -traceback -L/work/EMIS/smoke/test/ioapi -L/work/EMIS/smoke/test/repo/netcdf/lib/ -lioapi -lnetcdff -lnetcdf
