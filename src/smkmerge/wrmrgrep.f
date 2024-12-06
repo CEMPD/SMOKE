@@ -83,17 +83,17 @@ C...........   Subroutine arguments
 C...........   Local allocatable arrays
         LOGICAL, ALLOCATABLE :: LUPDATE( : ) ! true: units/names not yet updated
 
-        CHARACTER(IOVLEN3), ALLOCATABLE, SAVE ::  NAMES( : )
-        CHARACTER(IOVLEN3), ALLOCATABLE, SAVE :: ANAMES( : )
-        CHARACTER(IOVLEN3), ALLOCATABLE, SAVE :: BNAMES( : )
-        CHARACTER(IOVLEN3), ALLOCATABLE, SAVE :: MNAMES( : )
-        CHARACTER(IOVLEN3), ALLOCATABLE, SAVE :: PNAMES( : )
+        CHARACTER(30), ALLOCATABLE, SAVE ::  NAMES( : )
+        CHARACTER(30), ALLOCATABLE, SAVE :: ANAMES( : )
+        CHARACTER(30), ALLOCATABLE, SAVE :: BNAMES( : )
+        CHARACTER(30), ALLOCATABLE, SAVE :: MNAMES( : )
+        CHARACTER(30), ALLOCATABLE, SAVE :: PNAMES( : )
 
-        CHARACTER(IOULEN3), ALLOCATABLE, SAVE ::  UNITS( : )
-        CHARACTER(IOULEN3), ALLOCATABLE, SAVE :: AUNITS( : )
-        CHARACTER(IOULEN3), ALLOCATABLE, SAVE :: BUNITS( : )
-        CHARACTER(IOULEN3), ALLOCATABLE, SAVE :: MUNITS( : )
-        CHARACTER(IOULEN3), ALLOCATABLE, SAVE :: PUNITS( : )
+        CHARACTER(30), ALLOCATABLE, SAVE ::  UNITS( : )
+        CHARACTER(30), ALLOCATABLE, SAVE :: AUNITS( : )
+        CHARACTER(30), ALLOCATABLE, SAVE :: BUNITS( : )
+        CHARACTER(30), ALLOCATABLE, SAVE :: MUNITS( : )
+        CHARACTER(30), ALLOCATABLE, SAVE :: PUNITS( : )
 
 C...........   Local group counts
         INTEGER, SAVE :: ACNT = 0       ! area source output vars count
@@ -130,8 +130,8 @@ C...........   Other local variables
         CHARACTER(3000)    HEADER     ! header for output files
         CHARACTER(3000)    LINFLD     ! line of dashes
         CHARACTER(300)     MESG       ! message buffer
-        CHARACTER(IOVLEN3) SBUF       ! tmp pol or species name
-        CHARACTER(IOULEN3) CBUF       ! tmp units field
+        CHARACTER(30) SBUF       ! tmp pol or species name
+        CHARACTER(30) CBUF       ! tmp units field
 
         CHARACTER(16) :: PROGNAME = 'WRMRGREP' ! program name
 
@@ -724,8 +724,8 @@ C.............  Subprogram arguments
 
 C.............  Arrays allocated by subprogram argument
             INTEGER            MAXWID ( 0:NDIM )
-            CHARACTER(IOVLEN3) OUTNAMS( NDIM )
-            CHARACTER(IOULEN3) OUTUNIT( NDIM )
+            CHARACTER(30) OUTNAMS( NDIM )
+            CHARACTER(30) OUTUNIT( NDIM )
 
 C.............  Local variables
             INTEGER       I, J, L, L2
@@ -806,8 +806,8 @@ C.............  Subprogram arguments
 
 C.............  Arrays allocated by subprogram argument
             INTEGER            MAXWID ( 0:NDIM )
-            CHARACTER(IOVLEN3) OUTNAMS( NDIM )
-            CHARACTER(IOULEN3) OUTUNIT( NDIM )
+            CHARACTER(30) OUTNAMS( NDIM )
+            CHARACTER(30) OUTUNIT( NDIM )
 
 C.............  Local variables
             INTEGER       I, J, L, L1, L2, N
