@@ -226,6 +226,8 @@
         LOGICAL, PUBLIC :: NOFLAG = .FALSE. ! true: read in ORIS names file
         LOGICAL, PUBLIC :: SLFLAG = .FALSE. ! true: read in mole speciation matrix
         LOGICAL, PUBLIC :: SSFLAG = .FALSE. ! true: read in mass speciation matrix
+        LOGICAL, PUBLIC :: SPFLAG = .FALSE. ! true: writing only speciated species
+        LOGICAL, PUBLIC, ALLOCATABLE :: SKFLAG(:,:) ! true: writing only speciated species
         LOGICAL, PUBLIC :: PRFLAG = .FALSE. ! true: read projection matrix
         LOGICAL, PUBLIC :: PRRPTFLG = .FALSE. ! true: read projectn report
         LOGICAL, PUBLIC :: PSFLAG = .FALSE. ! true: read spec supplementary

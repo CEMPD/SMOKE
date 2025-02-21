@@ -40,7 +40,8 @@ C...........   MODULES for public variables
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: TFLAG, PRRPTFLG, NREPORT, SLFLAG, SSFLAG,
      &                      MXOUTDAT, MXINDAT, OUTDNAM, RPT_, ALLRPT,
-     &                      INDNAM, SPCPOL, NSPCPOL
+     &                      INDNAM, SPCPOL, NSPCPOL,
+     &                      SPFLAG, SKFLAG
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NSVARS, LV1, LV2, LV3, TODOUT, ETPNAM,
@@ -189,6 +190,8 @@ C.........  Speciation variable arrays
         CALL CHECKMEM( IOS, 'SLUNIT', PROGNAME )
         ALLOCATE( SSUNIT( NSVARS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SSUNIT', PROGNAME )
+        ALLOCATE( SKFLAG( NSVARS,NREPORT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SKFLAG', PROGNAME )
  
         TOSOUT%SPC    = 0       ! array
         TOSOUT%ETPSPC = 0       ! array
@@ -208,6 +211,7 @@ C.........  Speciation variable arrays
         SPCTOINV      = 0       ! array
         SPCTOTPR      = 0       ! array
         SPCIDX        = 0       ! array
+        SKFLAG        = .FALSE. ! array
 
 C.........  Set the length of the emission type joiner
         LT = LEN_TRIM( ETJOIN )
@@ -554,9 +558,14 @@ C.................  If species is same as pollutant, then add prefix
                         K = INDEX1( SBUF, NDATALL, DATNAM )
 
                         IF( K .GT. 0 ) THEN
-                            OUTDNAM( J,N ) = 'S-' // SBUF
+                            IF (SPFLAG) THEN
+                              OUTDNAM( J,N ) = SBUF
+                            ELSE
+                              OUTDNAM( J,N ) = 'S-' // SBUF
+                            END IF
                             I2 = INDEX1( SBUF, NPOL, OUTDNAM( 1:NPOL,N )) 
                             IF ( I2 .GT. 0) THEN
+                                IF (SPFLAG) SKFLAG(I2,N) = .TRUE. ! UNC-IE H.Tran: Mark this inventory species for skipping
                                 OUTDNAM( I2,N ) =  'I-' // SBUF
                             END IF
                         ELSE

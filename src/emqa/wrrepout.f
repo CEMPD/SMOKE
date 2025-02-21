@@ -81,7 +81,8 @@ C.........  This module contains Smkreport-specific settings
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
      &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
-     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH, UNITIDWIDTH
+     &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH, UNITIDWIDTH,
+     &                      SPFLAG, SKFLAG
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -95,7 +96,8 @@ C.........  This module contains report arrays for each output bin
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
      &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
-     &                      BINGEO1IDX, BINERPTYP, BINBOILER, BINUNITID
+     &                      BINGEO1IDX, BINERPTYP, BINBOILER, BINUNITID,
+     &                      NSVARS
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC,
@@ -170,6 +172,8 @@ C...........   Other local variables
         CHARACTER(STRLEN)   STRING            !  output string
         CHARACTER(SCCLEN3)  TSCC              ! tmp SCC string
         CHARACTER(FIPLEN3)  TFIPS             ! tmp FIPS string
+
+        CHARACTER(200)      TMPFMT            ! Tmeporary format string
 
         CHARACTER(16) :: PROGNAME = 'WRREPOUT' ! program name
 
@@ -1114,9 +1118,15 @@ C.............  Write out this record
                 END IF
 
                 IF( RPT_%RPTMODE .NE. 3 ) THEN
-
-                    WRITE( FDEV, OUTFMT ) STRING( 1:LE ), 
-     &                              ( BINDATA( I,J ), J=STIDX, EDIDX )
+                    WRITE(FDEV, '(A,1X)', ADVANCE='NO') STRING(1:LE)  ! Write the string first
+                    DO J = STIDX, EDIDX  ! Loop over columns
+                        IF (J .LE. NSVARS ) THEN
+                          IF ( SKFLAG(J,RCNT) ) CYCLE ! H.Tran: skip writing this species
+                        END IF
+                        WRITE(TMPFMT,'(5A)') '(',trim(RPT_%DATAFMT),',"',trim(DELIM),'",1X)'
+                        WRITE(FDEV, TMPFMT, ADVANCE='NO') BINDATA(I, J)
+                    END DO
+                    WRITE(FDEV, *)  ! Move to the next line
 
                 ELSE
 

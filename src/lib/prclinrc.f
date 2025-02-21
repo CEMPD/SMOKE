@@ -63,7 +63,8 @@ C.........  This module contains Smkreport-specific settings
      &                      ELEVOUT3, PINGOUT3, NOELOUT3, FIL_ONAME,
      &                      NIFLAG, NMFLAG, NNFLAG, NOFLAG, SDFLAG,
      &                      LAB_IDX, LENLAB3,
-     &                      DLFLAG, MATFLAG, NFDFLAG
+     &                      DLFLAG, MATFLAG, NFDFLAG,
+     &                      SPFLAG
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, CATDESC
@@ -810,6 +811,14 @@ C.............  Speciation used for report
                     SSFLAG = .TRUE.
                     RPT_%USESSMAT  = .TRUE.
 
+                    IF( SEGMENT( 2 ) .EQ. 'ONLY' ) THEN ! In case ONLY Keyword appears at unexpected location 
+                       SPFLAG = .TRUE.
+                    END IF
+
+                END IF
+
+                IF( SEGMENT( 3 ) .EQ. 'ONLY' ) THEN
+                    SPFLAG = .TRUE.
                 END IF
 
 C.............  Temporal allocated emission used for report

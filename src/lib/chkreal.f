@@ -37,7 +37,8 @@ C***************************************************************************
         IMPLICIT NONE
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN OUT) :: STRING   ! input character string
+C       CHARACTER(*), INTENT (IN OUT) :: STRING   ! input character string
+        CHARACTER(*), INTENT (IN) :: STRING   ! character string used as input only
 
 C...........   Other local variables
         INTEGER         K, L  ! counters and indices
@@ -98,7 +99,7 @@ C   begin body of function CHKREAL
             END IF
         END DO    
 
-        IF( BUFFER .EQ. '.' ) STRING = '0'
+C       IF( BUFFER .EQ. '.' ) STRING = '0'  ! UNC-IE Jan2025: commented out to not modify STRING value
 
         RETURN
 

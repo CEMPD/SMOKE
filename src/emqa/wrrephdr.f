@@ -72,7 +72,10 @@ C.........  This module contains Smkreport-specific settings
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH,
      &                      ERTYPWIDTH, FUGPFMT, FUGPWIDTH, LAMBWIDTH,
      &                      LAMBFMT, LLGRDFMT, LLGRDWIDTH, UNITWIDTH,
-     &                      UNITIDWIDTH
+     &                      UNITIDWIDTH,
+     &                      SPFLAG, SKFLAG
+
+        USE MODREPBN, ONLY: NSVARS
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -1946,6 +1949,9 @@ C.................  Add next entry to header buffers
      &                                  LH, HDRBUF )
 
                 ELSE
+                    IF ( J .LE. NSVARS ) THEN
+                        IF ( SKFLAG( J,RCNT ) ) CYCLE ! Skip writing inventory species
+                    END IF
                     CALL ADD_TO_HEADER( W1, OUTDNAM( J,RCNT ), 
      &                                  LH, HDRBUF )
 

@@ -142,7 +142,7 @@ C           this program
         CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
 C.........  For parsing lines
-        CHARACTER(64)         SEGMENT( 10 )
+        CHARACTER(64)         SEGMENT( 20 )  ! UNC-IE H.Tran: increase size from 10 to 20 for consistent with PARSLINE of TSUP 
         CHARACTER(CHRLEN3) :: CHARS  ( 5 )   ! tmp plant characteristics
 
 C...........   Local variables that depend on module variables
@@ -758,7 +758,7 @@ C.............  Skip file header
             IREC = 1
             DO I = 2, N
 
-                READ( TDEV, '(A)', END=1003, IOSTAT=IOS ) LINE 
+                READ( TDEV, '(A)', END=1003, IOSTAT=IOS ) LINE
                 IREC = IREC + 1
 
                 IF ( IOS .NE. 0 ) THEN
@@ -817,7 +817,7 @@ C.................  NV > 1 is not supported
                     CMET( S ) = TBUF
                 END SELECT
               
-            END DO            
+            END DO
 
 C.............  Check file format, assuming that pollutants weren't processed
 C               in > 1 groups.  (this routine doesn't handle grouped processing)
