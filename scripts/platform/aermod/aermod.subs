@@ -1,0 +1,217 @@
+use Scalar::Util qw(looks_like_number);
+use List::Util qw(sum);
+
+sub read_profiles {
+  my ($filename, $num_factors) = @_;
+  my %profiles;
+  
+  open (my $fh, '<', $filename) or die "Could not open file '$filename' $!";
+  while (my $line = <$fh>) {
+    chomp $line;
+    next unless $line;
+    next if $line =~ /^#/;
+    
+    my @data = split(/,/, $line);
+    next unless scalar @data >= ($num_factors + 1);
+    next unless looks_like_number($data[1]);
+    
+    my @factors = @data[1..$num_factors];
+    
+    # adjust factors so they sum to 1
+    my $sum = sum(@factors);
+    unless ($sum == 0) {
+      @factors = map { $_ / $sum } @factors;
+    }
+
+    my $prof_id = $data[0];
+    $prof_id =~ s/"//g;
+    $profiles{$prof_id} = \@factors;
+  }
+  close $fh;
+  
+  return %profiles;
+}
+
+sub read_dom_profiles {
+  my ($filename, $num_factors, $days_ref) = @_;
+  my %profiles;
+  
+  open (my $fh, '<', $filename) or die "Could not open file '$filename' $!";
+  while (my $line = <$fh>) {
+    chomp $line;
+    next unless $line;
+    next if $line =~ /^#/;
+    
+    my @data = split(/,/, $line, -1);
+    next unless scalar @data >= ($num_factors + 2);
+    next unless looks_like_number($data[1]);
+    
+    my $month_id = $data[1];
+    my $num_days = $days_ref->[$month_id];
+    my @factors = @data[2..$num_days + 1];
+    
+    # adjust factors so they sum to 1
+    my $sum = sum(@factors);
+    unless ($sum == 0) {
+      @factors = map { $_ / $sum } @factors;
+    }
+    
+    my $prof_id = $data[0];
+    $prof_id =~ s/"//g;
+    $profiles{$prof_id}{$month_id} = \@factors;
+  }
+  close $fh;
+  
+  return %profiles;
+}
+
+sub get_factors {
+  my ($headers_ref, $data_ref, $monthly_ref, $weekly_ref, $daily_ref) = @_;
+
+  my $qflag = '';
+  my $monthly_prof = $data_ref->[$headers_ref->{'Monthly Prf'}];
+  my $weekly_prof = $data_ref->[$headers_ref->{'Weekly  Prf'}];
+  my $monday_prof = $data_ref->[$headers_ref->{'Mon Diu Prf'}];
+  # check if all days use same profile
+  if ($monday_prof eq $data_ref->[$headers_ref->{'Tue Diu Prf'}] &&
+      $monday_prof eq $data_ref->[$headers_ref->{'Wed Diu Prf'}] &&
+      $monday_prof eq $data_ref->[$headers_ref->{'Thu Diu Prf'}] &&
+      $monday_prof eq $data_ref->[$headers_ref->{'Fri Diu Prf'}] &&
+      $monday_prof eq $data_ref->[$headers_ref->{'Sat Diu Prf'}] &&
+      $monday_prof eq $data_ref->[$headers_ref->{'Sun Diu Prf'}]) {
+    # check if day-of-week is uniform
+    if ($weekly_prof eq '7') {
+      # check if hour-of-day is uniform
+      if ($monday_prof eq '24') {
+        $qflag = 'MONTH';
+      # check if month-of-year is uniform
+      } elsif ($monthly_prof eq '262') {
+        $qflag = 'HROFDY';
+      }
+    }
+    $qflag = 'MHRDOW' unless $qflag;
+  } else {
+    # check if all weekdays use same profile
+    if ($monday_prof eq $data_ref->[$headers_ref->{'Tue Diu Prf'}] &&
+        $monday_prof eq $data_ref->[$headers_ref->{'Wed Diu Prf'}] &&
+        $monday_prof eq $data_ref->[$headers_ref->{'Thu Diu Prf'}] &&
+        $monday_prof eq $data_ref->[$headers_ref->{'Fri Diu Prf'}]) {
+      $qflag = 'MHRDOW';
+    } else {
+      $qflag = 'MHRDOW7';
+    }
+  }
+  
+  my @factors;
+  if ($qflag eq 'MONTH') {
+    die "Unknown monthly profile code: $monthly_prof" unless exists $monthly_ref->{$monthly_prof};
+    @factors = @{$monthly_ref->{$monthly_prof}};
+  } elsif ($qflag eq 'HROFDY') {
+    die "Unknown hourly profile code: $monday_prof" unless exists $daily_ref->{$monday_prof};
+    @factors = @{$daily_ref->{$monday_prof}};
+  } else {
+    die "Unknown monthly profile code: $monthly_prof" unless exists $monthly_ref->{$monthly_prof};
+    my @monthly_factors = @{$monthly_ref->{$monthly_prof}};
+    die "Unknown weekly profile code: $weekly_prof" unless exists $weekly_ref->{$weekly_prof};
+    my @weekly_factors = @{$weekly_ref->{$weekly_prof}};
+    
+    my @days;
+    my $index;
+    # for MHRDOW, check that all weekdays use the same factor
+    if ($qflag eq 'MHRDOW' &&
+        $weekly_factors[0] == $weekly_factors[1] &&
+        $weekly_factors[0] == $weekly_factors[2] &&
+        $weekly_factors[0] == $weekly_factors[3] &&
+        $weekly_factors[0] == $weekly_factors[4]) {
+      my $i = 4;
+      @days = map { [$_, $i++] } qw/Fri Sat Sun/;
+    } else {
+      $qflag = 'MHRDOW7';
+      my $i = 0;
+      @days = map { [$_, $i++] } qw/Mon Tue Wed Thu Fri Sat Sun/;
+    }
+    
+    # calculate weighted average number of days per month
+    my @days_in_month = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+    my $month = 0;
+    my $avg_days = 0;
+    foreach my $month_factor (@monthly_factors) {
+      $avg_days += $month_factor * $days_in_month[$month];
+      $month++;
+    }
+
+    foreach my $day_ref (@days) {
+      my ($day, $index) = @$day_ref;
+      my $prof = $data_ref->[$headers_ref->{"$day Diu Prf"}];
+
+      die "Unknown hourly profile code: $prof" unless exists $daily_ref->{$prof};
+      my @daily_factors = @{$daily_ref->{$prof}};
+
+      foreach my $month_factor (@monthly_factors) {
+        push @factors, map { $_ * $weekly_factors[$index] * 7 * $month_factor / $avg_days } @daily_factors;
+      }
+    }
+  }
+  
+  return ($qflag, @factors);
+}
+
+sub skip_line() {
+  my ($line) = @_;
+  
+  return 1 unless $line;
+  return 1 if $line =~ /^# /;
+  
+  return 0;
+}
+
+sub parse_report_line() {
+  my ($line) = @_;
+  
+  # check for header line
+  my $is_header = ($line =~ s/^#//);
+  
+  my @data;
+  foreach my $field (split(/;/, $line)) {
+    # remove leading and trailing spaces
+    $field =~ s/^\s+//;
+    $field =~ s/\s+$//;
+    push @data, $field;
+  }
+  
+  return ($is_header, @data);
+}
+
+sub parse_header() {
+  my ($data_ref, $headers_ref, $pollutants_ref, $last_non_pollutant) = @_;
+  
+  my $col_count = 0;
+  my $is_pollutant = 0;
+  foreach my $field (@$data_ref) {
+    $headers_ref->{$field} = $col_count;
+    $col_count++;
+    
+    if ($is_pollutant) {
+      push @$pollutants_ref, $field;
+    }
+    if ($field eq $last_non_pollutant) {
+      $is_pollutant = 1;
+    }
+  }
+}
+
+sub open_input() {
+  my ($name) = @_;
+  
+  open (my $fh, '<', $name) or die "Could not open file '$name' $!";
+  return $fh;
+}
+
+sub open_output() {
+  my ($name) = @_;
+  
+  open (my $fh, '>', $name) or die "Could not open file '$name' $!";
+  return $fh;
+}
+
+1;

@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 #
 ##### run m3stat on SMKMERGE output to check for NaN and negative values
 # Jonathan Petters 5/11/04

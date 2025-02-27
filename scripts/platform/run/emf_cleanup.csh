@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 # Script for automatically moving old EMF scripts for the same job as the
 # one being run when this helper script is called
 

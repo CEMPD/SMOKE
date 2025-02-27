@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/tcsh
 #
 ##### check for Normal completion in a log file
 #

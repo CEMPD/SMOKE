@@ -1,7 +1,0 @@
-# This file is used by open_buffers.csh to check whether or not a particular
-# buffer is currently being used, and the process ID that is using it. When a
-# buffer is "claimed", the process adds to this file, and then removes its
-# "claim" when done. When the script encounters a "claimed" buffer, it makes sure
-# the process is actually still running. If it is not running, the dormant
-# process is removed from this file.
----claims---

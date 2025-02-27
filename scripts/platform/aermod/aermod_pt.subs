@@ -1,0 +1,47 @@
+sub write_point_location_header() {
+  my ($fh) = @_;
+  
+  print $fh "state,facility_id,facility_name,src_id,grid_x,grid_y,longitude,latitude,utm_x,utm_y,utm_zone,col,row\n";
+}
+
+sub write_line_location_header() {
+  my ($fh) = @_;
+  
+  print $fh "state,facility_id,facility_name,src_id,xs1,ys1,xs2,ys2,utm_zone,col,row\n";
+}
+
+sub write_point_srcparam_header() {
+  my ($fh) = @_;
+  
+  print $fh "facility_id,facility_name,src_id,aermod_src_type,height,temp,velocity,diameter\n";
+}
+
+sub write_fug_srcparam_header() {
+  my ($fh) = @_;
+  
+  print $fh "facility_id,facility_name,src_id,aermod_src_type,rel_ht,x_length,y_length,angle,szinit\n";
+}
+
+sub write_temporal_header() {
+  my ($fh) = @_;
+  
+  print $fh "facility_id,facility_name,src_id,qflag";
+  for (my $i = 1; $i <= 2016; $i++) {
+    print $fh ",Scalar$i";
+  }
+  print $fh "\n";
+}
+
+sub write_crosswalk_header() {
+  my ($fh) = @_;
+  
+  print $fh "state,facility_id,facility_name,fac_source_type,src_id,unit_id,process_id,rel_point_id,smoke_name,ann_value\n";
+}
+
+sub write_source_header() {
+  my ($fh) = @_;
+  
+  print $fh "state,facility_id,facility_name,unit_id,process_id,rel_point_id,src_id\n";
+}
+
+1;

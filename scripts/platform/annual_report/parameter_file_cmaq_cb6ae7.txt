@@ -49,7 +49,8 @@ molecDct = {"CO": 28, "NH3": 17, "NO": 46, "NO2": 46, "SO2": 64, \
 	   "VOC_BEIS": 46, "APIN": 136.234, "BPIN": 120, "SESQ": 180, "NR": 24,
 	   "AACD": 60.052, "FACD": 46.025, "IVOC": 125.9429, "BENZOAPYRNE": 252.316,
 	   "TOG_INV": 1, "GLY": 58.036, "ISPD": 70.091, "PACD": 42.22425,
-	   "GLYD": 60.052, "MGLY": 72.063, "POA": 1, "CO2": 44.01}
+	   "GLYD": 60.052, "MGLY": 72.063, "POA": 1, "CO2": 44.01, "CO2_INV": 1,
+	   "N2O_INV": 1, "CH4_INV": 16.042}
 
 ## aggregate species dictionary, species that are composed of
 ## other species.

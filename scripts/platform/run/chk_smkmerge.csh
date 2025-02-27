@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 ##
 ## Wrapper script to test for existence of smkmerge input files.
 ## Assumes that is being called from a script that is about to run

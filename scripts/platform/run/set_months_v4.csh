@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 
 # This script sets the months needed for a given script run and
 # determines which months have spinup

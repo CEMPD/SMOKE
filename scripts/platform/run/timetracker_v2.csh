@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 
 # Script to put date/time information about SMOKE to a file
 # If file already exists, it will look for entries in the file

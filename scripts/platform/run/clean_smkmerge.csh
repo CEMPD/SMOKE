@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 ##
 ## Wrapper script to clean up any unzipped intermediary files.
 ## Tests if both an unzipped and zipped version exists before

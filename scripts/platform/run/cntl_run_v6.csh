@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 
 # Version @(#)$Id: cntl_run.csh,v 1.1.2.6 2003/03/14 14:12:43 mhouyoux Exp $
 # Path    $Source: /afs/isis/depts/cep/emc/apps/archive/smoke/smoke/scripts/run/Attic/cntl_run.csh,v $

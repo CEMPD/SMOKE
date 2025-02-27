@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 ##
 ## Wrapper script to run m3stat on smkmerge output files.
 ## Assumes that is being called from a script that has just run

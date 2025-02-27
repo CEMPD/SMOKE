@@ -1,6 +1,6 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 # 
-# duplicate_check.csh - Christopher T Allen, created 29 Apr 2008
+# duplicate_check.csh - Christine Allen, created 29 Apr 2008
 #
 # This script checks a speciation, gridding, and temporal cross-reference
 # file for duplicates. SMOKE does this accurately for area and point sectors,

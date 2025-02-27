@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 
 # Version @(#)$Id: smk_run.csh,v 1.1.2.15 2003/09/22 18:59:21 cseppan Exp $
 # Path    $Source: /afs/isis/depts/cep/emc/apps/archive/smoke/smoke/scripts/run/Attic/smk_run.csh,v $

@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 
 # This script creates .lst files for inventory or concatenates 
 #     datasets into a single dataset.

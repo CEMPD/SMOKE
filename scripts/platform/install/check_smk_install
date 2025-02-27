@@ -1,0 +1,96 @@
+#!/bin/csh -f
+
+# This script checks to see if the SMOKE installation worked successfully
+
+set errfile = $SCRIPTS/install/.err
+set errstat = 0
+
+set repdir = $SCRIPTS/install/reports
+set ncrepdir = $REPORTS/nctox/scenario
+
+# Check stationary area sources
+echo 'Stationary area source differences' > $errfile
+
+diff $ncrepdir/repagts_l.area.*0710* $repdir/repagts_l.area.*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+# Check biogenic sources
+echo 'Biogenic source differences' >> $errfile
+
+diff $ncrepdir/repb3gts_s.*0710* $repdir/repb3gts_s.*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+# Check nonroad area sources
+echo 'Nonroad source differences' >> $errfile
+
+diff $ncrepdir/repagts_l.nonroad.*0710* $repdir/repagts_l.nonroad.*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+# Check point sources
+echo 'Point source differences' >> $errfile
+
+diff $ncrepdir/reppgts_l.point.*0710* $repdir/reppgts_l.point.*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+# Check MOVES mobile sources
+echo 'MOVES rateperdistance source differences' >> $errfile
+
+diff $ncrepdir/repmgts_l.rateperdistance*0710* $repdir/repmgts_l.rateperdistance*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+echo 'MOVES rateperhour source differences' >> $errfile
+
+diff $ncrepdir/repmgts_l.rateperhour*0710* $repdir/repmgts_l.rateperhour*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+# Check MOVES ratepervehicle sources
+echo 'MOVES ratepervehicle source differences' >> $errfile
+
+diff $ncrepdir/repmgts_l.ratepervehicle*0710* $repdir/repmgts_l.ratepervehicle*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+# Check MOVES rateperprofile sources
+echo 'MOVES rateperprofile source differences' >> $errfile
+
+diff $ncrepdir/repmgts_l.rateperprofile.*0710* $repdir/repmgts_l.rateperprofile.*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+# Make sure all programs completed successfully
+set num_log_file = `ls $LOGS | wc -l`
+set sav_dir = `pwd`
+cd $LOGS
+set num_success = `grep 'Normal Completion' * | wc -l`
+cd $sav_dir
+
+if ( $errstat != 0 ) then
+   mv $errfile $SCRIPTS/install/install_diffs.txt
+   echo ' '
+   echo 'Differences between your installation and correct answers exist\!'
+   echo 'Please refer to file $SMKROOT/doc/install_diffs.txt for details.'
+   echo ' '
+else
+   echo ' '
+   echo "CONGRATULATION !"
+   echo ' '
+   echo 'No differences found between your SMOKE report files and the comparison files.'
+   echo 'Your installation and example SMOKE run have completed successfully\!'
+   echo 'YOU DO NOT NEED TO COMPILE SMOKE source codes but USE the precompiled executables located at $SMK_BIN'
+   echo ' '
+   rm -rf $errfile
+endif

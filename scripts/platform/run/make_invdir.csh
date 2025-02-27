@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 
 # Script for automatically setting E.V.s for Smkinven to build output
 #   file names and directories.

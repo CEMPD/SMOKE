@@ -1,0 +1,19 @@
+sub write_location_header() {
+  my ($fh) = @_;
+  
+  print $fh "run_group,met_cell,src_id,src_type,utmx,utmy,utm_zone,lon,lat\n";
+}
+
+sub write_parameter_header() {
+  my ($fh) = @_;
+  
+  print $fh "run_group,met_cell,src_id,rel_ht,verts,sz,utmx,utmy,x2,y2,x3,y3,x4,y4,lon,lat,lon2,lat2,lon3,lat3,lon4,lat4\n";
+}
+
+sub write_temporal_header() {
+  my ($fh) = @_;
+  
+  print $fh "run_group,met_cell,src_id,qflag,Scalar1,Scalar2,Scalar3,Scalar4,Scalar5,Scalar6,Scalar7,Scalar8,Scalar9,Scalar10,Scalar11,Scalar12,Scalar13,Scalar14,Scalar15,Scalar16,Scalar17,Scalar18,Scalar19,Scalar20,Scalar21,Scalar22,Scalar23,Scalar24\n";
+}
+
+1;

@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/tcsh -f
 # Script for automatically removing or moving log file
 
 if ( -e $TMPLOG ) then
