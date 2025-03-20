@@ -558,11 +558,9 @@ C.................  If species is same as pollutant, then add prefix
                         K = INDEX1( SBUF, NDATALL, DATNAM )
 
                         IF( K .GT. 0 ) THEN
-                            IF (SPFLAG) THEN
-                              OUTDNAM( J,N ) = SBUF
-                            ELSE
-                              OUTDNAM( J,N ) = 'S-' // SBUF
-                            END IF
+C................. Update March 13 2025; HT: OUTDNAME should be kept consitent with 
+C................. SUMPOLNAM and SUMSPCNAM throughout                        
+                            OUTDNAM( J,N ) = 'S-' // SBUF
                             I2 = INDEX1( SBUF, NPOL, OUTDNAM( 1:NPOL,N )) 
                             IF ( I2 .GT. 0) THEN
                                 IF (SPFLAG) SKFLAG(I2,N) = .TRUE. ! UNC-IE H.Tran: Mark this inventory species for skipping

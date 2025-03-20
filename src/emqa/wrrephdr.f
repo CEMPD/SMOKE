@@ -308,7 +308,7 @@ C...........   Other local arrays
         INTEGER       PWIDTH( 8 )
 
 C...........   Other local variables
-        INTEGER     I, J, K, K1, K2, L, L1, L2, S, V, IOS
+        INTEGER     I, J, K, K1, K2, L, L1, L2, S, V, IOS, P
 
         INTEGER     IHDRIDX         ! tmp header index
         INTEGER     LN              ! length of single units entry
@@ -1952,6 +1952,9 @@ C.................  Add next entry to header buffers
                     IF ( J .LE. NSVARS ) THEN
                         IF ( SKFLAG( J,RCNT ) ) CYCLE ! Skip writing inventory species
                     END IF
+C.................  Update 03/13/2025 HT: droping "S-" prefix for SPECIATION ONLY instruction
+                    P = INDEX(OUTDNAM(J,RCNT),"S-")
+                    IF (SPFLAG .AND. P .GT. 0) OUTDNAM(J,RCNT) = OUTDNAM(J,RCNT)(P+2:)
                     CALL ADD_TO_HEADER( W1, OUTDNAM( J,RCNT ), 
      &                                  LH, HDRBUF )
 
