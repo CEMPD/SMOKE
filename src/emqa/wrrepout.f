@@ -1120,12 +1120,14 @@ C.............  Write out this record
                 IF( RPT_%RPTMODE .NE. 3 ) THEN
                     WRITE(FDEV, '(A,1X)', ADVANCE='NO') STRING(1:LE)  ! Write the string first
                     DO J = STIDX, EDIDX  ! Loop over columns
-                        IF (J .LE. NSVARS .AND. SKFLAG(J,RCNT) ) CYCLE ! H.Tran: skip writing this species
+                        IF ( J .LE. NSVARS ) THEN
+                            IF ( SKFLAG(J,RCNT) ) CYCLE ! H.Tran: skip writing this species
+                        END IF
                         IF ( J .EQ. EDIDX) THEN
                             WRITE(TMPFMT,'(3a)') '(',trim(RPT_%DATAFMT),')'
                         ELSE
                             WRITE(TMPFMT,'(5a)') '(',trim(RPT_%DATAFMT),',"',trim(DELIM),'",1X)'
-                        ENDIF
+                        END IF
                         WRITE(FDEV, TMPFMT, ADVANCE='NO') BINDATA(I, J)
                     END DO
                     WRITE(FDEV, *)  ! Move to the next line
