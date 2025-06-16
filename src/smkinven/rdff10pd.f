@@ -350,7 +350,7 @@ C           of the reference date/time so that the indexing will work properly.
 
         IF( ALLOCATED( HSVAL ) ) DEALLOCATE( HSVAL )
         IF (.NOT. GETSIZES) THEN
-            ALLOCATE( HSVAL(NSRC,NIPPA,NSTEPS), STAT=IOS )
+            ALLOCATE( HSVAL(NSRC,NINVTBL,NSTEPS), STAT=IOS )
             CALL CHECKMEM( IOS, 'HSVAL', PROGNAME )
             HSVAL  = 0
         END IF
@@ -914,8 +914,8 @@ C               special toxics cases.
                     H = H + 1
 
 c                   Processing for Day light saving start                    
-                    IF ( HSVAL(S,COD,T) .NE. 0 ) THEN ! If this combination of source/pol/timestep was already processed
-                       HS = HSVAL(S,COD,T)            ! Recover recorded HS value
+                    IF ( HSVAL(S,CIDX,T) .NE. 0 ) THEN ! If this combination of source/pol/timestep was already processed
+                       HS = HSVAL(S,CIDX,T)            ! Recover recorded HS value
 
 c                      Just update emission values and move on
                        IF( HS .LE. MXPDSRC ) THEN
@@ -935,8 +935,8 @@ C                           DYTOTA( HS,T ) = CONVFAC * EMIS(S,COD) * TOTAL
 
 c                   Processing for when Day light saving end
                     IF (T .GT. 24 ) THEN
-                        IF ( HSVAL(S,COD,T-1) .EQ. 0
-     &                       .AND. HSVAL(S,COD,T-2) .GT. 0 ) THEN ! No data had been read for the previous hour of this combo but was read for the hour before that
+                        IF ( HSVAL(S,CIDX,T-1) .EQ. 0
+     &                       .AND. HSVAL(S,CIDX,T-2) .GT. 0 ) THEN ! No data had been read for the previous hour of this combo but was read for the hour before that
                         NPDPT(T-1) = NPDPT(T-1) + 1
                         HS = NPDPT(T-1)
                             
@@ -954,7 +954,7 @@ c UNC-IE 07/11/2024: Remove CONVFAC for CEMPOL as CONVFAC was already applied to
                             DYTOTA( HS,T-1 ) = CONVFAC * TOTAL
                           END IF
                         END IF   
-                        HSVAL(S,COD,T-1) = HS
+                        HSVAL(S,CIDX,T-1) = HS
                       END IF    
                     END IF 
 
@@ -979,7 +979,7 @@ c UNC-IE 07/11/2024: Remove CONVFAC for CEMPOL as CONVFAC was already applied to
 
                     END IF
 
-                    HSVAL(S,COD,T) = HS    ! Record HS source index for this combination of source, pol, and timestep
+                    HSVAL(S,CIDX,T) = HS    ! Record HS source index for this combination of source, pol, and timestep
 
                 END DO
 

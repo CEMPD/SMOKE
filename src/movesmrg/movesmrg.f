@@ -969,9 +969,10 @@ C...........................  Lookup poll/species index from MOVES lookup EF
                           END IF
 
                           IF( CFFLAG ) THEN
-                              CFFAC = CFPRO(MCFIP(SRC), SCCIDX, V, MONTH )
                               IF( SMATCHK ) THEN
                                   CFFAC = CFPRO(MCFIP(SRC), SCCIDX, SIIDX, MONTH )
+                              ELSE
+                                  CFFAC = CFPRO(MCFIP(SRC), SCCIDX, V, MONTH )
                               END IF
                           END IF
 
