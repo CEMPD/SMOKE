@@ -678,43 +678,43 @@ ${FLIB}: ${FILOBJ}
 
 tmpbeis3:  czangle.o getpar.o getparb.o hrbeis_361.o hrbeis3.o prebmet.o rdbpro.o \
  tmpbeis3.o tmpbeis314.o tmpbeis361.o hrno.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 tmpbeis4: czangle.o getparb.o hrbeis4.o  prebmet.o rdbpro.o tmpbeis4.o hrno_beis4.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 normbeis3: normbeis3.o rdb3fac.o rdb4fac.o rdb4fac_csv.o normbeis314.o normbeis361.o normbeis370.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 normbeis4: normbeis4.o rdnormbeis4_efs.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 cntlmat: $(CTLOBJ)
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 smkreport: $(RPTOBJ)
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 grdmat: $(GRDOBJ) 
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 movesmrg: movesmrg.o mbldmrgidx.o bldprocidx.o bldsrccell.o \
  mgetmrgev.o minitstcy.o mmrgonams.o mmrgunits.o  mmrgvnams.o   \
  mopenmrgin.o mopenmrgout.o rdfmref.o  rdmrclist.o rdmxref.o    \
  rdrpdemfacs.o rdrppemfacs.o rdrpvemfacs.o rdrphemfacs.o rdspdpro.o     \
  rdcfpro.o setrefcnty.o mwrmrgrep.o rdspdist.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) $^ ${LIBS} -o $@
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) $^ ${LIBS} -o $@
 
 met4moves: met4moves.o rdmxref.o rdfmref.o hourmet.o wrtemprof.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) $^ ${LIBS} -o $@
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) $^ ${LIBS} -o $@
 
 laypoint: laypoint.o openlayout.o preplm.o plmris.o postplm.o plsprd.o \
           fire_preplm.o fire_plmris.o fire_postplm.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 elevpoint: elevpoint.o asgngrps.o openeout.o plumesti.o wpingstk.o  \
            mxgrpemis.o rpelvcfg.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 smkinven: adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o formlist.o \
  genmedsout.o genpdout.o gethdr.o getpdinfo.o initinfo.o      \
@@ -726,82 +726,82 @@ smkinven: adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o formlist.o \
  rdsrcff10pt.o rdsrcmedspt.o rdsrcntiar.o rdsrcntifr.o rdsrcntimb.o rdsrcntinp.o \
  rdsrcntipt.o setnonhap.o smkinven.o srcmem.o wrepinven.o wrinvchr.o \
  wrinvemis.o wrinvpol.o wrpdemis.o wrptref.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 grwinven: opengrwout.o srcmem.o wrinvchr.o wrinvpol.o grwinven.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 smkmerge: smkmerge.o allocmrg.o bldmrgidx.o getmrgev.o mrgmult.o mrgonams.o \
  mrgvnams.o openmrgin.o openmrgout.o wmrgemis.o wrmrgrep.o initstcy.o \
  rdmrginv.o mrgelev.o mrgunits.o mrgbio.o wmrgelev.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 mrggrid: mrggrid.o setoutdate.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 mrgelev: mrgasciielev.o setoutdate.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 mrgpt: mrgpt.o setoutdate.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
  
 spcmat: $(SPCOBJ)
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 temporal: $(TMPOBJ)
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 ##############################  emutil programs:
 
 aggwndw: aggwndw.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 beld3to2: beld3to2.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 cemscan: cemscan.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 extractida: extractida.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 gcntl4carb: gcntl4carb.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 gentpro: gentpro.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 geofac: geofac.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 inlineto2d: inlineto2d.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 invsplit: invsplit.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 layalloc: layalloc.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 metcombine: metcombine.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 metscan: metscan.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 pktreduc: pktreduc.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 saregroup: saregroup.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 smk2emis: smk2emis.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 surgtool: surgtool.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 uam2ncf: uam2ncf.o
-	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+	cd ${OBJDIR}; $(FC) $(LDFLAGS) -o $(@) $^ $(LIBS)
 
 
