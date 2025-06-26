@@ -1,0 +1,7 @@
+This document provides instruction to compile executable files for **afdust_adj** package that is used for applying meteorological adjustment to fugitive dust which is highly dependent on meteorological conditions, e.g., dust is suppressed when the soil is wet or if there is rain. 
+
+The **afdust_adj** is included in pre-compiled version of SMOKE that is provided with EPA's Emission Modeling Plaform (EMP), e.g., under `smoke5.1/scripts/afdust_adj`. However these pre-compiled executables were specifically compiled for EPA's cluster system and may or may not be executed on a different system. In this case, executables in **afdust_adj** must be re-compiled for this system that they are running on. 
+
+In most of the case, the user would only need to modify the provided `compile.csh` script. Additional modifications must be made to `Makefile` and `Makefile.wrf` to deactivate some compiler flags (e.g., IOBASE, FC, LFLAGS, etc.) that are now defined within the `compile.csh` script. This instruction assumes SMOKE, I/O API and other dependent libraries were compiled using the [SMOKE Installation Instructions for how-to](https://github.com/CEMPD/SMOKE/wiki/B.-Instructions-for-SMOKE-Installation). If this is not the case, additional modifications should be made as instructed in the `compile.csh` script.
+
+Since the fortran programs provided in **afdust_adj** maybe updated in future versions of EMP, it is strongly recommended that the user adapt this instruction along with the provided `compile.csh` script to compile executables of the updated **afdust_adj**
