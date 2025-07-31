@@ -82,7 +82,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   LOCAL PARAMETERS
         CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.1_Jul2024$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv5.2_Jul2025$' ! CVS release tag
 
 C...........   Other local variables
 

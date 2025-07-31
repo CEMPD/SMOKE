@@ -1,2 +1,9 @@
 *.o
 Linux2*
+.gitignore
+backup.*
+src/smkinven/smk5.0.rdff10pd.f
+src/smkinven/smk5.1dbg.rdff10pd.f
+src/smkinven/exp.rdff10pd.f
+smoke_2016beta_platform_utilities
+smoke_2016beta_platform_utilities/*

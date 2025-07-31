@@ -104,7 +104,7 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.1_Jul2024$'  ! CVS revision tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2_Jul2025$'  ! CVS revision tag
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
