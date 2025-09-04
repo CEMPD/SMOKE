@@ -20,7 +20,8 @@ C
 C  REVISION  HISTORY:
 C      Created by B.H. Baek on 8/2011
 C      Modified by H. Tran on 3/2024 to fix daylight saving issue
-C      Modified by H. Tran on 7/2024 to fix processing HOURACT data and CONVFAC 
+C      Modified by H. Tran on 7/2024 to fix processing HOURACT data and CONVFAC
+C      Modified by H.T on 8/2025 for M3UTILIO
 C
 C***************************************************************************
 C
@@ -42,6 +43,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
@@ -61,37 +63,39 @@ C.........  This module contains data for day- and hour-specific data
      &                      CODEA, EMISVA, DYTOTA, CIDXA
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY, ONLY: NCOUNTY, CNTYCOD, USEDAYLT
+        USE MODSTCY, ONLY: NCOUNTY, CNTYCOD, USEDAYLT      
 
         IMPLICIT NONE
 
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C       INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER(2) CRLF
-        INTEGER      ENVINT
-        LOGICAL      ENVYN, CHKINT
-        INTEGER      FIND1
-        INTEGER      FINDC
-        INTEGER      INDEX1
-        INTEGER      JULIAN
-        INTEGER      SECSDIFF
-        INTEGER      STR2INT
-        REAL         STR2REAL
-        REAL         YR2DAY
-        INTEGER      YEAR4
-        INTEGER      GETTZONE
-        LOGICAL      ISDSTIME
-        LOGICAL      USEEXPGEO
+C        CHARACTER(2) CRLF
+C        INTEGER      ENVINT
+C        LOGICAL      ENVYN, CHKINT
+C        INTEGER      FIND1
+C        INTEGER      FINDC
+C        INTEGER      INDEX1
+C        INTEGER      JULIAN
+C        INTEGER      SECSDIFF
+C        INTEGER      STR2INT
+C        REAL         STR2REAL
+C        REAL         YR2DAY
+C        INTEGER      YEAR4
+C        INTEGER      GETTZONE
+C        LOGICAL      ISDSTIME
+C        LOGICAL      USEEXPGEO
 
-        EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1, JULIAN, 
-     &               SECSDIFF, STR2INT, STR2REAL, YEAR4, YR2DAY, CHKINT,
-     &               GETTZONE, ISDSTIME, USEEXPGEO
+C        EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1, JULIAN, 
+C     &               SECSDIFF, STR2INT, STR2REAL, YEAR4, YR2DAY, CHKINT,
+C     &               GETTZONE, ISDSTIME, USEEXPGEO
+        LOGICAL, EXTERNAL :: CHKINT, USEEXPGEO
+        INTEGER, EXTERNAL :: GETTZONE
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN)  :: FDEV           ! file unit no.
@@ -194,7 +198,8 @@ C...........   Other local variables
 
         CHARACTER(256) :: BUFFER = ' '    ! src description buffer 
         CHARACTER(1920):: LINE   = ' '    ! line buffer 
-        CHARACTER(512) :: MESG   = ' '    ! message buffer
+c       CHARACTER(512) :: MESG   = ' '    ! message buffer
+        CHARACTER(2000) :: MESG   = ' '   ! message buffer
 
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
         CHARACTER(FIPLEN3) LFIP      ! previous st/co FIPS code
@@ -207,7 +212,13 @@ C...........   Other local variables
         CHARACTER(SCCLEN3) TSCC      ! tmp source category code
         CHARACTER(ALLLEN3) CSRC      ! tmp source string
 
-        INTEGER, ALLOCATABLE :: HSVAL(:,:,:)   ! HS value record keeper; added by Huy Tran UNC-IE        
+C...... H.T. UNC-IE: Fix Day-light Saving Time issue        
+        INTEGER, ALLOCATABLE :: TSTPKEEP(:,:,:)
+        CHARACTER(IOVLEN3), ALLOCATABLE, SAVE :: CDATRAW(:)
+        INTEGER, SAVE :: CDATNUM = 0
+        INTEGER :: cdatidx
+        LOGICAL :: DSLFLAG
+C...... END        
 
         CHARACTER(16) :: PROGNAME = 'RDFF10PD' !  program name
 
@@ -229,7 +240,7 @@ C.............  No time zone shift for AERMOD support
 C.............  Get processing base year info
             MESG = 'Define Processing Base Year for daily/hourly-specific inventory'
             B_YEAR = ENVINT( 'BASE_YEAR', MESG, 0, IOS )
-            IF( B_YEAR == 0 ) THEN
+            IF( B_YEAR .EQ. 0 ) THEN
                 MESG = 'ERROR: MUST define the processing base year for '//
      &                 'daily/hourly-specific inventory'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -306,6 +317,10 @@ C.........  For the first call in a loop of files, initialize variables
         IF( FIRSTCALL ) THEN
             MINPTR  = 99999999
             MAXPTR  = 0
+            IF (.NOT. ALLOCATED( CDATRAW )) THEN ! H.T. UNC-IE
+                ALLOCATE( CDATRAW(NUNIQCAS), STAT=IOS) 
+                CALL CHECKMEM( IOS, 'CDATRAW', PROGNAME )
+            END IF
 
 C.............  Set time step divisor
             TDIVIDE = 3600 * TSTEP / 10000
@@ -317,6 +332,12 @@ C               steps
                 SDATESAV = SDATE
                 STIMESAV = STIME
             END IF
+
+C           IF (.NOT. ALLOCATED( TSTPKEEP )) THEN ! H.T. UNC-IE
+C               ALLOCATE( TSTPKEEP(NSTEPS), STAT=IOS) 
+C               CALL CHECKMEM( IOS, 'TSTPKEEP', PROGNAME )
+C           END IF
+
 
 C.............  Set switch for printing errors only the first loop through all
 C               of the input files.  The second time through is indicated
@@ -348,11 +369,9 @@ C           of the reference date/time so that the indexing will work properly.
         IREC = 0
         TDAT = 0.0   !  array
 
-        IF( ALLOCATED( HSVAL ) ) DEALLOCATE( HSVAL )
-        IF (.NOT. GETSIZES) THEN
-            ALLOCATE( HSVAL(NSRC,NINVTBL,NSTEPS), STAT=IOS )
-            CALL CHECKMEM( IOS, 'HSVAL', PROGNAME )
-            HSVAL  = 0
+C.........  Clear and re-initialize the hash table for each new file.
+        IF ( MXPDSRC > 0 .AND. CDATNUM > 0 .AND. NSTEPS > 0 ) THEN
+            CALL INIT_HSVAL()
         END IF
 
         DO         !  Head of period-specific file read loop
@@ -416,7 +435,7 @@ C.............  Set the number of fields, depending on day- or hour-specific
             IF( DAYFLAG ) THEN
                 NFIELD  = MON_DAYS( MONTH )
                 LYEAR =  INT( 1 / YR2DAY( YEAR ) )   ! convert year to days
-                IF( LYEAR > 365 .AND. MONTH == 2 ) NFIELD = 29
+                IF( LYEAR > 365 .AND. MONTH .EQ. 2 ) NFIELD = 29
                 FSTLOC = 1
                 LSTLOC = NFIELD
             ELSE
@@ -429,7 +448,7 @@ C.............  Skip non-processing month/day
             IF( INV_MON > 0 ) THEN
                 NDAYS  = MON_DAYS( INV_MON )
                 LYEAR =  INT( 1 / YR2DAY( B_YEAR ) )   ! convert year to days
-                IF( LYEAR > 365 .AND. MONTH == 2 ) NDAYS = 29
+                IF( LYEAR > 365 .AND. MONTH .EQ. 2 ) NDAYS = 29
                 FSTDATE = 1000 * B_YEAR + JULIAN( B_YEAR, INV_MON, 1 )
                 LSTDATE = 1000 * B_YEAR + JULIAN( B_YEAR, INV_MON, NDAYS )
                 CALL NEXTIME( FSTDATE, JTIME, -240000 )     ! include the last day of previous month
@@ -442,12 +461,12 @@ C.............  Skip non-processing month/day
                     N = MON_DAYS( MONTH )
                     CALL NEXTIME( FSTPRV, JTIME, -240000 * (N-1) )
 
-                    IF( LSTDATE == JDATE ) THEN
+                    IF( LSTDATE .EQ. JDATE ) THEN
                         NFIELD = 1
                         FSTLOC = 1
                         LSTLOC = 1
                         JDATE  = LSTDATE
-                    ELSE IF( FSTPRV == JDATE ) THEN
+                    ELSE IF( FSTPRV .EQ. JDATE ) THEN
                         NFIELD = 1
                         FSTLOC = N
                         LSTLOC = N
@@ -472,7 +491,7 @@ C.........................  Check start/end dates with emissions within the mont
                             END IF
                         END DO
 
-                        IF( FSTLOC == 0 .OR. LSTLOC == 0 ) THEN
+                        IF( FSTLOC .EQ. 0 .OR. LSTLOC .EQ. 0 ) THEN
                             NFIELD = 0
                         ELSE
                             NFIELD = ( LSTLOC - FSTLOC ) + 1
@@ -502,7 +521,7 @@ C.............  Read FIPS code
 
 C.............  Replace blanks with zeros
             DO I = 1,FIPLEN3
-                IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
+                IF( CFIP( I:I ) .EQ. ' ' ) CFIP( I:I ) = '0'
             END DO
 
 C.............  Search for time zone for current county
@@ -539,6 +558,9 @@ C                   already been converted, and if this FIPS code is
 C                   exempt from daylight time or not.
                 IF( ISDSTIME( JDATE ) .AND. USEDAYLT( I ) ) THEN
                     ZONE = ZONE - 1
+                    DSLFLAG = .TRUE.
+                ELSE
+                    DSLFLAG = .FALSE.
                 END IF
                
                 DZONE = ZONE - TZONE
@@ -568,7 +590,7 @@ C.............  Store maximum time step number as compared to reference
 
 C.............  Find source ID
 C.............  Set key for searching sources
-            IF( CATEGORY == 'POINT' ) THEN
+            IF( CATEGORY .EQ. 'POINT' ) THEN
                 FCID = ADJUSTL( SEGMENT( 4 ) )   ! EIS_FACILITY_ID in FF10&IDA (PlantID in ORL)
                 SKID = ADJUSTL( SEGMENT( 5 ) )   ! EIS_UNIT_ID in FF10&IDA (PointID in ORL)
                 DVID = ADJUSTL( SEGMENT( 6 ) )   ! EIS_REL_POINT_ID in FF10&IDA (StackID in ORL)
@@ -601,7 +623,7 @@ C.............  If SCCs are needed for matching...
                 IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
 
 C.................  Build source characteristics field for searching inventory
-                IF( CATEGORY == 'POINT' ) THEN
+                IF( CATEGORY .EQ. 'POINT' ) THEN
                     CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
      &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
                 ELSE
@@ -617,7 +639,7 @@ C.............  If SCCs are not being used for matching (at least not yet)...
             ELSE
 
 C.................  Build source characteristics field for searching inventory
-                IF( CATEGORY == 'POINT' ) THEN
+                IF( CATEGORY .EQ. 'POINT' ) THEN
                     CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
      &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
                 ELSE
@@ -637,7 +659,7 @@ C                   if reading the SCC in helps (needed for IDA format)
                     IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
 
 C.....................  Build source characteristics field for searching inventory
-                    IF( CATEGORY == 'POINT' ) THEN
+                    IF( CATEGORY .EQ. 'POINT' ) THEN
                         CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
      &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
                     ELSE
@@ -693,7 +715,8 @@ C.............  Check pollutant code and set index I
 
 C.............  Left justify and convert pollutant name to upper case
             CDAT = ADJUSTL( CDAT ) 
-            CALL UPCASE( CDAT ) 
+            CALL UPCASE( CDAT )
+            CALL GET_CDAT(CDAT) 
 
 C.............  Look up pollutant name in unique sorted array of
 C               Inventory pollutant names
@@ -701,6 +724,7 @@ C               Inventory pollutant names
 
 C.............  Check to see if data name is in inventory list
             COD  = INDEX1( CDAT, NIPPA, EANAM )
+
 
 C.............  If pollutant name is not in Inventory Table list
             IF ( CIDX .LE. 0 ) THEN
@@ -762,16 +786,16 @@ C....................  Preventing processing precomputed NONHAP[VOC|TOG]
 
                    NV = INDEX1( CNAM, MXIDAT, INVDNAM )
 
-                   IF( CINTGR( S ) == 'N' .AND. INVDVTS( NV ) /= 'N' ) THEN
+                   IF( CINTGR( S ) .EQ. 'N' .AND. INVDVTS( NV ) /= 'N' ) THEN
                        PNAM = TRIM( CNAM ) // '_NOI'
                        COD = INDEX1( PNAM, NIPPA, EANAM )
 
-                   ELSE IF( CINTGR( S ) == 'Y' ) THEN
+                   ELSE IF( CINTGR( S ) .EQ. 'Y' ) THEN
                        L = INDEX( CNAM, ETJOIN )
                        LL= LEN_TRIM( CNAM )
                        PNAM = CNAM
                        IF( L > 0 ) PNAM = CNAM( L+2:LL )
-                       IF( PNAM == 'VOC' .OR. PNAM == 'TOG' ) THEN
+                       IF( PNAM .EQ. 'VOC' .OR. PNAM .EQ. 'TOG' ) THEN
                            IF( L > 0 ) THEN
                                PNAM = CNAM(1:L+1) // 'NONHAP' //
      &                                CNAM(L+2:LL)
@@ -806,7 +830,7 @@ C................  If it's found, then record that this pollutant was found
             END IF  ! if cidx le 0 or not
 
 C.............  Check CEMS hourly temporal profile (TPROHR) is processed 
-            IF( .NOT. CEMFLAG .AND. CNAM == 'HOURACT' ) CEMFLAG = .TRUE.
+            IF( .NOT. CEMFLAG .AND. CNAM .EQ. 'HOURACT' ) CEMFLAG = .TRUE.
 
 C.............  Build array for the list of polls
             IF( GETSIZES ) THEN
@@ -835,7 +859,7 @@ C.............  NOTE - this is only useful if reading only part of data
 
 C.............  Count estimated record count per time step
             NPOL = 1
-            IF( CNAM == 'HOURACT' ) NPOL = NIPPA - NCEMPOL
+            IF( CNAM .EQ. 'HOURACT' ) NPOL = NIPPA - NCEMPOL
             DO N = 1, NPOL
                 DO T = PTR, MIN( PTR + 23, NSTEPS )
                     MXPDPT( T ) = MXPDPT( T ) + 1
@@ -878,7 +902,7 @@ C.............  If available, set total value from hourly file
             END IF
 
 C.............  CEMS pollutant processing
-            IF( CNAM == 'HOURACT' ) THEN
+            IF( CNAM .EQ. 'HOURACT' ) THEN
                 NCEMPOL = NIPPA
                 CEMPOL = .TRUE.
                 TDAT = TDAT / EMIS( S,COD )  ! Compute hourly fac based on mon tot
@@ -888,13 +912,14 @@ C.............  CEMS pollutant processing
             END IF
 
 C.............  Record needed data for this source and time step
-            DO D = 1, NFIELD
+            DO D = 1, NFIELD             ! NFIELD = 1 for hourly data; days-in-month if DAYFLAG
 
-              DO V = 1, NCEMPOL          ! loop for CEMS when HOURACT is processed
+              DO V = 1, NCEMPOL          ! loop for CEMS when HOURACT is processed; or this single species if not CEMPOL
 
-                IF( CEMPOL ) THEN
+                IF( CEMPOL ) THEN        ! Species to be calculated based on HOURACT
                     CDAT = EANAM( V )
                     COD  = INDEX1( CDAT, NIPPA, CEMPOLS )
+                    CALL GET_CDAT(CDAT)
                     IF( COD < 1 ) THEN
                         COD  = INDEX1( CDAT, NIPPA, EANAM )
                         CIDX = INDEX1( CDAT, NINVTBL, ITNAMA )
@@ -908,59 +933,55 @@ C               1., which is also what is used in all but a handful of
 C               special toxics cases.
                 CONVFAC = ITFACA( SCASIDX( UCASIDX( CIDX ) ) )
 
+C.............  NOTE:
+C               CEMPOL = True for species that are to be calculated from HOURACT
+C               CEMPOL = False for species that getting emissions directly from daily/hourly data; 
+C                        including but not limited to NOX and SO2 in CEM files
+
                 H = 0
+                cdatidx = INDEX1(CDAT, CDATNUM, CDATRAW)
+
                 DO T = PTR, MIN( PTR + 23, NSTEPS )
 
                     H = H + 1
 
-c                   Processing for Day light saving start                    
-                    IF ( HSVAL(S,CIDX,T) .NE. 0 ) THEN ! If this combination of source/pol/timestep was already processed
-                       HS = HSVAL(S,CIDX,T)            ! Recover recorded HS value
+                    NPDPT( T ) = NPDPT( T ) + 1
+                    
+                    HS = NPDPT( T )
+                    
+                    IF ( INV_MON .EQ. 3 ) THEN                               ! Only apply this treatment in March where DLS transition occures
+                      IF ( ( T .EQ. TSTPKEEP ( S, cdatidx, 1 ) ) .OR.        ! Duplication found for this record (S,CDAT,T)
+     &                     ( T .EQ. TSTPKEEP ( S, cdatidx, 2 ) )      ) THEN ! This second case is unlikely to happen
+                        NPDPT( T ) = NPDPT( T ) - 1                          ! Backtrack NPDPT(T)
+                        HS = HS - 1                                          ! Backtrack HS
 
-c                      Just update emission values and move on
-                       IF( HS .LE. MXPDSRC ) THEN
+C                       Update emissions for this (S,CDAT,T) if it has not been recorded (BADVAL3, defined in I/O API PARMS3.EXT)                        
+                        IF ( EMISVA( HS,T ) .EQ. BADVAL3 ) THEN
                           IF( CEMPOL ) THEN
-c UNC-IE 07/11/2024: Remove CONVFAC for CEMPOL as CONVFAC was already applied to EMIS                                         
-C                           EMISVA( HS,T ) = CONVFAC * EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
-C                           DYTOTA( HS,T ) = CONVFAC * EMIS(S,COD) * TOTAL
-                            EMISVA( HS,T ) = EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
+                            EMISVA( HS,T ) = EMIS(S,COD) * TDAT( D,H )       ! Store data in emissions
                             DYTOTA( HS,T ) = EMIS(S,COD) * TOTAL
                           ELSE
-                            EMISVA( HS,T ) = CONVFAC * TDAT( D,H )  ! Store data in emissions
+                            EMISVA( HS,T ) = CONVFAC * TDAT( D,H )           ! Store data in emissions
                             DYTOTA( HS,T ) = CONVFAC * TOTAL
-                          END IF 
-                       END IF                            
-                       CYCLE
-                    END IF
-
-c                   Processing for when Day light saving end
-                    IF (T .GT. 24 ) THEN
-                        IF ( HSVAL(S,CIDX,T-1) .EQ. 0
-     &                       .AND. HSVAL(S,CIDX,T-2) .GT. 0 ) THEN ! No data had been read for the previous hour of this combo but was read for the hour before that
-                        NPDPT(T-1) = NPDPT(T-1) + 1
-                        HS = NPDPT(T-1)
-                            
-                        IF( HS .LE. MXPDSRC ) THEN
-                          IDXSRC( HS,T-1 ) = HS
-                          SPDIDA( HS,T-1 ) = S
-                          CIDXA ( HS,T-1 ) = CIDX
-                          CODEA ( HS,T-1 ) = COD
-                          IF( CEMPOL ) THEN
-c UNC-IE 07/11/2024: Remove CONVFAC for CEMPOL as CONVFAC was already applied to EMIS                          
-                            EMISVA( HS,T-1 ) = EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
-                            DYTOTA( HS,T-1 ) = EMIS(S,COD) * TOTAL
-                          ELSE
-                            EMISVA( HS,T-1 ) = CONVFAC * TDAT( D,H )  ! Store data in emissions
-                            DYTOTA( HS,T-1 ) = CONVFAC * TOTAL
                           END IF
-                        END IF   
-                        HSVAL(S,CIDX,T-1) = HS
-                      END IF    
-                    END IF 
+                        END IF
 
-                    NPDPT( T ) = NPDPT( T ) + 1
+                        CYCLE                                                ! Skip to next time step
 
-                    HS = NPDPT( T )
+                      ELSE
+
+                        IF ( .NOT. DSLFLAG ) THEN
+                            IF ( T .GT. TSTPKEEP ( S, cdatidx, 1 ) ) THEN
+                                TSTPKEEP ( S, cdatidx, 1 ) = T               ! T step value when Daylight Saving Time is not active
+                            END IF
+                        ELSE
+                            IF ( T .LT. TSTPKEEP ( S, cdatidx, 2 ) ) THEN
+                                TSTPKEEP ( S, cdatidx, 2 ) = T               ! T step value when Daylight Saving Time is active
+                            END IF
+                        END IF
+
+                      END IF
+                    END IF
 
                     IF( HS .LE. MXPDSRC ) THEN
 
@@ -969,17 +990,14 @@ c UNC-IE 07/11/2024: Remove CONVFAC for CEMPOL as CONVFAC was already applied to
                         CIDXA ( HS,T ) = CIDX
                         CODEA ( HS,T ) = COD
                         IF( CEMPOL ) THEN
-c UNC-IE 07/11/2024: Remove CONVFAC for CEMPOL as CONVFAC was already applied to EMIS
                             EMISVA( HS,T ) = EMIS(S,COD) * TDAT( D,H )  ! Store data in emissions
                             DYTOTA( HS,T ) = EMIS(S,COD) * TOTAL
                         ELSE
-                            EMISVA( HS,T ) = CONVFAC * TDAT( D,H )  ! Store data in emissions
+                            EMISVA( HS,T ) = CONVFAC * TDAT( D,H )      ! Store data in emissions
                             DYTOTA( HS,T ) = CONVFAC * TOTAL
                         END IF
 
                     END IF
-
-                    HSVAL(S,CIDX,T) = HS    ! Record HS source index for this combination of source, pol, and timestep
 
                 END DO
 
@@ -1027,5 +1045,33 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
 94020   FORMAT( I6.6 )
+
+        CONTAINS
+        
+C ----- START HSVAL SUBROUTINES
+
+        SUBROUTINE INIT_HSVAL()
+            INTEGER :: IOS
+
+            IF (ALLOCATED(TSTPKEEP)) DEALLOCATE(TSTPKEEP)
+            ALLOCATE(TSTPKEEP(MXPDSRC, NUNIQCAS, 2), STAT=IOS)
+            CALL CHECKMEM( IOS, 'TSTPKEEP', PROGNAME )
+
+            TSTPKEEP(:,:,1) = 0
+            TSTPKEEP(:,:,2) = 9999
+        
+        END SUBROUTINE INIT_HSVAL
+
+        SUBROUTINE GET_CDAT(spcname)
+            CHARACTER(IOVLEN3), INTENT(IN)  :: spcname
+            INTEGER :: idx
+            idx = INDEX1( spcname, CDATNUM, CDATRAW )
+            IF ( idx < 1) THEN
+                CDATNUM = CDATNUM + 1
+                CDATRAW(CDATNUM) = spcname
+            END IF            
+        END SUBROUTINE GET_CDAT
+                
+C ----- END HSVAL OPTIMIZATION
 
         END SUBROUTINE RDFF10PD
