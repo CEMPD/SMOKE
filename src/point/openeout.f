@@ -74,7 +74,7 @@ C..........    Subroutine arguments and their descriptions
 
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2_Jul2025$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   Other local variables
         INTEGER         J      ! indices and counters

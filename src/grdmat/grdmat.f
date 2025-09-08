@@ -92,7 +92,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2_Jul2025$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Gridding Matrix

@@ -91,7 +91,7 @@ C...........  SUBROUTINE ARGUMENTS
 
 C...........  Local parameters
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2_Jul2025$' ! CVS release tag
+     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C.........  Base and future year per 
 
