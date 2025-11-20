@@ -1,0 +1,42 @@
+{
+  "nonpoint": [
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/nonpoint/Annual_afdust_adj_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/nonpoint/Annual_nonpt_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/nonpoint/Annual_np_oilgas_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/nonpoint/Annual_np_solvents_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/nonpoint/Annual_openburn_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/nonpoint/Annual_rail_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/nonpoint/Annual_rwc_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/nonpoint/Monthly_fertilizer_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/nonpoint/Monthly_livestock_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/nonpoint/Monthly_nonroad_12US1_2022he_cb6_22m.csh"
+  ],
+  "biogenics": [],
+  "onroad": [
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_ca_adj_diesel_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_ca_adj_gas_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_ca_adj_RPD_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_ca_adj_RPH_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_ca_adj_RPHO_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_ca_adj_RPP_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_ca_adj_RPS_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_ca_adj_RPV_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_RPD_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_RPH_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_RPHO_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_RPP_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_RPS_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/onroad/Monthly_onroad_RPV_daily_12US1_2022he_cb6_22m.csh"
+  ],
+  "point": [
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/point/Annual_airports_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/point/Annual_cmv_c1c2_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/point/Annual_cmv_c3_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/point/Annual_pt_oilgas_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/point/Annual_ptagfire_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/point/Annual_ptegu_summer_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/point/Annual_ptfire-rx_high_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/point/Annual_ptfire-wild_low_daily_12US1_2022he_cb6_22m.csh",
+    "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/point/Annual_ptnonipm_daily_12US1_2022he_cb6_22m.csh"
+  ]
+}

@@ -1,0 +1,39 @@
+! coords --line:  name; type, P-alpha, P-beta, P-gamma, xcent, ycent
+'12CONUS1'
+2, 33.0D0, 45.D0,-97.D0,-97.D0, 40.D0
+'LAM_40N97W'
+2, 33.0D0, 45.D0,-97.D0,-97.D0, 40.D0
+'LAM_40N_107W'
+2, 50., 50., -107., -107., 40.
+'LAM_21N_157W'
+2, 19.D0, 22.D0, -157.D0, -157.D0, 21.D0
+'LAM_18N_66W'
+2, 17.D0, 19.D0, -66.D0, -66.D0, 18.D0
+'LAM_63N_155W'
+2, 60.D0, 70.D0, -155.D0, -155.D0, 63.D0
+' '  !  end coords.  grids:  name; xorig,yorig,xcell,ycell,ncols,nrows,nthik
+'36US1_148X112'     ! abbrev. = 36US1
+'LAM_40N97W', -2736.D3, -2088.D3, 36.D3, 36.D3, 148, 112, 1
+'12US1_459X299', ! abbrev.=12US1, common name = Continental 12km grid
+'12CONUS1', -2556000.000, -1728000.000, 12.D3, 12.D3, 459, 299, 1
+'US12KM_444X336', ! 12km national US
+'LAM_40N97W', -2736.D3, -2088.D3, 12.D3, 12.D3, 444, 336, 1
+'12US2', ! 12km continential, slightly smaller than 12US1
+'12CONUS1', -2412000.0, -1620000.0, 12000.0, 12000.0, 396, 246, 1
+'4US2', ! 4km continental, same size as 12US2
+'12CONUS1', -2412000.0, -1620000.0, 4000.0, 4000.0, 1188, 738, 1
+'HTAP', ! 0.1 deg US grid for HTAP/EDGAR
+'LAT_40N97W', -180.D0, 15.D0, 0.1, 0.1, 1170, 600, 1
+'CONUS4k', ! 4km CONUS for surrogates
+'LAM_40N97W', -2736000.0, -2088000.0, 4000.0, 4000.0, 1332, 1008, 1
+'4NE1', ! 4km Northeast domain
+'LAM_40N97W', 1584000.0, -36000.0, 4000.0, 4000.0, 174, 201, 1
+'12NE3', ! 12 km Northeast domain 146x109
+'LAM_40N97W', 540000.0, -288000.0, 12000.0, 12000.0, 146, 109, 1
+'36US3'
+'LAM_40N97W', -2952000.000, -2772000.000, 36000.000, 36000.000, 172, 148, 1
+'12LISTOS'
+'LAM_40N97W', 1812000.000, 240000.000, 12000.000, 12000.000, 25, 25, 1
+'12LISTOS_DOT'
+'LAM_40N97W', 1806000.000, 234000.000, 12000.000, 12000.000, 26, 26, 1
+' '  !  end grids.'

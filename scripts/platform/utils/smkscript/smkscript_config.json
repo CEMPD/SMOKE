@@ -1,0 +1,46 @@
+{
+  "directory_definitions":"/proj/ie/proj/SMOKE/htran/12LISTOS/2022he_cb6_22m/scripts/directory_definitions.csh",
+  "runscript_in": "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/scripts/nonpoint/Annual_rwc_12US1_2022he_cb6_22m.csh",
+  "runscript_out": "/proj/ie/proj/SMOKE/htran/12LISTOS/2022he_cb6_22m/scripts/nonpoint/Annual_rwc_2022he_cb6_22m_12LISTOS.csh",
+  "check_path": true,
+  "sector": "rwc",
+  "sections": {
+    "Spatial Gridding Surrogates":[
+      "SRGDESC", "SRGPRO", "AGREF"
+    ],
+    "Speciation Profile Cross-reference": [
+      "GSREF"
+    ],
+    "Speciation Profiles Definitons with Split Factors": [
+      "GSPRO"
+    ],
+    "Temporal Profile Cross-reference": [
+      "ATREF", "PTREF","MTREF"
+    ],
+    "Temporal Profile Definitions and Split Factors": [
+      "MTPRO","ATPRO","PTPRO"
+    ],
+    "Point Sources Parameters":[
+      "ARTOPNT","PELVCONFIG","PSTK","ORISDESC"
+    ],
+    "SMOKE-MOVES Settings":[
+      "MGREF", "MFMREF", "METMOVES", "MCXREF", "MRCLIST", "MEPROC", "CFPRO", "SCCXREF", "SPDIST", "AVGSPD_SCCXREF"
+    ],
+    "SMOKE Report Configurations": [
+      "REPCONFIG"
+    ],
+    "Emission Inputs": [
+      "EMISINV","EMISDAY","EMISHOUR"
+    ],
+    "Grid Descriptions\\n(https://www.cmascenter.org/ioapi/documentation/all_versions/html/GRIDDESC.html)":
+    [
+      "GRIDDESC"
+    ],
+    "Merge Date Settings\\n(https://github.com/CEMPD/SMOKE/wiki/A.-Overall-Instructions-on-Running-SMOKE-using-EPA's-Emissions-Modeling-Platforms#mrgdate_files)":[
+      "MRGDATE_FILES"
+    ],
+    "L_TYPE and M_TYPE\\n(https://github.com/CEMPD/SMOKE/wiki/A.-Overall-Instructions-on-Running-SMOKE-using-EPA's-Emissions-Modeling-Platforms#l_type-and-m_type)": [
+      "L_TYPE", "M_TYPE"
+    ]
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "inputs": "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2022v2/2022he_cb6_22m/inputs",
+  "outputs": "/proj/ie/proj/SMOKE/htran/12LISTOS/2022he_cb6_22m/inputs",
+  "county_shp": "/proj/ie/proj/staff/tranhuy/python/GIS/tl_2020_us_county.gpkg",
+  "griddesc_path": "griddesc_simplified.txt",
+  "grid_id": "12LISTOS",
+  "sector_skip": [
+    "afdust"
+  ],
+  "sector": {
+    "afdust": [
+      "2022hc_proj_afdust_2020NEI_NONPOINT_20230222_24apr2025_nf_v3.csv"
+    ],
+    "nonpt": [
+      "2022hc_proj_2020NEI_NONPOINT_20230222_05aug2025_nf_v4.csv"
+    ],
+    "np_oilgas": [
+      "2022hd_np_oilgas_OGTool_plusPA_29apr2025_nf_v1.csv",
+      "2022hc_proj_np_oilgas_2020NEI_NONPOINT_20230222_OK_WY_production_03apr2024_nf_v1.csv",
+      "2022hd_np_oilgas_blowdown_pigging_23apr2025_nf_v1.csv",
+      "2022hc_np_oilgas_abandoned_wells_all_wHAPs_14jun2024_v0.csv",
+      "2022hd_np_oilgas_Colorado_22apr2025_nf_v1.csv"
+    ],
+    "np_solvents": [
+      "np_solvents_2022v1_20240221_31mar2025_nf_v1.csv",
+      "np_solvents_2022v1_20240221_HAPs_31mar2025_nf_v2.csv"
+    ],
+    "openburn": [
+      "openburn_2022hc_proj_2020NEI_NONPOINT_20230222_08apr2025_nf_v1.csv"
+    ],
+    "rail": [
+      "2022v1_platform_rail_2022_04jun2024_nf_v1.csv"
+    ],
+    "rwc": [
+      "rwc_2022v2_platform_EPA_09apr2025_nf_v1.csv",
+      "2022hd_from_rwc_2020NEI_NONPOINT_20230222_SLT_05aug2025_nf_v1.csv"
+    ],
+    "fertilizer": [
+      "2022hc_fertilizer_NH3_monthly_postCMAQ_STAGE_17sep2024_v0.csv"
+    ],
+    "livestock": [
+      "livestock_2022hd_FEM_monthly_31mar2025_v0.csv",
+      "2022hd_proj_nonFEM_livestock_2020NEI_NONPOINT_20230222_monthly_31mar2025_v0.csv",
+      "livestock_2022hd_FEM_daily_31mar2025_v0.csv",
+      "2022hd_proj_nonFEM_livestock_2020NEI_NONPOINT_20230222_daily_31mar2025_v0.csv",
+      "livestock_2022hd_daily_prevdec_31mar2025_v0.csv"
+    ],
+    "nonroad": [
+      "nonroad_ff10_2022v2_by2022_MOVES_ROC_AE6_07may2025_nf_v3.csv",
+      "2022proj_from_2020NEI_california_nonroad_for_SMOKE_14oct2024_v1.csv"
+    ],
+    "onroad_ca_adj": [
+      "VMT_2022v2_full_monthly_11apr2025_v2.csv",
+      "HOTELING_2022v2_monthly_11apr2025_v3.csv",
+      "ONI_2022v2_full_monthly_21may2025_v2.csv",
+      "VPOP_2022v2_full_21may2025_v2.csv",
+      "STARTS_2022v2_CONUS_monthly_27may2025_nf_v2.csv"
+    ],
+    "onroad": [
+      "VMT_2022v2_full_monthly_11apr2025_v3.csv",
+      "HOTELING_2022v2_monthly_21may2025_v4.csv",
+      "ONI_2022v2_full_monthly_21may2025_v1.csv",
+      "VPOP_2022v2_full_21may2025_v1.csv",
+      "STARTS_2022v2_CONUS_monthly_27may2025_nf_v1.csv"
+    ],
+    "airports": [
+      "2022hd_airports_2022_point_top51_adjusted_ATL_data_20250428_27may2025_v0.csv"
+    ],
+    "cmv_c1c2_12": [
+      "cmv_C1C2_cmv_c1c2_2022_gapfilled_masked_12US1_2022_US_annual_11jul2024_v0.csv",
+      "cmv_C1C2_cmv_c1c2_2022_gapfilled_masked_12US1_2022_MX_annual_11jul2024_v0.csv",
+      "cmv_C1C2_cmv_c1c2_2022_gapfilled_masked_12US1_2022_CA_annual_11jul2024_v0.csv",
+      "cmv_C1C2_01_cmv_c1c2_2022_gapfilled_masked_12US1_2022_CA_hourly.csv"
+    ],
+    "cmv_c3_12": [
+      "cmv_C3_cmv_c3_2022_gapfilled_masked_12US1_2022_US_annual_11jul2024_v0.csv",
+      "cmv_C3_cmv_c3_2022_gapfilled_masked_12US1_2022_CA_annual_11jul2024_v0.csv",
+      "cmv_C3_cmv_c3_2022_gapfilled_masked_12US1_2022_MX_annual_11jul2024_v0.csv",
+      "cmv_C3_01_cmv_c3_2022_gapfilled_masked_12US1_2022_CA_hourly.csv"
+    ],
+    "pt_oilgas": [
+      "oilgas_2022_POINT_20250812_14aug2025_v0.csv"
+    ],
+    "ptagfire": [
+      "ptinv_agburn_2022v1_conus_filtered_12may2025_nf_v1.csv",
+      "ptinv_agburn_2022v1_all_state_data_02jul2024_v0.csv",
+      "ptinv_midwest_crops_fires_2022v2_final_16jul2025_v0.csv",
+      "ptday_agburn_2022v1_conus_filtered_15aug2025_v1",
+      "ptday_agburn_2022v1_all_state_data_02jul2024_v0",
+      "prevdec_ptday_2022he_ptagfire_all_15aug2025_v0",
+      "ptday_midwest_crops_fires_2022v2_final_16jul2025_v0",
+      "ptinv_idaho_ditch_fires_2022v2_final_08aug2025_nf_v1.csv",
+      "ptday_idaho_ditch_fires_2022v2_final_15aug2025_v1"
+    ],
+    "ptegu": [
+      "egu_2022_POINT_20250812_multifix_2022cems_14aug2025_v0.csv"
+    ],
+    "cem":[
+      "pthour_01_2022_2022_2022cems_20250812_hourly.csv"
+    ],
+    "ptfire-rx": [
+      "ptinv_sf2_2022v2_full_10jul2025_rx_ff10_10jul2025_v0.csv",
+      "ptinv_flint_hills_fires_2022_beta_ff10_02apr2024_v0.csv",
+      "ptday_sf2_2022v2_full_10jul2025_rx_ff10_10jul2025_v0",
+      "ptday_flint_hills_fires_2022_beta_ff10_15mar2024_v0",
+      "ptday_sf2_2022v2_full_10jul2025_rx_hap_ff10_10jul2025_v0",
+      "ptinv_sf2_2022v2_full_10jul2025_rx_hap_ff10_10jul2025_v0.csv",
+      "prevdec_ptday_2022he_ptfire_rx_all_15aug2025_v0",
+      "ptinv_pile_burn_2022v1_08aug2025_nf_v3.csv",
+      "ptday_pile_burn_2022v1_08aug2025_nf_v3",
+      "ptday_pile_burn_2022v2_additional_17jun2025_nf_v2",
+      "ptinv_pile_burn_2022v2_additional_17jun2025_nf_v2.csv"
+    ],
+    "ptfire-wild": [
+      "ptinv_sf2_2022v2_full_10jul2025_wf_ff10_10jul2025_v0.csv",
+      "ptinv_sf2_2022v2_full_10jul2025_wf_hap_ff10_10jul2025_v0.csv",
+      "ptday_sf2_2022v2_full_10jul2025_wf_ff10_10jul2025_v0",
+      "ptday_sf2_2022v2_full_10jul2025_wf_hap_ff10_10jul2025_v0",
+      "prevdec_ptday_2022he_ptfire_wild_all_15aug2025_v0"
+    ],
+    "ptnonipm": [
+      "nonegu_norail_2022_POINT_20250812_14aug2025_nf_v1.csv",
+      "railyards_2022_POINT_20250812_14aug2025_v0.csv"
+    ]
+  }
+}
