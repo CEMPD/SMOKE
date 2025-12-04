@@ -195,9 +195,6 @@ setenv OUTZONE "0" # # Output time zone
 setenv MRG_REPCNY_YN "Y" # # Output county totals
 setenv WEST_HSPHERE "Y" # # Western hemisphere?
 setenv MRG_MARKETPEN_YN "N" # # Include market penetration
-# L_TYPE and M_TYPE
-# (https://github.com/CEMPD/SMOKE/wiki/A.-Overall-Instructions-on-Running-SMOKE-using-EPA's-Emissions-Modeling-Platforms#l_type-and-m_type)
-# Other settings
 
 
 ## Parameters specific to this sector and/or job
