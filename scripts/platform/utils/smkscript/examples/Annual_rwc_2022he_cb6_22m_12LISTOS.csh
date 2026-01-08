@@ -84,7 +84,7 @@ setenv ORISDESC "${GE_DAT}/smkreport/orisdesc_04dec2006_v0.txt" # VALID PATH
 setenv PSTK "${GE_DAT}/point/pstk_13nov2018_v1.txt" # VALID PATH
 # Grid Descriptions
 # (https://www.cmascenter.org/ioapi/documentation/all_versions/html/GRIDDESC.html)
-setenv GRIDDESC "${GE_DAT}/gridding/griddesc_lambertonly_18jan2019_v7.txt" # VALID PATH; Could not read GRIDDESC file: /proj/ie/proj/SMOKE/htran/12LISTOS/ge_dat/gridding/griddesc_lambertonly_18jan2019_v7.txt" # VALID PATH
+setenv GRIDDESC "${GE_DAT}/gridding/griddesc_lambertonly_18jan2019_v7.txt" # VALID PATH
 # Merge Date Settings
 # (https://github.com/CEMPD/SMOKE/wiki/A.-Overall-Instructions-on-Running-SMOKE-using-EPA's-Emissions-Modeling-Platforms#mrgdate_files)
 setenv MRGDATE_FILES "${INSTALL_DIR}/smoke5.2/scripts/smk_dates/2022/smk_merge_dates_202112.txt" # VALID PATH
@@ -96,16 +96,6 @@ setenv GSCNV "${GE_DAT}/speciation/gscnv_SPECIATE_5_3_fromS2S_20230911_16jun2025
 setenv NAICSDESC "${GE_DAT}/smkreport/naicsdesc_20220222_29feb2024_nf_v1.txt" # VALID PATH
 setenv EFTABLES "${CASEINPUTS}/onroad/eftables/rateperdistance_smoke_aq_cb6_saprc_20250402_rates2022v2-2022-20250306_10003_1.csv" # MISSING PATH
 setenv INVTABLE "${GE_DAT}/invtable_2022platform_integrate_15sep2025_nf_v3.txt" # VALID PATH
-# Spatial Gridding Surrogates
-# Temporal Profile Cross-reference
-# Temporal Profile Definitions and Split Factors
-# Point Sources Parameters
-# Grid Descriptions
-# (https://www.cmascenter.org/ioapi/documentation/all_versions/html/GRIDDESC.html)
-# Merge Date Settings
-# (https://github.com/CEMPD/SMOKE/wiki/A.-Overall-Instructions-on-Running-SMOKE-using-EPA's-Emissions-Modeling-Platforms#mrgdate_files)
-# Other settings
-
 
 ## Inputs specific to this sector and/or job
 # Speciation Profile Cross-reference
@@ -167,12 +157,6 @@ setenv REPCONFIG_INV2 "${GE_DAT}/smkreport/repconfig/repconfig_area_inv_nonhapvo
 # Emission Inputs
 setenv EMISINV_A "${CASEINPUTS}/rwc/rwc_2022v2_platform_EPA_09apr2025_nf_v1_12LISTOS.csv" # VALID PATH
 setenv EMISINV_B "${CASEINPUTS}/rwc/2022hd_from_rwc_2020NEI_NONPOINT_20230222_SLT_05aug2025_nf_v1_12LISTOS.csv" # VALID PATH
-# Speciation Profile Cross-reference
-# Speciation Profiles Definitons with Split Factors
-# Temporal Profile Cross-reference
-# Temporal Profile Definitions and Split Factors
-# SMOKE Report Configurations
-# Emission Inputs
 
 
 ## Parameters for all sectors
@@ -211,9 +195,6 @@ setenv OUTZONE "0" # # Output time zone
 setenv MRG_REPCNY_YN "Y" # # Output county totals
 setenv WEST_HSPHERE "Y" # # Western hemisphere?
 setenv MRG_MARKETPEN_YN "N" # # Include market penetration
-# L_TYPE and M_TYPE
-# (https://github.com/CEMPD/SMOKE/wiki/A.-Overall-Instructions-on-Running-SMOKE-using-EPA's-Emissions-Modeling-Platforms#l_type-and-m_type)
-# Other settings
 
 
 ## Parameters specific to this sector and/or job
@@ -224,8 +205,6 @@ setenv M_TYPE "all" # # Merge type ; DUPLICATED SETTING
 # Other settings
 setenv NONHAP_TYPE "VOC" # # Nonhap Type
 setenv SMK_PROCESS_HAPS "ALL" # # Use NHAPEXCLUDE file
-# L_TYPE and M_TYPE
-# (https://github.com/CEMPD/SMOKE/wiki/A.-Overall-Instructions-on-Running-SMOKE-using-EPA's-Emissions-Modeling-Platforms#l_type-and-m_type)
-# Other settings
+
 
 $RUNSCRIPTS/emf/smk_ar_annual_emf.csh $REGION_ABBREV $REGION_IOAPI_GRIDNAME -m "$RUN_MONTHS" $SPINUP_DURATION all
