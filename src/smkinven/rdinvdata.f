@@ -1080,28 +1080,23 @@ C.................  Convert data to real numbers and check for missing values
                     EANN = BADVAL3
                 END IF
 
-C................. UNC-IE 12/08/2025: Average-day emission is optional and only applicable for ORL format; treat it as such
-                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
-                    EDAY = STR2REAL( READDATA( I,NDY ) )
+                EDAY = STR2REAL( READDATA( I,NDY ) )
 
-                    IF( EDAY < AMISS3 .OR. EDAY == -9 ) THEN
-                        IF( NWARN < MXWARN .AND. .NOT. FIREFLAG ) THEN
-                            IF( ACTFLAG ) THEN
-                                WRITE( MESG,94010 ) 'WARNING: Missing ' //
-     &                              'average day inventory data for ' //
-     &                              TRIM( POLNAM ) // ' at line', IREC
-                            ELSE
-                                WRITE( MESG,94010 ) 'WARNING: Missing ' //
-     &                              'average day emissions for ' //
-     &                              TRIM( POLNAM ) // ' at line', IREC
-                            END IF
-                            CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
+                IF( EDAY < AMISS3 .OR. EDAY == -9 ) THEN
+                    IF( NWARN < MXWARN .AND. .NOT. FIREFLAG ) THEN
+                        IF( ACTFLAG ) THEN
+                            WRITE( MESG,94010 ) 'WARNING: Missing ' //
+     &                          'average day inventory data for ' //
+     &                          TRIM( POLNAM ) // ' at line', IREC
+                        ELSE
+                            WRITE( MESG,94010 ) 'WARNING: Missing ' //
+     &                          'average day emissions for ' //
+     &                          TRIM( POLNAM ) // ' at line', IREC
                         END IF
-
-                        EDAY = BADVAL3
+                        CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
                     END IF
-                ELSE
+
                     EDAY = BADVAL3
                 END IF
 
