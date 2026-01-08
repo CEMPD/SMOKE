@@ -40,10 +40,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
  
 C...........   MODULES for public variables
 C.........  This module contains the global variables for the 3-d grid
+        USE M3UTILIO
+
         USE MODGRID, ONLY: NGRID, NCOLS, NROWS, NLAYS, 
      &                     VGLVS, VGTYP, VGTOP
 
@@ -56,35 +59,36 @@ C.........  This module is required for the FileSetAPI
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'
         INCLUDE 'CONST3.EXT'    !  physical constants
-        INCLUDE 'PARMS3.EXT'
-        INCLUDE 'IODECL3.EXT'
-        INCLUDE 'FDESC3.EXT'
+C        INCLUDE 'PARMS3.EXT'
+C        INCLUDE 'IODECL3.EXT'
+C        INCLUDE 'FDESC3.EXT'
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS
-        CHARACTER(2)  CRLF
-        CHARACTER(14) MMDDYY
+C       CHARACTER(2)  CRLF
+C       CHARACTER(14) MMDDYY
         LOGICAL       BLKORCMT
-        LOGICAL       ENVYN, GETYN
-        INTEGER       GETFLINE, GETEFILE
-        INTEGER       INDEX1, STR2INT
-        INTEGER       LBLANK
-        INTEGER       PROMPTFFILE
-        CHARACTER(16) PROMPTMFILE
-        INTEGER       SEC2TIME
-        INTEGER       SECSDIFF
-        REAL          STR2REAL, ENVREAL
+C       LOGICAL       ENVYN, GETYN
+        INTEGER       GETFLINE ! HT UNC-IE: remove GETEFILE as it is not used
+C       INTEGER       INDEX1, STR2INT
+C       INTEGER       LBLANK
+C       INTEGER       PROMPTFFILE
+C       CHARACTER(16) PROMPTMFILE
+C       INTEGER       SEC2TIME
+C       INTEGER       SECSDIFF
+C       REAL          STR2REAL, ENVREAL
         LOGICAL       CHKREAL
-        LOGICAL       SETENVVAR
+C       LOGICAL       SETENVVAR
 
-        EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK, STR2INT,
-     &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF, ENVREAL,
-     &           BLKORCMT, STR2REAL, CHKREAL, MMDDYY, SETENVVAR
+C        EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK, STR2INT,
+C     &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF, ENVREAL,
+C     &           BLKORCMT, STR2REAL, CHKREAL, MMDDYY, SETENVVAR
+        EXTERNAL     GETFLINE, BLKORCMT, CHKREAL
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
        CHARACTER(16) :: SEGMENT( 3 )

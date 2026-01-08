@@ -35,18 +35,22 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C.........  Includes
-        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
+C        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
+        INCLUDE 'IOSTRG3.EXT'     !
         
 C.........  Local parameters
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
   
 C.........  External functions
-        LOGICAL, EXTERNAL :: ENVYN
+C       LOGICAL, EXTERNAL :: ENVYN
 
 C.........  Logical names and unit numbers
         INTEGER         LDEV    !  unit number for log device
@@ -74,11 +78,11 @@ C.........  Get the BEIS3 model version to use
         
         SELECT CASE( BEISVER )
         CASE( '3.7' )
-            CALL NORMBEIS370( CVSW )
+            CALL NORMBEIS370(  )
         CASE( '3.61' )
-            CALL NORMBEIS360( CVSW )
+            CALL NORMBEIS360(  )
         CASE( '3.14' )
-            CALL NORMBEIS312( CVSW )
+            CALL NORMBEIS312(  )
         CASE DEFAULT
             MESG = 'ERROR: Unrecognized BEIS_VERSION setting; valid ' //
      &             'settings are 3.14, 3.61, and 3.7'

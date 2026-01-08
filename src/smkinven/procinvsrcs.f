@@ -33,10 +33,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: SRCIDA, CSOURCA, CSOURC, CIFIP,
      &                      CSCC, XLOCA, YLOCA, CELLID, IRCLAS,
      &                      IVTYPE, CLINK, CVTYPE
@@ -48,10 +51,10 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
-        INTEGER, EXTERNAL :: STR2INT
+C       INTEGER, EXTERNAL :: STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: NRAWSRCS ! no. raw srcs

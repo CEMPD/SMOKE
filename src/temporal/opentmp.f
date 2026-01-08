@@ -15,6 +15,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C      Created 1/99 by M. Houyoux
+C     09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C****************************************************************************/
 C
@@ -36,6 +37,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C........   MODULES for public variables
 C.........  This module contains the information about the source category
@@ -55,21 +57,26 @@ C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)       CRLF
-        INTEGER            INDEX1
-        INTEGER            IOAPI_GRD_SIZE
-        CHARACTER(IODLEN3) GETCFDSC
-        INTEGER            GETIFDSC
-        CHARACTER(IOULEN3) MULTUNIT
-        INTEGER            PROMPTFFILE
-        CHARACTER(16)      VERCHAR
-        LOGICAL            SETENVVAR
+c       CHARACTER(2)       CRLF
+c       INTEGER            INDEX1
+c       INTEGER            IOAPI_GRD_SIZE
+c       CHARACTER(IODLEN3) GETCFDSC
+c       INTEGER            GETIFDSC
+c       CHARACTER(IOULEN3) MULTUNIT
+c       INTEGER            PROMPTFFILE
+c       CHARACTER(16)      VERCHAR
+c       LOGICAL            SETENVVAR
 
-        EXTERNAL        CRLF, INDEX1, IOAPI_GRD_SIZE, GETCFDSC, 
-     &                  GETIFDSC, MULTUNIT, VERCHAR, SETENVVAR
+c       EXTERNAL        CRLF, INDEX1, IOAPI_GRD_SIZE, GETCFDSC, 
+c    &                  GETIFDSC, MULTUNIT, VERCHAR, SETENVVAR
+        INTEGER           , EXTERNAL :: IOAPI_GRD_SIZE
+        CHARACTER(IODLEN3), EXTERNAL :: GETCFDSC
+        INTEGER           , EXTERNAL :: GETIFDSC
+        CHARACTER(IOULEN3), EXTERNAL :: MULTUNIT
+        CHARACTER(16)     , EXTERNAL :: VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: II     ! episode time preriod index 
@@ -85,8 +92,8 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT (IN) :: PFLAG  ! true: episode time periods needed
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS revision tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS revision tag
 
 C...........   Other local variables
 

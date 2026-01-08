@@ -15,7 +15,8 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C        11/99 by Jeff Vukovich     
+C        11/99 by Jeff Vukovich
+C       09/2025 by HT UNC-IE: Use M3UTILIO
 C
 C****************************************************************************/
 C
@@ -37,22 +38,25 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***********************************************************************
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   Include files
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+c       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        INTEGER         GETFLINE
-        INTEGER         INDEX1
-        REAL            STR2REAL
-        LOGICAL         BLKORCMT
+c       CHARACTER(2)    CRLF
+c       INTEGER         GETFLINE
+c       INTEGER         INDEX1
+c       REAL            STR2REAL
+c       LOGICAL         BLKORCMT
 
-        EXTERNAL        CRLF, GETFLINE, INDEX1, STR2REAL, BLKORCMT
+c       EXTERNAL        CRLF, GETFLINE, INDEX1, STR2REAL, BLKORCMT
+        INTEGER, EXTERNAL :: GETFLINE
+        LOGICAL, EXTERNAL :: BLKORCMT
 
 C...........   Subroutine arguments (note- outputs MXSPFUL, MXSPEC, and SPCNAMES
 C              passed via module MODSPRO)
@@ -60,7 +64,7 @@ C              passed via module MODSPRO)
         INTEGER     , INTENT  (IN) :: FDEV            ! file unit number
         INTEGER     , INTENT  (IN) :: NIPOL           ! number of pollutants
         INTEGER     , INTENT  (IN) :: MSPCS           ! max number of species
-        CHARACTER(*), INTENT  (IN) :: EINAM( NIPOL )  ! pollutant names
+        CHARACTER(IOVLEN3), INTENT  (IN) :: EINAM( NIPOL )  ! pollutant names
         CHARACTER(*), INTENT  (IN) :: SPPRO           ! biogenic profile to find 
         CHARACTER(*), INTENT  (IN) :: EMSPC( MSPCS ) 
 
@@ -72,7 +76,7 @@ C              passed via module MODSPRO)
 
 C...........   Other arrays
 
-        CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
+        CHARACTER(32) SEGMENT( MXSEG )             ! Segments of parsed lines
                 
 C...........   Local variables
 
@@ -86,9 +90,9 @@ C...........   Local variables
 
         REAL           SPLTFAC, SDIV, SMFAC ! tmp speciation profile factors
         LOGICAL      :: FOUND_FLAG = .FALSE.   ! flag for requested profile
-        CHARACTER(SPNLEN3)   TMPPRF     ! tmp profile number
-        CHARACTER(16)  POLNAM     ! pollutant name
-        CHARACTER(16)  SPECNM     ! tmp species name
+        CHARACTER(SPNLEN3)  TMPPRF     ! tmp profile number
+        CHARACTER(IOVLEN3)  POLNAM     ! pollutant name
+        CHARACTER(IOVLEN3)  SPECNM     ! tmp species name
         CHARACTER(300) LINE       ! buffer for profile data
         CHARACTER(256) MESG       ! message buffer
         

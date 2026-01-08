@@ -1,6 +1,10 @@
 C @(#)$Header$ 
 
+C.......... UNC-IE 12/10/2025: Moved SMOKE release tag from individual subroutines to this EXT file 
+        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKE_Dev_v5.2.2_Jan2026$' ! CVS release tag
+
 C.........  Width of other global character strings 
         INTEGER, PARAMETER :: IOVLEN3 = 16  ! length of I/O API variables
         INTEGER, PARAMETER :: IODLEN3 = 80  ! length of I/O API var descrption
         INTEGER, PARAMETER :: IOULEN3 = 16  ! length of I/O API units
+        INTEGER, PARAMETER :: IOFLEN3 = 16  ! length of I/O API logical file names; equivelent to NAMLEN3 in I/O API PARMS3.EXT

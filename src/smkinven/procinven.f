@@ -36,10 +36,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: INRECA, POLVLA, INDEXA, IPOSCODA, ICASCODA, 
      &                      CSOURC, NPCNT, POLVAL, IPOSCOD         
 
@@ -54,14 +57,14 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
-        CHARACTER(2)    CRLF
-        INTEGER         ENVINT
-        LOGICAL         ENVYN
+C       CHARACTER(2)    CRLF
+C       INTEGER         ENVINT
+C       LOGICAL         ENVYN
 
-        EXTERNAL        CRLF, ENVINT, ENVYN
+C       EXTERNAL        CRLF, ENVINT, ENVYN
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: NRAWBP   ! no. raw recs x pol/act

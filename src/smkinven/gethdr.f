@@ -16,7 +16,8 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C      created by M. Houyoux (2/2000) 
+C      created by M. Houyoux (2/2000)
+C      09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C****************************************************************************/
 C
@@ -38,6 +39,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C.........  This module contains the lists of unique inventory information
@@ -57,14 +59,17 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)           CRLF
-        INTEGER                GETNLIST
-        INTEGER                INDEX1
-        INTEGER                STR2INT
-        REAL                   UNITFAC 
-        LOGICAL                USEEXPGEO
+c       CHARACTER(2)           CRLF
+c       INTEGER                GETNLIST
+c       INTEGER                INDEX1
+c       INTEGER                STR2INT
+c       REAL                   UNITFAC 
+c       LOGICAL                USEEXPGEO
 
-        EXTERNAL    CRLF, GETNLIST, INDEX1, STR2INT, UNITFAC, USEEXPGEO
+c       EXTERNAL    CRLF, GETNLIST, INDEX1, STR2INT, UNITFAC, USEEXPGEO
+        INTEGER, EXTERNAL :: GETNLIST
+        REAL,    EXTERNAL :: UNITFAC
+        LOGICAL, EXTERNAL :: USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
 C...........   NOTE that NDROP and EDROP are not used at present

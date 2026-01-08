@@ -39,9 +39,12 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   This module is for cross reference tables
+        USE M3UTILIO
+
         USE MODXREF, ONLY: ICTL01, ICTL02, ICTL03, ICTL04, ICTL05,
      &          ICTL06, ICTL07, ICTL08, ICTL09, ICTL10,
      &          ICTL11, ICTL12, ICTL13, ICTL14, ICTL15, ICTL16,
@@ -54,7 +57,7 @@ C...........   This module is for cross reference tables
         IMPLICIT NONE
 
 C...........   INCLUDES
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT(IN) :: NIPPA        ! number of pollutants + activities

@@ -14,6 +14,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 7/2000 by M Houyoux
+C       09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C  
@@ -35,6 +36,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C  
 C***********************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C.........  This module contains Smkreport-specific settings
@@ -70,10 +72,10 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
-        CHARACTER(2)  CRLF
-        INTEGER       INDEX1
+c       CHARACTER(2)  CRLF
+c       INTEGER       INDEX1
 
-        EXTERNAL   CRLF, INDEX1
+c       EXTERNAL   CRLF, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: SLNAME     ! mole-based spec matrix name

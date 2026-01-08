@@ -25,10 +25,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the speciation profile tables
+        USE M3UTILIO
+
         USE MODSPRO, ONLY: CMBNP, CMBSPCD, CMBWGHT, CMBMAX
 
 C.........  This module contains the lists of unique source characteristics
@@ -38,20 +41,21 @@ C.........  This module contains the lists of unique source characteristics
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
+C        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2) CRLF
-        INTEGER     ENVINT 
-        LOGICAL     ENVYN
-        INTEGER     FINDC 
+C       CHARACTER(2) CRLF
+C       INTEGER     ENVINT 
+C       LOGICAL     ENVYN
+C       INTEGER     FINDC 
         INTEGER     GETFLINE
-        INTEGER     STR2INT
+C       INTEGER     STR2INT
         LOGICAL     BLKORCMT
-        REAL        STR2REAL  
+C       REAL        STR2REAL  
 
-        EXTERNAL    CRLF, ENVINT, ENVYN, FINDC, GETFLINE, STR2INT,
-     &              STR2REAL, BLKORCMT
+C        EXTERNAL    CRLF, ENVINT, ENVYN, FINDC, GETFLINE, STR2INT,
+C     &              STR2REAL, BLKORCMT
+        EXTERNAL     GETFLINE, BLKORCMT
  
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT    (IN) :: CDEV    ! unit number of input file

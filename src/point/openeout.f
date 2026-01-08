@@ -34,10 +34,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C  
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
+        USE M3UTILIO
+
         USE MODINFO, ONLY: CRL, CATDESC
         USE MODELEV, ONLY: FFLAG
         IMPLICIT NONE
@@ -45,22 +48,23 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2)    CRLF
+C       CHARACTER(2)    CRLF
         LOGICAL         DSCM3GRD
         CHARACTER(50)   GETCFDSC
-        INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
+C       INTEGER         PROMPTFFILE
+C       CHARACTER(16)   PROMPTMFILE
         CHARACTER(16)   VERCHAR
 
-        EXTERNAL        CRLF, DSCM3GRD, GETCFDSC, PROMPTFFILE, 
-     &                  PROMPTMFILE, VERCHAR
+C        EXTERNAL        CRLF, DSCM3GRD, GETCFDSC, PROMPTFFILE, 
+C     &                  PROMPTMFILE, VERCHAR
+        EXTERNAL     DSCM3GRD, GETCFDSC, VERCHAR
 
 C..........    Subroutine arguments and their descriptions
         INTEGER     , INTENT (IN) :: NGROUP  ! number of ping groups
@@ -73,8 +77,8 @@ C..........    Subroutine arguments and their descriptions
         CHARACTER(*), INTENT (OUT):: MNAME   ! logical name of ping srcs groups
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   Other local variables
         INTEGER         J      ! indices and counters

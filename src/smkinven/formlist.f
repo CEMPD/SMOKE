@@ -12,7 +12,8 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C      Created 5/2012 by B. Baek 
+C      Created 5/2012 by B. Baek
+C      09/2025 by HT UNC-IE: Use M3UTILIO; Removed MESG format 93000 which is not used anywhere
 C
 C**************************************************************************
 C
@@ -34,6 +35,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C**************************************************************************
+        USE M3UTILIO
 
 C...........   Modules for public variables
 C...........   This module contains the lists of unique source characteristics
@@ -46,9 +48,9 @@ C.........  This module contains the information about the source category
         IMPLICIT NONE
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER(2)  CRLF
-        INTEGER       INDEX1
-        EXTERNAL      CRLF, INDEX1
+C       CHARACTER(2)  CRLF
+C       INTEGER       INDEX1
+C       EXTERNAL      CRLF, INDEX1
 
 C.........   Subroutine arguments
         
@@ -212,8 +214,6 @@ C.............  Find formula inputs in existing variable list
         END IF
 
 C******************  FORMAT  STATEMENTS   ******************************
-
-93000   FORMAT( A )
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 

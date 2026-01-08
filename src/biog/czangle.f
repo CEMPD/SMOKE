@@ -34,15 +34,18 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
+
+        USE M3UTILIO
 
       IMPLICIT NONE
 
 C...........   INCLUDES:
 
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'CONST3.EXT'      ! I/O API constants
         INCLUDE 'EMCNST3.EXT'     !
         INCLUDE 'BIODIMS3.EXT'    ! biogenic-related constants

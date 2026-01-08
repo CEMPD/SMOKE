@@ -12,6 +12,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C       Copied from spcpmat.F 1/99 by M. Houyoux
+C     09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C
@@ -33,6 +34,7 @@ C Pathname: $Source$
 C Last updated: $Date$
 C
 C************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains the speciation profiles
@@ -63,25 +65,26 @@ C.........  This module is required by the FileSetAPI
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2)    CRLF
-        LOGICAL         ENVYN
-        INTEGER         GETFLINE
-        INTEGER         INDEX1
-        INTEGER         PROMPTFFILE
+c       CHARACTER(2)    CRLF
+c       LOGICAL         ENVYN
+c       INTEGER         GETFLINE
+c       INTEGER         INDEX1
+c       INTEGER         PROMPTFFILE
 
-        EXTERNAL        CRLF, ENVYN, GETFLINE, INDEX1, PROMPTFFILE
+c       EXTERNAL        CRLF, ENVYN, GETFLINE, INDEX1, PROMPTFFILE
+        INTEGER, EXTERNAL :: GETFLINE
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
         CHARACTER(1 ), PARAMETER :: QUOTE = "'"
 
-        CHARACTER(50), PARAMETER ::
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS revision tag
+C       CHARACTER(50), PARAMETER ::
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS revision tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 

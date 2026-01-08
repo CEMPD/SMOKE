@@ -32,10 +32,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the global variables for the 3-d grid
+        USE M3UTILIO
+
         USE MODGRID, ONLY: NCOLS, NROWS, XORIG, YORIG, XOFF, YOFF,
      &                     GDTYP, XCELL, YCELL, XCENT, YCENT,
      &                     P_ALP, P_BET, P_GAM, OFFLAG, GRDNM,
@@ -45,14 +48,15 @@ C.........  This module contains the global variables for the 3-d grid
 
 C.........  INCLUDES:
         INCLUDE 'IOCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2) CRLF
+C       CHARACTER(2) CRLF
         INTEGER      GETIFDSC  
 
-        EXTERNAL     CRLF, GETIFDSC
+C        EXTERNAL     CRLF, GETIFDSC
+        EXTERNAL     GETIFDSC
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(IN   ) :: DATDESC  ! data descriptions

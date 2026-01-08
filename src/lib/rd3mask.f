@@ -36,19 +36,22 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'IOSTRG3.EXT'   !  I/O API string lengths
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        INTEGER         INDEX1
+C       CHARACTER(2)    CRLF
+C       INTEGER         INDEX1
 
-        EXTERNAL        CRLF, INDEX1
+C        EXTERNAL        CRLF, INDEX1
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FNAME     ! i/o api file name

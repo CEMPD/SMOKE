@@ -33,29 +33,33 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2)   CRLF
+C       CHARACTER(2)   CRLF
         LOGICAL        DSCM3GRD
-        INTEGER        INDEX1
-        INTEGER        STR2INT
-        REAL           STR2REAL
-        REAL*8         STR2DBLE
+C       INTEGER        INDEX1
+C       INTEGER        STR2INT
+C       REAL           STR2REAL
+C       REAL*8         STR2DBLE
         LOGICAL        CHKINT
         LOGICAL        CHKREAL
 
-        EXTERNAL       CRLF, DSCM3GRD, INDEX1, STR2INT, STR2REAL, 
-     &                 CHKINT, CHKREAL, STR2DBLE
+C        EXTERNAL       CRLF, DSCM3GRD, INDEX1, STR2INT, STR2REAL, 
+C     &                 CHKINT, CHKREAL, STR2DBLE
+        EXTERNAL     DSCM3GRD, CHKINT, CHKREAL
 
 C...........   Subroutine arguments
         LOGICAL      , INTENT  (IN) :: VFLAG      ! true: using variable grid

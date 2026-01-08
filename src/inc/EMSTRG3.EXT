@@ -5,6 +5,10 @@ C            are source characteristics. They are all declared as private
 C            so that, for instance, several modules used in the same program
 C            can all include this file without duplicate declaration errors
 C            during compilation.
+C            Modified 08/2025: use width of other global character strings defined in IOSTRG3.EXT
+C                              instead of from this EXT file
+C
+        INCLUDE 'IOSTRG3.EXT'
 
 C.........  Maximum number of source characteristics for each source category
         INTEGER, PARAMETER :: MXARCHR3 =  3   ! area
@@ -47,13 +51,17 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: EXTLEN3 =500 ! additional extended orl var
 
 C.........  Width of other global character strings 
-        INTEGER, PARAMETER :: IOVLEN3 = 16  ! length of I/O API variables
-        INTEGER, PARAMETER :: IODLEN3 = 80  ! length of I/O API var descrption
-        INTEGER, PARAMETER :: IOULEN3 = 16  ! length of I/O API units
+c       INTEGER, PARAMETER :: IOVLEN3 = 16  ! length of I/O API variables
+c       INTEGER, PARAMETER :: IODLEN3 = 80  ! length of I/O API var descrption
+c       INTEGER, PARAMETER :: IOULEN3 = 16  ! length of I/O API units
         INTEGER, PARAMETER :: SDSLEN3 = 200 ! SCC description field
         INTEGER, PARAMETER :: SPNLEN3 = 10  ! Speciation profile code
         INTEGER, PARAMETER :: PLSLEN3 = IOVLEN3 * 2 + 1  ! Speciation vdesc3d
         INTEGER, PARAMETER :: SPDLEN3 = 7   ! Speed code length
+
+        INTEGER, PARAMETER :: MSGLEN3 = 500 ! length of message buffer; unused for now
+        INTEGER, PARAMETER :: CTNLEN3 =  20 ! length of county name buffer; unused for now
+        INTEGER, PARAMETER :: NM1LEN3 =  80 ! length of NAME1: physical name part for i/o api; tmp file name component; unused for now
 
 C.........  Position within SCC of mobile roadway type and vehicle type ID
         INTEGER, PARAMETER :: SRS = 8 

@@ -14,6 +14,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C      Created 4/99 by M. Houyoux
+C      09/2025 by HT UNC-IE:  Use M3UTILIO; remove unused FMT statement
 C
 C****************************************************************************/
 C
@@ -35,6 +36,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
@@ -214,11 +216,5 @@ C.........  Deallocate memory used in this program only
         FIRST = .FALSE.
 
         RETURN
-
-C******************  FORMAT  STATEMENTS   ******************************
-
-C...........   Internal buffering formats............ 94xxx
-
-94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
         END SUBROUTINE INITINFO

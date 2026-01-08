@@ -41,10 +41,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C...........  This module contains the information about the source category
+        USE M3UTILIO
+
         USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, INVPIDX, EANAM,
      &                     EINAM, NIPOL, NIPPA, NPPOL, NPACT, ACTVTY
 
@@ -53,23 +56,24 @@ C...........  This module contains the information about the source category
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   ! emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)       CRLF
-        LOGICAL            ENVYN
+C       CHARACTER(2)       CRLF
+C       LOGICAL            ENVYN
         CHARACTER(IOVLEN3) GETCFDSC
         INTEGER            GETIFDSC
-        INTEGER            INDEX1
-        INTEGER            PROMPTFFILE
-        CHARACTER(NAMLEN3) PROMPTMFILE
+C       INTEGER            INDEX1
+C       INTEGER            PROMPTFFILE
+C       CHARACTER(NAMLEN3) PROMPTMFILE
         LOGICAL            USEEXPGEO
 
-        EXTERNAL        CRLF, ENVYN, GETIFDSC, GETCFDSC, INDEX1, 
-     &                  PROMPTFFILE, PROMPTMFILE, USEEXPGEO
+C        EXTERNAL        CRLF, ENVYN, GETIFDSC, GETCFDSC, INDEX1, 
+C     &                  PROMPTFFILE, PROMPTMFILE, USEEXPGEO
+        EXTERNAL     GETIFDSC, GETCFDSC, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
 

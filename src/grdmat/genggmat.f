@@ -29,10 +29,13 @@ C Chapel Hill, NC 27599-6116
 C 
 C smoke@unc.edu
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: XLOCA, YLOCA, CIFIP, CELLID, CSOURC
 
 C.........  This module contains the global variables for the 3-d grid
@@ -46,17 +49,18 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
 
 C...........   EXTERNAL FUNCTIONS 
-        CHARACTER(2)    CRLF
-        INTEGER         FIND1
-        INTEGER         FINDC
+C       CHARACTER(2)    CRLF
+C       INTEGER         FIND1
+C       INTEGER         FINDC
         LOGICAL         DSCM3GRD
 
-        EXTERNAL        CRLF, FIND1, FINDC, DSCM3GRD
+C        EXTERNAL        CRLF, FIND1, FINDC, DSCM3GRD
+        EXTERNAL     DSCM3GRD
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAME         ! gridding mtx logical name

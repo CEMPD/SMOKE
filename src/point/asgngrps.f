@@ -39,10 +39,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C  
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CSOURC, CIFIP, STKHT, STKDM, STKTK, STKVE,
      &                      XLOCA, YLOCA
 
@@ -59,7 +62,7 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   ! emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    ! I/O API constants
+C        INCLUDE 'PARMS3.EXT'    ! I/O API constants
         INCLUDE 'CONST3.EXT'    ! physical and mathematical constants
 
 C...........   ARGUMENTS and their descriptions:
@@ -71,11 +74,12 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER     , INTENT(OUT) :: NINVGRP ! no. of groups
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2) CRLF
+C       CHARACTER(2) CRLF
         LOGICAL      EVALCRIT
-        INTEGER      ENVINT
+C       INTEGER      ENVINT
 
-        EXTERNAL    CRLF, EVALCRIT, ENVINT
+C        EXTERNAL    CRLF, EVALCRIT, ENVINT
+        EXTERNAL     EVALCRIT
 
 C...........   LOCAL PARAMETERS and their descriptions:
         INTEGER, PARAMETER :: MXLOCGRP = 1000  ! Max number groups per facility

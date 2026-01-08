@@ -34,10 +34,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: XLOCA, YLOCA, CIFIP, CELLID, CLINK,
      &                      XLOC1, YLOC1, XLOC2, YLOC2
 
@@ -59,21 +62,22 @@ C...........   This module contains the gridding surrogates tables
 C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        INTEGER         ENVINT
-        INTEGER         FIND1
-        INTEGER         FINDC
+C       CHARACTER(2)    CRLF
+C       INTEGER         ENVINT
+C       INTEGER         FIND1
+C       INTEGER         FINDC
         LOGICAL         BLKORCMT
-        LOGICAL         SETENVVAR
-        INTEGER         STR2INT
+C       LOGICAL         SETENVVAR
+C       INTEGER         STR2INT
         INTEGER         GETFLINE
-        INTEGER         GETEFILE
+C       INTEGER         GETEFILE
 
-        EXTERNAL        CRLF, FIND1, FINDC, BLKORCMT, SETENVVAR,
-     &                  STR2INT, GETFLINE, ENVINT, GETEFILE
+C        EXTERNAL        CRLF, FIND1, FINDC, BLKORCMT, SETENVVAR,
+C     &                  STR2INT, GETFLINE, ENVINT, GETEFILE
+        EXTERNAL     BLKORCMT, GETFLINE
 
 
 C...........   SUBROUTINE ARGUMENTS

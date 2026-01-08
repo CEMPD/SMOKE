@@ -35,10 +35,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
+        USE M3UTILIO
+
         USE MODMERGE, ONLY: AFLAG, BFLAG, MFLAG, PFLAG, XFLAG, SFLAG,
      &                      ANMSPC, BNMSPC, MNMSPC, PNMSPC,
      &                      AEMNAM, BEMNAM, MEMNAM, PEMNAM,  
@@ -57,17 +60,17 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)    CRLF
-        INTEGER         INDEX1
+C       CHARACTER(2)    CRLF
+C       INTEGER         INDEX1
 
-        EXTERNAL        CRLF , INDEX1
+C        EXTERNAL        CRLF , INDEX1
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: VNAME   ! variable name to output

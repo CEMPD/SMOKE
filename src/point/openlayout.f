@@ -37,10 +37,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
  
 C...........  MODULES for public variables
 C.........  This module contains arrays for plume-in-grid and major sources
+        USE M3UTILIO
+
         USE MODELEV, ONLY: NHRSRC
 
 C.........  This module contains the global variables for the 3-d grid
@@ -52,21 +55,23 @@ C...........  This module contains the information about the source category
         IMPLICIT NONE
  
 C...........   INCLUDES:
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'IOSTRG3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'CONST3.EXT'    ! physical and mathematical constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(16)   VERCHAR
-        INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
+C       INTEGER         PROMPTFFILE
+C       CHARACTER(16)   PROMPTMFILE
 
-        EXTERNAL        VERCHAR, PROMPTFFILE, PROMPTMFILE
+C        EXTERNAL        VERCHAR, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL     VERCHAR
 
 C...........  LOCAL PARAMETERS and their descriptions:
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: SDATE    ! Julian start date

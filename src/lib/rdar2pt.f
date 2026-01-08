@@ -41,11 +41,14 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 
 C.........  This module is for cross reference tables
+        USE M3UTILIO
+
         USE MODXREF, ONLY: INDXTA, CFIPTA, CSCCTA, CSRCTA, IARPTA
 
 C.........  This module contains the lists of unique inventory information
@@ -59,13 +62,14 @@ C.........  This module contains the arrays for the area-to-point x-form
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)   CRLF
-        LOGICAL        ENVYN
+C       CHARACTER(2)   CRLF
+C       LOGICAL        ENVYN
         LOGICAL        USEEXPGEO
-        EXTERNAL       CRLF, ENVYN, USEEXPGEO
+C        EXTERNAL       CRLF, ENVYN, USEEXPGEO
+        EXTERNAL     USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: FDEV   ! area-to-point factors unit no.
@@ -434,14 +438,15 @@ C...............   EXTERNAL FUNCTIONS and their descriptions:
             LOGICAL         CHKINT
             LOGICAL         CHKREAL
             LOGICAL         BLKORCMT
-            CHARACTER(2)    CRLF
+C           CHARACTER(2)    CRLF
             INTEGER         GETFLINE
             INTEGER         GETNLIST
-            INTEGER         STR2INT
-            REAL            STR2REAL
+C           INTEGER         STR2INT
+C           REAL            STR2REAL
 
-            EXTERNAL CHKINT, CHKREAL, CRLF, GETFLINE, GETNLIST,
-     &               STR2INT, STR2REAL, BLKORCMT
+C            EXTERNAL CHKINT, CHKREAL, CRLF, GETFLINE, GETNLIST,
+C     &               STR2INT, STR2REAL, BLKORCMT
+        EXTERNAL     CHKINT, CHKREAL, GETFLINE, GETNLIST, BLKORCMT
 
 C.............  Subprogram arguments
             CHARACTER(*), INTENT (IN) :: STATUS  ! call status: COUNT|STORE

@@ -22,45 +22,49 @@ C COPYRIGHT (C) 2008, Institute for the Environment, UNC-CH
 C All Rights Reserved
 C
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C*************************************************************************
 
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
         
 
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF
-        LOGICAL         DSCGRID
-        INTEGER         ENVINT
-        REAL            ENVREAL
-        INTEGER         FIND1
-        INTEGER         FINDC
+C       CHARACTER*2     CRLF
+C       LOGICAL         DSCGRID
+C       INTEGER         ENVINT
+C       REAL            ENVREAL
+C       INTEGER         FIND1
+C       INTEGER         FINDC
         INTEGER         GETFLINE
-        INTEGER         INDEX1
-        INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
-        INTEGER         STR2INT
-        REAL            STR2REAL
+C       INTEGER         INDEX1
+C       INTEGER         PROMPTFFILE
+C       CHARACTER*16    PROMPTMFILE
+C       INTEGER         STR2INT
+C       REAL            STR2REAL
         INTEGER         TRIMLEN
 
-        EXTERNAL        CRLF, DSCGRID, ENVINT, FIND1, FINDC, 
-     &                  GETFLINE, INDEX1, 
-     &                  PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL,
-     &                  TRIMLEN, WKDAY
+C        EXTERNAL        CRLF, DSCGRID, ENVINT, FIND1, FINDC, 
+C     &                  GETFLINE, INDEX1, 
+C     &                  PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL,
+C     &                  TRIMLEN, WKDAY
+        EXTERNAL     GETFLINE, TRIMLEN
 C
 C...........   PARAMETERS:
 
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER*50, PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
         REAL,         PARAMETER :: CONVPA = 1.0E-2  ! conversion factor for Pa to mb
 
 C...........   LOCAL VARIABLES and their descriptions:

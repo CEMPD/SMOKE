@@ -34,10 +34,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CSOURC, TZONES, TPFLAG, INVYR,
      &                      XLOCA, YLOCA, XLOC1, YLOC1, XLOC2, YLOC2,
      &                      CELLID, IRCLAS, IVTYPE,
@@ -58,12 +61,12 @@ C.........  This module contains the lists of unique inventory information
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C.........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER     LBLANK
-        EXTERNAL    LBLANK
+C       INTEGER     LBLANK
+C        EXTERNAL    LBLANK
 
 C.........  SUBROUTINE ARGUMENTS and their descriptions:
         CHARACTER(*), INTENT (IN) :: ENAME   ! I/O API file name

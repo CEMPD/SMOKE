@@ -37,16 +37,18 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
+        USE M3UTILIO
 
         IMPLICIT NONE
 
-        CHARACTER(2), EXTERNAL :: CRLF
+C       CHARACTER(2), EXTERNAL :: CRLF
 
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C...........   EXTERNAL FUNCTIONS:
 
@@ -74,6 +76,7 @@ C.........  Loop through lines of file
         DO
 
             READ( FDEV, 93000, IOSTAT=IOS ) LINE
+            CALL strip_garbage(LINE)   ! H.T. UNC-IE: strip garbage character that may ruin format identifier
             IREC = IREC + 1
 
 C.............  Check for I/O errors
@@ -114,7 +117,15 @@ C.................  Check if format is provided as a header entry
 
                 L = INDEX( LINE, 'FF10' )
                 IF( L .GT. 0 ) THEN
-                    GETFORMT = FF10FMT
+                    L2 = INDEX( LINE, 'DAILY' )
+                    L3 = INDEX( LINE, 'HOURLY' )
+                    IF( L2 .GT. 0 .AND. L3 .LE. 0 ) THEN
+                        GETFORMT = FF10DYFMT
+                    ELSE IF( L2 .LE. 0 .AND. L3 .GT. 0 ) THEN
+                        GETFORMT = FF10HRFMT
+                    ELSE
+                        GETFORMT = FF10FMT
+                    END IF
                     EXIT ! To end read loop
                 END IF
 
@@ -196,6 +207,33 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+        CONTAINS
+
+        subroutine strip_garbage(line)
+
+            implicit none
+            character(len=*), intent(inout) :: line
+            character(len=len(line)) :: tmp
+            integer :: i, j, n, c
+
+            n = len_trim(line)
+            j = 0
+            tmp = ''
+
+            do i = 1, n
+                c = iachar(line(i:i))
+
+                ! Keep space (32), tab (9), and printable ASCII (33–126)
+                if (c == 9 .or. (c >= 32 .and. c <= 126)) then
+                    j = j + 1
+                    tmp(j:j) = line(i:i)
+                end if
+            end do
+
+            line = ''
+            if (j > 0) line(1:j) = tmp(1:j)
+        end subroutine strip_garbage
 
         END FUNCTION GETFORMT
 

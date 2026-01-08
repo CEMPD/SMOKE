@@ -15,6 +15,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C       Created 2/99 by M. Houyoux
+C       09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C
@@ -36,6 +37,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C****************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
@@ -76,22 +78,25 @@ C.........  INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)    CRLF
-        LOGICAL         DSCM3GRD
-        CHARACTER(50)   GETCFDSC  
-        INTEGER         GETIFDSC  
-        INTEGER         INDEX1
-        INTEGER         PROMPTFFILE  
-        CHARACTER(16)   PROMPTMFILE  
-        INTEGER         SECSDIFF  
-        LOGICAL         SETENVVAR
+c       CHARACTER(2)    CRLF
+c       LOGICAL         DSCM3GRD
+c       CHARACTER(50)   GETCFDSC  
+c       INTEGER         GETIFDSC  
+c       INTEGER         INDEX1
+c       INTEGER         PROMPTFFILE  
+c       CHARACTER(16)   PROMPTMFILE  
+c       INTEGER         SECSDIFF  
+c       LOGICAL         SETENVVAR
 
-        EXTERNAL  CRLF, INDEX1, GETCFDSC, GETIFDSC, PROMPTFFILE, 
-     &            PROMPTMFILE, SECSDIFF, SETENVVAR
+c       EXTERNAL  CRLF, INDEX1, GETCFDSC, GETIFDSC, PROMPTFFILE, 
+c    &            PROMPTMFILE, SECSDIFF, SETENVVAR
+        LOGICAL      , EXTERNAL :: DSCM3GRD
+        CHARACTER(50), EXTERNAL :: GETCFDSC
+        INTEGER      , EXTERNAL :: GETIFDSC
 
 C.........   LOCAL VARIABLES and their descriptions:
 

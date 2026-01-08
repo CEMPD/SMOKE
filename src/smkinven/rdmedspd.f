@@ -17,6 +17,7 @@ C
 C  REVISION  HISTORY:
 C      Created by B.H. Baek on 12/2013
 C
+C      01/2026 by tranhuy:  Use M3UTILIO
 C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -40,6 +41,9 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
+C.........  MODULES for public variables
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CIFIP, CSOURC, NMEDGAI, COABDST
 
 C.........  This module contains the lists of unique inventory information
@@ -61,29 +65,31 @@ C.........  This module contains the arrays for state and county summaries
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER(2) CRLF
-        INTEGER      ENVINT
-        LOGICAL      ENVYN, CHKINT
-        INTEGER      FIND1
-        INTEGER      FINDC
-        INTEGER      INDEX1
-        INTEGER      JULIAN
-        INTEGER      SECSDIFF
-        INTEGER      STR2INT
-        REAL         STR2REAL
-        REAL         YR2DAY
-        INTEGER      YEAR4
-        INTEGER      GETTZONE
-        LOGICAL      ISDSTIME
+C        CHARACTER(2) CRLF
+C        INTEGER      ENVINT
+C        LOGICAL      ENVYN, CHKINT
+C        INTEGER      FIND1
+C        INTEGER      FINDC
+C        INTEGER      INDEX1
+C        INTEGER      JULIAN
+C        INTEGER      SECSDIFF
+C        INTEGER      STR2INT
+C        REAL         STR2REAL
+C        REAL         YR2DAY
+C        INTEGER      YEAR4
+C        INTEGER      GETTZONE
+C        LOGICAL      ISDSTIME
 
-        EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1, JULIAN, 
-     &               SECSDIFF, STR2INT, STR2REAL, YEAR4, YR2DAY, CHKINT,
-     &               GETTZONE, ISDSTIME
+C        EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1, JULIAN, 
+C     &               SECSDIFF, STR2INT, STR2REAL, YEAR4, YR2DAY, CHKINT,
+C     &               GETTZONE, ISDSTIME
+        INTEGER, EXTERNAL :: GETTZONE
+
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN)  :: FDEV           ! file unit no.

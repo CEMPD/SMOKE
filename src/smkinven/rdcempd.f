@@ -38,10 +38,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CSOURC
 
 C.........  This module contains the lists of unique inventory information
@@ -62,23 +65,24 @@ C.........  This module contains data for day- and hour-specific data
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C.........  EXTERNAL FUNCTIONS
         LOGICAL      BLKORCMT
-        CHARACTER(2) CRLF
-        REAL         ENVREAL
-        LOGICAL      ENVYN
-        INTEGER      FINDC
+C       CHARACTER(2) CRLF
+C       REAL         ENVREAL
+C       LOGICAL      ENVYN
+C       INTEGER      FINDC
         INTEGER      GETTZONE
-        INTEGER      INDEX1
-        INTEGER      JULIAN
-        INTEGER      SECSDIFF
-        INTEGER      YEAR4
-        INTEGER      STR2INT
+C       INTEGER      INDEX1
+C       INTEGER      JULIAN
+C       INTEGER      SECSDIFF
+C       INTEGER      YEAR4
+C       INTEGER      STR2INT
 
-        EXTERNAL     BLKORCMT, CRLF, ENVREAL, ENVYN, FINDC, GETTZONE, 
-     &               INDEX1, JULIAN, SECSDIFF, YEAR4, STR2INT
+C        EXTERNAL     BLKORCMT, CRLF, ENVREAL, ENVYN, FINDC, GETTZONE, 
+C     &               INDEX1, JULIAN, SECSDIFF, YEAR4, STR2INT
+        EXTERNAL     BLKORCMT, GETTZONE
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV           ! file unit no.

@@ -16,6 +16,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:  M3EXIT
 C
 C  REVISION  HISTORY:
 C       Created 3/99 by M Houyoux
+C       09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C
@@ -37,6 +38,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C****************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 
@@ -56,16 +58,17 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER(2)    CRLF
-        LOGICAL         ENVYN
-        INTEGER         GETIFDSC
-        LOGICAL         SETENVVAR
+c       CHARACTER(2)    CRLF
+c       LOGICAL         ENVYN
+c       INTEGER         GETIFDSC
+c       LOGICAL         SETENVVAR
 
-        EXTERNAL        CRLF, ENVYN, GETIFDSC, SETENVVAR
+c       EXTERNAL        CRLF, ENVYN, GETIFDSC, SETENVVAR
+        INTEGER, EXTERNAL :: GETIFDSC
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME   ! inventory file logical file name
@@ -78,7 +81,7 @@ C...........   LOCAL VARIABLES their descriptions:
         LOGICAL    :: EFLAG = .FALSE.  ! true: error found
         LOGICAL       LAVEDAY     ! true: use average day emissions
 
-        CHARACTER(16)  TMPNAME      ! tmp logical file name for map data files
+        CHARACTER(IOFLEN3)  TMPNAME ! tmp logical file name for map data files
         CHARACTER(256) MESG         ! Message buffer
 
         CHARACTER(16) :: PROGNAME = 'GETSINFO'    ! Program name

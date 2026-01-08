@@ -1,5 +1,5 @@
 
-        SUBROUTINE NORMBEIS360( CVSW )
+        SUBROUTINE NORMBEIS360(  )
 
 C***********************************************************************
 C
@@ -32,10 +32,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains biogenic variables
+        USE M3UTILIO
+
         USE MODBEIS3, ONLY: NVEG, VEGID, AVGEMIS, AVGLAI, NOEMIS, 
      &                      EMFAC, LAI, SLW, WFAC, LFBIO
 
@@ -44,22 +47,24 @@ C.........  This module contains biogenic variables
         IMPLICIT NONE
 
 C.........  INCLUDES
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'B3V14DIMS3.EXT'     ! BEIS3-related declarations
+        INCLUDE 'IOSTRG3.EXT'     !
   
 C.........  EXTERNAL FUNCTIONS and their descriptions
         INTEGER         GETFLINE
-        INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
+C       INTEGER         PROMPTFFILE
+C       CHARACTER(16)   PROMPTMFILE
         CHARACTER(16)   VERCHAR
-        LOGICAL         ENVYN
+C       LOGICAL         ENVYN
 
-        EXTERNAL        GETFLINE, PROMPTFFILE, PROMPTMFILE, VERCHAR, ENVYN
+C        EXTERNAL        GETFLINE, PROMPTFFILE, PROMPTMFILE, VERCHAR, ENVYN
+        EXTERNAL     GETFLINE, VERCHAR
 
 C.........  ARGUMENTS and their descriptions
-        CHARACTER(50), INTENT(IN) :: CVSW    ! CVS release tag
+C       CHARACTER(50), INTENT(IN) :: CVSW    ! CVS release tag
 
 C.........  LOCAL VARIABLES and their descriptions
         INTEGER         B, C, R, I, J, K, L, M, N ! loop counters and subscripts

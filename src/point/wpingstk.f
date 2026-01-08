@@ -33,10 +33,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C  
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
         
 C...........   MODULES for public variables
 C.........  This module contains arrays for plume-in-grid and major sources
+        USE M3UTILIO
+
         USE MODELEV, ONLY: NGROUP, GRPIDX, GRPGIDA, GRPCNT, GRPCOL,
      &                     GRPROW, GRPDM, GRPFL, GRPHT, GRPLAT, GRPLON,
      &                     GRPTK, GRPVE, GRPXL, GRPYL, GRPFIP,GRPLMAJOR,
@@ -46,16 +49,16 @@ C.........  This module contains arrays for plume-in-grid and major sources
 
 C...........   INCLUDES:
         
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2)    CRLF
-        INTEGER         STR2INT
+C       CHARACTER(2)    CRLF
+C       INTEGER         STR2INT
 
-        EXTERNAL        CRLF, STR2INT
+C        EXTERNAL        CRLF, STR2INT
 
 C..........    Subroutine arguments and their descriptions
         CHARACTER(*), INTENT (IN) :: FNAME   ! i/o api inventory file
@@ -64,8 +67,8 @@ C..........    Subroutine arguments and their descriptions
         LOGICAL     , INTENT (IN) :: LFLAG   ! true: write lat/lon
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   Local variables allocatable arrays
 C...........   These are for sorting groups and outputting in sorted order

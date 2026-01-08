@@ -15,6 +15,7 @@
 !
 !  REVISION HISTORY:
 !     Created 6/02 by C. Seppanen
+!     09/2025 by HT UNC-IE: Use M3UTILIO
 !
 !***************************************************************************
 !
@@ -35,19 +36,20 @@
 ! Last updated: $Date$ 
 !
 !*************************************************************************
-       
+       USE M3UTILIO
+
 !........  Modules for public variables
        USE MODFILESET
 
        IMPLICIT NONE
        
 !........  Include files
-       INCLUDE 'IODECL3.EXT'  ! I/O API function declarations
+c      INCLUDE 'IODECL3.EXT'  ! I/O API function declarations
        
 !........  External functions
-       INTEGER,       EXTERNAL :: INDEX1
+c      INTEGER,       EXTERNAL :: INDEX1
        CHARACTER(10), EXTERNAL :: GETCFDSC
-       INTEGER,       EXTERNAL :: STR2INT
+c      INTEGER,       EXTERNAL :: STR2INT
        
 !........  Function arguments
        CHARACTER(*), INTENT(IN) :: ROOTNAME  ! logical file name for file set

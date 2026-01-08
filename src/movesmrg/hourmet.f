@@ -35,9 +35,12 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C****************************************************************************
 
 C...........   MODULES for public variables
+        USE M3UTILIO
+
         USE MODMBSET, ONLY: NREFC, MCREFSORT, MCREFIDX,
      &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
 
@@ -53,17 +56,18 @@ C...........   This module contains the gridding surrogates tables
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS
-        CHARACTER(2) CRLF
-        INTEGER      ENVINT, STR2INT
-        LOGICAL      ISDSTIME
+C       CHARACTER(2) CRLF
+C       INTEGER      ENVINT, STR2INT
+C       LOGICAL      ISDSTIME
         REAL         CALCRELHUM
-        INTEGER      FINDC
+C       INTEGER      FINDC
         INTEGER      FINDCFIRST
 
-        EXTERNAL     CRLF, ENVINT, ISDSTIME, CALCRELHUM, FINDC, FINDCFIRST, STR2INT
+C        EXTERNAL     CRLF, ENVINT, ISDSTIME, CALCRELHUM, FINDC, FINDCFIRST, STR2INT
+        EXTERNAL     CALCRELHUM, FINDCFIRST
                 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT    (IN) :: NSRC                  ! no. sources

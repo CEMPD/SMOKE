@@ -34,10 +34,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
+        USE M3UTILIO
+
         USE MODMERGE, ONLY: PDEV,
      &                      MNIPPA, NIPPA,
      &                      MEANAM, EINAM,
@@ -63,11 +66,12 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)    CRLF
+C       CHARACTER(2)    CRLF
         INTEGER         GETFLINE
-        INTEGER         INDEX1
+C       INTEGER         INDEX1
 
-        EXTERNAL   CRLF, GETFLINE, INDEX1
+C        EXTERNAL   CRLF, GETFLINE, INDEX1
+        EXTERNAL     GETFLINE
 
 C...........   Temporary arrays for building sorted pol-to-species names list
         INTEGER           , ALLOCATABLE :: INDXA  ( : ) ! sorting index
@@ -326,7 +330,7 @@ C.............  This internal subprogram builds the unsorted list of unique
 C               pollutant-to-species speciation variable descriptions.
             SUBROUTINE BUILD_VDESC_UNSORT( NCNT, NVARS, VDESCS )
 
-            INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C            INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C.............  Subprogram arguments
 

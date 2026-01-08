@@ -58,8 +58,8 @@ C.........  LOCAL PARAMETERS and their descriptions:
         CHARACTER(16), PARAMETER :: PROGNAME = 'SAREGROUP' ! program name
         CHARACTER(64), PARAMETER ::
      &  BAR = '-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-'
-        CHARACTER(50), PARAMETER ::
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER ::
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 

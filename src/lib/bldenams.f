@@ -45,9 +45,12 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  This module contains the lists of unique source characteristics
+        USE M3UTILIO
+
         USE MODLISTS, ONLY: INVDNAM, INVDDSC, MXIDAT
 
         IMPLICIT NONE
@@ -55,13 +58,13 @@ C.........  This module contains the lists of unique source characteristics
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'   !  emissions constant parameters
+C        INCLUDE 'PARMS3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        INTEGER         INDEX1
+C       CHARACTER(2)    CRLF
+C       INTEGER         INDEX1
         
-        EXTERNAL        CRLF, INDEX1
+C        EXTERNAL        CRLF, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY_L               ! source CATEGORY

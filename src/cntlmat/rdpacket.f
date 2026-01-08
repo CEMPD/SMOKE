@@ -16,6 +16,7 @@ C
 C
 C  REVISION  HISTORY:
 C      Started 3/99 by M. Houyoux
+C      09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C
@@ -37,6 +38,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
@@ -49,13 +51,14 @@ C...........   INCLUDES
          INCLUDE 'CPKTDAT.EXT'   !  control packet contents
 
 C...........   EXTERNAL FUNCTIONS:
-        LOGICAL       CHKREAL, BLKORCMT
-        CHARACTER(2)  CRLF
-        INTEGER       INDEX1
-        INTEGER       STR2INT
-        REAL          STR2REAL
+c       LOGICAL       CHKREAL, BLKORCMT
+c       CHARACTER(2)  CRLF
+c       INTEGER       INDEX1
+c       INTEGER       STR2INT
+c       REAL          STR2REAL
 
-        EXTERNAL      BLKORCMT, CHKREAL, CRLF, INDEX1, STR2INT, STR2REAL
+c       EXTERNAL      BLKORCMT, CHKREAL, CRLF, INDEX1, STR2INT, STR2REAL
+        LOGICAL, EXTERNAL :: BLKORCMT
 
 C...........   SUBROUTINE ARGUMENTS:
         INTEGER        , INTENT (IN) :: FDEV      ! in file unit number
@@ -70,7 +73,7 @@ C...........   Local parameters
         INTEGER, PARAMETER :: MXSEG = 17   ! number of potential line segments
 
 C...........   Other arrays
-        CHARACTER(20) SEGMENT( MXSEG )      ! Segments of parsed packet lines
+        CHARACTER(32) SEGMENT( MXSEG )     ! Segments of parsed packet lines
 
 C...........   Other local variables
         INTEGER         K          ! index

@@ -20,6 +20,7 @@ C      Functions: I/O API subroutine
 C
 C  REVISION  HISTORY:
 C      Created 11/98 by M. Houyoux
+C     09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***************************************************************************
 C
@@ -41,6 +42,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
         USE MODFILESET
@@ -50,14 +52,14 @@ C...........   MODULES for public variables
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER(2)  CRLF
-        LOGICAL       SETENVVAR
+c       CHARACTER(2)  CRLF
+c       LOGICAL       SETENVVAR
 
-        EXTERNAL      CRLF, SETENVVAR
+c       EXTERNAL      CRLF, SETENVVAR
 
 C.............  Subroutine arguments 
         CHARACTER(*), INTENT (IN) :: CATEGORY        ! source category

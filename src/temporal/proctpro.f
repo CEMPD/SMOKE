@@ -56,12 +56,15 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  MODINFO  contains the information about the source category
 C.........  MODSOURC contains the inventory arrays
 C.........  MODTMPRL contains the temporal profile tables
+
+        USE M3UTILIO
 
         USE MODINFO,  ONLY: CATEGORY, NIPPA, EANAM, NSRC
 
@@ -90,9 +93,9 @@ C.........  MODTMPRL contains the temporal profile tables
 C.........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
-        INCLUDE 'FDESC3.EXT'    !  i/o api file-header structures
-        INCLUDE 'IODECL3.EXT'   !  i/o api subroutine declarations
+C        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
+C        INCLUDE 'FDESC3.EXT'    !  i/o api file-header structures
+C        INCLUDE 'IODECL3.EXT'   !  i/o api subroutine declarations
 
 C.........   Arguments:
 
@@ -102,20 +105,20 @@ C.........   Arguments:
 
 C.........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2), EXTERNAL :: CRLF
+C       CHARACTER(2), EXTERNAL :: CRLF
 
         LOGICAL, EXTERNAL :: CHKINT
         LOGICAL, EXTERNAL :: BLKORCMT
-        INTEGER, EXTERNAL :: ENVINT
-        LOGICAL, EXTERNAL :: ENVYN
-        INTEGER, EXTERNAL :: FIND1
-        INTEGER, EXTERNAL :: FINDC
+C       INTEGER, EXTERNAL :: ENVINT
+C       LOGICAL, EXTERNAL :: ENVYN
+C       INTEGER, EXTERNAL :: FIND1
+C       INTEGER, EXTERNAL :: FINDC
         INTEGER, EXTERNAL :: GETNLIST
         INTEGER, EXTERNAL :: GETFLINE
-        INTEGER, EXTERNAL :: SECSDIFF
-        INTEGER, EXTERNAL :: INDEX1
+C       INTEGER, EXTERNAL :: SECSDIFF
+C       INTEGER, EXTERNAL :: INDEX1
         LOGICAL, EXTERNAL :: SETSCCTYPE
-        INTEGER, EXTERNAL :: STR2INT
+C       INTEGER, EXTERNAL :: STR2INT
 
 C.........   Local parameters
 
@@ -1128,7 +1131,7 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 C Set active-month/active day-of-week flags for the time period SDATE:EDATE.
 C Compute SDATE, EDATE for this set of episodes.
 
-            INTEGER, EXTERNAL :: JSTEP3, WKDAY
+C           INTEGER, EXTERNAL :: JSTEP3, WKDAY
 
             INTEGER, PARAMETER :: DAYSTEP = 240000
 
@@ -1441,7 +1444,7 @@ C.............  Parameters:
             INTEGER      , PARAMETER :: DAYSTEP = 240000
             CHARACTER(24), PARAMETER :: PNAME   = 'PROCTPRO/CSVDOMP'
 
-            INTEGER, EXTERNAL :: JSTEP3
+C           INTEGER, EXTERNAL :: JSTEP3
 
 C.............  Local variables:
 
@@ -1656,7 +1659,7 @@ C.............  Arguments:
 
 C.............  Externals and Parameters:
 
-            INTEGER, EXTERNAL  :: GETEFILE
+C           INTEGER, EXTERNAL  :: GETEFILE
 
             CHARACTER(24), PARAMETER :: PNAME = 'PROCTPRO/CSVOPEN'
 

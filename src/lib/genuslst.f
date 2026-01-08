@@ -34,10 +34,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CSOURC, CIFIP, CSCC, CISIC, CINTGR, CMACT, 
      &                      CORIS, CBLRID, CPDESC, CNAICS, CVTYPE
 
@@ -58,15 +61,16 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        INTEGER         FINDC
-        INTEGER         INDEX1
+C       CHARACTER(2)    CRLF
+C       INTEGER         FINDC
+C       INTEGER         INDEX1
         LOGICAL         SETSCCTYPE, CHKEXPSCC, CHKEXPSIC
         
-        EXTERNAL        CRLF, FINDC, INDEX1, SETSCCTYPE
+C        EXTERNAL        CRLF, FINDC, INDEX1, SETSCCTYPE
+        EXTERNAL     SETSCCTYPE
 
 C...........   Sorting index
         INTEGER, ALLOCATABLE :: INDX( : )

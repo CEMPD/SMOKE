@@ -41,12 +41,15 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C  
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  MODSOURC contains the inventory arrays
 C.........  MODTMPRL contains the temporal profile tables
 C.........  MODDAYHR contains data for day- and hour-specific data
+
+        USE M3UTILIO
 
         USE MODSOURC, ONLY: TPFLAG, TZONES
 
@@ -61,7 +64,7 @@ C.........  MODDAYHR contains data for day- and hour-specific data
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   SUBROUTINE ARGUMENTS:
 
@@ -78,8 +81,8 @@ C...........   SUBROUTINE ARGUMENTS:
 
 C...........   EXTERNAL FUNCTIONS:
 
-        INTEGER, EXTERNAL :: FIND1
-        REAL   , EXTERNAL :: YR2DAY
+C       INTEGER, EXTERNAL :: FIND1
+C       REAL   , EXTERNAL :: YR2DAY
 
 C...........   Other Local variables:
 

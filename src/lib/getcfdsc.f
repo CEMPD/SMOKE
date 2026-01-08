@@ -1,4 +1,3 @@
-
         CHARACTER(*) FUNCTION GETCFDSC( FILEINFO, KEY, REQUIRED )
 
 C***********************************************************************
@@ -33,13 +32,15 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C****************************************************************************
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   Include files
         INCLUDE 'IOCNST3.EXT'   !  I/O API constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   ARGUMENTS and their descriptions:
 
@@ -48,10 +49,10 @@ C...........   ARGUMENTS and their descriptions:
         LOGICAL     , INTENT (IN) :: REQUIRED      ! true: key must be found
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER(2) CRLF
-        INTEGER      STR2INT
+C       CHARACTER(2) CRLF
+C       INTEGER      STR2INT
 
-        EXTERNAL     CRLF, STR2INT
+C        EXTERNAL     CRLF, STR2INT
 
 C...........   LOCAL VARIABLES their descriptions:
 

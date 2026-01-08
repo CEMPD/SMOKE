@@ -34,10 +34,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: POLVAL, TZONES, CIFIP, CELLID, TPFLAG, INVYR,
      &                      NPCNT, CSCC, IPOSCOD, CSOURC
 
@@ -49,18 +52,19 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)    CRLF
-        LOGICAL         ENVYN
+C       CHARACTER(2)    CRLF
+C       LOGICAL         ENVYN
         INTEGER         GETIFDSC
-        INTEGER         INDEX1
+C       INTEGER         INDEX1
 
-        EXTERNAL        CRLF, ENVYN, GETIFDSC, INDEX1
+C        EXTERNAL        CRLF, ENVYN, GETIFDSC, INDEX1
+        EXTERNAL     GETIFDSC
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FNAME     ! logical name of input file

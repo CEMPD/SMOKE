@@ -15,6 +15,8 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C       Created ??/???? by ???
+C       09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C****************************************************************************/
 C
@@ -36,6 +38,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains the speciation profiles
@@ -51,18 +54,19 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
-        LOGICAL       BLKORCMT
-        CHARACTER(2)  CRLF
-        INTEGER       INDEX1
-        REAL          STR2REAL
+c       LOGICAL       BLKORCMT
+c       CHARACTER(2)  CRLF
+c       INTEGER       INDEX1
+c       REAL          STR2REAL
 
-        EXTERNAL      BLKORCMT, CRLF, INDEX1, STR2REAL
+c       EXTERNAL      BLKORCMT, CRLF, INDEX1, STR2REAL
+        LOGICAL, EXTERNAL :: BLKORCMT
 
 C...........   Subroutine arguments
 
-        INTEGER     , INTENT    (IN) :: FDEV        ! file unit number
-        CHARACTER(*), INTENT    (IN) :: POLNAM      ! pol name of interest
-        INTEGER     , INTENT   (OUT) :: NMSPC       ! no. unique species IDs
+        INTEGER     , INTENT    (IN) :: FDEV          ! file unit number
+        CHARACTER(IOVLEN3), INTENT    (IN) :: POLNAM  ! pol name of interest; HT: change size from * to IOVLEN3
+        INTEGER     , INTENT   (OUT) :: NMSPC         ! no. unique species IDs
                                 
 C.........  Local parameters
         INTEGER    , PARAMETER :: MXSEG = 6         ! # of potential segments
@@ -74,7 +78,7 @@ C...........   Local unsorted arrays
         REAL           FACTRA( MXSPFUL )   ! unsorted split factors
         REAL           XMFA  ( MXSPFUL )   ! unsorted mass fraction
         CHARACTER(21)  INPSPA( MXSPFUL )   ! unsorted profile no. // species ID
-        CHARACTER(16)  SPCIDA( MXSPFUL )   ! unsorted species IDs
+        CHARACTER(IOVLEN3)  SPCIDA( MXSPFUL )   ! unsorted species IDs
         
 C...........   Other arrays
         CHARACTER(32) SEGMENT( MXSEG )          ! Segments of parsed lines

@@ -13,6 +13,8 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C       Created ??/???? by ???
+C       09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C**************************************************************************
 C
@@ -34,6 +36,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 
@@ -45,18 +48,18 @@ C.........  This module is required by the FileSetAPI
 C...........   INCLUDE FILES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2) CRLF
-        EXTERNAL     CRLF
+c       CHARACTER(2) CRLF
+c       EXTERNAL     CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: FILNAM           ! Logical file name
+        CHARACTER(IOFLEN3), INTENT (IN) :: FILNAM     ! Logical file name
         INTEGER     , INTENT (IN) :: NCNT             ! Number of records
         INTEGER     , INTENT (IN) :: VCNT             ! No. vars other than SRCID
-        CHARACTER(*), INTENT (IN) :: VNAMES( VCNT )   ! Variable names
+        CHARACTER(IOVLEN3), INTENT (IN) :: VNAMES( VCNT )   ! Variable names
         INTEGER     , INTENT (IN) :: VTYPES( VCNT )   ! Variable types
         INTEGER     , INTENT(OUT) :: SRCID ( NCNT )   ! Data
         REAL        , INTENT(OUT) :: POLDAT( NCNT,VCNT ) ! Data

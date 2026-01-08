@@ -17,31 +17,35 @@ C
 C  REVISION  HISTORY:
 C     Written by C. Seppanen
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C.........  INCLUDES
-        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
+C        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'   ! emissions constant parameters
 
 C.........  EXTERNAL FUNCTIONS
         LOGICAL       BLKORCMT
-        CHARACTER(2)  CRLF
-        INTEGER       ENVINT
-        INTEGER       FINDC
+C       CHARACTER(2)  CRLF
+C       INTEGER       ENVINT
+C       INTEGER       FINDC
         INTEGER       GETFLINE
-        INTEGER       JUNIT
-        INTEGER       LOCATC
-        INTEGER       PROMPTFFILE
-        REAL          STR2REAL
+C       INTEGER       JUNIT
+C       INTEGER       LOCATC
+C       INTEGER       PROMPTFFILE
+C       REAL          STR2REAL
         
-        EXTERNAL      BLKORCMT, CRLF, ENVINT, FINDC, GETFLINE, JUNIT, 
-     &                LOCATC, PROMPTFFILE, STR2REAL
+C        EXTERNAL      BLKORCMT, CRLF, ENVINT, FINDC, GETFLINE, JUNIT, 
+C     &                LOCATC, PROMPTFFILE, STR2REAL
+        EXTERNAL     BLKORCMT, GETFLINE
 
 C.........  LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS release tag
         INTEGER, PARAMETER :: MXSEG = 16        ! number of segments in line
 
 C.........  LOCAL VARIABLES

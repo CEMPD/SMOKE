@@ -34,35 +34,39 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C*************************************************************************
+
+        USE M3UTILIO
 
       IMPLICIT NONE
 
 C...........   INCLUDES:
 
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'     !
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         DSCM3GRD
-        CHARACTER(10)   HHMMSS
-        CHARACTER(14)   MMDDYY
-        INTEGER         PROMPTFFILE 
-        CHARACTER(16)   PROMPTMFILE
+C       CHARACTER(10)   HHMMSS
+C       CHARACTER(14)   MMDDYY
+C       INTEGER         PROMPTFFILE 
+C       CHARACTER(16)   PROMPTMFILE
         INTEGER         TRIMLEN
-        INTEGER         WKDAY
+C       INTEGER         WKDAY
         
-        EXTERNAL        DSCM3GRD, HHMMSS, MMDDYY, 
-     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, 
-     &                  WKDAY
+C        EXTERNAL        DSCM3GRD, HHMMSS, MMDDYY, 
+C     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, 
+C     &                  WKDAY
+        EXTERNAL     DSCM3GRD, TRIMLEN
 
 C...........   PARAMETER
 
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C.......  Input and output emissions
 

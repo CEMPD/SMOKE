@@ -34,15 +34,18 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C****************************************************************************
 
 C.........  This module contains the global variables for the 3-d grid
+        USE M3UTILIO
+
         USE MODGRID, ONLY: NCOLS, YOFF, XDIFF, XOFF
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NSRC          ! no. sources

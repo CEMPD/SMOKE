@@ -45,10 +45,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C*************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module contains the gridding surrogates tables
+        USE M3UTILIO
+
         USE MODSURG, ONLY: NSRGREC, IDXSRGA, SCELLA, SFIPSA, SSRGIDA,
      &                     SFRACA
 
@@ -61,22 +64,23 @@ C.........  This module contains the global variables for the 3-d grid
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2)    CRLF
+C       CHARACTER(2)    CRLF
         LOGICAL         DSCM3GRD
-        INTEGER         PROMPTFFILE
-        INTEGER         STR2INT
+C       INTEGER         PROMPTFFILE
+C       INTEGER         STR2INT
         
-        EXTERNAL   CRLF, DSCM3GRD, PROMPTFFILE, STR2INT
+C        EXTERNAL   CRLF, DSCM3GRD, PROMPTFFILE, STR2INT
+        EXTERNAL     DSCM3GRD
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C............   Allocatable arrays for computing grid cell intersections
         INTEGER, ALLOCATABLE::   C2( :, : )     !  output grid cell

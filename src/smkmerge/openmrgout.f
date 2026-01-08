@@ -14,6 +14,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C       Created 2/99 by M. Houyoux
+C     09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C
@@ -35,6 +36,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C****************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
@@ -69,29 +71,31 @@ C.........  This module contains the global variables for the 3-d grid
 C.........  INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2)    CRLF
-        INTEGER         INDEX1
-        INTEGER         JUNIT
-        CHARACTER(16)   MULTUNIT
-        INTEGER         PROMPTFFILE
-        LOGICAL         SETENVVAR
-        CHARACTER(16)   VERCHAR
-        CHARACTER(16)   PROMPTMFILE
+c       CHARACTER(2)    CRLF
+c       INTEGER         INDEX1
+c       INTEGER         JUNIT
+c       CHARACTER(16)   MULTUNIT
+c       INTEGER         PROMPTFFILE
+c       LOGICAL         SETENVVAR
+c       CHARACTER(16)   VERCHAR
+c       CHARACTER(16)   PROMPTMFILE
 
-        EXTERNAL  CRLF, INDEX1, JUNIT, MULTUNIT, PROMPTFFILE, 
-     &            SETENVVAR, VERCHAR, PROMPTMFILE
+c       EXTERNAL  CRLF, INDEX1, JUNIT, MULTUNIT, PROMPTFFILE, 
+c    &            SETENVVAR, VERCHAR, PROMPTMFILE
+        CHARACTER(16), EXTERNAL :: MULTUNIT
+        CHARACTER(16), EXTERNAL :: VERCHAR
 
 C...........  SUBROUTINE ARGUMENTS
        INTEGER, INTENT (IN) :: NGRP     ! Actual number of groups
 
 C...........  Local parameters
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C.........  Base and future year per 
 

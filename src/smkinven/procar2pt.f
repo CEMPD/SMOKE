@@ -14,7 +14,8 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C      Split from adjustinv.f 1/03 by C. Seppanen 
+C      Split from adjustinv.f 1/03 by C. Seppanen
+C      09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C**************************************************************************
 C
@@ -36,6 +37,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
@@ -57,12 +59,12 @@ C.........  This module contains the arrays for the area-to-point x-form
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+c       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
-        INTEGER         STR2INT
+c       INTEGER         STR2INT
         
-        EXTERNAL        STR2INT
+c       EXTERNAL        STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (INOUT) :: NRAWBP  ! no. raw records by pollutant

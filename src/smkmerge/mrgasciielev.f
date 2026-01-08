@@ -47,31 +47,35 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
         
 C.........  INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         
 C.........  EXTERNAL FUNCTIONS
         LOGICAL       BLKORCMT
-        CHARACTER(2)  CRLF
-        LOGICAL       ENVYN
-        INTEGER       FINDC
+C       CHARACTER(2)  CRLF
+C       LOGICAL       ENVYN
+C       INTEGER       FINDC
         INTEGER       GETFLINE
-        CHARACTER(10) HHMMSS
-        INTEGER       JUNIT
-        INTEGER       PROMPTFFILE
-        INTEGER       SECSDIFF
-        INTEGER       SEC2TIME
+C       CHARACTER(10) HHMMSS
+C       INTEGER       JUNIT
+C       INTEGER       PROMPTFFILE
+C       INTEGER       SECSDIFF
+C       INTEGER       SEC2TIME
 
-        EXTERNAL      BLKORCMT, CRLF, ENVYN, FINDC, GETFLINE, HHMMSS,
-     &                JUNIT, PROMPTFFILE, SECSDIFF, SEC2TIME
+C        EXTERNAL      BLKORCMT, CRLF, ENVYN, FINDC, GETFLINE, HHMMSS,
+C     &                JUNIT, PROMPTFFILE, SECSDIFF, SEC2TIME
+        EXTERNAL     BLKORCMT, GETFLINE
 
 C.........  LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS release tag
+C       CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS release tag
         INTEGER,       PARAMETER :: MXPING = 300        ! final number of PinG sources
 
 C.........  LOCAL VARIABLES

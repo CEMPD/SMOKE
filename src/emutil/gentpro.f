@@ -38,6 +38,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     2/11: Created  by B.H. Baek
+C     09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C
@@ -58,6 +59,7 @@ C Pathname: $Source$
 C Last updated: $Date$
 C
 C***********************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C.........  This module is used for MOBILE6 setup information
@@ -91,44 +93,49 @@ C.........  Force explicit declaration of all variables
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O api parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+c       INCLUDE 'PARMS3.EXT'    !  I/O api parameters
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        CHARACTER(14)   MMDDYY
-        CHARACTER(16)   PROMPTMFILE
-        CHARACTER(16)   VERCHAR
-        INTEGER         FIND1, FINDC
-        INTEGER         FIND1FIRST
-        INTEGER         GETIFDSC
-        INTEGER         GETFLINE
-        INTEGER         GETEFILE
-        INTEGER         INDEX1
-        INTEGER         PROMPTFFILE
-        INTEGER         SECSDIFF
-        INTEGER         STR2INT
-        INTEGER         WKDAY
-        INTEGER         ENVINT
-        REAL            ENVREAL
-        REAL            YR2DAY
-        REAL            STR2REAL
-        LOGICAL         BLKORCMT
-        LOGICAL         ENVYN
-        LOGICAL         DSCM3GRD
-        LOGICAL         INTLIST
-        LOGICAL         SETENVVAR
-        LOGICAL         STRLIST
+c       CHARACTER(2)    CRLF
+c       CHARACTER(14)   MMDDYY
+c       CHARACTER(16)   PROMPTMFILE
+c       CHARACTER(16)   VERCHAR
+c       INTEGER         FIND1, FINDC
+c       INTEGER         FIND1FIRST
+c       INTEGER         GETIFDSC
+c       INTEGER         GETFLINE
+c       INTEGER         GETEFILE
+c       INTEGER         INDEX1
+c       INTEGER         PROMPTFFILE
+c       INTEGER         SECSDIFF
+c       INTEGER         STR2INT
+c       INTEGER         WKDAY
+c       INTEGER         ENVINT
+c       REAL            ENVREAL
+c       REAL            YR2DAY
+c       REAL            STR2REAL
+c       LOGICAL         BLKORCMT
+c       LOGICAL         ENVYN
+c       LOGICAL         DSCM3GRD
+c       LOGICAL         INTLIST
+c       LOGICAL         SETENVVAR
+c       LOGICAL         STRLIST
 
-        EXTERNAL     CRLF, DSCM3GRD, GETIFDSC, GETFLINE, ENVINT, FIND1
-     &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE,
-     &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST,
-     &               FIND1FIRST, STRLIST, STR2INT, BLKORCMT, VERCHAR,
-     &               YR2DAY, ENVYN, STR2REAL, FINDC
+c       EXTERNAL     CRLF, DSCM3GRD, GETIFDSC, GETFLINE, ENVINT, FIND1
+c    &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE,
+c    &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST,
+c    &               FIND1FIRST, STRLIST, STR2INT, BLKORCMT, VERCHAR,
+c    &               YR2DAY, ENVYN, STR2REAL, FINDC
+        CHARACTER(16), EXTERNAL :: VERCHAR
+        INTEGER      , EXTERNAL :: GETIFDSC
+        INTEGER      , EXTERNAL :: GETFLINE
+        LOGICAL      , EXTERNAL :: BLKORCMT
+        LOGICAL      , EXTERNAL :: DSCM3GRD
 
 C.....  Define temporal profile type constants for enumeration
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
         INTEGER, PARAMETER :: MXVAR  = 100
         INTEGER, PARAMETER :: MXSEG  = 16
@@ -172,7 +179,7 @@ C...........   integer arrays
         INTEGER, ALLOCATABLE :: ISRGFIPS( : )      ! FIPS as integers
 
 C...........  character arrays
-        CHARACTER(16)                      SEGMENT( MXSEG )
+        CHARACTER(32)                      SEGMENT( MXSEG )   ! HT: increase size to 32
         CHARACTER(256)    , ALLOCATABLE :: METLIST( : )       ! listing of met file names
         CHARACTER(SCCLEN3), ALLOCATABLE :: SCCLIST( : )       ! listing of SCCs
         CHARACTER(256)    , ALLOCATABLE :: CSCCFIP( : )       ! tmp FIPS/SCC x-ref entries

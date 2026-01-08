@@ -37,9 +37,12 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   This module is for cross reference tables
+        USE M3UTILIO
+
         USE MODXREF, ONLY: MPRT01, WPRT01, DPRT01,
      &                     MPRT02, WPRT02, DPRT02,
      &                     MPRT03, WPRT03, DPRT03,
@@ -61,7 +64,7 @@ C...........   This module is for cross reference tables
 
 C...........   INCLUDES
 
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT(IN) :: NIPPA        ! number of pollutants + activities

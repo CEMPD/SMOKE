@@ -38,10 +38,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
+        USE M3UTILIO
+
         USE MODINFO, ONLY: CATEGORY, CRL, CATDESC, NSRC
 
         IMPLICIT NONE
@@ -49,18 +52,19 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
-        CHARACTER(2)       CRLF
+C       CHARACTER(2)       CRLF
         LOGICAL            DSCM3GRD
-        INTEGER            PROMPTFFILE 
-        CHARACTER(NAMLEN3) PROMPTMFILE
+C       INTEGER            PROMPTFFILE 
+C       CHARACTER(NAMLEN3) PROMPTMFILE
         CHARACTER(16)      VERCHAR
 
-        EXTERNAL CRLF, DSCM3GRD, PROMPTFFILE, PROMPTMFILE, VERCHAR
+C        EXTERNAL CRLF, DSCM3GRD, PROMPTFFILE, PROMPTMFILE, VERCHAR
+        EXTERNAL     DSCM3GRD, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NMATX   ! no. of source-cell intersections
@@ -75,8 +79,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: FDEV    ! report file
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   Other local variables
 

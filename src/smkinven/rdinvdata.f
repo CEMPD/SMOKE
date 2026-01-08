@@ -43,10 +43,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: NSTRECS, SRCSBYREC, RECIDX,         ! file numbers and records
      &                      INDEXA, IPOSCODA, ICASCODA,         ! unsorted source characteristics
      &                      INRECA, SRCIDA, POLVLA,
@@ -78,29 +81,31 @@ C.........  This module is for mobile-specific data
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         BLKORCMT
         LOGICAL         CHKINT
         LOGICAL         CHKREAL
-        CHARACTER(2)    CRLF
-        INTEGER         ENVINT
-        LOGICAL         ENVYN
-        INTEGER         FINDC
+C       CHARACTER(2)    CRLF
+C       INTEGER         ENVINT
+C       LOGICAL         ENVYN
+C       INTEGER         FINDC
         INTEGER         GETINVYR
         INTEGER         GETFLINE
-        INTEGER         INDEX1
-        INTEGER         STR2INT
-        REAL            STR2REAL
-        REAL*8          STR2DBLE
-        REAL            YR2DAY
+C       INTEGER         INDEX1
+C       INTEGER         STR2INT
+C       REAL            STR2REAL
+C       REAL*8          STR2DBLE
+C       REAL            YR2DAY
         INTEGER         FIND1FIRST
 
-        EXTERNAL        CHKINT, CHKREAL, CRLF, ENVINT, ENVYN, FINDC,
-     &                  GETINVYR, INDEX1, STR2INT, STR2REAL, STR3DBLE,
-     &                  YR2DAY, GETFLINE, BLKORCMT, FIND1FIRST
+C        EXTERNAL        CHKINT, CHKREAL, CRLF, ENVINT, ENVYN, FINDC,
+C     &                  GETINVYR, INDEX1, STR2INT, STR2REAL, STR3DBLE,
+C     &                  YR2DAY, GETFLINE, BLKORCMT, FIND1FIRST
+        EXTERNAL     CHKINT, CHKREAL, GETINVYR, STR3DBLE, GETFLINE, 
+     &               BLKORCMT, FIND1FIRST
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: FDEV         ! unit no. of inv file
@@ -599,7 +604,7 @@ C...........  Skip blank lines
 C...........  Process line depending on file format and source category
           SELECT CASE( CURFMT )
 
-            CASE( FF10FMT )
+            CASE( FF10FMT, FF10DYFMT, FF10HRFMT )
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
                     CALL RDDATAFF10AR( LINE, READDATA, READPOL, INVYEAR,
@@ -782,7 +787,9 @@ C.............  Check that point source information is correct
                     CALL M3MSG2( MESG )
                 END IF
 
-                IF ( CURFMT == FF10FMT  ) THEN
+                IF ( CURFMT == FF10FMT .OR. 
+     &               CURFMT == FF10DYFMT .OR. 
+     &               CURFMT == FF10HRFMT ) THEN
                     IF( .NOT. CHKREAL( FUGHT ) .OR.
      &                  .NOT. CHKREAL( FUGWD ) .OR.
      &                  .NOT. CHKREAL( FUGLN ) .OR.
@@ -910,7 +917,8 @@ C.................  Check ORL FIRE specific values
 
 C.............  Get current CAS number position and check that it is valid
             IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
-     &          CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT ) THEN
+     &          CURFMT == FF10FMT .OR. CURFMT == FF10DYFMT .OR. 
+     &          CURFMT == FF10HRFMT .OR. CURFMT == ORLFIREFMT ) THEN
                 POLNAM = READPOL( 1 )
                 UCASPOS = FINDC( POLNAM, NUNIQCAS, UNIQCAS )
                 IF( UCASPOS < 1 ) THEN
@@ -1022,7 +1030,8 @@ C.................  If format is not ORL or ORL Fires, find code corresponding
 C                   to current pollutant
                 ACTFLAG = .FALSE.
                 IF( CURFMT /= ORLFMT .AND. CURFMT /= ORLNPFMT .AND.
-     &              CURFMT /= ORLFIREFMT .AND. CURFMT /= FF10FMT ) THEN
+     &              CURFMT /= ORLFIREFMT .AND. CURFMT /= FF10FMT .AND.
+     &              CURFMT /= FF10DYFMT .AND. CURFMT /= FF10HRFMT ) THEN
                     POLCOD = INDEX1( POLNAM, MXIDAT, INVDNAM )
 
                     IF( POLCOD == 0 ) THEN
@@ -1071,23 +1080,28 @@ C.................  Convert data to real numbers and check for missing values
                     EANN = BADVAL3
                 END IF
 
-                EDAY = STR2REAL( READDATA( I,NDY ) )
+C................. UNC-IE 12/08/2025: Average-day emission is optional and only applicable for ORL format; treat it as such
+                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
+                    EDAY = STR2REAL( READDATA( I,NDY ) )
 
-                IF( EDAY < AMISS3 .OR. EDAY == -9 ) THEN
-                    IF( NWARN < MXWARN .AND. .NOT. FIREFLAG ) THEN
-                        IF( ACTFLAG ) THEN
-                            WRITE( MESG,94010 ) 'WARNING: Missing ' //
-     &                          'average day inventory data for ' //
-     &                          TRIM( POLNAM ) // ' at line', IREC
-                        ELSE
-                            WRITE( MESG,94010 ) 'WARNING: Missing ' //
-     &                          'average day emissions for ' //
-     &                          TRIM( POLNAM ) // ' at line', IREC
+                    IF( EDAY < AMISS3 .OR. EDAY == -9 ) THEN
+                        IF( NWARN < MXWARN .AND. .NOT. FIREFLAG ) THEN
+                            IF( ACTFLAG ) THEN
+                                WRITE( MESG,94010 ) 'WARNING: Missing ' //
+     &                              'average day inventory data for ' //
+     &                              TRIM( POLNAM ) // ' at line', IREC
+                            ELSE
+                                WRITE( MESG,94010 ) 'WARNING: Missing ' //
+     &                              'average day emissions for ' //
+     &                              TRIM( POLNAM ) // ' at line', IREC
+                            END IF
+                            CALL M3MESG( MESG )
+                            NWARN = NWARN + 1
                         END IF
-                        CALL M3MESG( MESG )
-                        NWARN = NWARN + 1
-                    END IF
 
+                        EDAY = BADVAL3
+                    END IF
+                ELSE
                     EDAY = BADVAL3
                 END IF
 
@@ -1179,7 +1193,8 @@ C.....................  Fill annual inventory using average day inventory
                     IF( FFLAG ) THEN
                         EANN = EDAY * DAY2YR  ! fill annual inv (aveday*365)
 
-                        IF( FWCOUNT < MXWARN .AND. CURFMT /= FF10FMT ) THEN
+                        IF( FWCOUNT < MXWARN .AND. CURFMT /= FF10FMT .AND.
+     &                   CURFMT /= FF10DYFMT .AND. CURFMT /= FF10HRFMT ) THEN
                            WRITE(MESG,94010) 'WARNING: Using average day '//
      &                       'emissions to fill in annual emissions' //
      &                       CRLF()// BLANK10// 'for ' //TRIM( POLNAM ) //
@@ -1210,7 +1225,8 @@ C                   zero or negative
 C.................  If current format is ORL, check if current CAS number
 C                   is split
                 IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
-     &              CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT ) THEN
+     &              CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT .OR.
+     &              CURFMT == FF10DYFMT .OR. CURFMT == FF10HRFMT ) THEN
                     NPOLPERCAS = UCASNPOL( UCASPOS )
 
 C.....................  Store emissions by CAS number for reporting
@@ -1229,7 +1245,8 @@ C.....................  Store emissions by CAS number for reporting
 
 C.....................  If ORL format, set current pollutant
                     IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
-     &                  CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT ) THEN
+     &                  CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT .OR.
+     &                  CURFMT == FF10DYFMT .OR. CURFMT == FF10HRFMT ) THEN
 
                         SCASPOS = UCASIDX( UCASPOS ) + J
 
@@ -1332,10 +1349,13 @@ C.............  Store SIC, SHAPE if not blank
 
             IF( CATEGORY == 'POINT' .OR.
      &          CURFMT == ORLNPFMT .OR. CURFMT == ORLFMT .OR.
-     &          CURFMT == FF10FMT  .OR. CURFMT /= MEDSFMT ) THEN
+     &          CURFMT == FF10FMT  .OR. CURFMT == FF10DYFMT .OR. 
+     &          CURFMT == FF10HRFMT .OR. CURFMT /= MEDSFMT ) THEN
 
                  IF( ( CATEGORY == 'POINT' .AND. CURFMT == ORLFMT )
      &               .OR. (CATEGORY == 'POINT' .AND. CURFMT == FF10FMT)
+     &               .OR. (CATEGORY == 'POINT' .AND. CURFMT == FF10DYFMT)
+     &               .OR. (CATEGORY == 'POINT' .AND. CURFMT == FF10HRFMT)
      &               .OR. CURFMT == ORLNPFMT               ) THEN
                      IF( MACT == '-9' ) MACT = ' '
                      IF( NAICS == '-9' ) NAICS = ' '
@@ -1457,7 +1477,8 @@ C.................  Recompute velocity if that option has been set
 
                 END IF
 
-                IF ( CURFMT == FF10FMT  ) THEN
+                IF ( CURFMT == FF10FMT .OR. CURFMT == FF10DYFMT .OR. 
+     &               CURFMT == FF10HRFMT ) THEN
                     FUGHGT( CURSRC ) = MAX( 0.0, FT2M * STR2REAL( FUGHT ) )
                     FUGWID( CURSRC ) = MAX( 0.0, FT2M * STR2REAL( FUGWD ) )
                     FUGLEN( CURSRC ) = MAX( 0.0, FT2M * STR2REAL( FUGLN ) )

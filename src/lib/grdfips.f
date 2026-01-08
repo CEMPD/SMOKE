@@ -34,10 +34,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C****************************************************************************
 
 C...........   Modules for public variables
 C...........   This module contains the gridding surrogates tables
+        USE M3UTILIO
+
         USE MODSURG, ONLY: NSRGFIPS, SRGFIPS, NCELLS, FIPCELL
      
 C.........  This module contains the global variables for the 3-d grid
@@ -49,11 +52,11 @@ C.........  This module is the derived meteorology data for emission factors
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:        
-        INTEGER      FINDC
-        EXTERNAL     FINDC
+C       INTEGER      FINDC
+C        EXTERNAL     FINDC
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NSRC             ! no. sources

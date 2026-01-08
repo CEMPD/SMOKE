@@ -39,10 +39,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
+        USE M3UTILIO
+
         USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, ISPTA, CMACTA, CISICA,
      &                     TXCNT, NXTYPES, XDUPCHK
 
@@ -60,15 +63,16 @@ C.........  This module contains the speciation profiles
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        LOGICAL         ENVYN
-        INTEGER         STR2INT
+C       CHARACTER(2)    CRLF
+C       LOGICAL         ENVYN
+C       INTEGER         STR2INT
         LOGICAL         SETSCCTYPE, CHKEXPSCC, CHKEXPSIC, USEEXPGEO
 
-        EXTERNAL   CRLF, ENVYN, STR2INT, SETSCCTYPE, CHKEXPSCC, CHKEXPSIC, USEEXPGEO
+C        EXTERNAL   CRLF, ENVYN, STR2INT, SETSCCTYPE, CHKEXPSCC, CHKEXPSIC, USEEXPGEO
+        EXTERNAL     SETSCCTYPE, CHKEXPSCC, CHKEXPSIC, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: OPTYPE ! operation type (tmprl,spec,ctg...)

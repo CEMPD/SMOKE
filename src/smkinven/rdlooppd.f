@@ -38,10 +38,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
+        USE M3UTILIO
+
         USE MODINFO, ONLY: NIPPA, BYEAR, CATEGORY, CATLEN
 
         USE MODLISTS, ONLY: FIREFLAG
@@ -49,20 +52,21 @@ C.........  This module contains the information about the source category
         IMPLICIT NONE
 
 C...........   EXTERNAL FUNCTIONS
-        CHARACTER(2) CRLF
+C       CHARACTER(2) CRLF
         INTEGER      GETFLINE
-        INTEGER      JULIAN
-        INTEGER      JUNIT
-        INTEGER      SECSDIFF
+C       INTEGER      JULIAN
+C       INTEGER      JUNIT
+C       INTEGER      SECSDIFF
 
-        EXTERNAL     CRLF, GETFLINE, JULIAN, JUNIT, SECSDIFF
+C        EXTERNAL     CRLF, GETFLINE, JULIAN, JUNIT, SECSDIFF
+        EXTERNAL     GETFLINE
 
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: FDEV           ! file unit no.
@@ -244,7 +248,9 @@ C.............  Read day-specific or hour-specific file
      &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME, 
      &                        EDATE, ETIME, EASTAT, SPSTAT )
 
-            ELSE IF( FILFMT( IFIL ) .EQ. FF10FMT ) THEN
+            ELSE IF( FILFMT( IFIL ) .EQ. FF10FMT .OR.
+     &               FILFMT( IFIL ) .EQ. FF10DYFMT .OR.
+     &               FILFMT( IFIL ) .EQ. FF10HRFMT ) THEN        
                 FIREFLAG = .FALSE.  ! to process ptfire in FF10 format as of SMOKEv3.7
                 CALL RDFF10PD( IDEV, TZONE, OUTSTEP, MXPDSRC, DFLAG,
      &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME,

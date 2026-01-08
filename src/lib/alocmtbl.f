@@ -36,9 +36,12 @@ C
 C Pathname: $Source$ 
 C Last updated: $Date$  
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   This module is for cross reference tables
+        USE M3UTILIO
+
         USE MODXREF, ONLY: IMVS01, IMVS02, IMVS03, IMVS04, IMVS05,
      &                     IMVS06, IMVS07, IMVS08, IMVS09, IMVS10,
      &                     IMVS11, IMVS12
@@ -46,7 +49,7 @@ C...........   This module is for cross reference tables
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT(IN) :: ICSIZE( * )  ! size of x-ref groups

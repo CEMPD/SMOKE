@@ -35,28 +35,32 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C*************************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2)    CRLF
-        INTEGER         FINDC
+C       CHARACTER(2)    CRLF
+C       INTEGER         FINDC
         INTEGER         GETFLINE
-        INTEGER         PROMPTFFILE
+C       INTEGER         PROMPTFFILE
 
-        EXTERNAL   CRLF, FINDC, GETFLINE, PROMPTFFILE
+C        EXTERNAL   CRLF, FINDC, GETFLINE, PROMPTFFILE
+        EXTERNAL     GETFLINE
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.1_Jul2024' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.1_Jul2024' ! CVS release tag
 
 C............   Allocatable arrays
         INTEGER,               ALLOCATABLE :: INDEXA  ( : ) ! sorting index

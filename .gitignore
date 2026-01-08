@@ -1,0 +1,14 @@
+*.o
+Linux2*
+.gitignore
+backup.*
+src/smkinven/smk5.0.rdff10pd.f
+src/smkinven/smk5.1dbg.rdff10pd.f
+src/smkinven/exp.rdff10pd.f
+smoke_2016beta_platform_utilities
+smoke_2016beta_platform_utilities/*
+src/smkinven/smk52patch_v5.rdff10pd.f
+src/smkinven/backup/*
+src/smkinven/backup
+scripts/platform/utils/copy_utils.csh
+src/emmod/modcntrl.f.debug

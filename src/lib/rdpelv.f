@@ -34,10 +34,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains arrays for plume-in-grid and major sources
+        USE M3UTILIO
+
         USE MODELEV, ONLY: LMAJOR, LPING, GROUPID
 
         IMPLICIT NONE
@@ -45,15 +48,15 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'     ! emissions constant parameters
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER(2)  CRLF
-        LOGICAL       ENVYN
+C       CHARACTER(2)  CRLF
+C       LOGICAL       ENVYN
 
-        EXTERNAL      CRLF, ENVYN
+C        EXTERNAL      CRLF, ENVYN
 
 C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
 

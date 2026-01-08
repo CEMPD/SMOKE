@@ -18,6 +18,9 @@ C      Subroutines: I/O API subroutine
 C
 C  REVISION  HISTORY:
 C      Created 12/99 by M. Houyoux
+C      09/2025 by HT UNC-IE:  Use M3UTILIO; 
+C                             Removed MESG FMT 93000 and 9400 which were not used;
+C                             replace NAMLEN3 with IOULEN3 for ONAME
 C
 C*************************************************************************
 C
@@ -39,6 +42,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
@@ -64,17 +68,17 @@ C.........  This module contains the arrays for state and county summaries
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+c       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER(2) CRLF
-        LOGICAL      ENVYN
-        INTEGER      FINDC
-        INTEGER      INDEX1
+c       CHARACTER(2) CRLF
+c       LOGICAL      ENVYN
+c       INTEGER      FINDC
+c       INTEGER      INDEX1
 
-        EXTERNAL     CRLF, ENVYN, FINDC, INDEX1
+c       EXTERNAL     CRLF, ENVYN, FINDC, INDEX1
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV      ! hour-specific file unit no.
@@ -136,7 +140,7 @@ C...........   Other local variables
 
         CHARACTER(FIPLEN3) CFIP          ! tmp co/st/cy code
         CHARACTER(SDSLEN3) BUFFER        ! tmp SCC description
-        CHARACTER(NAMLEN3) ONAME         ! output file name
+        CHARACTER(IOULEN3) ONAME         ! output file name
         CHARACTER(SCCLEN3) TSCC          ! tmp SCC value
         CHARACTER(ORSLEN3) CORS          ! tmp ORIS ID
         CHARACTER(DSCLEN3) PDSC          ! tmp plant DSC
@@ -507,14 +511,11 @@ C               in the inventory.
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
-93000   FORMAT( A )
 
 93042   FORMAT( '( A', I2.2,', "; ", A', I2.2, ', "; ",', I2.2, '(A',
      &          I2.2, ',"; "),', 'A', I2.2, ', "; ", A', I2.2,')' )
 
 C...........   Internal buffering formats............ 94xxx
-
-94000   FORMAT( A )
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 

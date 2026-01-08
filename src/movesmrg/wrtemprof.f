@@ -35,10 +35,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the derived meteorology data for emission factors
+        USE M3UTILIO
+
         USE MODMET, ONLY:   RHTBIN, NRHTBIN
         
         USE MODMBSET, ONLY: NREFC, MCREFIDX
@@ -48,14 +51,14 @@ C...........   This module is the derived meteorology data for emission factors
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS 
-        CHARACTER(2)    CRLF
-        CHARACTER(14)   MMDDYY
-        INTEGER         FINDC
+C       CHARACTER(2)    CRLF
+C       CHARACTER(14)   MMDDYY
+C       INTEGER         FINDC
 
-        EXTERNAL     CRLF, MMDDYY, FINDC
+C        EXTERNAL     CRLF, MMDDYY, FINDC
 
 C...........   SUBROUTINE ARGUMENTS
 C.............  Subroutine arguments

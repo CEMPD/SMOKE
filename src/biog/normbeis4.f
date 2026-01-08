@@ -31,12 +31,15 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains biogenic variables
 C.......... MODBEIS3 can be used for BEIS4; BEIS4 uses less of the
 C.......... module since LFBIO and SLW no longer needed.
+        USE M3UTILIO
+
         USE MODBEIS3, ONLY: NVEG, VEGID, AVGEMIS, AVGLAI, NOEMIS, 
      &                      EMFAC, LAI, WFAC
         USE MODGRDLIB
@@ -44,19 +47,21 @@ C.......... module since LFBIO and SLW no longer needed.
         IMPLICIT NONE
 
 C.........  INCLUDES
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+        INCLUDE 'IOSTRG3.EXT'     !
 C.......... Same include file for BEIS3 can be use for BEIS4
         INCLUDE 'B3V14DIMS3.EXT'     ! BEIS3-related and BEIS4 declarations
   
 C.........  EXTERNAL FUNCTIONS and their descriptions
-        LOGICAL         ENVYN
+C       LOGICAL         ENVYN
         INTEGER         GETFLINE
-        INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
+C       INTEGER         PROMPTFFILE
+C       CHARACTER(16)   PROMPTMFILE
 
-        EXTERNAL        ENVYN, GETFLINE, PROMPTFFILE, PROMPTMFILE
+C        EXTERNAL        ENVYN, GETFLINE, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL     GETFLINE
 
 C.........  LOCAL VARIABLES and their descriptions
         INTEGER         B, C, R, I, J, K, L, M, N ! loop counters and subscripts
@@ -79,7 +84,7 @@ C.........  LOCAL VARIABLES and their descriptions
         CHARACTER(256)  MESG    !  message buffer for M3EXIT()
         CHARACTER(5)    BTMP    ! temporary tag for naming output variables
 C.........  CVS release tag
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$'
+C       CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$'
 
         INTEGER         NCOLS   ! no. of grid columns
         INTEGER         NROWS   ! no. of grid rows

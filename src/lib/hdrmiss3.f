@@ -33,13 +33,16 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C****************************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
         CHARACTER(16) :: PROGNAME = 'HDRMISS3'    ! Program name
 

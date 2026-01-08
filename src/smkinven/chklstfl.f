@@ -14,6 +14,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C      Created 10/98 by M. Houyoux
+C      09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C**************************************************************************
 C
@@ -35,23 +36,26 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+c       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2) CRLF
-        INTEGER      GETFORMT
-        INTEGER      GETINVYR
-        INTEGER      JUNIT
+c       CHARACTER(2) CRLF
+c       INTEGER      GETFORMT
+c       INTEGER      GETINVYR
+c       INTEGER      JUNIT
 
-        EXTERNAL     CRLF, GETFORMT, GETINVYR, JUNIT
+c       EXTERNAL     CRLF, GETFORMT, GETINVYR, JUNIT
+        INTEGER, EXTERNAL :: GETFORMT
+        INTEGER, EXTERNAL :: GETINVYR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NLINE            ! number of lines in file
@@ -172,6 +176,8 @@ C.............  Determine format of INFILE
 C.............  Set flag based on format
             IF( FILFMT( J ) == EMSFMT ) EMSFLAG = .TRUE.
             IF( FILFMT( J ) == FF10FMT    .OR.
+     &          FILFMT( J ) == FF10DYFMT  .OR.
+     &          FILFMT( J ) == FF10HRFMT  .OR.
      &          FILFMT( J ) == MEDSFMT    .OR.
      &          FILFMT( J ) == ORLFMT     .OR.
      &          FILFMT( J ) == ORLNPFMT   .OR.
@@ -193,6 +199,8 @@ C.............  Check that file formats are consistent
 
             IF( ORLFLAG                   .AND. 
      &          FILFMT( J ) /= FF10FMT    .AND.
+     &          FILFMT( J ) /= FF10DYFMT  .AND.
+     &          FILFMT( J ) /= FF10HRFMT  .AND.
      &          FILFMT( J ) /= MEDSFMT    .AND.
      &          FILFMT( J ) /= ORLFMT     .AND.
      &          FILFMT( J ) /= ORLNPFMT   .AND.
@@ -214,7 +222,7 @@ C.............  Check that file formats are consistent
             EXTFORMAT = FILFMT( J )
 
         END DO     ! End of loop through list-formatted file
- 
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************

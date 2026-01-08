@@ -13,6 +13,8 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C       Created on ??/???? by ??
+C       09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***************************************************************************
 C
@@ -34,6 +36,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
@@ -67,32 +70,37 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
 c      INCLUDE 'PARMS3.EXT'    !  I/O API parameters (in modfileset)
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations 
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations 
 c      INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures (in modfileset)
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)       CRLF
-        LOGICAL            DSCM3GRD
-        LOGICAL            ENVYN
-        CHARACTER(IODLEN3) GETCFDSC
-        INTEGER            INDEX1
-        INTEGER            FIND1
-        INTEGER            PROMPTFFILE
-        CHARACTER(16)      VERCHAR
-        INTEGER            ENVINT
-        INTEGER            GETFLINE
-        INTEGER            GETEFILE
-        LOGICAL            BLKORCMT
-        LOGICAL            SETENVVAR
+c       CHARACTER(2)       CRLF
+c       LOGICAL            DSCM3GRD
+c       LOGICAL            ENVYN
+c       CHARACTER(IODLEN3) GETCFDSC
+c       INTEGER            INDEX1
+c       INTEGER            FIND1
+c       INTEGER            PROMPTFFILE
+c       CHARACTER(16)      VERCHAR
+c       INTEGER            ENVINT
+c       INTEGER            GETFLINE
+c       INTEGER            GETEFILE
+c       LOGICAL            BLKORCMT
+c       LOGICAL            SETENVVAR
 
-        EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INDEX1, 
-     &            PROMPTFFILE, VERCHAR, FIND1, ENVINT, GETFLINE,
-     &            BLKORCMT, SETENVVAR, GETEFILE
+c       EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INDEX1, 
+c    &            PROMPTFFILE, VERCHAR, FIND1, ENVINT, GETFLINE,
+c    &            BLKORCMT, SETENVVAR, GETEFILE
+        LOGICAL           , EXTERNAL :: DSCM3GRD
+        CHARACTER(MXDLEN3), EXTERNAL :: GETCFDSC
+        CHARACTER(16)     , EXTERNAL :: VERCHAR
+        INTEGER           , EXTERNAL :: GETFLINE
+        LOGICAL           , EXTERNAL :: BLKORCMT
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Gridding Matrix
@@ -118,11 +126,11 @@ C...........   File units and logical/physical names
         INTEGER         XDEV    !  for surrogate xref  file
         INTEGER         FDEV    !  for surrogate description file
 
-        CHARACTER(NAMLEN3)   ANAME   !  logical name for ASCII inventory input file
-        CHARACTER(NAMLEN3)   ENAME   !  logical name for i/o api inventory input file
-        CHARACTER(NAMLEN3)   INAME   !  tmp name for inven file of unknown fmt
-        CHARACTER(NAMLEN3)   GNAME   !  logical name for grid matrix output file
-        CHARACTER(NAMLEN3)   UNAME   !  logical name for ungrid matrix output file
+        CHARACTER(IOFLEN3)   ANAME   !  logical name for ASCII inventory input file
+        CHARACTER(IOFLEN3)   ENAME   !  logical name for i/o api inventory input file
+        CHARACTER(IOFLEN3)   INAME   !  tmp name for inven file of unknown fmt
+        CHARACTER(IOFLEN3)   GNAME   !  logical name for grid matrix output file
+        CHARACTER(IOFLEN3)   UNAME   !  logical name for ungrid matrix output file
 
 C...........   Other local variables
         

@@ -40,19 +40,22 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C****************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the global variables for the 3-d grid
+        USE M3UTILIO
+
         USE MODGRID, ONLY: XCELL, YCELL, XORIG, YORIG, NCOLS, NROWS
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
 
-        INCLUDE 'PARMS3.EXT'    ! I/O API constants
-        INCLUDE 'FDESC3.EXT'    ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'    ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'    ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
 
 C...........   ARGUMENTS and their descriptions:
 

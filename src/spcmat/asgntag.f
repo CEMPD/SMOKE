@@ -33,10 +33,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CSOURC, CSCC, CISIC, CMACT
 
 C...........   This module contains the cross-reference tables for tagging
@@ -57,14 +60,14 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
+C        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        INTEGER         FINDC
-        INTEGER         INDEX1
+C       CHARACTER(2)    CRLF
+C       INTEGER         FINDC
+C       INTEGER         INDEX1
 
-        EXTERNAL CRLF, FINDC, INDEX1
+C        EXTERNAL CRLF, FINDC, INDEX1
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT    (IN) :: SNAM    ! species name of interest

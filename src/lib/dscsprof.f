@@ -14,6 +14,9 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C       Created ??/???? by ????
+C       09/2025 by HT UNC-IE:  Use M3UTILIO; change  POLNAMA's size from 16 to IOVLEN3
+C                             Change EINAM's size from (*) to (IOVLEN3) in consistent with MODINFO
 C
 C****************************************************************************/
 C
@@ -35,6 +38,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   Modules for public variables
 C.........  This module contains the information about the source category
@@ -48,32 +52,34 @@ C...........   This module contains the speciation profile tables
 C...........   Include files
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+c       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        INTEGER         GETFLINE
-        INTEGER         INDEX1
-        REAL            STR2REAL
-        LOGICAL         BLKORCMT
+c       CHARACTER(2)    CRLF
+c       INTEGER         GETFLINE
+c       INTEGER         INDEX1
+c       REAL            STR2REAL
+c       LOGICAL         BLKORCMT
 
-        EXTERNAL        BLKORCMT, CRLF, GETFLINE, INDEX1, STR2REAL
+c       EXTERNAL        BLKORCMT, CRLF, GETFLINE, INDEX1, STR2REAL
+        INTEGER, EXTERNAL :: GETFLINE
+        LOGICAL, EXTERNAL :: BLKORCMT
 
 C...........   Subroutine arguments (note- outputs MXSPFUL, MXSPEC, and SPCNAMES
 C              passed via module MODSPRO)
 
         INTEGER     , INTENT  (IN) :: FDEV            ! file unit number
         INTEGER     , INTENT  (IN) :: NIPOL           ! number of pollutants
-        CHARACTER(*), INTENT  (IN) :: EINAM( NIPOL )  ! pollutant names
+        CHARACTER(IOVLEN3), INTENT  (IN) :: EINAM( NIPOL )  ! pollutant names
 
 C.........  Local parameters
         INTEGER, PARAMETER :: MXSEG = 6        ! # of potential line segments
         INTEGER, PARAMETER :: TMPNSPEC = 5000  ! # tmp number of species per pollutant
 
 C...........   Arrays for getting pollutant-specific information from file
-        INTEGER       NENTRA ( NIPOL )   ! number of table entries per pollutant
-        INTEGER       NSPECA ( NIPOL )   ! number of species per pollutant
-        CHARACTER(16) POLNAMA( NIPOL )   ! unsorted pollutant names
+        INTEGER       NENTRA ( NIPOL )      ! number of table entries per pollutant
+        INTEGER       NSPECA ( NIPOL )      ! number of species per pollutant
+        CHARACTER(IOVLEN3) POLNAMA( NIPOL ) ! unsorted pollutant names; HT: change from 16 to IOVLEN3 for consistency
 
 C...........   Arrays for getting species-specific information from file
         INTEGER,            ALLOCATABLE :: INDX1A ( : )    ! sorting index for SPECNMA
@@ -84,7 +90,7 @@ C...........   Arrays for getting species-specific information from file
         INTEGER        IPOS( 10 )       ! position in input pollutant list
 
 C...........   Other arrays
-        CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
+        CHARACTER(32) SEGMENT( MXSEG )  ! Segments of parsed lines; HT: increase lenght to 32 to support variable name expansion 
 
 C...........   Local variables
 

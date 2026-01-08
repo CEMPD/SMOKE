@@ -1,4 +1,3 @@
-
         INTEGER FUNCTION GETINVYR( LINE )
 
 C***********************************************************************
@@ -34,20 +33,24 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES
 
-        INCLUDE 'PARMS3.EXT'   !  emissions constat parameters
+C        INCLUDE 'PARMS3.EXT'   !  emissions constat parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        INTEGER         STR2INT
+C       INTEGER         STR2INT
         INTEGER         TRIMLEN
 
-        EXTERNAL        STR2INT, TRIMLEN
+C        EXTERNAL        STR2INT, TRIMLEN
+        EXTERNAL     TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*) LINE    !  description of source category

@@ -1,0 +1,36 @@
+{
+    "inputs": "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2020/2020ha2_cb6_20k/inputs",
+    "outputs": "/proj/ie/proj/SMOKE/htran/Emission_Modeling_Platform/2020/2020ha2_cb6_20k/inputs/issue135",
+    "sector_skip": [],
+    "sector": {
+        "cmv_c1c2": [
+            "cmv_C1C2_01_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_02_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_03_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_04_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_05_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_06_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_07_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_08_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_09_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_10_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_11_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_12_cmv_c1c2_2020_12US1_2020_US_hourly.csv",
+            "cmv_C1C2_12_cmv_c1c2_2020_12US1_2020_US_nexthour.csv",
+            "cmv_C1C2_cmv_c1c2_2020_12US1_2020_US_annual_22sep2022_v0.csv"
+        ]
+    },
+    "filter_col": "region_cd",
+    "filtered_val": [
+        "36005",
+        "36047",
+        "36059",
+        "36061",
+        "36081",
+        "36085",
+        "36103",
+        "36119"
+    ],
+    "start_val": null,
+    "end_val": null
+}

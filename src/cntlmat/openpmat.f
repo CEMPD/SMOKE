@@ -12,6 +12,8 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C       Created on ??/???? by ?? 
+C       09/2025 by HT UNC-IE:  Use M3UTILIO
 C     
 C
 C***********************************************************************
@@ -34,6 +36,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
@@ -49,20 +52,23 @@ C.........This module is required by the FileSetAPI
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)       CRLF
-        CHARACTER(IODLEN3) GETCFDSC
-        INTEGER            GETIFDSC   
-        CHARACTER(16)      VERCHAR
+c       CHARACTER(2)       CRLF
+c       CHARACTER(IODLEN3) GETCFDSC
+c       INTEGER            GETIFDSC   
+c       CHARACTER(16)      VERCHAR
 
-        EXTERNAL     CRLF, GETCFDSC, GETIFDSC, VERCHAR
+c       EXTERNAL     CRLF, GETCFDSC, GETIFDSC, VERCHAR
+        CHARACTER(IODLEN3), EXTERNAL :: GETCFDSC
+        INTEGER           , EXTERNAL :: GETIFDSC
+        CHARACTER(16)     , EXTERNAL :: VERCHAR
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME      ! emissions inven logical name

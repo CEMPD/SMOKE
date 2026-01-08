@@ -33,6 +33,7 @@ C  REVISION  HISTORY:
 C    started 10/98 by M Houyoux as rawpoint.f from emspoint.F 4.3
 C    smkinven changes started 4/98
 C    toxics changes 11/2002  A. Holland
+C    09/2025 by HT UNC-IE: Use M3UTILIO; replace NAMLEN3 with IOVLEN3
 C
 C***************************************************************************
 C
@@ -54,6 +55,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
@@ -67,34 +69,37 @@ C.........  This module contains the information about the source category
      &                     EINAM, AVIDX, ACTVTY, EANAM, NSRC
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG
+        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG     
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C       INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)  CRLF
-        INTEGER       ENVINT
-        LOGICAL       ENVYN
-        INTEGER       INDEX1
-        INTEGER       GETFLINE
-        INTEGER       GETTZONE
-        INTEGER       STR2INT
-        LOGICAL       USEEXPGEO
+C       CHARACTER(2)  CRLF
+C       INTEGER       ENVINT
+C       LOGICAL       ENVYN
+C       INTEGER       INDEX1
+C       INTEGER       GETFLINE
+C       INTEGER       GETTZONE
+C       INTEGER       STR2INT
+C       LOGICAL       USEEXPGEO
 
-        EXTERNAL      CRLF, ENVINT, ENVYN, INDEX1, GETFLINE, GETTZONE, 
-     &                STR2INT, USEEXPGEO
+C       EXTERNAL      CRLF, ENVINT, ENVYN, INDEX1, GETFLINE, GETTZONE, 
+C    &                STR2INT, USEEXPGEO
+        INTEGER, EXTERNAL :: GETFLINE
+        INTEGER, EXTERNAL :: GETTZONE
+        LOGICAL, EXTERNAL :: USEEXPGEO
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C.........  LOCAL VARIABLES and their descriptions:
 
@@ -126,13 +131,16 @@ C.........  File units and logical/physical names
         INTEGER    :: YDEV = 0  !  unit no. for area-to-point factors file
         INTEGER    :: ZDEV = 0  !  unit no. for time zone file
 
-        CHARACTER(NAMLEN3) :: ANAME = ' '! inven ASCII output logical name
-        CHARACTER(NAMLEN3) :: DNAME = ' '! day-specific input logical name
-        CHARACTER(NAMLEN3) :: ENAME = ' '! inven I/O API output logical name
-        CHARACTER(NAMLEN3) :: GNAME = ' '! gridded I/O API input logical
-        CHARACTER(NAMLEN3) :: HNAME = ' '! hour-specific input logical name
-        CHARACTER(NAMLEN3) :: INAME = ' '! inven input logical name
-        CHARACTER(NAMLEN3) :: TNAME = ' '! tmp day- or hour-specific input logical name
+C... H.T. UNC-IE Sep 2025: Change size of the following parameters from NAMLEN3 (defined in ioapi/PARMS3.EXT)
+C...                       to IOULEN3 (defined in SMOKE/src/inc/IOSTRG3.EXT) for better control in SMOKE
+C...                       As of Sep 2nd 2025, both NAMLEN3 and IOULEN3 are assigned with values = 16
+        CHARACTER(IOFLEN3) :: ANAME = ' '! inven ASCII output logical name
+        CHARACTER(IOFLEN3) :: DNAME = ' '! day-specific input logical name
+        CHARACTER(IOFLEN3) :: ENAME = ' '! inven I/O API output logical name
+        CHARACTER(IOFLEN3) :: GNAME = ' '! gridded I/O API input logical
+        CHARACTER(IOFLEN3) :: HNAME = ' '! hour-specific input logical name
+        CHARACTER(IOFLEN3) :: INAME = ' '! inven input logical name
+        CHARACTER(IOFLEN3) :: TNAME = ' '! tmp day- or hour-specific input logical name
 
 C...........   Other local variables
                                 
@@ -174,6 +182,9 @@ C...........   Other local variables
         CHARACTER(PHYLEN3) :: VARPATH = './' ! path for pol/act files
         CHARACTER(FIPLEN3)    CFIP        ! temporary FIPS code
         CHARACTER(FIPLEN3)    PCFIP       ! previous FIPS code
+
+        CHARACTER(IOVLEN3) :: TMPENV = ' ' !  temporary environment variable name
+        CHARACTER(IODLEN3) :: TMPDESC = ' ' !  temporary environment variable desc      
 
         CHARACTER(16) :: PROGNAME = 'SMKINVEN'   !  program name
 

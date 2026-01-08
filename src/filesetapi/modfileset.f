@@ -14,6 +14,7 @@
 !
 !  REVISION HISTORY:
 !     Created 6/02 by C. Seppanen
+!     09/2025 by HT UNC-IE:  Use M3UTILIO; Make use of EMSTRG3.EXT for variable size control 
 !
 !***************************************************************************
 !
@@ -34,13 +35,14 @@
 ! Last updated: $Date$ 
 !
 !*************************************************************************
+       USE M3UTILIO
 
        IMPLICIT NONE
        SAVE
 
 !.........  Include files
-       INCLUDE 'PARMS3.EXT'  ! I/O API parameters
-       INCLUDE 'FDESC3.EXT'  ! I/O API file description data structures
+c      INCLUDE 'PARMS3.EXT'  ! I/O API parameters
+c      INCLUDE 'FDESC3.EXT'  ! I/O API file description data structures
 
 !.........  File set information        
        INTEGER              :: NVARSET             ! total number of variables in the file set
@@ -52,12 +54,15 @@
        CHARACTER(16), ALLOCATABLE :: VNAMESET( : )  ! variable names
        CHARACTER(16), ALLOCATABLE :: VUNITSET( : )  ! variable units
        CHARACTER(80), ALLOCATABLE :: VDESCSET( : )  ! variable descriptions
+c      CHARACTER(IOVLEN3), ALLOCATABLE :: VNAMESET( : )  ! variable names
+c      CHARACTER(IOULEN3), ALLOCATABLE :: VUNITSET( : )  ! variable units
+c      CHARACTER(IODLEN3), ALLOCATABLE :: VDESCSET( : )  ! variable descriptions
 
 !.........  Internal wrapper data
        TYPE :: CHAR_PTR_ARRAY
-           LOGICAL                :: RDONLY        ! read-only status
-           CHARACTER(16), POINTER :: LNAMES( : )   ! logical file names
-           CHARACTER(16), POINTER :: VARS( :,: )   ! variable names
+           LOGICAL                :: RDONLY            ! read-only status
+           CHARACTER(16), POINTER :: LNAMES( : )       ! logical file names
+           CHARACTER(16), POINTER :: VARS( :,: )       ! variable names
        END TYPE
         
        INTEGER                :: NOPENSETS = 0         ! total number of open file sets

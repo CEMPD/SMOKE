@@ -53,7 +53,7 @@ C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVTBL, ITFACA, ITNAMA,
      &                      ITKEEPA, SORTCAS, SCASIDX, NUNIQCAS, INVDVTS,
      &                      UCASNPOL, UNIQCAS, UCASIDX, UCASNKEP, MXIDAT,
-     &                      INVDNAM
+     &                      INVDNAM, FIREFF10
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPPA, NSRC, EANAM, NCHARS, INV_MON
@@ -218,6 +218,10 @@ C...... H.T. UNC-IE: Fix Day-light Saving Time issue
         INTEGER, SAVE :: CDATNUM = 0
         INTEGER :: cdatidx
         LOGICAL :: DSLFLAG
+C...... H.T. UNC-IE: Fix issue 136
+        INTEGER, SAVE :: TMNPTR           ! theoretical minimum time step reference pointer
+        INTEGER, SAVE :: TMXPTR           ! theoretical maximum time step reference pointer
+        INTEGER, SAVE :: MNTZON, MXTZON   ! minimum and maximum time zone
 C...... END        
 
         CHARACTER(16) :: PROGNAME = 'RDFF10PD' !  program name
@@ -317,6 +321,10 @@ C.........  For the first call in a loop of files, initialize variables
         IF( FIRSTCALL ) THEN
             MINPTR  = 99999999
             MAXPTR  = 0
+            TMNPTR = 99999999
+            TMXPTR = 0
+            MNTZON = 99999999
+            MXTZON = -9999999
             IF (.NOT. ALLOCATED( CDATRAW )) THEN ! H.T. UNC-IE
                 ALLOCATE( CDATRAW(NUNIQCAS), STAT=IOS) 
                 CALL CHECKMEM( IOS, 'CDATRAW', PROGNAME )
@@ -418,9 +426,9 @@ C.............  Skip column header line
             IF( .NOT. CHKINT( SEGMENT( 2 ) ) ) CYCLE 
 
 C.............  Set Julian day from MMDDYY8 SAS format
-            IF( DAYFLAG ) THEN
+            IF( DAYFLAG ) THEN                   ! If this is daily data
                 YEAR  = YR4
-                MONTH = STR2INT( SEGMENT( 13 ) )
+                MONTH = STR2INT( SEGMENT( 13 ) ) 
                 DAY   = 1
             ELSE
                 YEAR  = STR2INT( TRIM( SEGMENT(13)( 1:4 ) ) )
@@ -433,9 +441,9 @@ C.............  Set Julian day from MMDDYY8 SAS format
 
 C.............  Set the number of fields, depending on day- or hour-specific
             IF( DAYFLAG ) THEN
-                NFIELD  = MON_DAYS( MONTH )
-                LYEAR =  INT( 1 / YR2DAY( YEAR ) )   ! convert year to days
-                IF( LYEAR > 365 .AND. MONTH .EQ. 2 ) NFIELD = 29
+                NFIELD  = MON_DAYS( MONTH ) ! Get number of days in the month; defined in inc/EMCNST3.EXT; e.g., NFIELD = 31 for Jan 2020
+                LYEAR =  INT( 1 / YR2DAY( YEAR ) )   ! convert year to days by I/O API YR2DAY; e.g., leaf year YR2DAY( 1980 )	=  1.0 / 366.0
+                IF( LYEAR > 365 .AND. INV_MON .EQ. 2 ) NFIELD = 29 ! Fix issue 135
                 FSTLOC = 1
                 LSTLOC = NFIELD
             ELSE
@@ -448,11 +456,13 @@ C.............  Skip non-processing month/day
             IF( INV_MON > 0 ) THEN
                 NDAYS  = MON_DAYS( INV_MON )
                 LYEAR =  INT( 1 / YR2DAY( B_YEAR ) )   ! convert year to days
-                IF( LYEAR > 365 .AND. MONTH .EQ. 2 ) NDAYS = 29
-                FSTDATE = 1000 * B_YEAR + JULIAN( B_YEAR, INV_MON, 1 )
+                IF( LYEAR > 365 .AND. INV_MON .EQ. 2 ) NDAYS = 29 ! Fix issue 135
+                FSTDATE = 1000 * B_YEAR + JULIAN( B_YEAR, INV_MON, 1 ) 
+                TMNPTR = MIN( TMNPTR, SECSDIFF( RDATE, RTIME, FSTDATE, JTIME ) / TDIVIDE + 1 ) ! Fix issue 136
                 LSTDATE = 1000 * B_YEAR + JULIAN( B_YEAR, INV_MON, NDAYS )
                 CALL NEXTIME( FSTDATE, JTIME, -240000 )     ! include the last day of previous month
-                CALL NEXTIME( LSTDATE, JTIME,  240000 )     ! include the first day of next month 
+                CALL NEXTIME( LSTDATE, JTIME,  240000 )     ! include the first day of next month
+                TMXPTR = MAX( TMXPTR,SECSDIFF( RDATE, RTIME, LSTDATE, JTIME ) / TDIVIDE + 1 ) ! Fix issue 136
 
                 IF( DAYFLAG ) THEN
 
@@ -460,6 +470,8 @@ C.............  Skip non-processing month/day
                     CALL DAYMON ( FSTPRV, MONTH, N )
                     N = MON_DAYS( MONTH )
                     CALL NEXTIME( FSTPRV, JTIME, -240000 * (N-1) )
+
+                    IF( .NOT. ( FSTPRV <= JDATE .AND. JDATE <= LSTDATE ) ) CYCLE ! UNC-IE 12/10/2025: Skipping processing data earlier to speed up
 
                     IF( LSTDATE .EQ. JDATE ) THEN
                         NFIELD = 1
@@ -587,6 +599,9 @@ C.............  Store maximum time step number as compared to reference
             END IF
 
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
+
+            MXTZON = max(MXTZON, DZONE)
+            MNTZON = min(MNTZON, DZONE)
 
 C.............  Find source ID
 C.............  Set key for searching sources
@@ -717,6 +732,9 @@ C.............  Left justify and convert pollutant name to upper case
             CDAT = ADJUSTL( CDAT ) 
             CALL UPCASE( CDAT )
             CALL GET_CDAT(CDAT) 
+
+C.............  UNC-IE 12/10/2025: Update for fire emission flag
+            IF ( CDAT == 'ACRESBURNED' ) FIREFF10 = .TRUE.       ! fire in FF10 format
 
 C.............  Look up pollutant name in unique sorted array of
 C               Inventory pollutant names
@@ -1023,12 +1041,19 @@ C.........  Update output starting date/time and ending date/time
         STIME = RTIME
         DO I = 1, MINPTR - 1
             CALL NEXTIME( SDATE, STIME, TSTEP )
+            IF ( MONTH .EQ. INV_MON .AND. TMNPTR .LT. MINPTR ) THEN ! Warning for missing data at beginning hours from local to UTC time ("head-issue")
+                IF ( I .GE. TMNPTR .AND. I .LT. MINPTR ) THEN
+                    WRITE( MESG,94030 ) 'WARNING: Missing data for ',
+     &                   SDATE,'  ',STIME,'. This may cause unexpected results.' 
+                    CALL M3MESG( MESG )
+                END IF
+            END IF
         END DO
 
         EDATE = RDATE
         ETIME = RTIME
         
-        DO I = 1, MAXPTR - 1
+        DO I = 1, MAX( MAXPTR, TMXPTR ) - 1      ! Fix for issue 136; "tail-issue"
             CALL NEXTIME( EDATE, ETIME, TSTEP )
         END DO
 
@@ -1045,6 +1070,8 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
 94020   FORMAT( I6.6 )
+
+94030   FORMAT( A, I7, A, I6, A)
 
         CONTAINS
         

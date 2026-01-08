@@ -36,25 +36,29 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+        INCLUDE 'IOSTRG3.EXT'     !
      
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER         INDEX1
-        CHARACTER(16)   PROMPTMFILE
-        LOGICAL         STRLIST
+C       INTEGER         INDEX1
+C       CHARACTER(16)   PROMPTMFILE
+C       LOGICAL         STRLIST
 
-        EXTERNAL        INDEX1, PROMPTMFILE, STRLIST
+C        EXTERNAL        INDEX1, PROMPTMFILE, STRLIST
 
 C.........  LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS release tag
 
         INTEGER,      PARAMETER :: MAXVARS = 80        ! maximum number of variables
 

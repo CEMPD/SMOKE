@@ -82,7 +82,7 @@
         CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: MOLUNITS( :,: )
 
 !.........  Header definitions for NONHAP<pollutants>
-        CHARACTER(4), PARAMETER :: HDRSTART = '#NHAP' ! start of header
+        CHARACTER(5), PARAMETER :: HDRSTART = '#NHAP' ! start of header
 
         INTEGER,                         PUBLIC :: NSPDEF   ! no. pols with def'ns
         INTEGER,                         PUBLIC :: MXSPLST  ! max items per def'n list

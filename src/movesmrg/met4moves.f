@@ -34,9 +34,12 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C...........   MODULES for public variables
+        USE M3UTILIO
+
         USE MODMBSET, ONLY: NINVC, NREFC, MCREFSORT, MCREFIDX,
      &                      DAILY, WEEKLY, MONTHLY, EPISLEN,
      &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
@@ -68,41 +71,42 @@ C...........   This module is the derived meteorology data for emission factors
         
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
 
-        CHARACTER(2)    CRLF
+C       CHARACTER(2)    CRLF
         LOGICAL         BLKORCMT 
         LOGICAL         DSCM3GRD
         INTEGER         GETIFDSC
         INTEGER         GETFLINE
-        INTEGER         GETEFILE
-        INTEGER         ENVINT
-        REAL            ENVREAL
-        INTEGER         INDEX1
-        LOGICAL         INTLIST
-        LOGICAL         ISDSTIME 
-        INTEGER         FINDC
+C       INTEGER         GETEFILE
+C       INTEGER         ENVINT
+C       REAL            ENVREAL
+C       INTEGER         INDEX1
+C       LOGICAL         INTLIST
+C       LOGICAL         ISDSTIME 
+C       INTEGER         FINDC
         INTEGER         FINDCFIRST
-        CHARACTER(14)   MMDDYY
-        INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
-        INTEGER         SECSDIFF
-        LOGICAL         SETENVVAR
-        INTEGER         WKDAY
-        INTEGER         STR2INT
-        LOGICAL         ENVYN 
+C       CHARACTER(14)   MMDDYY
+C       INTEGER         PROMPTFFILE
+C       CHARACTER(16)   PROMPTMFILE
+C       INTEGER         SECSDIFF
+C       LOGICAL         SETENVVAR
+C       INTEGER         WKDAY
+C       INTEGER         STR2INT
+C       LOGICAL         ENVYN 
         
-        EXTERNAL     CRLF, DSCM3GRD, GETIFDSC, GETFLINE, ENVINT, FINDC,
-     &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
-     &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST, ISDSTIME,
-     &               FINDCFIRST, STR2INT, BLKORCMT, ENVYN
+C        EXTERNAL     CRLF, DSCM3GRD, GETIFDSC, GETFLINE, ENVINT, FINDC,
+C     &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
+C     &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST, ISDSTIME,
+C     &               FINDCFIRST, STR2INT, BLKORCMT, ENVYN
+        EXTERNAL     DSCM3GRD, GETIFDSC, GETFLINE, FINDCFIRST, BLKORCMT
         
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
         INTEGER, PARAMETER :: MXVAR = 20
 
 C...........   LOCAL VARIABLES and their descriptions:

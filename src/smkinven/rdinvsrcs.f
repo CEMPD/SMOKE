@@ -41,10 +41,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CSOURCA, SRCIDA, 
      &                      NSTRECS, SRCSBYREC, RECIDX
 
@@ -63,32 +66,34 @@ C.........  This module is for mobile-specific data
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)    CRLF
-        INTEGER         ENVINT
+C       CHARACTER(2)    CRLF
+C       INTEGER         ENVINT
         INTEGER         GETFLINE
         INTEGER         GETFORMT
         INTEGER         GETINVYR
-        INTEGER         JUNIT
-        INTEGER         FIND1
+C       INTEGER         JUNIT
+C       INTEGER         FIND1
         INTEGER         FIND1FIRST
-        INTEGER         FINDC
+C       INTEGER         FINDC
         LOGICAL         CHKINT
-        INTEGER         STR2INT
-        INTEGER         INDEX1
+C       INTEGER         STR2INT
+C       INTEGER         INDEX1
         LOGICAL         BLKORCMT
-        LOGICAL         SETENVVAR
+C       LOGICAL         SETENVVAR
         INTEGER*4       GETPID   
         LOGICAL         USEEXPGEO
-        LOGICAL         ENVYN
+C       LOGICAL         ENVYN
 
-        EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR, 
-     &                  JUNIT, FIND1, FIND1FIRST, FINDC, ENVYN,
-     &                  CHKINT, STR2INT, INDEX1, BLKORCMT, SETENVVAR,
-     &                  USEEXPGEO
+C        EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR, 
+C     &                  JUNIT, FIND1, FIND1FIRST, FINDC, ENVYN,
+C     &                  CHKINT, STR2INT, INDEX1, BLKORCMT, SETENVVAR,
+C     &                  USEEXPGEO
+        EXTERNAL     GETFLINE, GETFORMT, GETINVYR, FIND1FIRST, CHKINT, 
+     &               BLKORCMT, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: FDEV         ! unit no. of inv file
@@ -500,7 +505,7 @@ C...............  Process line depending on file format and source category
      &                                   EFLAG )
                     END SELECT
 
-                CASE( FF10FMT )
+                CASE( FF10FMT, FF10DYFMT, FF10HRFMT )
                     ORLFLG = .TRUE.
                     FF10FLAG = .TRUE.
 

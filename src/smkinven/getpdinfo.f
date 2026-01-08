@@ -18,6 +18,7 @@ C      Subroutines: I/O API subroutine
 C
 C  REVISION  HISTORY:
 C      Created 12/99 by M. Houyoux
+C      09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***************************************************************************
 C
@@ -39,6 +40,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
@@ -60,21 +62,23 @@ C.........  This module contains the lists of unique inventory information
 C.........  INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+c       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)    CRLF
-        INTEGER         GETFLINE
-        INTEGER         GETFORMT
-        INTEGER         FINDC
-        INTEGER         FIND1
-        INTEGER         INDEX1 
-        INTEGER         INDEXINT1 
+c       CHARACTER(2)    CRLF
+c       INTEGER         GETFLINE
+c       INTEGER         GETFORMT
+c       INTEGER         FINDC
+c       INTEGER         FIND1
+c       INTEGER         INDEX1 
+c       INTEGER         INDEXINT1 
 
-        EXTERNAL        CRLF, GETFLINE, GETFORMT, FIND1, FINDC, INDEX1, INDEXINT1
+c       EXTERNAL        CRLF, GETFLINE, GETFORMT, FIND1, FINDC, INDEX1, INDEXINT1
+        INTEGER, EXTERNAL :: GETFLINE
+        INTEGER, EXTERNAL :: GETFORMT
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN):: FDEV          ! file unit no.

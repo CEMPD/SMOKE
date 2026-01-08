@@ -1,26 +1,29 @@
-C @(#)$Id$ $Source$ $Date$ 
+C @(#)$Id$ $Source$ $Date$
+C       Modified 09/2025 by HT UNC-IE: use IOCNST3.EXT
+C          for parameters overlap with this EXT file
 
         INCLUDE 'EMSTRG3.EXT'   !  emissions private parameters
+        INCLUDE 'IOCNST3.EXT'
 
 C.........   Output formatting parameters
         INTEGER     , PARAMETER :: EMOUTLN3 = 80
 
         CHARACTER(2),  PARAMETER :: EMCMISS3 = '??'
-        CHARACTER(5),  PARAMETER :: BLANK5   = ' '
-        CHARACTER(10), PARAMETER :: BLANK10  = ' '
-        CHARACTER(16), PARAMETER :: BLANK16  = ' '
+c       CHARACTER(5),  PARAMETER :: BLANK5   = ' ' ! Use IOCNST3.EXT instead
+c       CHARACTER(10), PARAMETER :: BLANK10  = ' ' ! Use IOCNST3.EXT instead
+c       CHARACTER(16), PARAMETER :: BLANK16  = ' ' ! Use IOCNST3.EXT instead
 
 C.........   Physical constants and conversion factors
-        REAL, PARAMETER :: DAY2SEC = 24. * 3600.  ! Days to seconds 
+c       REAL, PARAMETER :: DAY2SEC = 24. * 3600.  ! Days to seconds; use IOCNST3.EXT instead
         REAL, PARAMETER :: HR2SEC  = 1. / 3600.   ! x/hour to x/second
-        REAL, PARAMETER :: FT2M    = 0.3048       ! Feet to meters 
-        REAL, PARAMETER :: FT2M3   = FT2M ** 3    ! Cubic feet to cubic meters 
-        REAL, PARAMETER :: FLWE2M  = FT2M3 / 60.0 ! ft^3/min to m^3/sec
-        REAL, PARAMETER :: FTOC    = 5./9.        ! Fahrenheit to Celcius 
+c       REAL, PARAMETER :: FT2M    = 0.3048       ! Feet to meters; use IOCNST3.EXT instead
+c       REAL, PARAMETER :: FT2M3   = FT2M ** 3    ! Cubic feet to cubic meters; use IOCNST3.EXT instead
+c       REAL, PARAMETER :: FLWE2M  = FT2M3 / 60.0 ! ft^3/min to m^3/sec; use IOCNST3.EXT instead
+c       REAL, PARAMETER :: FTOC    = 5./9.        ! Fahrenheit to Celcius; use IOCNST3.EXT instead
         REAL, PARAMETER :: CTOF    = 9./5.        ! Celcius to Fahrenheit
-        REAL, PARAMETER :: SEC2DAY = 1. / DAY2SEC ! Days to seconds 
-        REAL, PARAMETER :: TON2GM  = 907184.74    ! Tons to grams 
-        REAL, PARAMETER :: GM2TON  = 1. / TON2GM  ! Grams to tons
+c       REAL, PARAMETER :: SEC2DAY = 1. / DAY2SEC ! Days to seconds; use IOCNST3.EXT instead
+c       REAL, PARAMETER :: TON2GM  = 907184.74    ! Tons to grams; use IOCNST3.EXT instead
+c       REAL, PARAMETER :: GM2TON  = 1. / TON2GM  ! Grams to tons; use IOCNST3.EXT instead
         REAL, PARAMETER :: LB2TON  = 1. / 2000.   ! Pounds to short tons
         REAL, PARAMETER :: PA2INHG = 1. / 3386.39 ! Pascals to inches of Hg
         REAL, PARAMETER :: G2M_HMD = 0.001607524  ! g_water/kg_dry_air to moles_w/moles_dry_air
@@ -83,8 +86,10 @@ C.........  Input file format constants
         INTEGER, PARAMETER  :: FF10FMT    = 11 ! FF10 format
         INTEGER, PARAMETER  :: MEDSFMT    = 12 ! MEDS format
         INTEGER, PARAMETER  :: NCDFMT     = 13 ! Gridded NetCDF format
+        INTEGER, PARAMETER  :: FF10DYFMT  = 14 ! FF10_DAILY_ format
+        INTEGER, PARAMETER  :: FF10HRFMT  = 15 ! FF10_HOURLY_ format
 
-        CHARACTER(12), PARAMETER :: FMTNAMES( 0:13 ) = 
+        CHARACTER(12), PARAMETER :: FMTNAMES( 0:15 ) = 
      &                        ( / 'list        ', 
      &                            'EMS-95      ', 
      &                            'EPS         ', 
@@ -98,10 +103,12 @@ C.........  Input file format constants
      &                            'ORL FIREEMIS',
      &                            'FF10        ',
      &                            'MEDS        ',
-     &                            'GRID        ' / )
+     &                            'GRID        ',
+     &                            'FF10_DAILY  ',
+     &                            'FF10_HOURLY ' / )
 
 C.........  Indicator for inventory header fields
-        CHARACTER, PARAMETER :: CINVHDR = '#'
+c       CHARACTER, PARAMETER :: CINVHDR = '#' ! Use IOCNST3.EXT instead 
 
 C.........  Separator for speciation "variables" (stored in description field)
         CHARACTER, PARAMETER :: SPJOIN = '~'

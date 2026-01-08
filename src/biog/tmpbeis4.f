@@ -69,7 +69,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(16)   VERCHAR
 
 C.........  ARGUMENTS and their descriptions
-        CHARACTER(50) :: CVSW    ! CVS release tag
+C       CHARACTER(50) :: CVSW    ! CVS release tag
         
 C.........  Latitude and longitude for zenith angle calculation
         REAL, ALLOCATABLE :: LAT  ( :, : )    !  grid lat (deg) -90 <= LAT <= 90

@@ -17,6 +17,7 @@ C      Subroutines: I/O API subroutines
 C
 C  REVISION  HISTORY:
 C      Created 4/99 by M. Houyoux
+C      09/2025 by HT UNC-IE:  Use M3UTILIO;  replace NAMLEN3 with IOULEN3
 C
 C**************************************************************************
 C
@@ -38,6 +39,8 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
+
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, NCOMP, VAR_FORMULA, NETCDFUNIT
 
@@ -58,21 +61,22 @@ C.........  This module is for mobile-specific data
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+c       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
-        CHARACTER(2)       CRLF
-        LOGICAL            ENVYN
-        INTEGER            ENVINT
-        INTEGER            INDEX1
-        INTEGER            PROMPTFFILE
-        CHARACTER(NAMLEN3) PROMPTMFILE
-        LOGICAL            USEEXPGEO
+c       CHARACTER(2)       CRLF
+c       LOGICAL            ENVYN
+c       INTEGER            ENVINT
+c       INTEGER            INDEX1
+c       INTEGER            PROMPTFFILE
+c       CHARACTER(NAMLEN3) PROMPTMFILE
+c       LOGICAL            USEEXPGEO
 
-        EXTERNAL        CRLF, ENVYN, INDEX1, PROMPTFFILE, PROMPTMFILE,
-     &                  USEEXPGEO, ENVINT
+c       EXTERNAL        CRLF, ENVYN, INDEX1, PROMPTFFILE, PROMPTMFILE,
+c    &                  USEEXPGEO, ENVINT
+        LOGICAL, EXTERNAL :: USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY  ! source category
@@ -106,9 +110,9 @@ C...........   Other local variables
         LOGICAL    :: NFLAG = .FALSE.  ! true: open non-HAP inclusions/exclusions
         LOGICAL    :: MFLAG = .FALSE.  ! true: treat all sources as treated
 
-        CHARACTER(NAMLEN3) ANAME
-        CHARACTER(NAMLEN3) NAMBUF      ! file name buffer
-        CHARACTER(NAMLEN3) INAME       ! tmp name for inven file of unknown fmt
+        CHARACTER(IOULEN3) ANAME
+        CHARACTER(IOULEN3) NAMBUF      ! file name buffer
+        CHARACTER(IOULEN3) INAME       ! tmp name for inven file of unknown fmt
         CHARACTER(256)     MESG        ! message buffer 
 
         CHARACTER(16) :: PROGNAME = 'OPENINVIN' ! program name

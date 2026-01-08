@@ -33,10 +33,13 @@ C
 C Pathname: %P%
 C Last updated: %G% %U%
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CSOURC
 
 C.........  This module contains the control packet data and control matrices
@@ -50,15 +53,15 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER         GETEFILE
-        INTEGER         PROMPTFFILE
+C       INTEGER         GETEFILE
+C       INTEGER         PROMPTFFILE
 
-        EXTERNAL   GETEFILE, PROMPTFFILE
+C        EXTERNAL   GETEFILE, PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
 

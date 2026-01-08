@@ -37,10 +37,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CIFIP, CSOURC, HEATCONTENT, INTGRFLAG, CINTGR
 
 C.........  This module contains the lists of unique inventory information
@@ -61,30 +64,31 @@ C.........  This module contains data for day- and hour-specific data
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER(2) CRLF
-        LOGICAL      ENVYN
-        INTEGER      ENVINT
-        INTEGER      FIND1
-        INTEGER      FINDC
-        INTEGER      INDEX1
-        INTEGER      JULIAN
-        INTEGER      SECSDIFF
-        INTEGER      STR2INT
-        REAL         STR2REAL
-        INTEGER      YEAR4
+C       CHARACTER(2) CRLF
+C       LOGICAL      ENVYN
+C       INTEGER      ENVINT
+C       INTEGER      FIND1
+C       INTEGER      FINDC
+C       INTEGER      INDEX1
+C       INTEGER      JULIAN
+C       INTEGER      SECSDIFF
+C       INTEGER      STR2INT
+C       REAL         STR2REAL
+C       INTEGER      YEAR4
         LOGICAL      BLKORCMT
         INTEGER      GETTZONE
-        LOGICAL      SETENVVAR
+C       LOGICAL      SETENVVAR
 
-        EXTERNAL     BLKORCMT, CRLF, ENVYN, FIND1, FINDC, INDEX1, 
-     &               JULIAN, SECSDIFF, STR2INT, STR2REAL, YEAR4,
-     &               GETTZONE, SETENVVAR, ENVINT
+C        EXTERNAL     BLKORCMT, CRLF, ENVYN, FIND1, FINDC, INDEX1, 
+C     &               JULIAN, SECSDIFF, STR2INT, STR2REAL, YEAR4,
+C     &               GETTZONE, SETENVVAR, ENVINT
+        EXTERNAL     BLKORCMT, GETTZONE
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT( IN ):: FDEV           ! file unit no.

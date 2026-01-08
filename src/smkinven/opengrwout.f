@@ -16,6 +16,9 @@ C
 C  REVISION  HISTORY:
 C      Created 2/2000 by M. Houyoux
 C      Updated 6/8/2005 by M. Houyoux for ORL format
+C      09/2025 by HT UNC-IE:  Use M3UTILIO; 
+C                             change size of ENAME and ONAME from fix value 16 to 
+C                             IOULEN3 for consitentcy
 C
 C***************************************************************************
 C
@@ -37,6 +40,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
@@ -47,26 +51,29 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+c       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
-        CHARACTER(2)        CRLF
-        CHARACTER(IODLEN3)  GETCFDSC
-        INTEGER             GETIFDSC
-        INTEGER             GETEFILE
-        INTEGER             INDEX1
-        INTEGER             PROMPTFFILE
-        LOGICAL             SETENVVAR
-        CHARACTER(16)       VERCHAR
+c       CHARACTER(2)        CRLF
+c       CHARACTER(IODLEN3)  GETCFDSC
+c       INTEGER             GETIFDSC
+c       INTEGER             GETEFILE
+c       INTEGER             INDEX1
+c       INTEGER             PROMPTFFILE
+c       LOGICAL             SETENVVAR
+c       CHARACTER(16)       VERCHAR
 
-        EXTERNAL CRLF, GETCFDSC, GETEFILE, INDEX1, PROMPTFFILE, 
-     &           SETENVVAR, VERCHAR
+c       EXTERNAL CRLF, GETCFDSC, GETEFILE, INDEX1, PROMPTFFILE, 
+c    &           SETENVVAR, VERCHAR
+        CHARACTER(MXDLEN3), EXTERNAL :: GETCFDSC
+        INTEGER           , EXTERNAL :: GETIFDSC
+        CHARACTER(16)     , EXTERNAL :: VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(16), INTENT (IN) :: ENAME ! emis input inven logical name
+        CHARACTER(IOULEN3), INTENT (IN) :: ENAME ! emis input inven logical name
         INTEGER      , INTENT (IN) :: FYEAR ! future year or 0 for no projection
         CHARACTER(80), INTENT (IN) :: NAME1 ! physical name part for i/o api
         LOGICAL      , INTENT (IN) :: SFLAG ! true: output SMOKE file
@@ -75,12 +82,12 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER      , INTENT(OUT) :: DDEV  ! IDA output emissions file number
         INTEGER      , INTENT(OUT) :: VDEV  ! IDA output activity file number
         INTEGER      , INTENT(OUT) :: RDEV  ! ORL output emissions file number
-        CHARACTER(16), INTENT(OUT) :: ONAME ! output logical main i/o api
+        CHARACTER(IOULEN3), INTENT(OUT) :: ONAME ! output logical main i/o api
         CHARACTER(PHYLEN3), INTENT( OUT ) :: VARPATH ! path for pol/act output files
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   Other local variables
 

@@ -19,6 +19,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 7/2000 by M Houyoux
+C       09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C  
@@ -40,6 +41,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C  
 C***********************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
@@ -86,23 +88,28 @@ C.........  This module is required for the FileSetAPI
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
-        LOGICAL     CHKINT
-        LOGICAL     CHKREAL 
-        CHARACTER(2) CRLF
-        INTEGER     FINDC
-        INTEGER     GETFLINE
-        INTEGER     GETNLIST
-        INTEGER     INDEX1
-        REAL        STR2REAL
-        INTEGER     STR2INT
-        LOGICAL     USEEXPGEO
+c       LOGICAL     CHKINT
+c       LOGICAL     CHKREAL 
+c       CHARACTER(2) CRLF
+c       INTEGER     FINDC
+c       INTEGER     GETFLINE
+c       INTEGER     GETNLIST
+c       INTEGER     INDEX1
+c       REAL        STR2REAL
+c       INTEGER     STR2INT
+c       LOGICAL     USEEXPGEO
 
-        EXTERNAL    CHKINT, CHKREAL, CRLF, FINDC, GETFLINE, GETNLIST, 
-     &              INDEX1, STR2REAL, STR2INT, USEEXPGEO
+c       EXTERNAL    CHKINT, CHKREAL, CRLF, FINDC, GETFLINE, GETNLIST, 
+c    &              INDEX1, STR2REAL, STR2INT, USEEXPGEO
+        LOGICAL, EXTERNAL :: CHKINT
+        LOGICAL, EXTERNAL :: CHKREAL
+        INTEGER, EXTERNAL :: GETFLINE
+        INTEGER, EXTERNAL :: GETNLIST
+        LOGICAL, EXTERNAL :: USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NSLIN  ! no. mass spec input vars

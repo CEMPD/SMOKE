@@ -39,6 +39,8 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
+        USE M3UTILIO
+
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CRL
 
@@ -47,13 +49,13 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C       INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER     PROMPTFFILE
-        EXTERNAL    PROMPTFFILE
+C        INTEGER     PROMPTFFILE
+C        EXTERNAL    PROMPTFFILE
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: NPSRC          !  actual source count

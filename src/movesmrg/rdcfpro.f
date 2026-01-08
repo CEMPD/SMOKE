@@ -35,10 +35,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
+        USE M3UTILIO
+
         USE MODMERGE, ONLY:  NIPPA, EANAM, NMSPC, EMNAM, NSMATV,
      &                       TSVDESC
 
@@ -56,23 +59,24 @@ C.........  This module is used for reference county information
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       BLKORCMT
         LOGICAL       CHKINT
         LOGICAL       CHKREAL
         INTEGER       GETFLINE
-        INTEGER       INDEX1
-        INTEGER       FIND1
-        INTEGER       FINDC
-        INTEGER       STR2INT
-        INTEGER       ENVINT
-        REAL          STR2REAL
-        CHARACTER(2)  CRLF
+C       INTEGER       INDEX1
+C       INTEGER       FIND1
+C       INTEGER       FINDC
+C       INTEGER       STR2INT
+C       INTEGER       ENVINT
+C       REAL          STR2REAL
+C       CHARACTER(2)  CRLF
         
-        EXTERNAL BLKORCMT, CHKINT, CHKREAL, FIND1, GETFLINE, 
-     &           STR2INT, STR2REAL, CRLF, INDEX1, ENVINT
+C        EXTERNAL BLKORCMT, CHKINT, CHKREAL, FIND1, GETFLINE, 
+C     &           STR2INT, STR2REAL, CRLF, INDEX1, ENVINT
+        EXTERNAL     BLKORCMT, CHKINT, CHKREAL, GETFLINE
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: CFDEV             ! CFPRO file unit no.

@@ -17,6 +17,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 4/99 by M. Houyoux
+C     09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C****************************************************************************/
 C
@@ -38,6 +39,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
@@ -53,17 +55,20 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        LOGICAL         CHKINT
-        LOGICAL         BLKORCMT, ENVYN
-        CHARACTER(2)    CRLF
-        INTEGER         FIND1
-        INTEGER         FINDC
-        INTEGER         GETFLINE
-        INTEGER         INDEX1
-        INTEGER         STR2INT
+c       LOGICAL         CHKINT
+c       LOGICAL         BLKORCMT, ENVYN
+c       CHARACTER(2)    CRLF
+c       INTEGER         FIND1
+c       INTEGER         FINDC
+c       INTEGER         GETFLINE
+c       INTEGER         INDEX1
+c       INTEGER         STR2INT
 
-        EXTERNAL  CHKINT, CRLF, FIND1, FINDC, GETFLINE, INDEX1, STR2INT,
-     &            BLKORCMT, ENVYN
+c       EXTERNAL  CHKINT, CRLF, FIND1, FINDC, GETFLINE, INDEX1, STR2INT,
+c    &            BLKORCMT, ENVYN
+        LOGICAL, EXTERNAL :: CHKINT
+        LOGICAL, EXTERNAL :: BLKORCMT
+        INTEGER, EXTERNAL :: GETFLINE
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.

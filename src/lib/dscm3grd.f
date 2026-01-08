@@ -39,13 +39,15 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
+        USE M3UTILIO
 
         IMPLICIT NONE
         
         INCLUDE 'IOCNST3.EXT'
         INCLUDE 'IOSTRG3.EXT'
-        INCLUDE 'PARMS3.EXT'               
+C        INCLUDE 'PARMS3.EXT'               
         
 C...........   ARGUMENTS and their descriptions.  All are output variables:
         
@@ -71,16 +73,17 @@ C...........   EXTERNAL FUNCTIONS:
 
         LOGICAL      CHKINT
         LOGICAL      CHKREAL
-        LOGICAL      DSCGRID
-        CHARACTER(2) CRLF
-        INTEGER      GETEFILE
+C       LOGICAL      DSCGRID
+C       CHARACTER(2) CRLF
+C       INTEGER      GETEFILE
         INTEGER      GETNLIST
-        INTEGER      INDEX1
-        INTEGER      JUNIT
-        INTEGER      STR2INT
-        REAL         STR2REAL
-        EXTERNAL     CHKINT, CHKREAL, DSCGRID, CRLF, GETEFILE, GETNLIST, 
-     &               INDEX1, JUNIT, STR2INT, STR2REAL
+C       INTEGER      INDEX1
+C       INTEGER      JUNIT
+C       INTEGER      STR2INT
+C       REAL         STR2REAL
+C        EXTERNAL     CHKINT, CHKREAL, DSCGRID, CRLF, GETEFILE, GETNLIST, 
+C     &               INDEX1, JUNIT, STR2INT, STR2REAL
+        EXTERNAL     CHKINT, CHKREAL, GETNLIST
         
 C...........   Local parameters
         INTEGER, PARAMETER :: MXGRDTYP = 13

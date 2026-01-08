@@ -50,10 +50,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C  
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: XLOCA, YLOCA, STKDM, STKHT, STKTK, STKVE,
      &                      CSOURC, CIFIP, CPDESC, CSCC, CNAICS
 
@@ -86,32 +89,33 @@ C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2)    CRLF
+C       CHARACTER(2)    CRLF
         LOGICAL         DSCM3GRD
-        INTEGER         ENVINT
-        REAL            ENVREAL
-        LOGICAL         ENVYN
+C       INTEGER         ENVINT
+C       REAL            ENVREAL
+C       LOGICAL         ENVYN
         LOGICAL         EVALCRIT
-        INTEGER         FINDC
+C       INTEGER         FINDC
         REAL            PLUMRIS
-        INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
-        INTEGER         INDEX1        
+C       INTEGER         PROMPTFFILE
+C       CHARACTER(16)   PROMPTMFILE
+C       INTEGER         INDEX1        
 
-        EXTERNAL        CRLF, DSCM3GRD, ENVINT, ENVREAL, ENVYN, INDEX1,
-     &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE,
-     &                  PROMPTMFILE
+C        EXTERNAL        CRLF, DSCM3GRD, ENVINT, ENVREAL, ENVYN, INDEX1,
+C     &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE,
+C     &                  PROMPTMFILE
+        EXTERNAL     DSCM3GRD, EVALCRIT, PLUMRIS
 
 C...........  LOCAL PARAMETERS and their descriptions:
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
         INTEGER, PARAMETER :: LAYPOINT_APPROACH   = 0
         INTEGER, PARAMETER :: NOPING_APPROACH     = 0

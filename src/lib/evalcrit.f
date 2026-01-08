@@ -1,4 +1,3 @@
-
         LOGICAL FUNCTION EVALCRIT( NV, NORS, MXAND, VALS, REFS, RANK, 
      &                             CHRS, COMPARE, COMPCHR, TYPES, 
      &                             STATUS )
@@ -38,12 +37,14 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C  
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         
 C...........   ARGUMENTS and their descriptions:
         INTEGER     , INTENT (IN) :: NV      ! Number of values

@@ -14,6 +14,8 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C       Version ??/???? by ???
+C       09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C************************************************************************
 C
@@ -35,6 +37,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
@@ -47,16 +50,16 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)     CRLF
-        INTEGER          INDEX1
-        LOGICAL          SETENVVAR
+c       CHARACTER(2)     CRLF
+c       INTEGER          INDEX1
+c       LOGICAL          SETENVVAR
 
-        EXTERNAL    CRLF, INDEX1, SETENVVAR
+c       EXTERNAL    CRLF, INDEX1, SETENVVAR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NSRC                 ! no. inven sources        

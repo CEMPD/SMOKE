@@ -14,6 +14,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Written 7/2001 by M. Houyoux
+C     09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C  
@@ -35,6 +36,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C  
 C***********************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
@@ -59,7 +61,7 @@ C.........This module is required by the FileSetAPI
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   ! emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   ! FileSetAPI variables and functions
         INCLUDE 'CONST3.EXT'    ! physical and mathematical constants
 
@@ -71,16 +73,17 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER  , INTENT(IN OUT) :: NSTEPS   ! number of time steps limit
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2) CRLF
-        INTEGER      GETFLINE
-        CHARACTER(14) MMDDYY
-        LOGICAL      SETENVVAR
-        INTEGER      PROMPTFFILE
-        INTEGER      SECSDIFF
-        INTEGER      WKDAY
+c       CHARACTER(2) CRLF
+c       INTEGER      GETFLINE
+c       CHARACTER(14) MMDDYY
+c       LOGICAL      SETENVVAR
+c       INTEGER      PROMPTFFILE
+c       INTEGER      SECSDIFF
+c       INTEGER      WKDAY
 
-        EXTERNAL    CRLF, GETFLINE, MMDDYY, SETENVVAR, 
-     &              PROMPTMFILE, SECSDIFF, WKDAY
+c       EXTERNAL    CRLF, GETFLINE, MMDDYY, SETENVVAR, 
+c    &              PROMPTMFILE, SECSDIFF, WKDAY
+        INTEGER, EXTERNAL :: GETFLINE
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: DAYBEGT ( : )  ! day beginning time by source
@@ -636,7 +639,8 @@ C.............  Write status message
 
 C.................  Note that all sources in a group have the same group-total
 C                   emissions value at this point.
-                CALL SORTR2( NSRC, MXEIDX(1,K), MXEMIS(1,K), GROUPID )
+c               CALL SORTR2( NSRC, MXEIDX(1,K), MXEMIS(1,K), GROUPID )
+                CALL SORTR2( NSRC, MXEIDX(1,K), MXEMIS(1,K), FLOAT( GROUPID ) )
 
 C.................  Reset indices if a source is in a group, invert the
 C                   order, and change the index to a ranking.

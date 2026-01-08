@@ -16,6 +16,7 @@ C
 C  REVISION  HISTORY:
 C             10/00 : Prototype by JMV
 C             04/24 : Improvised by Huy Tran (UNC-IE)
+C     09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C
@@ -37,32 +38,35 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C*************************************************************************
+        USE M3UTILIO
 
-      USE MODFILESET
+        USE MODFILESET
 
-      IMPLICIT NONE
+        IMPLICIT NONE
 
 C...........   INCLUDES:
 
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'     ! Emissions constants
         INCLUDE 'SETDECL.EXT'     ! FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        INTEGER         GETFLINE
-        INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
-        INTEGER         TRIMLEN
+c       INTEGER         GETFLINE
+c       INTEGER         PROMPTFFILE
+c       CHARACTER(16)   PROMPTMFILE
+c       INTEGER         TRIMLEN
 
-        EXTERNAL  GETFLINE, PROMPTFFILE, PROMPTMFILE,
-     &            TRIMLEN
-        LOGICAL, EXTERNAL :: ENVYN          ! from IOAPI
+c       EXTERNAL  GETFLINE, PROMPTFFILE, PROMPTMFILE,
+c    &            TRIMLEN
+c       LOGICAL, EXTERNAL :: ENVYN          ! from IOAPI
+        INTEGER, EXTERNAL :: GETFLINE
+        INTEGER, EXTERNAL :: TRIMLEN
            
 C...........   PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........  LOCAL VARIABLES
 

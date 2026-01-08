@@ -41,16 +41,19 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C*************************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'     ! emissions constant parameters
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 
 C...........   PARAMETERS and their descriptions:
 
@@ -60,11 +63,12 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         CHKINT
         INTEGER         GETNLIST
-        INTEGER         PROMPTFFILE
-        INTEGER         STR2INT
-        REAL            STR2REAL
+C       INTEGER         PROMPTFFILE
+C       INTEGER         STR2INT
+C       REAL            STR2REAL
  
-        EXTERNAL    CHKINT, GETNLIST, PROMPTFFILE, STR2INT, STR2REAL
+C        EXTERNAL    CHKINT, GETNLIST, PROMPTFFILE, STR2INT, STR2REAL
+        EXTERNAL     CHKINT, GETNLIST
 
 C.........  Allocatable arrays
         INTEGER,      ALLOCATABLE :: INDXA  ( : )

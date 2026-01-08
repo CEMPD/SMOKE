@@ -48,12 +48,15 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 Ct
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........   MODULES for public variables
 C.........   MODSOURC contains the source ararys
 C.........   MODTMPRL contains the temporal profile tables
 C.........   MODINFO contains the information about the source category
+
+        USE M3UTILIO
 
         USE MODSOURC, ONLY: CSOURC, CSCC, TPFLAG, IRCLAS, IVTYPE
 
@@ -77,16 +80,16 @@ C.........   MODINFO contains the information about the source category
 C.........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
+C        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C.........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2), EXTERNAL :: CRLF
-        INTEGER     , EXTERNAL :: ENVINT
-        LOGICAL     , EXTERNAL :: ENVYN
-        INTEGER     , EXTERNAL :: FIND1
-        INTEGER     , EXTERNAL :: FINDC
-        INTEGER     , EXTERNAL :: INDEX1
+C       CHARACTER(2), EXTERNAL :: CRLF
+C       INTEGER     , EXTERNAL :: ENVINT
+C       LOGICAL     , EXTERNAL :: ENVYN
+C       INTEGER     , EXTERNAL :: FIND1
+C       INTEGER     , EXTERNAL :: FINDC
+C       INTEGER     , EXTERNAL :: INDEX1
         LOGICAL     , EXTERNAL :: SETSCCTYPE
         LOGICAL     , EXTERNAL :: CHKEXPSCC
         LOGICAL     , EXTERNAL :: USEEXPGEO

@@ -37,10 +37,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
+        USE M3UTILIO
+
         USE MODMERGE, ONLY: 
      &          MFLAG_BD, LREPANY,                          ! by-day hourly emis flags
      &          LREPSTA, LREPCNY, LREPSCC, LREPSRC, LGRDOUT,! report flags, gridded output
@@ -102,31 +105,32 @@ C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'CONST3.EXT'    !  physical constants
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         INCLUDE 'MVSCNST3.EXT'   !  MOVES constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(10)   HHMMSS
-        CHARACTER(2)    CRLF
-        INTEGER         INDEX1
+C       CHARACTER(10)   HHMMSS
+C       CHARACTER(2)    CRLF
+C       INTEGER         INDEX1
         INTEGER         FINDCFIRST
-        INTEGER         FINDC
-        INTEGER         WKDAY
-        INTEGER         ENVINT
-        INTEGER         STR2INT
-        CHARACTER(16)   PROMPTMFILE
+C       INTEGER         FINDC
+C       INTEGER         WKDAY
+C       INTEGER         ENVINT
+C       INTEGER         STR2INT
+C       CHARACTER(16)   PROMPTMFILE
 
-        EXTERNAL    HHMMSS, INDEX1, FINDCFIRST, FINDC, WKDAY, 
-     &              PROMPTMFILE, STR2INT, ENVINT, CRLF
+C        EXTERNAL    HHMMSS, INDEX1, FINDCFIRST, FINDC, WKDAY, 
+C     &              PROMPTMFILE, STR2INT, ENVINT, CRLF
+        EXTERNAL     FINDCFIRST
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 

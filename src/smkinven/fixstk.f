@@ -22,6 +22,7 @@ C  REVISION  HISTORY:
 C       prototype 12/95 by CJC
 C       copied by: mhouyoux
 C       origin: fixstk.F 4.3
+C       09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C
@@ -43,6 +44,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
@@ -54,25 +56,28 @@ C.........  This module contains the inventory arrays
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+c       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2)    CRLF
-        INTEGER         FINDC
-        INTEGER         GETFLINE
-        LOGICAL         BLKORCMT
-        INTEGER         STR2INT
-        REAL            STR2REAL
-        INTEGER         ENVINT
-        LOGICAL         USEEXPGEO
-        REAL            ENVREAL
-        LOGICAL         ENVYN
+c       CHARACTER(2)    CRLF
+c       INTEGER         FINDC
+c       INTEGER         GETFLINE
+c       LOGICAL         BLKORCMT
+c       INTEGER         STR2INT
+c       REAL            STR2REAL
+c       INTEGER         ENVINT
+c       LOGICAL         USEEXPGEO
+c       REAL            ENVREAL
+c       LOGICAL         ENVYN
 
-        EXTERNAL        BLKORCMT, CRLF, FINDC, GETFLINE, STR2REAL,
-     &                  STR2INT, ENVINT, USEEXPGEO, ENVREAL, ENVYN
+c       EXTERNAL        BLKORCMT, CRLF, FINDC, GETFLINE, STR2REAL,
+c    &                  STR2INT, ENVINT, USEEXPGEO, ENVREAL, ENVYN
+        INTEGER, EXTERNAL :: GETFLINE
+        LOGICAL, EXTERNAL :: BLKORCMT
+        LOGICAL, EXTERNAL :: USEEXPGEO
 
 C...........   ARGUMENTS and their descriptions:
 

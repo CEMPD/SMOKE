@@ -34,12 +34,14 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
+        USE M3UTILIO
 
         IMPLICIT NONE
         
         INCLUDE 'IOCNST3.EXT'
-        INCLUDE 'PARMS3.EXT'               
+C        INCLUDE 'PARMS3.EXT'               
         
 C...........   ARGUMENTS and their descriptions.  All are output variables:
         
@@ -51,15 +53,16 @@ C...........   ARGUMENTS and their descriptions.  All are output variables:
 C...........   EXTERNAL FUNCTIONS:
         LOGICAL      CHKINT
         LOGICAL      CHKREAL
-        CHARACTER(2) CRLF
-        INTEGER      GETEFILE
+C       CHARACTER(2) CRLF
+C       INTEGER      GETEFILE
         INTEGER      GETNLIST
-        INTEGER      INDEX1
-        INTEGER      STR2INT
-        REAL         STR2REAL
+C       INTEGER      INDEX1
+C       INTEGER      STR2INT
+C       REAL         STR2REAL
 
-        EXTERNAL     CHKINT, CHKREAL, CRLF, GETEFILE, GETNLIST, 
-     &               INDEX1, STR2INT, STR2REAL
+C        EXTERNAL     CHKINT, CHKREAL, CRLF, GETEFILE, GETNLIST, 
+C     &               INDEX1, STR2INT, STR2REAL
+        EXTERNAL     CHKINT, CHKREAL, GETNLIST
         
 C...........   Local parameters
         INTEGER, PARAMETER :: MXLAYTYP = 6
@@ -330,6 +333,7 @@ C********************** INTERNAL SUBPROGRAMS ****************************
 
 C.............  Subroutine arguments
             CHARACTER(*), INTENT (IN) :: STRINGS( 3 )
+
             INTEGER     , INTENT (IN) :: OUTTYPE
             REAL(8)     , INTENT(OUT) :: ROUT     ! real output value
             INTEGER     , INTENT(OUT) :: IOUT     ! integer output value

@@ -38,12 +38,15 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  MODINFO  contains the information about the source category
 C.........  MODSOURC contains the inventory arrays
 C........   MODTMPRL contains the temporal profile tables
+
+        USE M3UTILIO
 
         USE MODINFO,  ONLY: CATEGORY
         USE MODSOURC, ONLY: CSOURC, CSCC, TPFLAG
@@ -59,9 +62,9 @@ C........   MODTMPRL contains the temporal profile tables
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   SUBROUTINE ARGUMENTS
 
@@ -72,8 +75,8 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        INTEGER, EXTERNAL :: INDEX1
-        INTEGER, EXTERNAL :: FIND1
+C       INTEGER, EXTERNAL :: INDEX1
+C       INTEGER, EXTERNAL :: FIND1
 
 C...........   PARAMETERs and their descriptions:
 

@@ -31,10 +31,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CIFIP, INVYR, XLOCA, YLOCA,
      &                      CORIS, STKHT, STKDM, STKTK, STKVE,
      &                      CSCC, CSOURC, CPDESC, CLINK, CBLRID,
@@ -58,18 +61,18 @@ C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'CONST3.EXT'    !  physical constants
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2     CRLF
-        LOGICAL         ENVYN
-        INTEGER         FINDC
-        INTEGER         INDEX1
-        INTEGER         STR2INT
+C       CHARACTER*2     CRLF
+C       LOGICAL         ENVYN
+C       INTEGER         FINDC
+C       INTEGER         INDEX1
+C       INTEGER         STR2INT
 
-        EXTERNAL        CRLF, ENVYN, FINDC, INDEX1, STR2INT
+C        EXTERNAL        CRLF, ENVYN, FINDC, INDEX1, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER      , INTENT (IN) :: RDEV           ! emissions unit no.

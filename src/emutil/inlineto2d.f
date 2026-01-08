@@ -32,10 +32,13 @@ C Chapel Hill, NC 27599-6116
 C 
 C smoke@unc.edu
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
  
 C.........  MODULES for public variables
 C.........  This module contains the global variables for the 3-d grid
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: XLOCA, YLOCA
 
         USE MODGRID, ONLY: GRDNM, COORD, GDTYP, P_ALP, P_BET, P_GAM,
@@ -48,30 +51,31 @@ C.........  This module contains the global variables for the 3-d grid
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'
-        INCLUDE 'PARMS3.EXT'
-        INCLUDE 'IODECL3.EXT'
-        INCLUDE 'FDESC3.EXT'
+C        INCLUDE 'PARMS3.EXT'
+C        INCLUDE 'IODECL3.EXT'
+C        INCLUDE 'FDESC3.EXT'
       
 C...........   EXTERNAL FUNCTIONS
-        CHARACTER(2)  CRLF
-        LOGICAL       ENVYN
+C       CHARACTER(2)  CRLF
+C       LOGICAL       ENVYN
         INTEGER       GETFLINE
-        LOGICAL       GETYN       
-        INTEGER       INDEX1
-        INTEGER       LBLANK
-        INTEGER       PROMPTFFILE
-        CHARACTER(16) PROMPTMFILE
-        INTEGER       SEC2TIME
-        INTEGER       SECSDIFF
+C       LOGICAL       GETYN       
+C       INTEGER       INDEX1
+C       INTEGER       LBLANK
+C       INTEGER       PROMPTFFILE
+C       CHARACTER(16) PROMPTMFILE
+C       INTEGER       SEC2TIME
+C       INTEGER       SECSDIFF
         LOGICAL       DSCM3GRD
 
-        EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK,
-     &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF, DSCM3GRD
+C        EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK,
+C     &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF, DSCM3GRD
+        EXTERNAL     GETFLINE, DSCM3GRD
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name: SMOKEv5.1_Jul2024$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name: SMOKEv5.1_Jul2024$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Emissions arrays

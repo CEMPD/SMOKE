@@ -36,9 +36,12 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C**************************************************************************
 
 C.........  MODULES for public variables
+        USE M3UTILIO
+
         USE MODMERGE, ONLY: NSRCGRP, IGRPNUM, ISRCGRP,
      &                      EMGGRD, EMGGRDSPC, EMGGRDSPCT, NSGOUTPUT,
      &                      GRPCNT, NGRPS, IUGRPNUM, IUGRPIDX, SUBSECFLAG,
@@ -68,19 +71,20 @@ C...........   This module contains the inventory arrays
         IMPLICIT NONE
 
 C...........   INCLUDES
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
-        INTEGER         STR2INT, FIND1, FINDC, INDEX1
-        INTEGER         ENVINT
+C       INTEGER         STR2INT, FIND1, FINDC, INDEX1
+C       INTEGER         ENVINT
         LOGICAL         BLKORCMT, CHKINT
-        INTEGER         PROMPTFFILE
+C       INTEGER         PROMPTFFILE
         LOGICAL         USEEXPGEO
  
-        EXTERNAL  GETFLINE, STR2INT, FIND1, ENVINT, BLKORCMT, FINDC,
-     &            CHKINT, INDEX1, PROMPTFFILE, USEEXPGEO
+C        EXTERNAL  GETFLINE, STR2INT, FIND1, ENVINT, BLKORCMT, FINDC,
+C     &            CHKINT, INDEX1, PROMPTFFILE, USEEXPGEO
+        EXTERNAL     GETFLINE, BLKORCMT, CHKINT, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: SGDEV           ! file unit number

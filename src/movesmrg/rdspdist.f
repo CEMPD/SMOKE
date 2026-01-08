@@ -29,10 +29,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains data structures and flags specific to Movesmrg
+        USE M3UTILIO
+
         USE MODMVSMRG, ONLY: SPDIST
 
 C.........  This module contains the lists of unique source characteristics
@@ -45,25 +48,26 @@ C.........  This module is for mobile-specific data
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'MVSCNST3.EXT'   !  MOVES constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       BLKORCMT
         LOGICAL       CHKINT
         LOGICAL       CHKREAL
-        LOGICAL       ENVYN
-        INTEGER       INDEX1 
+C       LOGICAL       ENVYN
+C       INTEGER       INDEX1 
         INTEGER       GETFLINE
-        INTEGER       FINDC
-        INTEGER       STR2INT
-        INTEGER       PROMPTFFILE
-        INTEGER       ENVINT
-        REAL          STR2REAL
-        CHARACTER(2)  CRLF
+C       INTEGER       FINDC
+C       INTEGER       STR2INT
+C       INTEGER       PROMPTFFILE
+C       INTEGER       ENVINT
+C       REAL          STR2REAL
+C       CHARACTER(2)  CRLF
         
-        EXTERNAL BLKORCMT, CHKINT, CHKREAL, FINDC, GETFLINE, ENVINT,
-     &           STR2INT, STR2REAL, CRLF, ENVYN, INDEX1, PROMPTFFILE
+C        EXTERNAL BLKORCMT, CHKINT, CHKREAL, FINDC, GETFLINE, ENVINT,
+C     &           STR2INT, STR2REAL, CRLF, ENVYN, INDEX1, PROMPTFFILE
+        EXTERNAL     BLKORCMT, CHKINT, CHKREAL, GETFLINE
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: SPDEV             ! SPDIST file unit no.

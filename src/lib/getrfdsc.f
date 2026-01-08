@@ -1,4 +1,3 @@
-
         REAL FUNCTION GETRFDSC( FILEINFO, KEY, REQUIRED )
 
 C***********************************************************************
@@ -35,12 +34,14 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C****************************************************************************
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   Include files
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   ARGUMENTS and their descriptions:
 
@@ -50,8 +51,8 @@ C...........   ARGUMENTS and their descriptions:
 
 
 C...........   EXTERNAL FUNCTIONS:
-        REAL       STR2REAL
-        EXTERNAL   STR2REAL
+C       REAL       STR2REAL
+C        EXTERNAL   STR2REAL
 
 C...........   LOCAL VARIABLES their descriptions:
 

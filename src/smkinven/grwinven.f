@@ -11,6 +11,9 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C       Created ??/???? by ???
+C       09/2025 by HT UNC-IE: Use M3UTILIO; Remove unused format statements
+C                             Change NAMLEN3 to IOVLEN3 (variable-related) and IOFLEN3 (file-related)
 C
 C***************************************************************************
 C
@@ -32,6 +35,7 @@ C Pathname: $Source$
 C Last updated: $Date$
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
@@ -49,26 +53,27 @@ C...........   This module contains the information about the source category
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)            CRLF
-        INTEGER                 ENVINT
-        LOGICAL                 ENVYN
-        INTEGER                 GETIFDSC
-        INTEGER                 INDEX1
-        INTEGER                 PROMPTFFILE
-        INTEGER                 STR2INT
+c       CHARACTER(2)            CRLF
+c       INTEGER                 ENVINT
+c       LOGICAL                 ENVYN
+c       INTEGER                 GETIFDSC
+c       INTEGER                 INDEX1
+c       INTEGER                 PROMPTFFILE
+c       INTEGER                 STR2INT
 
-        EXTERNAL CRLF, ENVINT, ENVYN, GETIFDSC,
-     &           INDEX1, PROMPTFFILE, STR2INT
+c       EXTERNAL CRLF, ENVINT, ENVYN, GETIFDSC,
+c    &           INDEX1, PROMPTFFILE, STR2INT
+        INTEGER, EXTERNAL :: GETIFDSC
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........  LOCAL VARIABLES and their descriptions:
 C...........  Local parameters
@@ -94,9 +99,9 @@ C...........  Variables for each control/projection matrix
         INTEGER, ALLOCATABLE :: IDXALL ( : ) ! index of matrixes with "All"
         INTEGER, ALLOCATABLE :: NCPVARS( : ) ! sorted no. variables
 
-        CHARACTER(NAMLEN3), ALLOCATABLE :: CNAMEA ( : )  ! unsort mtx names
-        CHARACTER(NAMLEN3), ALLOCATABLE :: CNAME  ( : )  ! sorted mtx names
-        CHARACTER(NAMLEN3), ALLOCATABLE :: CPVNAMS( :,: )! mtx var names
+        CHARACTER(IOFLEN3), ALLOCATABLE :: CNAMEA ( : )  ! unsort mtx names
+        CHARACTER(IOFLEN3), ALLOCATABLE :: CNAME  ( : )  ! sorted mtx names
+        CHARACTER(IOVLEN3), ALLOCATABLE :: CPVNAMS( :,: )! mtx var names
 
 C...........  Control matrix factors
         REAL, ALLOCATABLE :: CFAC   ( : )  ! by-variable factors
@@ -125,12 +130,12 @@ C...........   File units and logical/physical names
         INTEGER  :: SDEV = 0 !  for ASCII input inventory file
         INTEGER  :: ZDEV = 0 !  for country/state/county file
 
-        CHARACTER(NAMLEN3) :: ANAME = ' '! inven ASCII input logical name
-        CHARACTER(NAMLEN3) :: ENAME = ' '! emis input inven logical name
-        CHARACTER(NAMLEN3) :: INAME      ! tmp name for inven file of unknown fmt
-        CHARACTER(NAMLEN3)    MNAME      ! tmp control/proj matrix name
-        CHARACTER(NAMLEN3) :: ONAME      ! output main i/o api
-        CHARACTER(NAMLEN3) :: TNAME = 'IOAPI_DAT'  ! input name for pol/act
+        CHARACTER(IOFLEN3) :: ANAME = ' '! inven ASCII input logical name
+        CHARACTER(IOFLEN3) :: ENAME = ' '! emis input inven logical name
+        CHARACTER(IOFLEN3) :: INAME      ! tmp name for inven file of unknown fmt
+        CHARACTER(IOFLEN3) :: MNAME      ! tmp control/proj matrix name
+        CHARACTER(IOFLEN3) :: ONAME      ! output main i/o api
+        CHARACTER(IOVLEN3) :: TNAME = 'IOAPI_DAT'  ! input name for pol/act
 
 C...........   Other local variables
                                 
@@ -868,24 +873,9 @@ C.........  Exit program with normal completion
 
 C******************  FORMAT  STATEMENTS   ******************************
 
-C...........   Informational (LOG) message formats... 92xxx
-
-92000   FORMAT( 5X, A )
-
-92010   FORMAT( 5X, A, :, I10 )
-
-
-C...........   Formatted file I/O formats............ 93xxx
-
-93000   FORMAT( A )
-
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
-
-94040   FORMAT( A, I2.2 )
-
-94060   FORMAT( 10( A, :, E10.3, :, 1X ) )
 
 94100   FORMAT( 10( A, :, I3, :, 1X ) )
 

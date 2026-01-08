@@ -1,5 +1,5 @@
 
-        SUBROUTINE TMPBEIS314( CVSW )
+        SUBROUTINE TMPBEIS314( )
 
 C***********************************************************************
 C  program body starts at line  187
@@ -42,10 +42,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C.........  Modules for public variables
 C.........  This module contains the speciation profile tables
+        USE M3UTILIO
+
         USE MODSPRO, ONLY: MXSPEC, SPCNAMES
 
 C.........  This module contains BEIS3 specific arrays
@@ -54,29 +57,30 @@ C.........  This module contains BEIS3 specific arrays
         IMPLICIT NONE
 
 C.........  INCLUDES:
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'     !
         INCLUDE 'B3V14DIMS3.EXT'  ! biogenic-related constants
         
 C.........  EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER         ENVINT 
-        LOGICAL         ENVYN
+C       INTEGER         ENVINT 
+C       LOGICAL         ENVYN
         CHARACTER(50)   GETCFDSC
         INTEGER         GETFLINE
-        CHARACTER(10)   HHMMSS
-        INTEGER         INDEX1
+C       CHARACTER(10)   HHMMSS
+C       INTEGER         INDEX1
 
-        CHARACTER(16)   PROMPTMFILE
-        INTEGER         PROMPTFFILE
+C       CHARACTER(16)   PROMPTMFILE
+C       INTEGER         PROMPTFFILE
         CHARACTER(16)   VERCHAR
 
-        EXTERNAL        ENVINT, ENVYN, GETFLINE, HHMMSS, INDEX1, PROMPTMFILE,  
-     &                  PROMPTFFILE, VERCHAR
+C        EXTERNAL        ENVINT, ENVYN, GETFLINE, HHMMSS, INDEX1, PROMPTMFILE,  
+C     &                  PROMPTFFILE, VERCHAR
+        EXTERNAL     GETFLINE, VERCHAR
 
 C.........  ARGUMENTS and their descriptions
-        CHARACTER(50), INTENT(IN) :: CVSW    ! CVS release tag
+C        CHARACTER(50), INTENT(IN) :: CVSW    ! CVS release tag
         
 C.........  Latitude and longitude for zenith angle calculation
         REAL, ALLOCATABLE :: LAT  ( :, : )    !  grid lat (deg) -90 <= LAT <= 90

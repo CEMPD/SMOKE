@@ -40,41 +40,45 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
+        USE M3UTILIO
+
         USE MODINFO, ONLY: CRL
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2)    CRLF
-        INTEGER         ENVINT
-        REAL            ENVREAL
-        LOGICAL         ENVYN
+C       CHARACTER(2)    CRLF
+C       INTEGER         ENVINT
+C       REAL            ENVREAL
+C       LOGICAL         ENVYN
         INTEGER         GETFLINE
-        INTEGER         GETNUM
-        INTEGER         INDEX1
-        INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
-        INTEGER         SECSDIFF
+C       INTEGER         GETNUM
+C       INTEGER         INDEX1
+C       INTEGER         PROMPTFFILE
+C       CHARACTER(16)   PROMPTMFILE
+C       INTEGER         SECSDIFF
         INTEGER         TRIMLEN
  
-        EXTERNAL    CRLF, ENVINT, ENVREAL, ENVYN, GETFLINE, GETNUM, 
-     &              INDEX1, PROMPTFFILE, PROMPTMFILE, SECSDIFF, TRIMLEN
+C        EXTERNAL    CRLF, ENVINT, ENVREAL, ENVYN, GETFLINE, GETNUM, 
+C     &              INDEX1, PROMPTFFILE, PROMPTMFILE, SECSDIFF, TRIMLEN
+        EXTERNAL     GETFLINE, TRIMLEN
 
 C.........  Allocatable arrays
         CHARACTER(4), ALLOCATABLE :: SPCNAM ( :,: )  ! output species names

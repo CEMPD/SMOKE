@@ -16,6 +16,7 @@ C
 C  REVISION  HISTORY:
 C     Updated Feb. 2005 with changes from J. Godowitch & G. Pouliot
 C     Updated to read either ACRESBURNED(EPA) or AREA(Bluesky) as acres burned variables
+C     09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C
@@ -37,6 +38,7 @@ C Pathname: $Source$
 C Last updated: $Date$
 C
 C***********************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
@@ -65,33 +67,37 @@ C.........  This module is required for the FileSetAPI
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        LOGICAL         CHKMETEM
-        CHARACTER(2)    CRLF
-        LOGICAL         DSCM3GRD
-        LOGICAL         DSCM3LAY
-        INTEGER         ENVINT
-        REAL            ENVREAL
-        LOGICAL         ENVYN
-        INTEGER         FIND1
-        INTEGER         MFIND1
-        CHARACTER(50)   GETCFDSC
-        CHARACTER(10)   HHMMSS
-        INTEGER         INDEX1
-        CHARACTER(14)   MMDDYY
-        INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
-        INTEGER         WKDAY
-        REAL            STR2REAL
+c       LOGICAL         CHKMETEM
+c       CHARACTER(2)    CRLF
+c       LOGICAL         DSCM3GRD
+c       LOGICAL         DSCM3LAY
+c       INTEGER         ENVINT
+c       REAL            ENVREAL
+c       LOGICAL         ENVYN
+c       INTEGER         FIND1
+c       INTEGER         MFIND1
+c       CHARACTER(50)   GETCFDSC
+c       CHARACTER(10)   HHMMSS
+c       INTEGER         INDEX1
+c       CHARACTER(14)   MMDDYY
+c       INTEGER         PROMPTFFILE
+c       CHARACTER(16)   PROMPTMFILE
+c       INTEGER         WKDAY
+c       REAL            STR2REAL
 
-        EXTERNAL   CHKMETEM, CRLF, DSCM3GRD, DSCM3LAY, ENVINT, ENVREAL,
-     &             ENVYN, FIND1, GETCFDSC, HHMMSS, INDEX1, MMDDYY,
-     &             PROMPTFFILE, PROMPTMFILE, VERCHAR, WKDAY, STR2REAL
+c       EXTERNAL   CHKMETEM, CRLF, DSCM3GRD, DSCM3LAY, ENVINT, ENVREAL,
+c    &             ENVYN, FIND1, GETCFDSC, HHMMSS, INDEX1, MMDDYY,
+c    &             PROMPTFFILE, PROMPTMFILE, VERCHAR, WKDAY, STR2REAL
+        LOGICAL      , EXTERNAL :: CHKMETEM
+        LOGICAL      , EXTERNAL :: DSCM3GRD
+        LOGICAL      , EXTERNAL :: DSCM3LAY
+        CHARACTER(50), EXTERNAL :: GETCFDSC
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
@@ -100,8 +106,8 @@ C...........  LOCAL PARAMETERS and their descriptions:
         REAL, PARAMETER :: ZERO      = 0.0     ! dummy zero value
         REAL, PARAMETER :: BTU2M4PS3 = 0.00000258  ! conv. factor for bouyancy flux
 
-        CHARACTER(50), PARAMETER ::
-     &  CVSW = '$Name SMOKEv5.0_Jun2023$' ! CVS release tag
+C       CHARACTER(50), PARAMETER ::
+C    &  CVSW = '$Name SMOKEv5.0_Jun2023$' ! CVS release tag
 
 C.........  Indicator for which public inventory arrays need to be read
         INTEGER,            PARAMETER :: NINVARR = 9

@@ -39,10 +39,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: TZONES, TPFLAG, FLTRDAYL
 
 C.........  This module contains the temporal profile tables
@@ -73,38 +76,39 @@ C.........  This module is used for MOBILE setup information
 
 C.........  INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C..........  EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         CHKINT
-        CHARACTER(2)    CRLF
-        INTEGER         ENVINT
-        LOGICAL         ENVYN
-        INTEGER         FINDC
-        INTEGER         JULIAN
-        INTEGER         GETDATE
+C       CHARACTER(2)    CRLF
+C       INTEGER         ENVINT
+C       LOGICAL         ENVYN
+C       INTEGER         FINDC
+C       INTEGER         JULIAN
+C       INTEGER         GETDATE
         INTEGER         GETFLINE
-        INTEGER         GETNUM
-        INTEGER         INDEX1
-        LOGICAL         ISDSTIME
-        CHARACTER(14)   MMDDYY
-        INTEGER         PROMPTFFILE
+C       INTEGER         GETNUM
+C       INTEGER         INDEX1
+C       LOGICAL         ISDSTIME
+C       CHARACTER(14)   MMDDYY
+C       INTEGER         PROMPTFFILE
         INTEGER         RDTPROF
-        INTEGER         SECSDIFF
-        INTEGER         STR2INT
+C       INTEGER         SECSDIFF
+C       INTEGER         STR2INT
         LOGICAL         USEEXPGEO
 
-        EXTERNAL    CHKINT, CRLF, ENVINT, ENVYN, FINDC, JULIAN,
-     &              GETDATE, GETFLINE, GETNUM, INDEX1, ISDSTIME, MMDDYY,
-     &              PROMPTFFILE, RDTPROF, SECSDIFF, STR2INT, USEEXPGEO
+C        EXTERNAL    CHKINT, CRLF, ENVINT, ENVYN, FINDC, JULIAN,
+C     &              GETDATE, GETFLINE, GETNUM, INDEX1, ISDSTIME, MMDDYY,
+C     &              PROMPTFFILE, RDTPROF, SECSDIFF, STR2INT, USEEXPGEO
+        EXTERNAL     CHKINT, GETFLINE, RDTPROF, USEEXPGEO
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS revision tag
+C       CHARACTER(50), PARAMETER :: CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS revision tag
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program

@@ -15,6 +15,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 2/99 by M. Houyoux
+C     09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***************************************************************************
 C
@@ -36,6 +37,7 @@ C Pathname: $Source$
 C Last updated: $Date$
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
@@ -51,19 +53,21 @@ C.........  This module is required by the FileSetAPI
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)       CRLF
-        INTEGER            FINDC
-        CHARACTER(IODLEN3) GETCFDSC
-        INTEGER            PROMPTFFILE
-        CHARACTER(16)      PROMPTMFILE
-        CHARACTER(16)      VERCHAR
+c       CHARACTER(2)       CRLF
+c       INTEGER            FINDC
+c       CHARACTER(IODLEN3) GETCFDSC
+c       INTEGER            PROMPTFFILE
+c       CHARACTER(16)      PROMPTMFILE
+c       CHARACTER(16)      VERCHAR
 
-        EXTERNAL        CRLF, FINDC, GETCFDSC, PROMPTFFILE, 
-     &                  PROMPTMFILE, VERCHAR
+c       EXTERNAL        CRLF, FINDC, GETCFDSC, PROMPTFFILE, 
+c    &                  PROMPTMFILE, VERCHAR
+        CHARACTER(80), EXTERNAL :: GETCFDSC
+        CHARACTER(16), EXTERNAL :: VERCHAR
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME      ! emissions inven logical name
@@ -83,8 +87,8 @@ C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: LVNAMES( 0:MXTAG, MXSPEC, NIPPA )   ! mole out vars
       
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.1_Jul2024  $'  ! CVS revision tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.1_Jul2024  $'  ! CVS revision tag
 
 C.........  Count of species per inventory pollutant/emission type
         INTEGER    NSPEC( NIPPA )

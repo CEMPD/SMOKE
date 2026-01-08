@@ -14,6 +14,7 @@ C      Subroutines: I/O API subroutine
 C
 C  REVISION  HISTORY:
 C      Created 12/2013 by B.H. Baek
+C      09/2025 by HT UNC-IE:  Use M3UTILIO; Removed MESG format 93000 which is not used anywhere
 C
 C*************************************************************************
 C
@@ -35,6 +36,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
@@ -47,19 +49,20 @@ C.........  This module contains data for day- and hour-specific data
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+c       INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER(2) CRLF
-        LOGICAL      ENVYN
-        INTEGER      FINDC
-        INTEGER      INDEX1
-        INTEGER      JUNIT 
-        INTEGER      GETFLINE
+c       CHARACTER(2) CRLF
+c       LOGICAL      ENVYN
+c       INTEGER      FINDC
+c       INTEGER      INDEX1
+c       INTEGER      JUNIT 
+c       INTEGER      GETFLINE
 
-        EXTERNAL     CRLF, ENVYN, FINDC, INDEX1, JUNIT, GETFLINE
+c       EXTERNAL     CRLF, ENVYN, FINDC, INDEX1, JUNIT, GETFLINE
+        INTEGER, EXTERNAL :: GETFLINE
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV      ! hour-specific file unit no.
@@ -169,9 +172,6 @@ C.............  Abort if error found
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************
-
-C...........   Formatted file I/O formats............ 93xxx
-93000   FORMAT( A )
 
 C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I8, :, 1X ) )

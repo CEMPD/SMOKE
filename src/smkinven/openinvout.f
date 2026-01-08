@@ -19,6 +19,9 @@ C      Functions: I/O API functions, VERCHAR
 C
 C  REVISION  HISTORY:
 C      Created 4/99 by M. Houyoux
+C      09/2025 by HT UNC-IE:  Use M3UTILIO;
+C           Change length of GRDNM, ENAME, ANAME from * to IOVLEN3 and IOFLEN3 for
+C           consistency with upstream caller (smkinven)
 C
 C*************************************************************************
 C
@@ -40,6 +43,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
@@ -54,26 +58,27 @@ C.........  This module is required by the FileSetAPI
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
-        CHARACTER(2)    CRLF
-        INTEGER         ENVINT
-        INTEGER         GETEFILE
-        INTEGER         INDEX1
-        INTEGER         PROMPTFFILE
-        LOGICAL         SETENVVAR
-        CHARACTER(16)   VERCHAR
+c       CHARACTER(2)    CRLF
+c       INTEGER         ENVINT
+c       INTEGER         GETEFILE
+c       INTEGER         INDEX1
+c       INTEGER         PROMPTFFILE
+c       LOGICAL         SETENVVAR
+c       CHARACTER(16)   VERCHAR
 
-        EXTERNAL    CRLF, ENVINT, GETEFILE, INDEX1, PROMPTFFILE, 
-     &              SETENVVAR, VERCHAR
+c       EXTERNAL    CRLF, ENVINT, GETEFILE, INDEX1, PROMPTFFILE, 
+c    &              SETENVVAR, VERCHAR
+        CHARACTER(16), EXTERNAL :: VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT(IN)  :: A2PFLAG  ! true: using area-to-point processing
-        CHARACTER(*), INTENT(IN)  :: GRDNM    ! grid name if any gridded data
-        CHARACTER(*), INTENT(OUT) :: ENAME    ! emis i/o api inven logical name
-        CHARACTER(*), INTENT(OUT) :: ANAME    ! emis ASCII inven logical name
+        CHARACTER(IOVLEN3), INTENT(IN)  :: GRDNM    ! grid name if any gridded data
+        CHARACTER(IOFLEN3), INTENT(OUT) :: ENAME    ! emis i/o api inven logical name
+        CHARACTER(IOFLEN3), INTENT(OUT) :: ANAME    ! emis ASCII inven logical name
         INTEGER     , INTENT(OUT) :: IDEV     ! map inventory file
         INTEGER     , INTENT(OUT) :: SDEV     ! ascii output inven file unit no.
         INTEGER     , INTENT(OUT) :: ADEV     ! REPINVEN output file unit no.
@@ -81,8 +86,8 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   LOCAL PARAMETERS
         CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   Other local variables
 
@@ -108,7 +113,7 @@ C...........   Other local variables
 
         CHARACTER(80)       NAME1  ! tmp file name component
         CHARACTER(80)       NAME2  ! tmp file name component
-        CHARACTER(NAMLEN3)  NAMBUF ! file name buffer
+        CHARACTER(IOFLEN3)  NAMBUF ! file name buffer
         CHARACTER(IOULEN3)  UNITS  ! tmp units name
         CHARACTER(PHYLEN3)  APHYS  ! ASCII physical file name
         CHARACTER(PHYLEN3)  EPHYS  ! I/O API physical file name

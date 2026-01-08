@@ -39,10 +39,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
+        USE M3UTILIO
+
         USE MODMERGE, ONLY:
      &          AFLAG, BFLAG, MFLAG, PFLAG,                     ! source flags
      &          AUFLAG, MUFLAG, PUFLAG,                         ! mult control flags
@@ -119,27 +122,28 @@ C.........  This module contains the global variables for the 3-d grid
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER(2)    CRLF
-        CHARACTER(10)   HHMMSS
-        INTEGER         INDEX1
-        INTEGER         WKDAY
+C       CHARACTER(2)    CRLF
+C       CHARACTER(10)   HHMMSS
+C       INTEGER         INDEX1
+C       INTEGER         WKDAY
         LOGICAL         USEEXPGEO
 
-        EXTERNAL    CRLF, HHMMSS, INDEX1, WKDAY, USEEXPGEO
+C        EXTERNAL    CRLF, HHMMSS, INDEX1, WKDAY, USEEXPGEO
+        EXTERNAL     USEEXPGEO
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
         CHARACTER(16), PARAMETER :: PROGNAME = 'SMKMERGE' ! program name
 
-        CHARACTER(50), PARAMETER ::
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER ::
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 

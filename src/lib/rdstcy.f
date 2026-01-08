@@ -34,10 +34,15 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated by Huy Tran UNC-IE on 2026-01:
+C                           Use M3UTILIO
+C                           Applied bug fix in INDEX1 call, line 456 following CJC's bug fix
 C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the arrays for state and county summaries
+        USE M3UTILIO
+
         USE MODSTCY, ONLY: LSTCYPOP, STCYPOPYR, USEDAYLT,
      &                     NCOUNTRY, NSTATE,   NCOUNTY,
      &                     CTRYCOD,  STATCOD,  CNTYCOD,
@@ -50,21 +55,22 @@ C.........  This module contains the arrays for state and county summaries
 C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL      CHKINT
-        CHARACTER(2) CRLF
-        INTEGER      ENVINT
-        INTEGER      FIND1
-        INTEGER      FINDC
-        INTEGER      INDEX1
+C       CHARACTER(2) CRLF
+C       INTEGER      ENVINT
+C       INTEGER      FIND1
+C       INTEGER      FINDC
+C       INTEGER      INDEX1
         INTEGER      GETFLINE
-        INTEGER      STR2INT 
-        REAL         STR2REAL
+C       INTEGER      STR2INT 
+C       REAL         STR2REAL
 
-        EXTERNAL  CHKINT, CRLF, ENVINT, FINDC, FIND1, INDEX1, GETFLINE, 
-     &            STR2INT, STR2REAL
+C        EXTERNAL  CHKINT, CRLF, ENVINT, FINDC, FIND1, INDEX1, GETFLINE, 
+C     &            STR2INT, STR2REAL
+        EXTERNAL     CHKINT, GETFLINE
 
 C...........   Subroutine arguments
         INTEGER,            INTENT (IN):: FDEV            ! county file unit no.
@@ -124,7 +130,7 @@ C...........   Other local variables
         CHARACTER(3)    TZN      ! tmp time zone
         CHARACTER(300)  LINE     ! line read buffer
         CHARACTER(300)  MESG     ! message buffer
-
+        CHARACTER(FIPLEN3)  FBUF     ! message buffer; for INDEX1 bugfix; following CJC (2023)
         CHARACTER(16) :: PROGNAME = 'RDSTCY' ! program name
 
 C***********************************************************************
@@ -470,8 +476,13 @@ C.........  Check if input states all have information in state codes file
 
 C.................  Loop through input states and report missing
                 DO N = 1, NDIMST
-                    STA = INSTATE( N ) * 1000
-                    J = INDEX1( STA, K, STATCOD )
+C                   STA = INSTATE( N ) * 1000
+C                   J = INDEX1( STA, K, STATCOD )
+C HT UNC-IE: There is bug in INDEX1 call above which expect STA to be a string
+C             However, STA was declared as integer
+C HT UNC-IE: Applying CJC (2023) bug fix to INDEX1 call
+                    WRITE( FBUF, '(I12)' ) INSTATE( N ) * 1000
+                    J = INDEX1( FBUF, K, STATCOD )
                     IF( J .LE. 0 ) THEN
                         EFLAG = .TRUE.
                         WRITE( MESG,'(A,1X,I3.3,A)' )

@@ -18,6 +18,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C       Created 7/2000 by M. Houyoux
+C       09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C***********************************************************************
 C
@@ -39,6 +40,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C****************************************************************************
+        USE M3UTILIO
 
 C.........  MODULES for public variables
 C.........  This module contains Smkreport-specific settings
@@ -73,21 +75,24 @@ C.........  This module is required for the FileSetAPI
 C.........  INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+c       INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)    CRLF
-        CHARACTER(50)   GETCFDSC  
-        INTEGER         GETIFDSC  
-        INTEGER         PROMPTFFILE  
-        CHARACTER(16)   PROMPTMFILE  
-        INTEGER         SECSDIFF  
-        LOGICAL         USEEXPGEO
+c       CHARACTER(2)    CRLF
+c       CHARACTER(50)   GETCFDSC  
+c       INTEGER         GETIFDSC  
+c       INTEGER         PROMPTFFILE  
+c       CHARACTER(16)   PROMPTMFILE  
+c       INTEGER         SECSDIFF  
+c       LOGICAL         USEEXPGEO
 
-        EXTERNAL  CRLF, GETCFDSC, GETIFDSC, PROMPTFFILE, 
-     &            PROMPTMFILE, SECSDIFF, USEEXPGEO
+c       EXTERNAL  CRLF, GETCFDSC, GETIFDSC, PROMPTFFILE, 
+c    &            PROMPTMFILE, SECSDIFF, USEEXPGEO
+        CHARACTER(MXDLEN3), EXTERNAL :: GETCFDSC
+        INTEGER           , EXTERNAL :: GETIFDSC
+        LOGICAL           , EXTERNAL :: USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: ENAME  ! name for I/O API inven input

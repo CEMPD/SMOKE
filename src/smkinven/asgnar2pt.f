@@ -16,6 +16,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 11/02 by M. Houyoux
+C     09/2025 by HT UNC-IE:  Use M3UTILIO
 C
 C************************************************************************
 C
@@ -37,6 +38,7 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+        USE M3UTILIO
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
@@ -53,14 +55,15 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
+C       INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        INTEGER         FINDC
-        LOGICAL         SETSCCTYPE
+C       CHARACTER(2)    CRLF
+C       INTEGER         FINDC
+C       LOGICAL         SETSCCTYPE
 
-        EXTERNAL        CRLF, FINDC, SETSCCTYPE
+C       EXTERNAL        CRLF, FINDC, SETSCCTYPE
+        LOGICAL, EXTERNAL :: SETSCCTYPE
 
 C...........   SUBROUTINE ARGUMENTS
 

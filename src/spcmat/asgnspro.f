@@ -41,10 +41,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module contains the source arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CSOURC, CSCC, IRCLAS, IVTYPE, CISIC, CMACT
 
 C.........  This module contains the lists of unique source characteristics
@@ -78,7 +81,7 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
+C        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C...........   PARAMETERs
 
@@ -86,17 +89,18 @@ C...........   PARAMETERs
         CHARACTER(16), PARAMETER :: PROGNAME = 'ASGNSPRO' ! program name
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        LOGICAL         ENVYN
-        INTEGER         FIND1
-        INTEGER         FINDC
-        INTEGER         INDEX1
-        INTEGER         ENVINT
-        INTEGER         PROMPTFFILE
+C       CHARACTER(2)    CRLF
+C       LOGICAL         ENVYN
+C       INTEGER         FIND1
+C       INTEGER         FINDC
+C       INTEGER         INDEX1
+C       INTEGER         ENVINT
+C       INTEGER         PROMPTFFILE
         LOGICAL         SETSCCTYPE
 
-        EXTERNAL CRLF, ENVYN, FINDC, FIND1, INDEX1, PROMPTFFILE,
-     &           SETSCCTYPE, ENVINT
+C        EXTERNAL CRLF, ENVYN, FINDC, FIND1, INDEX1, PROMPTFFILE,
+C     &           SETSCCTYPE, ENVINT
+        EXTERNAL     SETSCCTYPE
 
 C.........  SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT    (IN) :: MASSOUT        ! true: create mass-based

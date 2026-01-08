@@ -42,15 +42,18 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C  
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
 
-        INCLUDE 'PARMS3.EXT'    ! I/O API constants
-        INCLUDE 'FDESC3.EXT'    ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'    ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'    ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
         INCLUDE 'CONST3.EXT'    ! physical and mathematical constants
 
 C...........   ARGUMENTS and their descriptions:
@@ -95,8 +98,8 @@ C...........   PARAMETERS and their descriptions:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        REAL        POLY
-        EXTERNAL    POLY
+C       REAL        POLY
+C        EXTERNAL    POLY
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 

@@ -59,10 +59,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the global variables for the 3-d grid
+        USE M3UTILIO
+
         USE MODGRID, ONLY: GRDNM, COORD, GDTYP, P_ALP, P_BET, P_GAM,
      &                     XCENT, YCENT, XORIG, YORIG, XCELL, YCELL,
      &                     NCOLS, NROWS
@@ -71,25 +74,26 @@ C.........  This module contains the global variables for the 3-d grid
 
 C.........  INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER(2)    CRLF
+C       CHARACTER(2)    CRLF
         LOGICAL         DBLERR
         LOGICAL         DSCM3GRD
-        INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
-        LOGICAL         SETENVVAR
-        LOGICAL         ENVYN
+C       INTEGER         PROMPTFFILE
+C       CHARACTER(16)   PROMPTMFILE
+C       LOGICAL         SETENVVAR
+C       LOGICAL         ENVYN
 
-        EXTERNAL        CRLF, DBLERR, DSCM3GRD, PROMPTFFILE, 
-     &                  PROMPTMFILE, SETENVVAR, ENVYN
+C        EXTERNAL        CRLF, DBLERR, DSCM3GRD, PROMPTFFILE, 
+C     &                  PROMPTMFILE, SETENVVAR, ENVYN
+        EXTERNAL     DBLERR, DSCM3GRD
 
 C.........  LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$'  ! CVS release tag
 
 C.........  LOCAL VARIABLES
 

@@ -33,10 +33,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C...........  This module contains the information about the source category
+        USE M3UTILIO
+
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
 
         IMPLICIT NONE
@@ -44,23 +47,24 @@ C...........  This module contains the information about the source category
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER(2)     CRLF
-        INTEGER          GETEFILE
+C       CHARACTER(2)     CRLF
+C       INTEGER          GETEFILE
         INTEGER          GETFLINE
         INTEGER          GETIFDSC
-        INTEGER          JUNIT
-        INTEGER          STR2INT
-        LOGICAL          SETENVVAR
+C       INTEGER          JUNIT
+C       INTEGER          STR2INT
+C       LOGICAL          SETENVVAR
 
-        EXTERNAL    CRLF, GETEFILE, GETFLINE, GETIFDSC, JUNIT, STR2INT, 
-     &              SETENVVAR
+C        EXTERNAL    CRLF, GETEFILE, GETFLINE, GETIFDSC, JUNIT, STR2INT, 
+C     &              SETENVVAR
+        EXTERNAL     GETFLINE, GETIFDSC
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: INAME        ! map inventory name

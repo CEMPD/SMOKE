@@ -40,10 +40,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C*************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: CSOURC, CSCC, CMACT, CISIC, CSRCTYP
 
 C.........  This module is for cross reference tables
@@ -69,17 +72,18 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
+C        INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        LOGICAL         ENVYN
-        INTEGER         FIND1
-        INTEGER         FINDC
-        INTEGER         INDEX1
+C       CHARACTER(2)    CRLF
+C       LOGICAL         ENVYN
+C       INTEGER         FIND1
+C       INTEGER         FINDC
+C       INTEGER         INDEX1
         LOGICAL         SETSCCTYPE
 
-        EXTERNAL CRLF, ENVYN, FIND1, FINDC, INDEX1, SETSCCTYPE
+C        EXTERNAL CRLF, ENVYN, FIND1, FINDC, INDEX1, SETSCCTYPE
+        EXTERNAL     SETSCCTYPE
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NSRCIN         ! number of sources

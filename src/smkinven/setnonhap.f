@@ -35,10 +35,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: POLVAL, IPOSCOD, NPCNT, CSOURC, CINTGR
 
 C.........  This module contains the lists of unique inventory information
@@ -55,15 +58,15 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    !  physical and mathematical constants
+C        INCLUDE 'PARMS3.EXT'    !  physical and mathematical constants
  
 C...........   EXTERNAL FUNCTIONS and their descriptions
-        CHARACTER(2)    CRLF
-        INTEGER         INDEX1
-        INTEGER         ENVINT
-        LOGICAL         ENVYN
+C       CHARACTER(2)    CRLF
+C       INTEGER         INDEX1
+C       INTEGER         ENVINT
+C       LOGICAL         ENVYN
  
-        EXTERNAL        CRLF, INDEX1, ENVINT, ENVYN
+C        EXTERNAL        CRLF, INDEX1, ENVINT, ENVYN
         
 C.........  Pollutant names
         CHARACTER(11),      PARAMETER :: NONHAPCOMP  = 'NONHAP_TYPE'

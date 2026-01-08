@@ -35,10 +35,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the control packet data and control matrices
+        USE M3UTILIO
+
         USE MODCNTRL, ONLY: CUTCTG, FACCTG, FACMACT, FACRACT, 
      &                      ICTLEQUP, CCTLSIC, FACCEFF, FACREFF, 
      &                      FACRLPN, CALWSIC, FACALW, EMCAPALW,
@@ -52,17 +55,18 @@ C.........  This module contains the control packet data and control matrices
         
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER(2)  CRLF
-        EXTERNAL      CRLF
+C       CHARACTER(2)  CRLF
+C        EXTERNAL      CRLF
         LOGICAL       BLKORCMT
-        LOGICAL       ENVYN
+C       LOGICAL       ENVYN
         
-        EXTERNAL      BLKORCMT, ENVYN
+C        EXTERNAL      BLKORCMT, ENVYN
+        EXTERNAL     BLKORCMT
 
 C...........   SUBROUTINE ARGUMENTS:
 C...........   Note: LPTMP and LCTMP needed only because PKTLOOP call needs them.

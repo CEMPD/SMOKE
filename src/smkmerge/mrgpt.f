@@ -42,10 +42,13 @@ C Pathname: $Source: /afs/isis/depts/cep/emc/apps/archive/smoke/smoke/src/smkmer
 C Last updated: $Date: 2007/07/11 19:30:43 $ 
 C
 
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
  
 C...........   MODULES for public variables
 C.........  This module contains the global variables for the 3-d grid
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
@@ -53,34 +56,36 @@ C.........  This module contains the global variables for the 3-d grid
  
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'
-        INCLUDE 'PARMS3.EXT'
-        INCLUDE 'IODECL3.EXT'
-        INCLUDE 'FDESC3.EXT'
+C        INCLUDE 'PARMS3.EXT'
+C        INCLUDE 'IODECL3.EXT'
+C        INCLUDE 'FDESC3.EXT'
       
 C...........   EXTERNAL FUNCTIONS
-        CHARACTER(2)  CRLF
-        LOGICAL       ENVYN
+C       CHARACTER(2)  CRLF
+C       LOGICAL       ENVYN
         INTEGER       GETFLINE
-        LOGICAL       GETYN       
-        INTEGER       INDEX1
-        INTEGER       LBLANK
-        INTEGER       PROMPTFFILE
-        CHARACTER(16) PROMPTMFILE
-        INTEGER       SEC2TIME
-        INTEGER       SECSDIFF
+C       LOGICAL       GETYN       
+C       INTEGER       INDEX1
+C       INTEGER       LBLANK
+C       INTEGER       PROMPTFFILE
+C       CHARACTER(16) PROMPTMFILE
+C       INTEGER       SEC2TIME
+C       INTEGER       SECSDIFF
         LOGICAL       BLKORCMT
         LOGICAL       CHKREAL
-        REAL          STR2REAL
-        CHARACTER(14) MMDDYY
+C       REAL          STR2REAL
+C       CHARACTER(14) MMDDYY
 
-        EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK,
-     &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF
-     &           BLKORCMT, CHKREAL, STR2REAL, MMDDYY
-     
-C.........  LOCAL PARAMETERS and their descriptions:
+C        EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK,
+C     &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF
+C     &           BLKORCMT, CHKREAL, STR2REAL, MMDDYY
+C     
+CC.........  LOCAL PARAMETERS and their descriptions:
+        EXTERNAL     GETFLINE, BLKORCMT, CHKREAL, C, LOCAL, PARAMETERS, 
+     &               AND, THEIR, DESCRIPTIONS
 
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name: SMOKEv5.1_Jul2024$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name: SMOKEv5.1_Jul2024$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 

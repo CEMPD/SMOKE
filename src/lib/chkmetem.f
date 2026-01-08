@@ -39,7 +39,9 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***************************************************************************
+        USE M3UTILIO
 
         USE MODGRDLIB       !! for dblerr() generic
 
@@ -47,15 +49,16 @@ C***************************************************************************
 
 C.........  INCLUDE FILES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER(2)  CRLF
+C       CHARACTER(2)  CRLF
         CHARACTER(50) GETCFDSC
 
-        EXTERNAL      CRLF, GETCFDSC
+C        EXTERNAL      CRLF, GETCFDSC
+        EXTERNAL     GETCFDSC
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAM2D ! name of grid cross-point 2d file

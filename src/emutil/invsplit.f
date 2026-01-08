@@ -36,10 +36,13 @@ C
 C Pathname: $Source$ 
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C*************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
+        USE M3UTILIO
+
         USE MODINFO, ONLY: CATEGORY, CRL
 
         IMPLICIT NONE
@@ -47,26 +50,27 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'     ! emissions constant parameters
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 
 C...........   PARAMETERS and their descriptions:
 
         CHARACTER(50), PARAMETER :: SCCSW = '%W%'
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        INTEGER         ENVINT
-        INTEGER         FIND1
+C       CHARACTER(2)    CRLF
+C       INTEGER         ENVINT
+C       INTEGER         FIND1
         INTEGER         GETFLINE
         INTEGER         GETFORMT
-        INTEGER         INDEX1
-        INTEGER         PROMPTFFILE
-        INTEGER         STR2INT
+C       INTEGER         INDEX1
+C       INTEGER         PROMPTFFILE
+C       INTEGER         STR2INT
  
-        EXTERNAL    CRLF, ENVINT, FIND1, GETFLINE, GETFORMT, INDEX1, 
-     &              PROMPTFFILE, STR2INT
+C        EXTERNAL    CRLF, ENVINT, FIND1, GETFLINE, GETFORMT, INDEX1, 
+C     &              PROMPTFFILE, STR2INT
+        EXTERNAL     GETFLINE, GETFORMT
 
 C...........   LOCAL PARAMETERS
         INTEGER, PARAMETER ::   NSEG = 80
@@ -268,7 +272,7 @@ C.............  Convert state code to integer
                 CALL PARSLINE( LINE, NSEG, SEGMENT )
                 STA = INT( STR2INT( SEGMENT(1) ) / 1000 )
 
-            CASE ( FF10FMT )
+            CASE ( FF10FMT, FF10DYFMT, FF10HRFMT )
                 CALL PARSLINE( LINE, NSEG, SEGMENT )
                 STA = INT( STR2INT( SEGMENT(2) ) / 1000 )
 

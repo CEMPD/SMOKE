@@ -49,38 +49,42 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
+
+        USE M3UTILIO
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
 
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+C        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+C        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+C        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'     !
 
 C...........   PARAMETERS and their descriptions:
 
 C...........   LOCAL PARAMETERS
 
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
         REAL,          PARAMETER :: TOHECT = 0.0001  ! factor to convert to hectares
         CHARACTER,     PARAMETER :: AQUT = "'"  
         INTEGER,       PARAMETER :: IZERO = 0
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        LOGICAL         ENVYN
+C       LOGICAL         ENVYN
         INTEGER         GETFLINE
-        INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
+C       INTEGER         PROMPTFFILE
+C       CHARACTER(16)   PROMPTMFILE
         INTEGER         TRIMLEN
         CHARACTER(16)   VERCHAR
 
-        EXTERNAL        ENVYN, GETFLINE, PROMPTFFILE, PROMPTMFILE,  
-     &                  TRIMLEN, VERCHAR
+C        EXTERNAL        ENVYN, GETFLINE, PROMPTFFILE, PROMPTMFILE,  
+C     &                  TRIMLEN, VERCHAR
+        EXTERNAL     GETFLINE, TRIMLEN, VERCHAR
 
 C...........   LOCAL VARIABLES and their descriptions:
 

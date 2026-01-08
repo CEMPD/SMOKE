@@ -18,6 +18,7 @@ C  REVISION  HISTORY:
 C      Created 12/99 by M. Houyoux
 C
 C       Version 10/2016 by C. Coats:  USE M3UTILIO
+C               09/2025 by HT UNC-IE: replace VARNAM(NAMLEN3) with VARNAM(IOVLEN3)
 C
 C****************************************************************************
 C
@@ -70,8 +71,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(IN OUT) :: RDEV   ! report unit number
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
+C       CHARACTER(50), PARAMETER :: 
+C    &  CVSW = '$Name SMOKEv5.2.1_Sep2025$' ! CVS release tag
 
 C...........   Other local variables
 
@@ -79,7 +80,7 @@ C...........   Other local variables
 
         CHARACTER(5)       CTZONE      ! string of time zone
         CHARACTER(5)       SCRNAM      ! upcase(typnam)
-        CHARACTER(NAMLEN3) VARNAM      ! name for integer index
+        CHARACTER(IOVLEN3) VARNAM      ! name for integer index
         CHARACTER(IOVLEN3) VBUF        ! tmp buffer for variable names
         CHARACTER(300)     MESG        ! message buffer
 

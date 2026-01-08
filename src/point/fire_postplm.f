@@ -42,21 +42,24 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
  
+        USE M3UTILIO
+
         IMPLICIT NONE
  
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'
-        INCLUDE 'PARMS3.EXT'
-        INCLUDE 'IODECL3.EXT'
-        INCLUDE 'FDESC3.EXT'
+C        INCLUDE 'PARMS3.EXT'
+C        INCLUDE 'IODECL3.EXT'
+C        INCLUDE 'FDESC3.EXT'
         INCLUDE 'CONST3.EXT'
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)  CRLF
+C       CHARACTER(2)  CRLF
 
-        EXTERNAL      CRLF
+C        EXTERNAL      CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: EMLAYS           ! no. emissions layers

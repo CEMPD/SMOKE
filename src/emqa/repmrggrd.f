@@ -40,10 +40,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C  
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: INDEXA
 
 C.........  This module contains Smkreport-specific settings
@@ -61,13 +64,13 @@ C.........  This module contains the global variables for the 3-d grid
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER     INDEX1
+C       INTEGER     INDEX1
 
-        EXTERNAL    INDEX1
+C        EXTERNAL    INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: RCNT        ! current report number

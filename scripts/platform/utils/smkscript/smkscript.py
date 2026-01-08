@@ -49,6 +49,8 @@ import pathlib
 import shlex
 
 
+import glob
+
 def load_config(path: str) -> Dict:
     with open(path, 'r', encoding='utf-8') as fh:
         return json.load(fh)
@@ -324,6 +326,18 @@ def main(argv: List[str] | None = None) -> int:
 
     env_from_defs: Dict[str,str] = parse_tcsh_all_env_vars(defs_path)
 
+    var_pattern = re.compile(r"\$\{?([A-Za-z0-9_]+)\}?")
+    def recursive_expand(val: str, env: Dict[str, str], max_depth: int = 10) -> str:
+        result = val
+        for _ in range(max_depth):
+            matches = var_pattern.findall(result)
+            if not matches:
+                break
+            for v in set(matches):
+                if v in env:
+                    result = re.sub(fr"\${{?{v}}}?", env[v], result)
+        return result
+
     # Optional: path validation for lines referencing GE_DAT
     if args.check_path:
         pattern = re.compile(r"^\s*setenv\s+([A-Za-z0-9_]+)\s+(.+?)\s*$")
@@ -357,32 +371,57 @@ def main(argv: List[str] | None = None) -> int:
         # --- End duplicate detection ---
         if not env_from_defs:
             print('[check-path] No environment variables parsed from directory_definitions; skipping.')
-        else:
-            var_pattern = re.compile(r"\$\{?([A-Za-z0-9_]+)\}?")
-            def recursive_expand(val: str, env: Dict[str, str], max_depth: int = 10) -> str:
-                result = val
-                for _ in range(max_depth):
-                    matches = var_pattern.findall(result)
-                    if not matches:
-                        break
-                    for v in set(matches):
-                        if v in env:
-                            # Replace all ${VAR} and $VAR
-                            result = re.sub(fr"\${{?{v}}}?", env[v], result)
-                return result
+        
+        current_env = env_from_defs.copy()
+        setenv_pattern = re.compile(r"^\s*setenv\s+([A-Za-z0-9_]+)\s+(.+?)\s*$")
+        set_pattern = re.compile(r"^\s*set\s+([A-Za-z0-9_]+)\s*=\s*(.+?)\s*$")
 
-            for idx, raw in enumerate(lines):
-                m = pattern.match(raw)
-                if not m:
-                    continue
-                var, val = m.group(1), m.group(2).strip()
-                # Recursively expand all env variables
-                expanded = recursive_expand(val, env_from_defs)
+        for idx, raw in enumerate(lines):
+            # Ignore lines that are fully commented out (start with # or ## after optional whitespace)
+            stripped = raw.lstrip()
+            if stripped.startswith('#'):
+                continue
+
+            m_setenv = setenv_pattern.match(raw)
+            m_set = set_pattern.match(raw)
+            
+            if not m_setenv and not m_set:
+                continue
+            
+            if m_setenv:
+                var = m_setenv.group(1)
+                val_part = m_setenv.group(2).strip()
+            else:
+                var = m_set.group(1)
+                val_part = m_set.group(2).strip()
+
+            # Handle quotes/shlex like in parse_tcsh_all_env_vars
+            try:
+                tokens = shlex.split(val_part, posix=True)
+                val = tokens[0] if tokens else ''
+            except Exception:
+                val = val_part.strip('"')
+
+            # Expand
+            expanded = recursive_expand(val, current_env)
+            
+            # Update current_env so subsequent lines can use this variable
+            current_env[var] = expanded
+            
+            # Only perform path check if it was a setenv (preserving original behavior)
+            if m_setenv:
                 expanded_clean = expanded.strip().strip('"').strip("'")
                 if ' ' in expanded_clean and not (expanded_clean.startswith('/') and os.path.exists(expanded_clean)):
                     expanded_clean = expanded_clean.split()[0]
                 if re.match(r"^(\/|\.\.?\/)", expanded_clean):
-                    exists = os.path.exists(expanded_clean)
+                    # Check for wildcards
+                    is_glob = any(c in expanded_clean for c in ['*', '?', '['])
+                    if is_glob:
+                        matches = glob.glob(expanded_clean)
+                        exists = len(matches) > 0
+                    else:
+                        exists = os.path.exists(expanded_clean)
+                        
                     checked.append((var, expanded_clean))
                     if exists:
                         ok_paths.append(f"{var}={expanded_clean}")
@@ -488,18 +527,11 @@ def main(argv: List[str] | None = None) -> int:
                     var_seen[var] = idx
         # Path check and annotation
         env_from_defs: Dict[str,str] = parse_tcsh_all_env_vars(defs_path)
-        var_pattern = re.compile(r"\$\{?([A-Za-z0-9_]+)\}?")
-        def recursive_expand(val: str, env: Dict[str, str], max_depth: int = 10) -> str:
-            result = val
-            for _ in range(max_depth):
-                matches = var_pattern.findall(result)
-                if not matches:
-                    break
-                for v in set(matches):
-                    if v in env:
-                        result = re.sub(fr"\${{?{v}}}?", env[v], result)
-            return result
-        pattern = re.compile(r"^\s*setenv\s+([A-Za-z0-9_]+)\s+(.+?)\s*$")
+        current_env = env_from_defs.copy()
+        
+        setenv_pattern = re.compile(r"^\s*setenv\s+([A-Za-z0-9_]+)\s+(.+?)\s*$")
+        set_pattern = re.compile(r"^\s*set\s+([A-Za-z0-9_]+)\s*=\s*(.+?)\s*$")
+
         for idx, line in enumerate(output_lines):
             orig_line = line.rstrip('\n')
             # Remove any previous VALID PATH or MISSING PATH or DUPLICATED SETTING or REGION_ABBREV annotation from the comment
@@ -510,22 +542,54 @@ def main(argv: List[str] | None = None) -> int:
                 orig_line = base.rstrip()
                 if comment.strip():
                     orig_line += ' # ' + comment.strip()
-            m = pattern.match(orig_line)
+            
+            m_setenv = setenv_pattern.match(orig_line)
+            m_set = set_pattern.match(orig_line)
+            
             annotation = ''
-            if m:
-                var, val = m.group(1), m.group(2).strip()
-                expanded = recursive_expand(val, env_from_defs)
-                expanded_clean = expanded.strip().strip('"').strip("'")
-                if ' ' in expanded_clean and not (expanded_clean.startswith('/') and os.path.exists(expanded_clean)):
-                    expanded_clean = expanded_clean.split()[0]
-                if re.match(r"^(\/|\.\.?\/)", expanded_clean):
-                    exists = os.path.exists(expanded_clean)
-                    if exists:
-                        annotation = 'VALID PATH'
-                    else:
-                        annotation = 'MISSING PATH'
+            
+            if m_setenv or m_set:
+                if m_setenv:
+                    var = m_setenv.group(1)
+                    val_part = m_setenv.group(2).strip()
                 else:
-                    annotation = ''
+                    var = m_set.group(1)
+                    val_part = m_set.group(2).strip()
+
+                # Handle quotes/shlex
+                try:
+                    tokens = shlex.split(val_part, posix=True)
+                    val = tokens[0] if tokens else ''
+                except Exception:
+                    val = val_part.strip('"')
+
+                # Expand
+                expanded = recursive_expand(val, current_env)
+                current_env[var] = expanded
+
+                if m_setenv:
+                    expanded_clean = expanded.strip().strip('"').strip("'")
+                    if ' ' in expanded_clean and not (expanded_clean.startswith('/') and os.path.exists(expanded_clean)):
+                        expanded_clean = expanded_clean.split()[0]
+                    
+                    # Check for wildcards
+                    is_glob = any(c in expanded_clean for c in ['*', '?', '['])
+                    
+                    if re.match(r"^(\/|\.\.?\/)", expanded_clean):
+                        if is_glob:
+                            # Use glob to check if any file matches
+                            matches = glob.glob(expanded_clean)
+                            exists = len(matches) > 0
+                        else:
+                            exists = os.path.exists(expanded_clean)
+                            
+                        if exists:
+                            annotation = 'VALID PATH'
+                        else:
+                            annotation = 'MISSING PATH'
+                    else:
+                        annotation = ''
+
             if idx in duplicate_lines:
                 if annotation:
                     annotation += ' ; DUPLICATED SETTING'

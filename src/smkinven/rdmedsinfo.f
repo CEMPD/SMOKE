@@ -34,26 +34,30 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C.........  MODULES for public variables
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: NMEDGRD, CMEDGRD, NMEDGAI, COABDST
 
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       BLKORCMT
         INTEGER       GETFLINE
-        INTEGER       PROMPTFFILE
-        INTEGER       STR2INT
-        REAL          STR2REAL
+C       INTEGER       PROMPTFFILE
+C       INTEGER       STR2INT
+C       REAL          STR2REAL
         
-        EXTERNAL BLKORCMT, PROMPTFFILE, GETFLINE, STR2INT, STR2REAL
+C        EXTERNAL BLKORCMT, PROMPTFFILE, GETFLINE, STR2INT, STR2REAL
+        EXTERNAL     BLKORCMT, GETFLINE
 
 C...........   Local allocatable arrays
 

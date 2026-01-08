@@ -44,10 +44,13 @@ C
 C Pathname: $Source$
 C Last updated: $Date$
 C
+C       Updated with USE M3UTILIO by Huy Tran UNC-IE on 2026-01
 C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  MODSOURC contains the inventory arrays
+        USE M3UTILIO
+
         USE MODSOURC, ONLY: TZONES, TPFLAG
 
 C.........  MODTMPRL contains the temporal profile tables
@@ -64,9 +67,9 @@ C.........  MODDAYHR contains data for day- and hour-specific data
 C.........    INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........    SUBROUTINE ARGUMENTS:
 
@@ -84,9 +87,9 @@ C.........    SUBROUTINE ARGUMENTS:
 
 C.........  EXTERNAL FUNCTIONS:
 
-        INTEGER, EXTERNAL :: FIND1, INDEX1, JULIAN
-        LOGICAL, EXTERNAL :: ISDSTIME       !  true iff daylight savings time( date)
-        REAL   , EXTERNAL :: YR2DAY
+C       INTEGER, EXTERNAL :: FIND1, INDEX1, JULIAN
+C       LOGICAL, EXTERNAL :: ISDSTIME       !  true iff daylight savings time( date)
+C       REAL   , EXTERNAL :: YR2DAY
 
 C.........  Other Local variables:
 
