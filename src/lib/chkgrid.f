@@ -196,9 +196,9 @@ C.............  Check settings that must be consistent for grids and subgrids
 C.................  Ensure that origins are compatible with each other by
 C                   making sure they line up based on the cell sizes
                 CHK_X  = ( X0 - XORIG ) / XCELL
-                CHK_X  = CHK_X - INT( CHK_X )
+                CHK_X  = CHK_X - NINT( CHK_X )
                 CHK_Y  = ( Y0 - YORIG ) / YCELL
-                CHK_Y  = CHK_Y - INT( CHK_Y )
+                CHK_Y  = CHK_Y - NINT( CHK_Y )
                 IF( DABS( CHK_X ) > 0.001D0  .OR.
      &              DABS( CHK_Y ) > 0.001D0       ) THEN
                     SFLAG = .TRUE.
