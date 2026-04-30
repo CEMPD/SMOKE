@@ -422,14 +422,14 @@ C.................  Re-initialize tmp array
         ENDDO
 
         IF ( .NOT. CLOSE3( CNAME ) ) THEN
-            CALL M3ERR( PROGNAME, 0, 0,
-     &                  CNAME( 1 : TRIMLEN( CNAME ) ) // '".', .TRUE. )
-        END IF      !  if close3() failed 
+            MESG = 'Could not close file "' // TRIM( CNAME ) // '".'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
         IF ( .NOT. CLOSE3( ONAME ) ) THEN
-            CALL M3ERR( PROGNAME, 0, 0,
-     &                  ONAME( 1 : TRIMLEN( ONAME ) ) // '".', .TRUE. )
-        END IF      !  if close3() failed 
+            MESG = 'Could not close file "' // TRIM( ONAME ) // '".'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........   End of program:
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )

@@ -446,10 +446,11 @@ C.............  Loop over output variables
 C.....................  Read input file for time and species of interest
 
                 IF ( .NOT. READ3( ENAME, VNAME3D( K ), 1, 
-     &                            SDATE, STIME, EMIS )) THEN
-                  CALL M3ERR( PROGNAME , 0, 0,
-     &                       'Error reading ' // VNAME3D( K ) // 
-     &                       ' from file ' // ENAME , .TRUE. )
+     &                            SDATE, STIME, EMIS ) ) THEN
+                    MESG = 'ERROR: Could not read "' // 
+     &                     TRIM( VNAME3D( K ) ) // '" from file "' // 
+     &                     TRIM( ENAME ) // '"'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF 
 
 C.............  Write UAM formatted output data for all variables

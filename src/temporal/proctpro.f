@@ -486,6 +486,7 @@ C.............  Write pol/act position to a character string
 
             IF ( JSPC .EQ. 0 ) THEN
                 CPOS = ZEROS
+                POLREFFLAG = .TRUE.
             ELSE
                 WRITE( CPOS, '(I5.5)' ) JSPC      ! species index into EANAM, from FLTRXREF
                 POLREFFLAG( JSPC ) = .TRUE.
@@ -694,7 +695,13 @@ C.................  link-specific assignments from the documentation for Spcmat.
                     METCOUNT = METCOUNT + 1
                     METIDU ( METCOUNT ) = FIELD(9)
                     METKEYU( METCOUNT ) = CSRCALL
-                    METREFFLAG( JSPC )  = .TRUE.
+C                    METREFFLAG( JSPC )  = .TRUE.      ! issue145: commented out
+C..............  issue145 fix: blank pollutant (JSPC=0) means apply to all pollutants
+                    IF ( JSPC .EQ. 0 ) THEN
+                        METREFFLAG = .TRUE.
+                    ELSE
+                        METREFFLAG( JSPC ) = .TRUE.
+                    END IF
 
                     IF ( LASTMET .EQ. MISSMET ) THEN
                         METPROTYPE = FIELD( 8 )
@@ -964,7 +971,15 @@ C.............  Determine which hourly profiles to apply
 C.........................  If this source in XREF and this FIP in METFIPS
 C.........................  use subscript into (unsorted) COUNTIES:
 
+C                        I = FINDC( CSRCALL, METCOUNT, METKEYS )         !  index in sorted XREF, or 0   ! issue145: commented out
+C..............  issue145 fix: try pollutant-specific key first; fall back to wildcard (ZEROS)
                         I = FINDC( CSRCALL, METCOUNT, METKEYS )         !  index in sorted XREF, or 0
+                        IF ( I .LE. 0 ) THEN
+                            CALL BLDCSRC( CFIP, TSCC, BLANK,
+     &                                   BLANK, BLANK, BLANK,
+     &                                   BLANK, ZEROS, CSRCALL )
+                            I = FINDC( CSRCALL, METCOUNT, METKEYS )     !  retry with wildcard key
+                        END IF
                         IF ( I .GT. 0 )  THEN
                             K = FIND1( STR2INT( CFIP ), NMETPROF, COUNTIES )  !  index into sorted list,   or 0
                             METPROF( S,V ) = K                          !  index into unsorted list, or 0

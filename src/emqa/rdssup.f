@@ -145,13 +145,9 @@ C.....................  Count the unique list of GSPRO
                             GSPROID( NGSPRO ) = TPROF( K )
                         END IF
                     END DO
+                    IF( S >= NSRC ) V = 0 !! Modified by Huy Tran UNC-IE: Moved inside ELSE (Issue 144 fix)
+C                                         !! Ensures last source's profile count is done before V is zeroed.
                 END IF
-
-C               IF( S .EQ. NSRC ) V = 0
-C  UNC-IE Dec 2023: Replace the above line with the line below this comment which allow
-C                   this subroutine check the last line in A|PSSUP file
-C                IF( S == NSRC+1 ) V = 0
-                IF( S >= NSRC ) V = 0 !! Modified by Huy Tran UNC-IE: Use >= NSRC to prevent buffer overflow
 
             END IF
 
@@ -233,10 +229,9 @@ C.....................  Develop the unique list of GSPRO
                             GSPROID( NS ) = SPPROF( K )
                         END IF
                     END DO
-
+                    IF( S >= NSRC ) V = 0 !! Modified by Huy Tran UNC-IE: Moved inside ELSE (Issue 144 fix)
+C                                         !! Ensures last source's SPPROF is read before V is zeroed.
                 END IF
-
-                IF( S >= NSRC ) V = 0 !! Modified by Huy Tran UNC-IE: Use >= NSRC to prevent buffer overflow
 
             END IF
 

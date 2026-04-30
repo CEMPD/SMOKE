@@ -1131,9 +1131,11 @@ C.............................  Store Temporal intermediate hourly emissions
      &                                       EMVAL * GM2TON       ! g/hr-cell * ton/g = ton/hr-cell
                                     END IF
                                 ELSE
-                                    MTMP_INVT( SRC,SIIDX,T ) =
-     &                                   MTMP_INVT( SRC,SIIDX,T ) +
-     &                                   EMVAL * GM2TON       ! g/hr-cell * ton/g = ton/hr-cell
+                                    IF( V <= NIPPA ) THEN
+                                        MTMP_INVT( SRC,SIIDX,T ) =
+     &                                       MTMP_INVT( SRC,SIIDX,T ) +
+     &                                       EMVAL * GM2TON       ! g/hr-cell * ton/g = ton/hr-cell
+                                    END IF
                                 END IF
                             END IF
 

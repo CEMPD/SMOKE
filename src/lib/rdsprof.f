@@ -77,7 +77,7 @@ C...........   Local unsorted arrays
         REAL           DIVISA( MXSPFUL )   ! unsorted divisors
         REAL           FACTRA( MXSPFUL )   ! unsorted split factors
         REAL           XMFA  ( MXSPFUL )   ! unsorted mass fraction
-        CHARACTER(21)  INPSPA( MXSPFUL )   ! unsorted profile no. // species ID
+        CHARACTER(26)  INPSPA( MXSPFUL )   ! unsorted profile no. // species ID
         CHARACTER(IOVLEN3)  SPCIDA( MXSPFUL )   ! unsorted species IDs
         
 C...........   Other arrays

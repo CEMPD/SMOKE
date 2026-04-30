@@ -17,6 +17,10 @@ C  REVISION  HISTORY:
 C             10/00 : Prototype by JMV
 C             04/24 : Improvised by Huy Tran (UNC-IE)
 C     09/2025 by HT UNC-IE:  Use M3UTILIO
+C     04/2026 by HT UNC-IE:  IMASK changed from INTEGER to REAL to support
+C                              per-cell fractional scaling when MASKFRAC=T;
+C                              inner loop applies IMASK(I,J) directly as
+C                              the cell-specific factor instead of SPCFAC(M)
 C
 C***********************************************************************
 C
@@ -76,7 +80,7 @@ C       REAL  FEMIS                              ! temporary value for emissions
 
         INTEGER  TSTEP                           ! time step
         INTEGER  I, J, K , L, M, N               ! counters
-        INTEGER, ALLOCATABLE ::  IMASK ( :, : )  ! mask values
+        REAL,    ALLOCATABLE ::  IMASK ( :, : )  ! mask values (REAL: ratio per cell when MASKFRAC=T)
         INTEGER  LDEV                            ! log file unit number
         INTEGER  RDEV                            ! species factors unit number
         INTEGER  NSPECS                          ! number of species
@@ -169,12 +173,11 @@ C.........  Read mask file header
         ALLOCATE( IMASK ( NCOLS3D, NROWS3D ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IMASK', PROGNAME )
      
-        IF ( .NOT. READ3( MNAME, MASKVAR, 1,
-     &                            0, 0, IMASK ) ) THEN
-                  CALL M3ERR( PROGNAME , 0, 0,
-     &                       'Error reading masked region from file '
-     &                       // MNAME , .TRUE. )
-        ENDIF
+        IF ( .NOT. READ3( MNAME, MASKVAR, 1, 0, 0, IMASK ) ) THEN
+            MESG = 'ERROR: Could not read masked region from file "' //
+     &             TRIM( MNAME ) // '"'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
         MAXMSK = maxval(IMASK)
  
 C.........  Read species factors
@@ -222,11 +225,11 @@ C...........  Loop through cells and apply factor to cells in mask
 C...........  Read input file for time and species of interest
 
               IF ( .NOT. READSET( ENAME, VNAMESET( L ), ALLAYS3,
-     &              ALLFILES, SDATE, STIME, EMIS   ) ) THEN
-                 CALL M3ERR( PROGNAME , 0, 0,
-     &               'Error reading ' // VNAMESET( L ) //
-     &               ' from file ' // ENAME , .TRUE. )
-              ENDIF
+     &              ALLFILES, SDATE, STIME, EMIS ) ) THEN
+                  MESG = 'ERROR: Could not read "' // TRIM( VNAMESET( L ) ) //
+     &                   '" from file "' // TRIM( ENAME ) // '"'
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              END IF
 
               DO I = 1, NCOLS3D 
               DO J = 1, NROWS3D
@@ -246,7 +249,13 @@ C...........    If grid cell is NOT in geographical region of interest
 C...........       Find out if factor for this species exists
                    IF ( VNAMESET ( L ) .EQ. SPCNAM ( M )  ) THEN
 
-                        EMIS (I,J,:) = EMIS ( I, J, :  ) * SPCFAC( M ) 
+C...........          MASKFRAC=T: use per-cell IMASK value as the scale factor
+C                     MASKFRAC=F: use uniform SPCFAC from SPECFACS file
+                        IF ( MASKFRAC ) THEN
+                             EMIS (I,J,:) = EMIS ( I, J, :  ) * IMASK ( I, J )
+                        ELSE
+                             EMIS (I,J,:) = EMIS ( I, J, :  ) * SPCFAC( M )
+                        ENDIF
 
                    ENDIF
 
