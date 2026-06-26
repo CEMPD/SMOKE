@@ -156,7 +156,7 @@ C.......   Get variable name that represent mask area in mask file
 
 C.......   Check if to use fractional mask value or unity mask value
         MASKFRAC = ENVYN( 'MASKFRAC', 'Whether or not using fractional mask value',
-     &               .TRUE., IOS )
+     &               .FALSE., IOS )
 
 C.......   Get the species fac file name
 
