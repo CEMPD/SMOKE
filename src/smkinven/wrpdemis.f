@@ -503,7 +503,11 @@ C.................................  If pollutant is not a model species, set it 
                                 L  = INDEX( POLNAM,'_NOI' )
                                 IF( L > 0 ) INVNAM = POLNAM( 1:L-1 )
                                 NVRAW = INDEX1( INVNAM, NINVTBL, ITNAMA )
-                                IF( .NOT. ITMSPC( NVRAW ) ) EMISVA( JJ, TIDX ) = 0.0
+C                               IF( .NOT. ITMSPC( NVRAW ) ) EMISVA( JJ, TIDX ) = 0.0
+C.. UNC-IE: Issue 148, For non-integrated sources, only zero out if not a model species and not a kept HAPs species
+                                IF( .NOT. ITKEEPA( NVRAW ) .AND. .NOT. ITMSPC( NVRAW ) ) THEN
+                                    EMISVA( JJ, TIDX ) = 0.0
+                                END IF
                                 PDDATA( LK,IV ) = EMISVA( JJ,TIDX )
                                 PDTOTL( LK,IV ) = DYTOTA( JJ,TIDX )
                             END IF

@@ -46,7 +46,7 @@ C...........   This module is the inventory arrays
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: INVSTAT, MXIDAT, INVDNAM, INVDVTS,
-     &                      ITMSPC, ITEXPL, ITNAMA, NINVTBL
+     &                      ITMSPC, ITEXPL, ITNAMA, NINVTBL, ITKEEPA
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: LNONHAP, PROC_HAPS
@@ -408,7 +408,9 @@ C.....................  Find pollutant position in raw list
                     CPOLRAW = INDEX1( INVDNAM( CPOL ), NINVTBL, ITNAMA )
 
 C.....................  If pollutant is not a model species, set it to zero
-                    IF( .NOT. ITMSPC( CPOLRAW ) ) THEN
+C                   IF( .NOT. ITMSPC( CPOLRAW ) ) THEN
+C... UNC-IE: Issue 148, If pollutant is not a model species and not a kept HAPs species, set it to zero 
+                    IF( .NOT. ITKEEPA( CPOLRAW ) .AND. .NOT. ITMSPC( CPOLRAW ) ) THEN
                         POLVAL( CURRPOS,NEM ) = 0.0
                         POLVAL( CURRPOS,NDY ) = 0.0
 
