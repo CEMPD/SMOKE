@@ -541,8 +541,9 @@ C.................  Count the number of unique data names
 C.................  If pollutant is a part of VOC or TOG, is "no-integrate" 
 C                   and a model species, increase the count for inserting 
 C                   the _NOI pollutants.
+C... UNC-IE: fix for issue 148, include all kept HAPs regardless of mechanism explicitness
                 IF ( ( ITVTSA(J) .EQ. 'V' .OR. ITVTSA(J) .EQ. 'T' ).AND.
-     &               ITMSPC( J ) .AND. .NOT. ITEXPL( J ) ) THEN
+     &               ( ITKEEPA( J ) .OR. ITMSPC( J ) ) ) THEN
 
                     NNOI = NNOI + 1
 
@@ -772,8 +773,9 @@ C              : added to prevent doubling emssions by exact duplicate entries (
             END IF
 
 C.............  Insert no-integrate entries (memory already increased with NNOI variable)
+C... UNC-IE: fix for issue 148, include all kept HAPs regardless of mechanism explicitness
             IF ( ( ITVTSA(J) .EQ. 'V' .OR. ITVTSA(J) .EQ. 'T' ).AND.
-     &             ITMSPC( J ) .AND. .NOT. ITEXPL( J ) ) THEN
+     &             ( ITKEEPA( J ) .OR. ITMSPC( J ) ) ) THEN
 
                 K = MXIDAT
                 MXIDAT = MXIDAT + 1

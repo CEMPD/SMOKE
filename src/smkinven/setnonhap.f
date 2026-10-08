@@ -414,8 +414,9 @@ C... UNC-IE: Issue 148, If pollutant is not a model species and not a kept HAPs 
                         POLVAL( CURRPOS,NEM ) = 0.0
                         POLVAL( CURRPOS,NDY ) = 0.0
 
+C... UNC-IE: fix for issue 148, rename all kept HAPs to NOI regardless of mechanism explicitness
 C..................... Otherwise, if pollutant is not an explicit species, rename to NOI
-                    ELSE IF( .NOT. ITEXPL( CPOLRAW ) ) THEN
+                    ELSE
                 
 C.........................  Create NOI name
                         POLNAM = INVDNAM( CPOL )

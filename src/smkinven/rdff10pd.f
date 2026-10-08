@@ -444,8 +444,8 @@ C.............  Set the number of fields, depending on day- or hour-specific
                 NFIELD  = MON_DAYS( MONTH ) ! Get number of days in the month; defined in inc/EMCNST3.EXT; e.g., NFIELD = 31 for Jan 2020
                 LYEAR =  INT( 1 / YR2DAY( YEAR ) )   ! convert year to days by I/O API YR2DAY; e.g., leaf year YR2DAY( 1980 )	=  1.0 / 366.0
                 IF( LYEAR > 365 ) THEN
-                    IF ( MONTH .EQ. 2 .OR. INV_MON .EQ. 2 ) THEN
-                        NFIELD = 29 ! Fix issue 135
+                    IF ( MONTH .EQ. 2 ) THEN
+                        NFIELD = 29 ! Fix issue 135 and issue 152
                     END IF
                 END IF
                 FSTLOC = 1
@@ -461,8 +461,8 @@ C.............  Skip non-processing month/day
                 NDAYS  = MON_DAYS( INV_MON )
                 LYEAR =  INT( 1 / YR2DAY( B_YEAR ) )   ! convert year to days
                 IF( LYEAR > 365 ) THEN
-                    IF ( MONTH .EQ. 2 .OR. INV_MON .EQ. 2 ) THEN
-                        NDAYS = 29 ! Fix issue 135
+                    IF ( INV_MON .EQ. 2 ) THEN
+                        NDAYS = 29 ! Fix issue 135 and issue 152
                     END IF
                 END IF
                 FSTDATE = 1000 * B_YEAR + JULIAN( B_YEAR, INV_MON, 1 ) 
@@ -476,7 +476,7 @@ C.............  Skip non-processing month/day
 
                     FSTPRV = FSTDATE  ! reset the last of previous month to first day of prv month for a proper daily inv 
                     CALL DAYMON ( FSTPRV, MONTH, N )
-                    N = MON_DAYS( MONTH )
+C                   N = MON_DAYS( MONTH )  ! Removed for issue 152: DAYMON already returns exact days in previous month
                     CALL NEXTIME( FSTPRV, JTIME, -240000 * (N-1) )
 
 C                   IF( .NOT. ( FSTPRV <= JDATE .AND. JDATE <= LSTDATE ) ) CYCLE ! UNC-IE 12/10/2025: Skipping processing data earlier to speed up; however this is broken for Mar

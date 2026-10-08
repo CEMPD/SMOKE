@@ -128,7 +128,13 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine PROCAR2PT
-            
+
+C.........  Nullify local pointers
+        NULLIFY( OLDNPCNT, OLDIPOSCOD, OLDTPFLAG, OLDINVYR, OLDPOLVAL,
+     &           OLDCIFIP, OLDCSOURC, OLDCSCC, OLDCISIC, OLDCMACT,
+     &           OLDCNAICS, OLDCSRCTYP, OLDCEXTORL, OLDCINTGR,
+     &           OLDCSHAPE )
+
 C.........  Determine total number of sources to be added; if source only
 C           has one location, can use existing arrays and don't need to 
 C           create additional memory for it

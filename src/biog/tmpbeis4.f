@@ -350,9 +350,24 @@ C.........  Check to see if frost date switch file to be used
             CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "BIOSW_YN"', 2 )
         END IF
 
+C.........  Check if using PX version of MCIP (Move up, issue 151)
+        PX_VERSION = ENVYN( 'PX_VERSION', 'MCIP is PX version?',
+     &                      .FALSE., IOS)
+        IF ( IOS .GT. 0 ) THEN
+            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "PX_VERSION"', 2 )
+        END IF
+
 C.........  Check to compute season function from MCIP soil temperature 
         MESG = 'Compute season function from soil temperature?'
         SEASON_CALC = ENVYN( 'COMPUTE_SEASON_FUNCTION', MESG, .TRUE., IOS)
+
+C......... Add Error Check (issue 151)
+        IF ( .NOT. PX_VERSION .AND. SEASON_CALC ) THEN
+            MESG = "ERROR: COMPUTE_SEASON_FUNCTION only supported when" //
+     &          " PX-LSM input data is used.  If PX not used then set" //
+     &          " COMPUTE_SEASON_FUNCTION to N"
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Check to see if want to use LAI from WRF-MCIP file 
         MESG = 'Use LAI from WRF-MCIP?'
@@ -467,12 +482,6 @@ C.........  Check for temperature variable
         END IF
         CALL CHECK_VARIABLE( TMPRNAM, M3NAME )
 
-C.........  Check if using PX version of MCIP
-        PX_VERSION = ENVYN( 'PX_VERSION', 'MCIP is PX version?',
-     &                      .FALSE., IOS)
-        IF ( IOS .GT. 0 ) THEN
-            CALL M3EXIT( PROGNAME,0,0, 'Bad env vble "PX_VERSION"', 2 )
-        END IF
           
         IF (PX_VERSION) THEN
         
