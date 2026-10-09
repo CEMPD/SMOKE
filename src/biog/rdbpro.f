@@ -64,7 +64,7 @@ C              passed via module MODSPRO)
         INTEGER     , INTENT  (IN) :: FDEV            ! file unit number
         INTEGER     , INTENT  (IN) :: NIPOL           ! number of pollutants
         INTEGER     , INTENT  (IN) :: MSPCS           ! max number of species
-        CHARACTER(IOVLEN3), INTENT  (IN) :: EINAM( NIPOL )  ! pollutant names
+        CHARACTER(*), INTENT  (IN) :: EINAM( NIPOL )  ! pollutant names
         CHARACTER(*), INTENT  (IN) :: SPPRO           ! biogenic profile to find 
         CHARACTER(*), INTENT  (IN) :: EMSPC( MSPCS ) 
 
